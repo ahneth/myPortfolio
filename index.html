@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>myPortfolio</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            },
+            dark: {
+              bg: '#0b0f19',
+              card: '#111827',
+              cardHover: '#1f2937',
+              border: '#1f2937',
+              input: '#1a2234'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- SheetJS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- External Custom CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-device="desktop" class="bg-slate-50 dark:bg-dark-bg text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+  <!-- TOP NAVBAR -->
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-dark-card/95 backdrop-blur border-b border-slate-200 dark:border-dark-border shadow-sm">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-14 sm:h-16">
+        <!-- Brand Logo -->
+        <div class="flex items-center gap-2.5 sm:gap-3">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+            <i class="fa-solid fa-chart-pie text-base sm:text-lg"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">my<span class="text-brand-500">Portfolio</span></span>
+              <!-- Auto-Detected Device Badge -->
+              <span id="device-indicator-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center gap-1" title="Auto-detected device profile">
+                <i id="device-indicator-icon" class="fa-solid fa-desktop text-[9px] text-brand-500"></i>
+                <span id="device-indicator-text">Desktop</span>
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">API-Driven Stock &amp; Historical Wealth Tracker</p>
+          </div>
+        </div>
+
+        <!-- Center: API Connection Status & Sync Controls -->
+        <div class="hidden md:flex items-center gap-3 bg-slate-100 dark:bg-slate-800/80 px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+          <div class="flex items-center gap-2">
+            <span id="api-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span id="api-status-text" class="text-xs font-medium text-slate-700 dark:text-slate-300">API: Not Configured</span>
+          </div>
+          <div class="h-3 w-px bg-slate-300 dark:bg-slate-600"></div>
+          <button id="header-sync-api-btn" class="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold flex items-center gap-1.5" title="Fetch current & monthly historical prices via API">
+            <i id="header-sync-icon" class="fa-solid fa-cloud-arrow-down text-[11px]"></i>
+            <span>Sync Market Data</span>
+          </button>
+        </div>
+
+        <!-- Right Action Items -->
+        <div class="flex items-center gap-1.5 sm:gap-2.5">
+          <!-- Mobile API Sync Button -->
+          <button id="mobile-sync-api-btn" class="md:hidden w-9 h-9 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-brand-600 dark:text-brand-400 flex items-center justify-center transition" title="Sync API Data">
+            <i class="fa-solid fa-cloud-arrow-down text-sm"></i>
+          </button>
+
+          <!-- Quick Trade Action -->
+          <button id="btn-open-trade-modal" class="px-3 sm:px-3.5 py-1.5 sm:py-2 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center gap-1.5 shadow-md shadow-brand-600/20">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>New Trade</span>
+          </button>
+
+          <!-- Dark / Light Mode Toggle -->
+          <button id="theme-toggle" class="w-9 h-9 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition" aria-label="Toggle Theme">
+            <i class="fa-solid fa-moon dark:hidden"></i>
+            <i class="fa-solid fa-sun hidden dark:inline"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Desktop Navigation Tabs Bar (Hidden on mobile screens, replaced by bottom nav) -->
+      <nav class="hidden md:flex space-x-2 overflow-x-auto border-t border-slate-200 dark:border-dark-border py-2 text-sm font-medium no-scrollbar">
+        <button data-tab="dashboard" class="nav-tab active px-3 py-1.5 rounded-lg text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/40 flex items-center gap-2 transition whitespace-nowrap">
+          <i class="fa-solid fa-gauge-high"></i> Dashboard
+        </button>
+        <button data-tab="holdings" class="nav-tab px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition whitespace-nowrap">
+          <i class="fa-solid fa-briefcase"></i> Holdings (<span class="tab-holdings-count">0</span>)
+        </button>
+        <button data-tab="transactions" class="nav-tab px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition whitespace-nowrap">
+          <i class="fa-solid fa-list-check"></i> Transactions (<span class="tab-tx-count">0</span>)
+        </button>
+        <button data-tab="dividends" class="nav-tab px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition whitespace-nowrap">
+          <i class="fa-solid fa-hand-holding-dollar"></i> Dividends &amp; DRIP
+        </button>
+        <button data-tab="watchlist" class="nav-tab px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition whitespace-nowrap">
+          <i class="fa-solid fa-binoculars"></i> Watchlist &amp; Valuation
+        </button>
+        <button data-tab="settings" class="nav-tab px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 transition whitespace-nowrap">
+          <i class="fa-solid fa-sliders"></i> API &amp; Backup
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+
+    <!-- API Key Setup Prompt Banner (Shown when no API key is configured) -->
+    <div id="api-setup-banner" class="hidden mb-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div class="flex items-start sm:items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+          <i class="fa-solid fa-key"></i>
+        </div>
+        <div>
+          <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Connect Your Stock Market API Key</h3>
+          <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+            myPortfolio fetches live quotes, company fundamentals, and monthly historical price trends directly via API (Alpha Vantage, Twelve Data, or Finnhub).
+          </p>
+        </div>
+      </div>
+      <button id="banner-configure-api-btn" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs whitespace-nowrap transition shrink-0">
+        Configure API Key &rarr;
+      </button>
+    </div>
+
+    <!-- KPI STATS SUMMARY ROW -->
+    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 mb-6">
+      <!-- Total Portfolio Value -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-3.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
+        <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+          <span>Portfolio Value</span>
+          <i class="fa-solid fa-vault text-brand-500 opacity-80"></i>
+        </div>
+        <div class="mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font text-slate-900 dark:text-white tracking-tight" id="kpi-portfolio-value">$0.00</div>
+        <div class="mt-1 flex items-center text-[11px] text-slate-500 dark:text-slate-400">
+          <span>Total Net Worth</span>
+        </div>
+      </div>
+
+      <!-- Cash Balance -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-3.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
+        <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+          <span>Available Cash</span>
+          <button id="btn-quick-cash" class="text-xs text-brand-600 dark:text-brand-400 hover:underline" title="Deposit / Withdraw Cash">
+            <i class="fa-solid fa-money-bill-transfer"></i>
+          </button>
+        </div>
+        <div class="mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font text-slate-900 dark:text-white tracking-tight" id="kpi-cash-balance">$0.00</div>
+        <div class="mt-1 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+          <span id="kpi-cash-pct">0% of total</span>
+          <button id="btn-deposit-quick" class="text-[11px] text-brand-500 hover:underline font-semibold">+ Cash</button>
+        </div>
+      </div>
+
+      <!-- Invested Cost Basis -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-3.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
+        <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+          <span>Invested Capital</span>
+          <i class="fa-solid fa-coins text-amber-500 opacity-80"></i>
+        </div>
+        <div class="mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font text-slate-900 dark:text-white tracking-tight" id="kpi-cost-basis">$0.00</div>
+        <div class="mt-1 flex items-center text-[11px] text-slate-500 dark:text-slate-400">
+          <span>Active Cost Basis</span>
+        </div>
+      </div>
+
+      <!-- Unrealized P&L -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-3.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
+        <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+          <span>Unrealized P&amp;L</span>
+          <i class="fa-solid fa-chart-line text-emerald-500 opacity-80"></i>
+        </div>
+        <div class="mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font tracking-tight" id="kpi-unrealized-val">$0.00</div>
+        <div class="mt-1 flex items-center text-[11px] font-semibold num-font" id="kpi-unrealized-pct">+0.00%</div>
+      </div>
+
+      <!-- Realized P&L -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-3.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
+        <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+          <span>Realized P&amp;L</span>
+          <i class="fa-solid fa-scale-balanced text-indigo-500 opacity-80"></i>
+        </div>
+        <div class="mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font tracking-tight" id="kpi-realized-val">$0.00</div>
+        <div class="mt-1 flex items-center text-[11px] text-slate-500 dark:text-slate-400">
+          <span>Closed Trades</span>
+        </div>
+      </div>
+
+      <!-- Total Dividends -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-3.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
+        <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+          <span>Dividends Earned</span>
+          <i class="fa-solid fa-receipt text-cyan-500 opacity-80"></i>
+        </div>
+        <div class="mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font text-cyan-600 dark:text-cyan-400 tracking-tight" id="kpi-dividends-val">$0.00</div>
+        <div class="mt-1 flex items-center text-[11px] text-slate-500 dark:text-slate-400">
+          <span id="kpi-dividends-count">0 payouts</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 1: DASHBOARD ==================== -->
+    <div id="tab-content-dashboard" class="tab-pane space-y-6">
+
+      <!-- FEATURED CHART: MONTHLY HISTORICAL TRENDS (PORTFOLIO & INDIVIDUAL STOCKS) -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-chart-area text-brand-500"></i>
+              <span>Monthly Historical Price &amp; Portfolio Trend</span>
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400" id="historical-chart-subtitle">
+              Track aggregate monthly portfolio valuation vs. cost basis or inspect individual stock monthly closing prices via API
+            </p>
+          </div>
+
+          <!-- Controls for Historical Chart -->
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- View Mode: Whole Portfolio vs Individual Stock -->
+            <select id="history-target-select" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+              <option value="PORTFOLIO">Entire Portfolio (Aggregate)</option>
+              <!-- Populated dynamically with held & watched tickers -->
+            </select>
+
+            <!-- Timeframe Selector (12M / 24M / 36M / ALL) -->
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
+              <button data-range="12" class="history-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1Y (12M)</button>
+              <button data-range="24" class="history-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">2Y (24M)</button>
+              <button data-range="36" class="history-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">3Y (36M)</button>
+              <button data-range="120" class="history-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">ALL</button>
+            </div>
+
+            <!-- Fetch Monthly History from API Button -->
+            <button id="btn-fetch-monthly-history" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-cloud-arrow-down text-[11px]"></i>
+              <span>Fetch Monthly API Data</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Historical Chart Canvas -->
+        <div class="pt-4 relative chart-container min-h-[270px] sm:min-h-[320px]">
+          <canvas id="chart-monthly-history"></canvas>
+          <div id="chart-history-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 text-slate-400 text-sm bg-white/80 dark:bg-dark-card/80">
+            <i class="fa-solid fa-chart-line text-4xl mb-2 opacity-40"></i>
+            <span id="chart-history-empty-text">Add a stock trade or configure your API key to load monthly historical trends.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Grid 2: Asset Allocation & Transaction Cost Basis Trajectory -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Asset Allocation Doughnut -->
+        <div class="lg:col-span-5 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h2 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-brand-500"></i> Asset Allocation
+              </h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Holdings breakdown by market weight</p>
+            </div>
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
+              <button id="toggle-alloc-ticker" class="px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">By Ticker</button>
+              <button id="toggle-alloc-sector" class="px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">By Sector</button>
+            </div>
+          </div>
+          <div class="flex-1 flex items-center justify-center pt-4 relative chart-container">
+            <canvas id="chart-allocation"></canvas>
+            <div id="chart-alloc-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-sm">
+              <i class="fa-solid fa-chart-pie text-4xl mb-2 opacity-40"></i>
+              <span>No active positions to display</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Realized vs Unrealized P&L Breakdown -->
+        <div class="lg:col-span-7 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h2 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-chart-simple text-purple-500"></i> P&amp;L Breakdown by Position
+              </h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Realized gains vs. unrealized floating paper profits</p>
+            </div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
+              <span class="inline-flex items-center gap-1.5 mr-3"><span class="w-3 h-1 bg-emerald-500 rounded-full inline-block"></span> Unrealized</span>
+              <span class="inline-flex items-center gap-1.5"><span class="w-3 h-1 bg-indigo-500 rounded-full inline-block"></span> Realized</span>
+            </div>
+          </div>
+          <div class="flex-1 pt-4 chart-container">
+            <canvas id="chart-pnl-breakdown"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Grid 3: Monthly Dividend Income & Summary Insights -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Monthly / Cumulative Dividend Bar Chart -->
+        <div class="lg:col-span-7 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h2 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-hand-holding-dollar text-cyan-500"></i> Monthly &amp; Cumulative Dividend Income
+              </h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Monthly cash &amp; DRIP distributions over time</p>
+            </div>
+            <span class="text-xs px-2.5 py-1 rounded bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 font-semibold" id="chart-div-total-badge">$0.00 Total</span>
+          </div>
+          <div class="flex-1 pt-4 chart-container">
+            <canvas id="chart-dividends"></canvas>
+          </div>
+        </div>
+
+        <!-- Portfolio Insights Column -->
+        <div class="lg:col-span-5 flex flex-col justify-between gap-4">
+          <!-- Top Performer card -->
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center gap-2">
+              <i class="fa-solid fa-trophy text-amber-400"></i> Top Performing Holding
+            </h3>
+            <div id="top-performer-box" class="flex items-center justify-between">
+              <span class="text-sm text-slate-400">No active positions</span>
+            </div>
+          </div>
+
+          <!-- Average Yield on Cost card -->
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
+              <i class="fa-solid fa-percent text-brand-500"></i> Portfolio Yield on Cost (YoC)
+            </h3>
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-2xl font-bold num-font text-slate-900 dark:text-white" id="stat-avg-yoc">0.00%</div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Cumulative Dividends / Active Cost Basis</p>
+              </div>
+              <div class="w-11 h-11 rounded-xl bg-brand-500/10 flex items-center justify-center text-brand-500 text-lg">
+                <i class="fa-solid fa-seedling"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Watchlist Alerts Triggered card -->
+          <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
+              <i class="fa-solid fa-bell text-rose-500"></i> Target Price Alerts
+            </h3>
+            <div id="watchlist-alerts-box" class="text-sm text-slate-500 dark:text-slate-400">
+              <span>No alerts triggered</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: HOLDINGS & INVENTORY ==================== -->
+    <div id="tab-content-holdings" class="tab-pane hidden space-y-4">
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-briefcase text-brand-500"></i> Active Stock Holdings
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Weighted average cost basis, API prices, unrealized P&amp;L, and historical chart shortcuts</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-holdings-new-trade" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-plus text-xs"></i> Record Trade
+            </button>
+            <button id="btn-refresh-prices-now" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-rotate text-xs"></i> Sync API Quotes
+            </button>
+          </div>
+        </div>
+
+        <!-- Holdings Table -->
+        <div class="table-responsive-wrapper">
+          <table class="w-full text-left text-sm whitespace-nowrap">
+            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-dark-border">
+              <tr>
+                <th class="py-3 px-4 sticky-col-mobile">Asset / Sector</th>
+                <th class="py-3 px-4 text-right">Shares</th>
+                <th class="py-3 px-4 text-right">Avg Cost</th>
+                <th class="py-3 px-4 text-right">Total Cost</th>
+                <th class="py-3 px-4 text-right">Live Price</th>
+                <th class="py-3 px-4 text-right">Market Value</th>
+                <th class="py-3 px-4 text-right">Unrealized P&amp;L</th>
+                <th class="py-3 px-4 text-right">Yield on Cost</th>
+                <th class="py-3 px-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="holdings-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/80">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="holdings-empty-state" class="hidden p-10 sm:p-12 text-center text-slate-400">
+          <i class="fa-solid fa-folder-open text-4xl mb-3 opacity-30"></i>
+          <p class="font-medium text-slate-600 dark:text-slate-300">Your portfolio has no active stock positions yet</p>
+          <p class="text-xs text-slate-500 mt-1">Click "+ New Trade" to record a purchase or restore your portfolio from an Excel backup.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: TRANSACTIONS LOG ==================== -->
+    <div id="tab-content-transactions" class="tab-pane hidden space-y-4">
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-indigo-500"></i> Transaction Audit Log
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Chronological ledger of all buy, sell, deposit, withdrawal, and DRIP orders</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <input type="text" id="tx-search-ticker" placeholder="Filter ticker..." class="px-3 py-1.5 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 w-28 uppercase placeholder:normal-case">
+            <select id="tx-filter-type" class="px-3 py-1.5 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+              <option value="ALL">All Types</option>
+              <option value="BUY">Buy</option>
+              <option value="SELL">Sell</option>
+              <option value="DRIP">DRIP</option>
+              <option value="DEPOSIT">Deposit</option>
+              <option value="WITHDRAW">Withdraw</option>
+            </select>
+            <button id="btn-tx-add" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-plus text-xs"></i> Add Trade
+            </button>
+          </div>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="table-responsive-wrapper">
+          <table class="w-full text-left text-sm whitespace-nowrap">
+            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-dark-border">
+              <tr>
+                <th class="py-3 px-4">Date</th>
+                <th class="py-3 px-4">Type</th>
+                <th class="py-3 px-4">Ticker</th>
+                <th class="py-3 px-4 text-right">Shares</th>
+                <th class="py-3 px-4 text-right">Price ($)</th>
+                <th class="py-3 px-4 text-right">Fees ($)</th>
+                <th class="py-3 px-4 text-right">Net Amount</th>
+                <th class="py-3 px-4 text-right">Realized P&amp;L</th>
+                <th class="py-3 px-4">Notes</th>
+                <th class="py-3 px-4 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="tx-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/80">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="tx-empty-state" class="hidden p-10 sm:p-12 text-center text-slate-400">
+          <i class="fa-solid fa-receipt text-4xl mb-3 opacity-30"></i>
+          <p class="font-medium">No transactions recorded yet</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: DIVIDENDS & DRIP ==================== -->
+    <div id="tab-content-dividends" class="tab-pane hidden space-y-6">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 rounded-xl shadow-sm">
+          <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Cumulative Dividends</div>
+          <div class="text-xl sm:text-2xl font-bold num-font text-cyan-600 dark:text-cyan-400 mt-1" id="div-stat-cumulative">$0.00</div>
+          <div class="text-[11px] text-slate-400 mt-1">All time cash &amp; DRIP</div>
+        </div>
+        <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 rounded-xl shadow-sm">
+          <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Cash Dividends</div>
+          <div class="text-xl sm:text-2xl font-bold num-font text-emerald-600 dark:text-emerald-400 mt-1" id="div-stat-cash">$0.00</div>
+          <div class="text-[11px] text-slate-400 mt-1">Credited to cash</div>
+        </div>
+        <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 rounded-xl shadow-sm">
+          <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase">DRIP Reinvested</div>
+          <div class="text-xl sm:text-2xl font-bold num-font text-indigo-600 dark:text-indigo-400 mt-1" id="div-stat-drip">$0.00</div>
+          <div class="text-[11px] text-slate-400 mt-1">Auto-compounded shares</div>
+        </div>
+        <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 rounded-xl shadow-sm">
+          <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Yield on Cost</div>
+          <div class="text-xl sm:text-2xl font-bold num-font text-brand-600 dark:text-brand-400 mt-1" id="div-stat-yoc">0.00%</div>
+          <div class="text-[11px] text-slate-400 mt-1">Dividends / Cost Basis</div>
+        </div>
+      </div>
+
+      <!-- Log Dividends Ledger -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex items-center justify-between">
+          <div>
+            <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-hand-holding-dollar text-cyan-500"></i> Dividend Payout Logs
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Record dividend distributions and automatic DRIP share reinvestments</p>
+          </div>
+          <button id="btn-open-dividend-modal" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-plus text-xs"></i> Log Dividend
+          </button>
+        </div>
+
+        <div class="table-responsive-wrapper">
+          <table class="w-full text-left text-sm whitespace-nowrap">
+            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-dark-border">
+              <tr>
+                <th class="py-3 px-4">Pay Date</th>
+                <th class="py-3 px-4">Ex-Date</th>
+                <th class="py-3 px-4">Ticker</th>
+                <th class="py-3 px-4 text-right">Payout / Share</th>
+                <th class="py-3 px-4 text-right">Total Payout</th>
+                <th class="py-3 px-4 text-center">DRIP Mode</th>
+                <th class="py-3 px-4 text-right">DRIP Shares</th>
+                <th class="py-3 px-4">Notes</th>
+                <th class="py-3 px-4 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="dividends-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/80">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="dividends-empty-state" class="hidden p-10 sm:p-12 text-center text-slate-400">
+          <i class="fa-solid fa-hand-holding-dollar text-4xl mb-3 opacity-30"></i>
+          <p class="font-medium">No dividend payouts logged</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 5: WATCHLIST & VALUATION ==================== -->
+    <div id="tab-content-watchlist" class="tab-pane hidden space-y-6">
+      <!-- Watchlist Section -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-binoculars text-purple-500"></i> Target Price Watchlist &amp; Alerts
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Track stocks via API with target entry prices and automatic buy signals</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-open-watchlist-modal" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-plus text-xs"></i> Add Ticker
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive-wrapper">
+          <table class="w-full text-left text-sm whitespace-nowrap">
+            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-dark-border">
+              <tr>
+                <th class="py-3 px-4 sticky-col-mobile">Ticker / Company</th>
+                <th class="py-3 px-4">Sector</th>
+                <th class="py-3 px-4 text-right">Current API Price</th>
+                <th class="py-3 px-4 text-right">Target Buy Price</th>
+                <th class="py-3 px-4 text-right">Distance to Target</th>
+                <th class="py-3 px-4 text-center">Alert Status</th>
+                <th class="py-3 px-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="watchlist-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/80">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="watchlist-empty-state" class="hidden p-8 text-center text-slate-400 text-xs">
+          No tickers in your watchlist yet. Click "Add Ticker" to monitor target prices via API.
+        </div>
+      </div>
+
+      <!-- Fundamental Analysis & Intrinsic Fair-Value Matrix -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-calculator text-brand-500"></i> Fundamental Analysis &amp; Intrinsic Valuation
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Key metrics fetched via API or custom inputs alongside Graham Number &amp; 2-Stage DCF Fair Value</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-fetch-fundamentals-api" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-cloud-arrow-down text-xs"></i> Sync API Fundamentals
+            </button>
+            <button id="btn-open-calc-modal" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-calculator text-xs"></i> Fair-Value Calculator
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive-wrapper">
+          <table class="w-full text-left text-sm whitespace-nowrap">
+            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-dark-border">
+              <tr>
+                <th class="py-3 px-4 sticky-col-mobile">Ticker</th>
+                <th class="py-3 px-4 text-right">P/E Ratio</th>
+                <th class="py-3 px-4 text-right">Forward P/E</th>
+                <th class="py-3 px-4 text-right">EPS ($)</th>
+                <th class="py-3 px-4 text-right">Market Cap</th>
+                <th class="py-3 px-4 text-right">Debt / Equity</th>
+                <th class="py-3 px-4 text-right">ROE (%)</th>
+                <th class="py-3 px-4 text-right">Free Cash Flow</th>
+                <th class="py-3 px-4 text-right">Div Yield</th>
+                <th class="py-3 px-4 text-right">Graham Number</th>
+                <th class="py-3 px-4 text-right">DCF Fair Value</th>
+                <th class="py-3 px-4 text-center">Margin of Safety</th>
+              </tr>
+            </thead>
+            <tbody id="fundamentals-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/80">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 6: API, DEVICE & BACKUP SETTINGS ==================== -->
+    <div id="tab-content-settings" class="tab-pane hidden space-y-6">
+
+      <!-- 1. Stock Market API Configuration (Live Quotes, Monthly Historicals & Fundamentals) -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-5 sm:p-6 rounded-2xl shadow-sm">
+        <div class="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div class="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-cloud-bolt"></i>
+          </div>
+          <div>
+            <h2 class="font-bold text-slate-900 dark:text-white">Stock Market API Configuration</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">All stock quotes, monthly historical closing series, and company fundamentals are retrieved via your chosen API provider</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Select Stock Data API Provider</label>
+              <select id="setting-api-provider" class="w-full px-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+                <option value="alphavantage">Alpha Vantage (Live Quotes + Monthly Historicals + Company Fundamentals)</option>
+                <option value="twelvedata">Twelve Data (Live Quotes + Monthly Time-Series 1month)</option>
+                <option value="finnhub">Finnhub (Real-Time Quotes + Basic Financial Metrics)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">API Key</label>
+              <div class="flex items-center gap-2">
+                <input type="password" id="setting-api-key" placeholder="Paste your personal API Key here..." class="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+                <button id="btn-save-api-key" class="px-4 py-2 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition whitespace-nowrap">
+                  Save &amp; Connect
+                </button>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+              <button id="btn-sync-all-api" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5">
+                <i class="fa-solid fa-cloud-arrow-down"></i> Sync All Quotes &amp; Monthly History Now
+              </button>
+              <span id="last-api-sync-label" class="text-[11px] text-slate-400">Never synced</span>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs space-y-2.5 text-slate-600 dark:text-slate-300">
+            <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-info text-brand-500"></i> Supported API Endpoints Used by myPortfolio:
+            </div>
+            <ul class="space-y-1.5 list-disc list-inside text-[11px]">
+              <li><strong>Alpha Vantage:</strong> Uses <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">GLOBAL_QUOTE</code> for live price, <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">TIME_SERIES_MONTHLY_ADJUSTED</code> for monthly historical trends, and <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">OVERVIEW</code> for P/E, EPS, ROE, &amp; Market Cap (<a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener" class="text-brand-500 underline">Get Free Key</a>).</li>
+              <li><strong>Twelve Data:</strong> Uses <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">/quote</code> and <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">/time_series?interval=1month</code> for up to 10 years of monthly closes (<a href="https://twelvedata.com" target="_blank" rel="noopener" class="text-brand-500 underline">Get Free Key</a>).</li>
+              <li><strong>Finnhub:</strong> Uses <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">/quote</code> and <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">/stock/metric</code> (<a href="https://finnhub.io" target="_blank" rel="noopener" class="text-brand-500 underline">Get Free Key</a>).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Automatic Device Detection & Responsive Display Diagnostics -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-5 sm:p-6 rounded-2xl shadow-sm">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-mobile-screen-button"></i>
+            </div>
+            <div>
+              <h2 class="font-bold text-slate-900 dark:text-white">Automatic Device Detection &amp; Layout Optimization</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Real-time client detection adapts navigation, touch targets, sticky table columns, and chart density</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+            <div class="text-[11px] font-semibold uppercase text-slate-400">Detected Device Profile</div>
+            <div id="diag-device-type" class="text-base font-bold text-slate-900 dark:text-white mt-1">-</div>
+            <div id="diag-os-browser" class="text-xs text-slate-500 mt-0.5">-</div>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+            <div class="text-[11px] font-semibold uppercase text-slate-400">Viewport &amp; Input Mode</div>
+            <div id="diag-viewport" class="text-base font-bold num-font text-slate-900 dark:text-white mt-1">-</div>
+            <div id="diag-touch" class="text-xs text-slate-500 mt-0.5">-</div>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+            <label class="block text-[11px] font-semibold uppercase text-slate-400 mb-1.5">UI Layout Mode Override</label>
+            <select id="setting-device-override" class="w-full px-3 py-2 text-xs font-semibold bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+              <option value="auto">Auto-Detect Device (Recommended)</option>
+              <option value="mobile">Force Mobile Layout</option>
+              <option value="desktop">Force Desktop Layout</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Excel Backup & Restore Module (SheetJS) -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-5 sm:p-6 rounded-2xl shadow-sm">
+        <div class="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-file-excel"></i>
+          </div>
+          <div>
+            <h2 class="font-bold text-slate-900 dark:text-white">Full Excel Backup &amp; Restore (SheetJS)</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Export or restore your complete portfolio database including cached monthly historical prices</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                <i class="fa-solid fa-download text-emerald-500"></i>
+                <span>Export to Multi-Sheet Excel (.xlsx)</span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                Exports 6 worksheets: <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[11px]">Account_Summary</code>, <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[11px]">Holdings</code>, <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[11px]">Transactions</code>, <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[11px]">Dividends</code>, <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[11px]">Watchlist_Fundamentals</code>, and <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[11px]">Historical_Prices</code>.
+              </p>
+            </div>
+            <button id="btn-export-excel" class="mt-4 w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20">
+              <i class="fa-solid fa-file-export"></i> Download myPortfolio Backup (.xlsx)
+            </button>
+          </div>
+
+          <div class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+                <i class="fa-solid fa-upload text-indigo-500"></i>
+                <span>Restore from Backup Workbook</span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                Upload a previously exported <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[11px]">.xlsx</code> backup file to restore all records into <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[11px]">localStorage</code>.
+              </p>
+            </div>
+            <div class="mt-4">
+              <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="hidden">
+              <button id="btn-trigger-import-excel" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20">
+                <i class="fa-solid fa-file-import"></i> Upload .xlsx Backup File
+              </button>
+              <div id="import-status-msg" class="text-xs text-center mt-2 font-medium"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Clear Local Storage -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-5 sm:p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="font-bold text-slate-900 dark:text-white">Reset Local Portfolio Database</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Permanently clear all transactions, holdings, dividends, and cached API data from this browser</p>
+        </div>
+        <button id="btn-reset-data" class="px-4 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-500 text-white transition flex items-center gap-2 shadow-sm shrink-0">
+          <i class="fa-solid fa-trash-can"></i> Clear All Data
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR (Visible on Mobile / Small Screens) -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-dark-card/95 backdrop-blur border-t border-slate-200 dark:border-dark-border mobile-bottom-nav">
+    <div class="grid grid-cols-6 h-14">
+      <button data-tab="dashboard" class="nav-tab active flex flex-col items-center justify-center gap-0.5 text-brand-600 dark:text-brand-400">
+        <i class="fa-solid fa-gauge-high text-sm"></i>
+        <span class="text-[10px] font-semibold">Home</span>
+      </button>
+      <button data-tab="holdings" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
+        <i class="fa-solid fa-briefcase text-sm"></i>
+        <span class="text-[10px] font-semibold">Holdings</span>
+      </button>
+      <button data-tab="transactions" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
+        <i class="fa-solid fa-list-check text-sm"></i>
+        <span class="text-[10px] font-semibold">Trades</span>
+      </button>
+      <button data-tab="dividends" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
+        <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
+        <span class="text-[10px] font-semibold">Dividends</span>
+      </button>
+      <button data-tab="watchlist" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
+        <i class="fa-solid fa-binoculars text-sm"></i>
+        <span class="text-[10px] font-semibold">Watchlist</span>
+      </button>
+      <button data-tab="settings" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
+        <i class="fa-solid fa-sliders text-sm"></i>
+        <span class="text-[10px] font-semibold">Settings</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>
+        <strong>myPortfolio</strong> &bull; Modular Client-Side Stock &amp; Historical Portfolio Tracker
+      </div>
+      <div class="flex items-center gap-4 text-slate-400">
+        <span><i class="fa-solid fa-cloud text-brand-500"></i> Live &amp; Monthly API</span>
+        <span><i class="fa-solid fa-database text-indigo-500"></i> LocalStorage Sync</span>
+        <span><i class="fa-solid fa-mobile-screen text-emerald-500"></i> Adaptive UI</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- MODAL 1: NEW TRANSACTION (BUY / SELL / DEPOSIT / WITHDRAW) -->
+  <div id="modal-trade" class="modal-backdrop fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="modal-card bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl max-w-md w-full shadow-2xl overflow-y-auto">
+      <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-base" id="trade-modal-title">
+          <i class="fa-solid fa-money-bill-trend-up text-brand-500"></i> Record Transaction
+        </h3>
+        <button class="close-modal text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="form-trade" class="p-4 sm:p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Transaction Type</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button type="button" data-tx-type="BUY" class="tx-type-btn py-2 text-xs font-bold rounded-lg border border-brand-500 bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400">BUY</button>
+            <button type="button" data-tx-type="SELL" class="tx-type-btn py-2 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">SELL</button>
+            <button type="button" data-tx-type="DEPOSIT" class="tx-type-btn py-2 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">DEPOSIT</button>
+            <button type="button" data-tx-type="WITHDRAW" class="tx-type-btn py-2 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">WITHDRAW</button>
+          </div>
+          <input type="hidden" id="trade-type-val" value="BUY">
+        </div>
+
+        <div id="stock-trade-fields" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ticker Symbol</label>
+              <div class="flex gap-1.5">
+                <input type="text" id="trade-ticker" placeholder="e.g. AAPL" required class="w-full px-3 py-2 text-sm uppercase bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold">
+                <button type="button" id="btn-lookup-ticker-price" class="px-2.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs" title="Fetch current price from API">
+                  <i class="fa-solid fa-magnifying-glass-dollar"></i>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Trade Date</label>
+              <input type="date" id="trade-date" required class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Shares (Qty)</label>
+              <input type="number" id="trade-shares" step="any" min="0.0001" placeholder="10" required class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+              <span id="trade-holding-hint" class="text-[11px] text-slate-400 mt-1 block"></span>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Price per Share ($)</label>
+              <input type="number" id="trade-price" step="any" min="0.01" placeholder="0.00" required class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Commission / Fees ($)</label>
+              <input type="number" id="trade-fees" step="any" min="0" value="0.00" class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Calculated Total</label>
+              <div id="trade-calc-total" class="px-3 py-2 text-sm font-bold num-font bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+                $0.00
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="cash-trade-fields" class="hidden space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Cash Amount ($)</label>
+            <input type="number" id="trade-cash-amount" step="any" min="0.01" placeholder="5000.00" class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Effective Date</label>
+            <input type="date" id="trade-cash-date" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Notes</label>
+          <input type="text" id="trade-notes" placeholder="Optional trade notes..." class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+        </div>
+
+        <div id="trade-error-msg" class="hidden text-xs text-rose-500 bg-rose-50 dark:bg-rose-950/40 p-2.5 rounded-lg border border-rose-200 dark:border-rose-900"></div>
+
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button type="button" class="close-modal px-4 py-2 text-xs font-semibold rounded-lg text-slate-500">Cancel</button>
+          <button type="submit" class="px-5 py-2 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition shadow-md shadow-brand-600/20">
+            Save Transaction
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: LOG DIVIDEND PAYOUT -->
+  <div id="modal-dividend" class="modal-backdrop fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="modal-card bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl max-w-md w-full shadow-2xl overflow-y-auto">
+      <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-base">
+          <i class="fa-solid fa-hand-holding-dollar text-cyan-500"></i> Record Dividend Payout
+        </h3>
+        <button class="close-modal text-slate-400 hover:text-slate-600 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="form-dividend" class="p-4 sm:p-5 space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ticker Symbol</label>
+            <input type="text" id="div-ticker" placeholder="e.g. AAPL" required class="w-full px-3 py-2 text-sm uppercase bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Payment Date</label>
+            <input type="date" id="div-pay-date" required class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ex-Dividend Date</label>
+            <input type="date" id="div-ex-date" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Total Payout ($)</label>
+            <input type="number" id="div-amount" step="any" min="0.01" placeholder="50.00" required class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Reinvest via DRIP</span>
+              <p class="text-[11px] text-slate-500">Auto-purchase fractional shares instead of crediting cash</p>
+            </div>
+            <input type="checkbox" id="div-drip-toggle" class="w-5 h-5 accent-brand-600 rounded">
+          </div>
+          <div id="div-drip-fields" class="hidden pt-2 border-t border-slate-200 dark:border-slate-700">
+            <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">Reinvestment Share Price ($)</label>
+            <input type="number" id="div-drip-price" step="any" min="0.01" placeholder="Price per share..." class="w-full px-3 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Notes</label>
+          <input type="text" id="div-notes" placeholder="Quarterly dividend..." class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button type="button" class="close-modal px-4 py-2 text-xs font-semibold rounded-lg text-slate-500">Cancel</button>
+          <button type="submit" class="px-5 py-2 text-xs font-semibold rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition">
+            Save Dividend
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: ADD TO WATCHLIST -->
+  <div id="modal-watchlist" class="modal-backdrop fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="modal-card bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl max-w-md w-full shadow-2xl overflow-y-auto">
+      <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-base">
+          <i class="fa-solid fa-binoculars text-purple-500"></i> Add Ticker to Watchlist
+        </h3>
+        <button class="close-modal text-slate-400 hover:text-slate-600 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="form-watchlist" class="p-4 sm:p-5 space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ticker Symbol</label>
+            <input type="text" id="wl-ticker" placeholder="e.g. MSFT" required class="w-full px-3 py-2 text-sm uppercase bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Company Name</label>
+            <input type="text" id="wl-name" placeholder="Optional (Fetched via API)" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Sector</label>
+            <select id="wl-sector" class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+              <option value="Technology">Technology</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="Financials">Financials</option>
+              <option value="Consumer Discretionary">Consumer Discretionary</option>
+              <option value="Consumer Staples">Consumer Staples</option>
+              <option value="Energy">Energy</option>
+              <option value="Industrials">Industrials</option>
+              <option value="Real Estate">Real Estate</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Communications">Communications</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Buy Price ($)</label>
+            <input type="number" id="wl-target-price" step="any" min="0.01" placeholder="150.00" required class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+          </div>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button type="button" class="close-modal px-4 py-2 text-xs font-semibold rounded-lg text-slate-500">Cancel</button>
+          <button type="submit" class="px-5 py-2 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition">
+            Add &amp; Fetch API Data
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: INTRINSIC VALUE CALCULATOR (GRAHAM & DCF) -->
+  <div id="modal-calc" class="modal-backdrop fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="modal-card bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-base">
+            <i class="fa-solid fa-calculator text-brand-500"></i> Fundamental &amp; Intrinsic Fair-Value Calculator
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Edit metrics or compute valuation using Graham Number and 2-Stage DCF</p>
+        </div>
+        <button class="close-modal text-slate-400 hover:text-slate-600 text-lg p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-4 sm:p-5 space-y-5 overflow-y-auto">
+        <div class="flex items-center gap-3">
+          <div class="flex-1">
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Select Ticker</label>
+            <select id="calc-ticker-select" class="w-full px-3 py-2 text-sm font-bold bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Current Price</label>
+            <div id="calc-current-price-badge" class="px-3 py-2 text-sm font-bold num-font bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-900 dark:text-white">$0.00</div>
+          </div>
+        </div>
+
+        <!-- Core Fundamental Metrics Input Grid -->
+        <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 space-y-3">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Key Fundamental Metrics</h4>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div>
+              <label class="block text-[10px] text-slate-500">P/E Ratio</label>
+              <input type="number" id="calc-pe" step="any" class="w-full px-2 py-1 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-500">Forward P/E</label>
+              <input type="number" id="calc-fwd-pe" step="any" class="w-full px-2 py-1 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-500">Market Cap</label>
+              <input type="text" id="calc-mcap" placeholder="e.g. 2.5T" class="w-full px-2 py-1 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-500">Debt / Equity</label>
+              <input type="number" id="calc-de" step="any" class="w-full px-2 py-1 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-500">ROE (%)</label>
+              <input type="number" id="calc-roe" step="any" class="w-full px-2 py-1 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-500">Free Cash Flow</label>
+              <input type="text" id="calc-fcf-str" placeholder="e.g. 70B" class="w-full px-2 py-1 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded">
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-500">Div Yield (%)</label>
+              <input type="number" id="calc-div-yield" step="any" class="w-full px-2 py-1 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded">
+            </div>
+          </div>
+        </div>
+
+        <!-- Calculator 1: Benjamin Graham Number -->
+        <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-book-bookmark text-indigo-500"></i> Graham Number
+            </h4>
+            <span class="text-[11px] text-slate-400 font-mono">&radic;(22.5 &times; EPS &times; BVPS)</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] text-slate-500">EPS ($)</label>
+              <input type="number" id="calc-graham-eps" step="any" class="w-full px-2.5 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-500">Book Value / Share ($)</label>
+              <input type="number" id="calc-graham-bvps" step="any" class="w-full px-2.5 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg">
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
+            <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Graham Intrinsic Value:</span>
+            <span id="calc-graham-result" class="text-sm font-bold num-font text-indigo-600 dark:text-indigo-400">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Calculator 2: Discounted Cash Flow (DCF) -->
+        <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-chart-line text-emerald-500"></i> 2-Stage DCF Model
+            </h4>
+            <span class="text-[11px] text-slate-400">5-Yr Growth + Terminal Value</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] text-slate-500">FCF Per Share ($)</label>
+              <input type="number" id="calc-dcf-fcf" step="any" class="w-full px-2.5 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-500">5-Yr Growth Rate (%)</label>
+              <input type="number" id="calc-dcf-growth" step="any" value="10.0" class="w-full px-2.5 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-500">Discount Rate / WACC (%)</label>
+              <input type="number" id="calc-dcf-discount" step="any" value="9.0" class="w-full px-2.5 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg">
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-500">Terminal Growth (%)</label>
+              <input type="number" id="calc-dcf-terminal" step="any" value="2.5" class="w-full px-2.5 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg">
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700">
+            <span class="text-xs font-medium text-slate-600 dark:text-slate-300">DCF Fair Value:</span>
+            <span id="calc-dcf-result" class="text-sm font-bold num-font text-emerald-600 dark:text-emerald-400">$0.00</span>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-between">
+          <div>
+            <div class="text-xs font-semibold text-slate-600 dark:text-slate-400">DCF Margin of Safety:</div>
+            <div id="calc-margin-safety-badge" class="mt-0.5 text-sm font-bold num-font">0.00%</div>
+          </div>
+          <button id="btn-save-valuation-to-stock" class="px-4 py-2 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition">
+            Save Metrics
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed bottom-16 md:bottom-5 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <!-- External Application Logic -->
+  <script src="app.js" defer></script>
+</body>
+</html>
