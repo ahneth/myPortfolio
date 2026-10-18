@@ -1,8 +1,8 @@
 /**
  * @file portfolio.js
  * @module PortfolioEngineAndExcelIO
- * @version 2.3.0
- * @build 20261018_1431
+ * @version 2.3.2
+ * @build 20261018_2130
  * @description Application state persistence, WACB & P&L accounting engine, and SheetJS 6-worksheet Excel backup/restore.
  */
 
@@ -83,6 +83,7 @@ function initAppState() {
   if (!state.settings.yahooDefaultApplied) {
     state.settings.apiProvider = 'yahoo';
     state.settings.yahooDefaultApplied = true;
+    state.settings.buildId = (typeof APP_VERSION_MANIFEST !== 'undefined' ? APP_VERSION_MANIFEST.buildId : '20261018_2130');
   }
 
   // Auto-normalize any legacy tickers in transactions, dividends, watchlist & caches (e.g. 2800.HKG -> 2800.HK)
@@ -120,13 +121,23 @@ function initAppState() {
     ...state.transactions.map(t => t.ticker).filter(Boolean),
     ...state.watchlist.map(w => w.ticker).filter(Boolean)
   ]));
+  const targetBuildId = (typeof APP_VERSION_MANIFEST !== 'undefined') ? APP_VERSION_MANIFEST.buildId : '20261018_2130';
+  const buildChanged = state.settings.buildId !== targetBuildId;
   seedTickers.forEach(sym => {
     const vd = (typeof VERIFIED_MARKET_DATA !== 'undefined') ? VERIFIED_MARKET_DATA[sym] : null;
     if (vd) {
       if (!state.prices[sym] || !state.prices[sym].price) {
         state.prices[sym] = { ...vd.quote, lastUpdated: new Date().toISOString() };
       }
-      if (!state.historicalPrices[sym] || state.historicalPrices[sym].length < 6) {
+      const existingHist = state.historicalPrices[sym] || [];
+      const vdFirst = (vd.history && vd.history[0]) ? vd.history[0] : null;
+      const existingFirstMatch = (vdFirst && existingHist.length > 0)
+        ? existingHist.find(r => r.month === vdFirst.month)
+        : null;
+      const hasDiscrepancy = Boolean(
+        vdFirst && existingFirstMatch && Math.abs(Number(existingFirstMatch.close) - Number(vdFirst.close)) > 0.5
+      );
+      if (existingHist.length < 6 || buildChanged || hasDiscrepancy) {
         state.historicalPrices[sym] = [...(vd.history || [])];
       }
       if (!state.fundamentals[sym] || !state.fundamentals[sym].name) {
@@ -134,6 +145,7 @@ function initAppState() {
       }
     }
   });
+  state.settings.buildId = targetBuildId;
   if (typeof AppLogger !== 'undefined') {
     AppLogger.info('Portfolio', `State initialized (${state.transactions.length} transactions, ${state.watchlist.length} watchlist items, ${Object.keys(state.historicalPrices).length} historical series).`);
   }
@@ -569,6 +581,20 @@ function restorePortfolioFromExcel(file) {
             low: Number(row['Low ($)']) || 0,
             volume: Number(row['Volume']) || 0
           });
+        });
+      }
+
+      // Reconcile against VERIFIED_MARKET_DATA so stale synthetic prices in older .xlsx files (e.g. 1378.HK at $20.34 in 2023-11) are automatically corrected
+      if (typeof VERIFIED_MARKET_DATA !== 'undefined') {
+        Object.keys(VERIFIED_MARKET_DATA).forEach(sym => {
+          const vd = VERIFIED_MARKET_DATA[sym];
+          if (!vd || !Array.isArray(vd.history) || vd.history.length === 0) return;
+          const imported = state.historicalPrices[sym] || [];
+          const vdFirst = vd.history[0];
+          const impMatch = imported.find(r => r.month === vdFirst.month);
+          if (imported.length < 6 || (impMatch && Math.abs(Number(impMatch.close) - Number(vdFirst.close)) > 0.5)) {
+            state.historicalPrices[sym] = [...vd.history];
+          }
         });
       }
 

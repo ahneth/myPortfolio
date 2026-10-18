@@ -1,8 +1,8 @@
 /**
  * @file utils.js
  * @module UtilsAndDeviceDetector
- * @version 2.3.0
- * @build 20261018_1431
+ * @version 2.3.2
+ * @build 20261018_2130
  * @description Financial precision arithmetic utilities (Fin) and automatic client DeviceDetector.
  */
 

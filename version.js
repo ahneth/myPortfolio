@@ -1,27 +1,32 @@
 /**
  * @file version.js
  * @module VersionRegistry
- * @version 2.3.0
- * @build 20261018_1431
+ * @version 2.3.2
+ * @build 20261018_2130
  * @description Centralized version & build manifest for myPortfolio modular architecture.
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '2.3.0',
-  buildId: '20261018_1431',
-  releaseDate: '2026-10-18 14:31 HKT',
-  driveFolder: '/stock_portfolio/20261018_1431/',
+  appVersion: '2.3.2',
+  buildId: '20261018_2130',
+  releaseDate: '2026-10-18 21:30 HKT',
+  driveFolder: '/stock_portfolio/20261018_2130/',
   modules: {
-    'version.js':   { version: '2.3.0', updated: '20261018_1431', role: 'Version manifest, module registry & changelog history' },
-    'logger.js':    { version: '2.3.0', updated: '20261018_1431', role: 'Real-time runtime log & error interceptor, console hook & 8-point health diagnostics' },
-    'utils.js':     { version: '2.3.0', updated: '20261018_1431', role: 'Financial precision math (Fin 4-decimal share price support) & Automatic DeviceDetector' },
-    'api.js':       { version: '2.3.0', updated: '20261018_1431', role: '3-Tier Global MarketAPI (Yahoo v8 Race, JSONP, 33-Ticker Verified Snapshot & API Logs)' },
-    'portfolio.js': { version: '2.3.0', updated: '20261018_1431', role: 'Defensive state persistence, WACB/P&L/DRIP accounting & SheetJS 6-sheet Excel I/O' },
-    'charts.js':    { version: '2.3.0', updated: '20261018_1431', role: 'Guarded Chart.js controllers for Portfolio Balance & Return + Holdings/Watchlist charts' },
-    'app.js':       { version: '2.3.0', updated: '20261018_1431', role: 'Null-safe DOM controllers, Log Tab UI, clickable stock rows & guarded bootstrap' },
-    'styles.css':   { version: '2.3.0', updated: '20261018_1431', role: 'Responsive layout rules, mobile 7-tab bottom-nav safe areas & log viewer styles' }
+    'version.js':   { version: '2.3.2', updated: '20261018_2130', role: 'Version manifest, module registry & changelog history' },
+    'logger.js':    { version: '2.3.2', updated: '20261018_2130', role: 'Real-time runtime log & error interceptor, console hook & 8-point health diagnostics' },
+    'utils.js':     { version: '2.3.2', updated: '20261018_2130', role: 'Financial precision math (Fin 4-decimal share price support) & Automatic DeviceDetector' },
+    'api.js':       { version: '2.3.2', updated: '20261018_2130', role: '3-Tier Global MarketAPI (Yahoo v8 Race, JSONP, 33-Ticker Verified Snapshot & API Logs)' },
+    'portfolio.js': { version: '2.3.2', updated: '20261018_2130', role: 'Defensive state persistence, WACB/P&L/DRIP accounting & SheetJS 6-sheet Excel I/O' },
+    'charts.js':    { version: '2.3.2', updated: '20261018_2130', role: 'Guarded Chart.js controllers for Portfolio Balance & Return + Holdings/Watchlist charts' },
+    'app.js':       { version: '2.3.2', updated: '20261018_2130', role: 'Null-safe DOM controllers, Log Tab UI, clickable stock rows & guarded bootstrap' },
+    'styles.css':   { version: '2.3.2', updated: '20261018_2130', role: 'Responsive layout rules, mobile 7-tab bottom-nav safe areas & log viewer styles' }
   },
   changelog: [
+    {
+      buildId: '20261018_2130',
+      version: '2.3.2',
+      summary: 'Corrected historical monthly closing price series for 1378.HK (Nov 2023 close HK$6.50 adj / HK$6.98 raw instead of synthetic $20.34) and audited all 16 HKEX stocks in VERIFIED_MARKET_DATA (api.js) and myPortfolio_Yahoo_Restore_20261018.xlsx. Enhanced initAppState() and restorePortfolioFromExcel() in portfolio.js to automatically replace stale cached or imported historical series with verified HKEX trajectories.'
+    },
     {
       buildId: '20261018_1431',
       version: '2.3.0',
