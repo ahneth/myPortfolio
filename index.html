@@ -75,6 +75,8 @@
                 <i id="device-indicator-icon" class="fa-solid fa-desktop text-[9px] text-brand-500"></i>
                 <span id="device-indicator-text">Desktop</span>
               </span>
+              <!-- Version Badge -->
+              <span id="app-version-badge" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30" title="Application Release &amp; Build ID">v2.1.0 (20261018_1158)</span>
             </div>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Global HK, US &amp; London Stock Portfolio Tracker</p>
           </div>
@@ -90,6 +92,11 @@
           <button id="header-sync-api-btn" class="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold flex items-center gap-1.5" title="Fetch current & monthly historical prices via API">
             <i id="header-sync-icon" class="fa-solid fa-cloud-arrow-down text-[11px]"></i>
             <span>Sync Market Data</span>
+          </button>
+          <div class="h-3 w-px bg-slate-300 dark:bg-slate-600"></div>
+          <button id="header-test-api-btn" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold flex items-center gap-1" title="Run thorough API diagnostic test on 2800.HK & VOO">
+            <i class="fa-solid fa-vial-circle-check text-[11px]"></i>
+            <span>Test 2800.HK &amp; VOO</span>
           </button>
         </div>
 
@@ -692,6 +699,20 @@
               </button>
               <span id="last-api-sync-label" class="text-[11px] text-slate-400">Never synced</span>
             </div>
+
+            <!-- Interactive API Diagnostic Test Suite (2800.HK & VOO) -->
+            <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+              <label class="block text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-vial-circle-check text-emerald-500"></i> Live API Diagnostic Test Suite (HK, US &amp; London)
+              </label>
+              <div class="flex items-center gap-2">
+                <input type="text" id="diag-test-tickers-input" value="2800.HK, VOO" placeholder="e.g. 2800.HK, VOO, 0700.HK, HSBA.L" class="flex-1 px-3 py-2 text-xs font-bold uppercase bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+                <button type="button" id="btn-run-api-diagnostic" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+                  <i class="fa-solid fa-play text-[10px]"></i> Run API Test
+                </button>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Tests live quote, 70-month historical series, and fundamentals for 2800.HK &amp; VOO and loads them into Watchlist &amp; Charts.</p>
+            </div>
           </div>
 
           <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs space-y-2.5 text-slate-600 dark:text-slate-300">
@@ -705,6 +726,9 @@
             </ul>
           </div>
         </div>
+
+        <!-- Diagnostic Results Table Container -->
+        <div id="api-diagnostic-results-box" class="hidden mt-5 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900/40"></div>
       </div>
 
       <!-- 2. Automatic Device Detection & Responsive Display Diagnostics -->
@@ -794,7 +818,51 @@
         </div>
       </div>
 
-      <!-- 4. Clear Local Storage -->
+      <!-- 4. Codebase Versioning & Modular JS Registry -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-5 sm:p-6 rounded-2xl shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-code-branch"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v2.1.0 • Build 20261018_1158</span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
+            </div>
+          </div>
+          <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /stock_portfolio/<span id="settings-drive-folder-label">20261018_1158</span>/
+          </span>
+        </div>
+
+        <div class="mt-4 table-responsive-wrapper">
+          <table class="w-full text-left text-xs whitespace-nowrap">
+            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-dark-border">
+              <tr>
+                <th class="py-2.5 px-3">Module File</th>
+                <th class="py-2.5 px-3">Version</th>
+                <th class="py-2.5 px-3">Build Stamp</th>
+                <th class="py-2.5 px-3">Responsibility &amp; Scope</th>
+              </tr>
+            </thead>
+            <tbody id="version-registry-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/80">
+              <!-- Populated by renderVersionRegistryUI() -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Release Changelog History</h3>
+          <div id="version-changelog-list" class="space-y-2">
+            <!-- Populated by renderVersionRegistryUI() -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Clear Local Storage -->
       <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-5 sm:p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 class="font-bold text-slate-900 dark:text-white">Reset Local Portfolio Database</h2>
@@ -842,7 +910,7 @@
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
       <div>
-        <strong>myPortfolio</strong> &bull; Modular Client-Side Global Stock &amp; Historical Portfolio Tracker
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v2.1.0 (Build 20261018_1158)</span> &bull; Compartmentalized 6-Module Architecture
       </div>
       <div class="flex items-center gap-4 text-slate-400">
         <span><i class="fa-solid fa-globe text-brand-500"></i> HK, US &amp; London API</span>
@@ -1209,7 +1277,12 @@
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container" class="fixed bottom-16 md:bottom-5 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
 
-  <!-- External Application Logic -->
+  <!-- Compartmentalized Application JS Modules (v2.1.0 • Build 20261018_1158) -->
+  <script src="version.js" defer></script>
+  <script src="utils.js" defer></script>
+  <script src="api.js" defer></script>
+  <script src="portfolio.js" defer></script>
+  <script src="charts.js" defer></script>
   <script src="app.js" defer></script>
 </body>
 </html>

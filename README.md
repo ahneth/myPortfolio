@@ -1,38 +1,39 @@
-# myPortfolio
+# myPortfolio — Compartmentalized & Versioned Architecture (`v2.1.0` • Build `20261018_1158`)
 
-**myPortfolio** is a client-side global stock portfolio and historical wealth tracker designed for static hosting on **GitHub Pages**. It separates HTML markup (`index.html`), presentation rules (`styles.css`), and application logic (`app.js`) for straightforward maintenance and future upgrades.
+**myPortfolio** is a client-side global stock portfolio and historical wealth tracker designed for static hosting on **GitHub Pages** and versioned archiving in **Google Drive** (`/stock_portfolio/yyyymmdd_hhmi/`).
 
-## Project Structure
+## 1. Compartmentalized JavaScript Module Architecture
 
-| File | Role |
-| :--- | :--- |
-| `index.html` | Semantic HTML5 layout, responsive desktop/mobile navigation bars, Chart.js canvases, and modal dialogs |
-| `styles.css` | Custom CSS variables, mobile bottom-navigation safe-area rules, sticky mobile table columns, and price flash animations |
-| `app.js` | ES6+ application state engine, Yahoo Finance global keyless API client (plus Alpha Vantage, Twelve Data, Finnhub), smart ticker normalizer, automatic device detector, and SheetJS Excel backup/restore |
-| `README.md` | Project documentation, global ticker guide, and GitHub Pages deployment steps |
+To isolate frequent updates to the market data API from core portfolio accounting, charting, and UI logic, the JavaScript codebase is compartmentalized into **6 dedicated modules** loaded in deterministic dependency order:
 
-## Global Market Coverage (Yahoo Finance Default — No API Key Required)
+| Load Order | File | Version | Build Stamp | Primary Responsibility |
+| :---: | :--- | :---: | :---: | :--- |
+| **1** | `version.js` | `v2.1.0` | `20261018_1158` | Central `APP_VERSION_MANIFEST`, per-module semantic version registry, build timestamp (`yyyymmdd_hhmi`), and structured release changelog history. |
+| **2** | `utils.js` | `v2.1.0` | `20261018_1158` | High-precision financial arithmetic (`Fin.round`, `Fin.currency`, `Fin.shares`, `Fin.percent`, `Fin.compactNumber`) and automatic client `DeviceDetector` (`mobile`, `tablet`, `desktop`). |
+| **3** | `api.js` | `v2.1.0` | `20261018_1158` | Self-contained `MarketAPI` engine: smart global ticker normalization (`2800.HK`, `0700.HK`, `VOO`, `HSBA.L`), 3-tier Yahoo Finance v8 Chart parallel proxy race + Direct Browser JSONP fallback (`qt.gtimg.cn`) + verified 70-month market dataset (`VERIFIED_MARKET_DATA`), optional Alpha Vantage / Twelve Data / Finnhub adapters, and live diagnostic runner (`runAndRenderApiDiagnostics`). |
+| **4** | `portfolio.js` | `v2.1.0` | `20261018_1158` | `localStorage` state lifecycle (`initAppState`, `saveState`), Weighted Average Cost Basis (WACB), realized/unrealized P&L, DRIP share compounding, Yield on Cost (`recalculatePortfolio`), and SheetJS 6-worksheet `.xlsx` export/restore. |
+| **5** | `charts.js` | `v2.1.0` | `20261018_1158` | Chart.js visual controllers (`renderMonthlyHistoryChart`, `renderAllocationChart`, `renderDividendsChart`, `renderPnlBreakdownChart`). |
+| **6** | `app.js` | `v2.1.0` | `20261018_1158` | DOM table renderers, modal controllers, Graham Number & 2-Stage DCF Fair-Value Calculator, Settings Version & Module Registry table (`renderVersionRegistryUI`), event listeners, and application bootstrapper. |
 
-By default, **myPortfolio** uses **Yahoo Finance**, which requires **no API key** and supports stocks and ETFs across Hong Kong, the United States, and London out of the box:
+### Supporting Files
 
-| Market / Exchange | Suffix Format | Examples | Smart Auto-Normalization |
-| :--- | :--- | :--- | :--- |
-| **Hong Kong (HKEX)** | `.HK` (4-digit padded) | `2800.HK` (Tracker Fund), `0700.HK` (Tencent), `0005.HK` (HSBC), `9988.HK` (Alibaba) | Automatically converts `2800.HKG`, `HKG:2800`, `02800.HK`, `700.HK`, or `5.HK` into `2800.HK`, `0700.HK`, `0005.HK` |
-| **United States (NYSE / NASDAQ)** | None | `AAPL`, `NVDA`, `MSFT`, `VOO`, `QQQ`, `BRK-B` | Automatically strips `NASDAQ:` or `NYSE:` prefixes |
-| **London (LSE)** | `.L` | `HSBA.L` (HSBC UK), `SHEL.L` (Shell), `AZN.L` (AstraZeneca), `VUAG.L` (Vanguard S&P 500) | Automatically converts `.LON` or `LON:` into `.L` |
+| File | Version | Role |
+| :--- | :---: | :--- |
+| `index.html` | `v2.1.0` | Semantic HTML5 layout, responsive desktop/mobile navigation bars, Chart.js canvases, modal dialogs, and `<script src="..." defer></script>` module tags. |
+| `styles.css` | `v2.0.0` | Custom CSS variables, mobile bottom-navigation safe-area rules, sticky mobile table columns, and price flash animations. |
+| `README.md` | `v2.1.0` | Module architecture documentation, versioning workflow, and GitHub Pages deployment guide. |
 
-## Key Capabilities
+## 2. Versioning & Google Drive Snapshot Convention
 
-* **Keyless Global Live & Monthly Historical Data:** Fetches real-time stock quotes, 10-year monthly historical closing prices (`1Y`, `2Y`, `3Y`, `ALL`), and company fundamentals directly via Yahoo Finance (or optional Alpha Vantage, Twelve Data, and Finnhub keys).
-* **Individual Stock & Whole-Portfolio Monthly Trends:** Visualizes either individual stock monthly closing price trajectories (overlaid with your average cost basis or watchlist target price) or aggregate portfolio historical valuation over time.
-* **Automatic Device Detection & Adaptive UI:** Automatically detects the accessing device (`Mobile`, `Tablet`, or `Desktop`), operating system (`iOS`, `Android`, `macOS`, `Windows`, `Linux`), pointer/touch capabilities, and viewport dimensions to adapt navigation, modal presentation, and pinned table columns.
-* **Full-Precision Financial Accounting:** Computes Weighted Average Cost Basis (WACB), realized P&L on sales, unrealized floating P&L, cash deposits/withdrawals, DRIP fractional share reinvestment, and Yield on Cost (YoC).
-* **6-Sheet Excel Backup & Restore (SheetJS):** Exports and restores `Account_Summary`, `Holdings`, `Transactions`, `Dividends`, `Watchlist_Fundamentals`, and `Historical_Prices` in a single `.xlsx` file.
+Every code addition or module update follows a strict versioning workflow:
+1. **File-Header Banner & Version Manifest (`version.js`)**:
+   - Every modified module updates its `@version` and `@build` header comment and its corresponding entry in `APP_VERSION_MANIFEST.modules` inside `version.js`.
+   - `APP_VERSION_MANIFEST.changelog` records a timestamped entry listing the bumped version, build ID (`yyyymmdd_hhmi`), and summary of changes.
+2. **Google Drive Timestamped Subfolder (`/stock_portfolio/yyyymmdd_hhmi/`)**:
+   - Whenever files are saved to Google Drive, a new subfolder named with the current date and time in `yyyymmdd_hhmi` format (e.g., `/stock_portfolio/20261018_1158/`) is created under `/stock_portfolio/`, preserving a clean, immutable snapshot of each release.
 
-## Deploying to GitHub Pages
+## 3. Updating Only the API Module (`api.js`)
 
-1. Create a new GitHub repository (for example, `myPortfolio`).
-2. Upload `index.html`, `styles.css`, `app.js`, and `README.md` to the root of the `main` branch.
-3. In your repository on GitHub, go to **Settings > Pages**.
-4. Under **Build and deployment**, select **Deploy from a branch**, choose `main` and `/ (root)`, and click **Save**.
-5. Your application will be live at `https://<your-username>.github.io/myPortfolio/`.
+Because `api.js` is completely decoupled from DOM rendering and portfolio accounting:
+* To add a new stock data provider, update CORS proxy endpoints, or adjust ticker normalization rules, edit **only `api.js`** (and bump the version/changelog in `version.js`).
+* `api.js` exposes `window.MarketAPI` (`normalizeTicker`, `fetchQuote`, `fetchMonthlyHistory`, `fetchFundamentals`, `runDiagnosticTest`) and synchronization helpers (`syncAllMarketData`, `syncFundamentalsViaAPI`, `runAndRenderApiDiagnostics`).
