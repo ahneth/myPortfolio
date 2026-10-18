@@ -1,8 +1,8 @@
 /**
  * @file app.js
  * @module AppUIController
- * @version 2.1.0
- * @build 20261018_1158
+ * @version 2.2.0
+ * @build 20261018_1315
  * @description Main UI controller, table renderers, modal handlers, intrinsic valuation calculators, and event listeners.
  */
 
@@ -30,11 +30,19 @@ function renderVersionRegistryUI() {
   if (vBadge) {
     vBadge.textContent = `v${APP_VERSION_MANIFEST.appVersion} (${APP_VERSION_MANIFEST.buildId})`;
   }
-  const footerVer = document.getElementById('footer-version-label');
-  if (footerVer) {
-    footerVer.textContent = `v${APP_VERSION_MANIFEST.appVersion} • Build ${APP_VERSION_MANIFEST.buildId}`;
+  const pill = document.getElementById('settings-version-pill');
+  if (pill) {
+    pill.textContent = `v${APP_VERSION_MANIFEST.appVersion} • Build ${APP_VERSION_MANIFEST.buildId}`;
   }
-  const modBody = document.getElementById('module-versions-table-body');
+  const folderLbl = document.getElementById('settings-drive-folder-label');
+  if (folderLbl) {
+    folderLbl.textContent = APP_VERSION_MANIFEST.buildId;
+  }
+  const footerVer = document.getElementById('footer-version-text');
+  if (footerVer) {
+    footerVer.textContent = `v${APP_VERSION_MANIFEST.appVersion} (Build ${APP_VERSION_MANIFEST.buildId})`;
+  }
+  const modBody = document.getElementById('version-registry-tbody');
   if (modBody) {
     modBody.innerHTML = Object.entries(APP_VERSION_MANIFEST.modules).map(([file, meta]) => `
       <tr class="border-b border-slate-200/60 dark:border-slate-800 text-xs">
@@ -45,7 +53,59 @@ function renderVersionRegistryUI() {
       </tr>
     `).join('');
   }
+  const logList = document.getElementById('version-changelog-list');
+  if (logList && Array.isArray(APP_VERSION_MANIFEST.changelog)) {
+    logList.innerHTML = APP_VERSION_MANIFEST.changelog.map(item => `
+      <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <span class="font-mono font-bold text-purple-600 dark:text-purple-400">v${item.version}</span>
+          <span class="font-mono text-[11px] text-slate-400 ml-1.5">[${item.buildId}]</span>
+          <p class="text-slate-600 dark:text-slate-300 mt-0.5">${item.summary}</p>
+        </div>
+      </div>
+    `).join('');
+  }
 }
+
+async function selectStockForInlineChart(tabType, rawTicker, scrollIntoView = false) {
+  const ticker = MarketAPI.normalizeTicker(rawTicker);
+  if (!ticker) return;
+
+  if (tabType === 'holdings') {
+    window.__holdingsChartManuallyClosed = false;
+    selectedHoldingsTicker = ticker;
+    renderHoldingsTable();
+    renderInlineStockChart('holdings');
+  } else {
+    window.__watchlistChartManuallyClosed = false;
+    selectedWatchlistTicker = ticker;
+    renderWatchlistAndFundamentals();
+    renderInlineStockChart('watchlist');
+  }
+
+  const cardId = tabType === 'holdings' ? 'holdings-stock-chart-card' : 'watchlist-stock-chart-card';
+  const cardEl = document.getElementById(cardId);
+  if (scrollIntoView && cardEl) {
+    setTimeout(() => {
+      cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  }
+
+  if ((!state.historicalPrices[ticker] || state.historicalPrices[ticker].length === 0) && MarketAPI.hasKey()) {
+    try {
+      showToast(`Fetching monthly price history for ${ticker}...`, 'info');
+      const history = await MarketAPI.fetchMonthlyHistory(ticker);
+      if (Array.isArray(history) && history.length > 0) {
+        state.historicalPrices[ticker] = history;
+        saveState();
+        renderInlineStockChart(tabType);
+      }
+    } catch (e) {
+      showToast(`API notice: ${e.message}`, 'error');
+    }
+  }
+}
+window.selectStockForInlineChart = selectStockForInlineChart;
 
 
 function renderApiStatusUI() {
@@ -184,27 +244,24 @@ function updateTabCounters() {
 }
 
 function populateHistorySelector() {
-  const select = document.getElementById('history-target-select');
-  if (!select) return;
-  const currentVal = select.value || 'PORTFOLIO';
+  // Dashboard chart is dedicated to Portfolio Historical Balance & Return.
+  // Keep Holdings & Watchlist selected tickers synchronized with active items.
+  if (portfolio.activeHoldings.length > 0) {
+    const stillHeld = portfolio.activeHoldings.some(h => h.ticker === selectedHoldingsTicker);
+    if (!stillHeld && !window.__holdingsChartManuallyClosed) {
+      selectedHoldingsTicker = portfolio.activeHoldings[0].ticker;
+    }
+  } else {
+    selectedHoldingsTicker = null;
+  }
 
-  const allTickers = Array.from(new Set([
-    ...portfolio.activeHoldings.map(h => h.ticker),
-    ...state.watchlist.map(w => w.ticker),
-    ...Object.keys(state.historicalPrices)
-  ]));
-
-  select.innerHTML = `<option value="PORTFOLIO">Entire Portfolio (Aggregate Monthly Trend)</option>`;
-  allTickers.forEach(t => {
-    const count = (state.historicalPrices[t] || []).length;
-    const opt = document.createElement('option');
-    opt.value = t;
-    opt.textContent = `${t} - Individual Stock (${count > 0 ? count + ' mos cached' : 'Fetch via API'})`;
-    select.appendChild(opt);
-  });
-
-  if (allTickers.includes(currentVal) || currentVal === 'PORTFOLIO') {
-    select.value = currentVal;
+  if (state.watchlist.length > 0) {
+    const stillWatched = state.watchlist.some(w => w.ticker === selectedWatchlistTicker);
+    if (!stillWatched && !window.__watchlistChartManuallyClosed) {
+      selectedWatchlistTicker = state.watchlist[0].ticker;
+    }
+  } else {
+    selectedWatchlistTicker = null;
   }
 }
 
@@ -215,14 +272,26 @@ function renderHoldingsTable() {
 
   if (portfolio.activeHoldings.length === 0) {
     emptyState.classList.remove('hidden');
+    const chartCard = document.getElementById('holdings-stock-chart-card');
+    if (chartCard) chartCard.classList.add('hidden');
     return;
   }
   emptyState.classList.add('hidden');
 
   portfolio.activeHoldings.forEach(h => {
+    const isSelected = selectedHoldingsTicker === h.ticker;
     const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition';
+    tr.className = `cursor-pointer transition ${
+      isSelected
+        ? 'bg-brand-50/70 dark:bg-brand-950/30 border-l-4 border-l-brand-500'
+        : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
+    }`;
     tr.id = `holding-row-${h.ticker}`;
+    tr.title = `Click to view ${h.ticker} historical monthly price chart below`;
+    tr.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      selectStockForInlineChart('holdings', h.ticker, true);
+    });
 
     const pnlColor = h.unrealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
     const priceChangeColor = h.priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
@@ -230,12 +299,12 @@ function renderHoldingsTable() {
     tr.innerHTML = `
       <td class="py-3 px-4 sticky-col-mobile">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-300 shrink-0">
+          <div class="w-8 h-8 rounded-lg ${isSelected ? 'bg-brand-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'} flex items-center justify-center font-bold text-xs shrink-0">
             ${h.ticker.replace(/\..*$/, '').slice(0, 4)}
           </div>
           <div>
             <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <span>${h.ticker}</span>
+              <span class="hover:text-brand-500 underline decoration-dotted underline-offset-2">${h.ticker}</span>
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium">${h.currency}</span>
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">${h.sector}</span>
             </div>
@@ -262,13 +331,13 @@ function renderHoldingsTable() {
       </td>
       <td class="py-3 px-4 text-center">
         <div class="flex items-center justify-center gap-1">
-          <button onclick="viewStockHistoryOnDashboard('${h.ticker}')" class="p-1.5 text-xs text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded" title="View Monthly Price Trend">
+          <button onclick="event.stopPropagation(); selectStockForInlineChart('holdings', '${h.ticker}', true)" class="p-1.5 text-xs ${isSelected ? 'bg-brand-500 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Monthly Price Chart Below">
             <i class="fa-solid fa-chart-line"></i>
           </button>
-          <button onclick="openTradeModalForTicker('${h.ticker}', 'BUY')" class="p-1.5 text-xs text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded" title="Buy More">
+          <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'BUY')" class="p-1.5 text-xs text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded" title="Buy More">
             <i class="fa-solid fa-cart-plus"></i>
           </button>
-          <button onclick="openTradeModalForTicker('${h.ticker}', 'SELL')" class="p-1.5 text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded" title="Sell Shares">
+          <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'SELL')" class="p-1.5 text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded" title="Sell Shares">
             <i class="fa-solid fa-arrow-trend-down"></i>
           </button>
         </div>
@@ -392,9 +461,12 @@ function renderWatchlistAndFundamentals() {
 
   if (state.watchlist.length === 0) {
     wlEmpty.classList.remove('hidden');
+    const wlChartCard = document.getElementById('watchlist-stock-chart-card');
+    if (wlChartCard) wlChartCard.classList.add('hidden');
   } else {
     wlEmpty.classList.add('hidden');
     state.watchlist.forEach(w => {
+      const isSelected = selectedWatchlistTicker === w.ticker;
       const curPrice = state.prices[w.ticker]?.price || 0;
       const wlCurrency = state.prices[w.ticker]?.currency || state.fundamentals[w.ticker]?.currency || (w.ticker.endsWith('.HK') ? 'HKD' : (w.ticker.endsWith('.L') ? 'GBp' : 'USD'));
       const targetPrice = w.targetBuyPrice;
@@ -402,10 +474,23 @@ function renderWatchlistAndFundamentals() {
       const isTriggered = curPrice > 0 && curPrice <= targetPrice;
 
       const tr = document.createElement('tr');
-      tr.className = 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition text-xs';
+      tr.className = `cursor-pointer transition text-xs ${
+        isSelected
+          ? 'bg-purple-50/70 dark:bg-purple-950/30 border-l-4 border-l-purple-500'
+          : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
+      }`;
+      tr.title = `Click to view ${w.ticker} historical monthly price chart below`;
+      tr.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        selectStockForInlineChart('watchlist', w.ticker, true);
+      });
+
       tr.innerHTML = `
         <td class="py-3 px-4 sticky-col-mobile">
-          <div class="font-bold text-slate-900 dark:text-white">${w.ticker}</div>
+          <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+            <span class="hover:text-purple-500 underline decoration-dotted underline-offset-2">${w.ticker}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium">${wlCurrency}</span>
+          </div>
           <div class="text-[11px] text-slate-400">${w.name || state.fundamentals[w.ticker]?.name || ''}</div>
         </td>
         <td class="py-3 px-4 text-slate-500 dark:text-slate-400">${w.sector || 'General'}</td>
@@ -423,13 +508,13 @@ function renderWatchlistAndFundamentals() {
         </td>
         <td class="py-3 px-4 text-center">
           <div class="flex items-center justify-center gap-1.5">
-            <button onclick="viewStockHistoryOnDashboard('${w.ticker}')" class="p-1.5 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded" title="View Monthly Trend">
+            <button onclick="event.stopPropagation(); selectStockForInlineChart('watchlist', '${w.ticker}', true)" class="p-1.5 ${isSelected ? 'bg-purple-600 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Monthly Price Chart Below">
               <i class="fa-solid fa-chart-line"></i>
             </button>
-            <button onclick="openTradeModalForTicker('${w.ticker}', 'BUY', ${curPrice || targetPrice})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold text-[11px]">
+            <button onclick="event.stopPropagation(); openTradeModalForTicker('${w.ticker}', 'BUY', ${curPrice || targetPrice})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold text-[11px]">
               Buy
             </button>
-            <button onclick="deleteFromWatchlist('${w.ticker}')" class="p-1.5 text-slate-400 hover:text-rose-500 transition">
+            <button onclick="event.stopPropagation(); deleteFromWatchlist('${w.ticker}')" class="p-1.5 text-slate-400 hover:text-rose-500 transition">
               <i class="fa-solid fa-trash-can text-xs"></i>
             </button>
           </div>
@@ -531,6 +616,10 @@ function switchTab(target) {
 
   if (target === 'dashboard') {
     setTimeout(renderCharts, 40);
+  } else if (target === 'holdings') {
+    setTimeout(() => renderInlineStockChart('holdings'), 40);
+  } else if (target === 'watchlist') {
+    setTimeout(() => renderInlineStockChart('watchlist'), 40);
   }
 }
 
@@ -1015,8 +1104,18 @@ function setupEventListeners() {
   document.getElementById('btn-fetch-monthly-history').addEventListener('click', () => syncAllMarketData(true));
   document.getElementById('btn-fetch-fundamentals-api').addEventListener('click', syncFundamentalsViaAPI);
 
-  // Historical Chart Controls
-  document.getElementById('history-target-select').addEventListener('change', renderMonthlyHistoryChart);
+  // Dashboard "Portfolio Historical Balance & Return" Chart Controls
+  document.querySelectorAll('.port-history-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      portfolioHistoryMode = btn.getAttribute('data-port-mode') || 'balance';
+      document.querySelectorAll('.port-history-mode-btn').forEach(b => {
+        b.className = 'port-history-mode-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition';
+      });
+      btn.className = 'port-history-mode-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition';
+      renderMonthlyHistoryChart();
+    });
+  });
+
   document.querySelectorAll('.history-range-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       historyRangeMonths = parseInt(btn.getAttribute('data-range'), 10) || 24;
@@ -1027,6 +1126,50 @@ function setupEventListeners() {
       renderMonthlyHistoryChart();
     });
   });
+
+  // Holdings Tab Inline Stock Historical Price Chart Period Buttons (1-Y, 2-Y, 3-Y, 5-Y, ALL)
+  document.querySelectorAll('.holdings-stock-range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      holdingsStockRangeMonths = parseInt(btn.getAttribute('data-stock-range'), 10) || 24;
+      document.querySelectorAll('.holdings-stock-range-btn').forEach(b => {
+        b.className = 'holdings-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+      });
+      btn.className = 'holdings-stock-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition';
+      renderInlineStockChart('holdings');
+    });
+  });
+
+  const closeHoldingsChartBtn = document.getElementById('btn-close-holdings-chart');
+  if (closeHoldingsChartBtn) {
+    closeHoldingsChartBtn.addEventListener('click', () => {
+      window.__holdingsChartManuallyClosed = true;
+      selectedHoldingsTicker = null;
+      renderHoldingsTable();
+      renderInlineStockChart('holdings');
+    });
+  }
+
+  // Watchlist Tab Inline Stock Historical Price Chart Period Buttons (1-Y, 2-Y, 3-Y, 5-Y, ALL)
+  document.querySelectorAll('.watchlist-stock-range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      watchlistStockRangeMonths = parseInt(btn.getAttribute('data-stock-range'), 10) || 24;
+      document.querySelectorAll('.watchlist-stock-range-btn').forEach(b => {
+        b.className = 'watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+      });
+      btn.className = 'watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition';
+      renderInlineStockChart('watchlist');
+    });
+  });
+
+  const closeWatchlistChartBtn = document.getElementById('btn-close-watchlist-chart');
+  if (closeWatchlistChartBtn) {
+    closeWatchlistChartBtn.addEventListener('click', () => {
+      window.__watchlistChartManuallyClosed = true;
+      selectedWatchlistTicker = null;
+      renderWatchlistAndFundamentals();
+      renderInlineStockChart('watchlist');
+    });
+  }
 
   // Close Modals
   document.querySelectorAll('.close-modal').forEach(btn => {

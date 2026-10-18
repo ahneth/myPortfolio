@@ -1,8 +1,8 @@
 /**
  * @file api.js
  * @module MarketAPIModule
- * @version 2.1.0
- * @build 20261018_1158
+ * @version 2.1.1
+ * @build 20261018_1315
  * @description Compartmentalized Global Stock Market API Client (HKEX, US NYSE/NASDAQ, London LSE).
  *   - Tier 1: Parallel Yahoo Finance v8 Chart Proxy Race (Promise.any) with 30s deduplication cache & 45s circuit breaker
  *   - Tier 2: Zero-CORS Browser <script> JSONP Quote Fallback (qt.gtimg.cn) for HK & US equities
@@ -941,28 +941,18 @@ function triggerRowPriceFlash(ticker, isUp) {
 
 window.viewStockHistoryOnDashboard = async function(rawTicker) {
   const ticker = MarketAPI.normalizeTicker(rawTicker);
-  switchTab('dashboard');
-  const select = document.getElementById('history-target-select');
-  if (select) {
-    populateHistorySelector();
-    select.value = ticker;
-  }
-
-  if ((!state.historicalPrices[ticker] || state.historicalPrices[ticker].length === 0) && MarketAPI.hasKey()) {
-    try {
-      showToast(`Fetching monthly price history for ${ticker}...`, 'info');
-      const history = await MarketAPI.fetchMonthlyHistory(ticker);
-      if (history && history.length > 0) {
-        state.historicalPrices[ticker] = history;
-        saveState();
-        populateHistorySelector();
-        select.value = ticker;
-      }
-    } catch (e) {
-      showToast(`API notice: ${e.message}`, 'error');
+  const isHeld = portfolio?.activeHoldings?.some(h => h.ticker === ticker);
+  if (isHeld) {
+    switchTab('holdings');
+    if (typeof selectStockForInlineChart === 'function') {
+      await selectStockForInlineChart('holdings', ticker, true);
+    }
+  } else {
+    switchTab('watchlist');
+    if (typeof selectStockForInlineChart === 'function') {
+      await selectStockForInlineChart('watchlist', ticker, true);
     }
   }
-  renderMonthlyHistoryChart();
 };
 
 window.VERIFIED_MARKET_DATA = VERIFIED_MARKET_DATA;

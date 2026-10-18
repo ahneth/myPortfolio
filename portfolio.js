@@ -1,8 +1,8 @@
 /**
  * @file portfolio.js
  * @module PortfolioEngineAndExcelIO
- * @version 2.1.0
- * @build 20261018_1158
+ * @version 2.2.0
+ * @build 20261018_1315
  * @description Application state persistence, WACB & P&L accounting engine, and SheetJS 6-worksheet Excel backup/restore.
  */
 
@@ -37,9 +37,18 @@ let state = null;
 let portfolio = null;
 let allocationViewMode = 'ticker';
 let historyRangeMonths = 24;
+let portfolioHistoryMode = 'balance'; // 'balance' | 'return'
+
+let selectedHoldingsTicker = null;
+let holdingsStockRangeMonths = 24; // default 2-Y (12 = 1-Y, 24 = 2-Y, 36 = 3-Y, 60 = 5-Y, 120 = ALL)
+
+let selectedWatchlistTicker = null;
+let watchlistStockRangeMonths = 24; // default 2-Y
 
 const charts = {
   monthlyHistory: null,
+  holdingsStockHistory: null,
+  watchlistStockHistory: null,
   allocation: null,
   dividends: null,
   pnlBreakdown: null

@@ -76,7 +76,7 @@
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30" title="Application Release &amp; Build ID">v2.1.0 (20261018_1158)</span>
+              <span id="app-version-badge" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30" title="Application Release &amp; Build ID">v2.2.0 (20261018_1315)</span>
             </div>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Global HK, US &amp; London Stock Portfolio Tracker</p>
           </div>
@@ -245,39 +245,42 @@
     <!-- ==================== TAB 1: DASHBOARD ==================== -->
     <div id="tab-content-dashboard" class="tab-pane space-y-6">
 
-      <!-- FEATURED CHART: MONTHLY HISTORICAL TRENDS (PORTFOLIO & INDIVIDUAL STOCKS) -->
+      <!-- FEATURED CHART: PORTFOLIO HISTORICAL BALANCE & RETURN -->
       <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
-              <i class="fa-solid fa-chart-area text-brand-500"></i>
-              <span>Monthly Historical Price &amp; Portfolio Trend</span>
-            </h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400" id="historical-chart-subtitle">
-              Track aggregate monthly portfolio valuation vs. cost basis or inspect individual stock monthly closing prices via API
+            <div class="flex flex-wrap items-center gap-2.5">
+              <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-chart-area text-brand-500"></i>
+                <span>Portfolio Historical Balance &amp; Return</span>
+              </h2>
+              <span id="portfolio-history-metric-badge" class="text-xs font-mono font-bold px-2.5 py-1 rounded-lg border bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-500/30">Balance: $0.00</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5" id="historical-chart-subtitle">
+              Track monthly portfolio balance vs. invested capital or switch to monthly accumulative total return
             </p>
           </div>
 
-          <!-- Controls for Historical Chart -->
+          <!-- Controls for Portfolio Historical Balance & Return -->
           <div class="flex flex-wrap items-center gap-2">
-            <!-- View Mode: Whole Portfolio vs Individual Stock -->
-            <select id="history-target-select" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
-              <option value="PORTFOLIO">Entire Portfolio (Aggregate)</option>
-              <!-- Populated dynamically with held & watched tickers -->
-            </select>
-
-            <!-- Timeframe Selector (12M / 24M / 36M / ALL) -->
+            <!-- Mode Switch: Monthly Portfolio Balance vs. Monthly Accumulative Total Return -->
             <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
-              <button data-range="12" class="history-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1Y (12M)</button>
-              <button data-range="24" class="history-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">2Y (24M)</button>
-              <button data-range="36" class="history-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">3Y (36M)</button>
-              <button data-range="120" class="history-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">ALL</button>
+              <button type="button" id="btn-port-mode-balance" data-port-mode="balance" class="port-history-mode-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">Monthly Balance</button>
+              <button type="button" id="btn-port-mode-return" data-port-mode="return" class="port-history-mode-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">Accumulative Total Return</button>
+            </div>
+
+            <!-- Timeframe Selector (1-Y / 2-Y / 3-Y / ALL) -->
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
+              <button type="button" data-range="12" class="history-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1-Y</button>
+              <button type="button" data-range="24" class="history-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">2-Y</button>
+              <button type="button" data-range="36" class="history-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">3-Y</button>
+              <button type="button" data-range="120" class="history-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">ALL</button>
             </div>
 
             <!-- Fetch Monthly History from API Button -->
-            <button id="btn-fetch-monthly-history" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5 shadow-sm">
+            <button type="button" id="btn-fetch-monthly-history" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5 shadow-sm">
               <i class="fa-solid fa-cloud-arrow-down text-[11px]"></i>
-              <span>Fetch Monthly API Data</span>
+              <span>Sync Monthly API Data</span>
             </button>
           </div>
         </div>
@@ -287,7 +290,10 @@
           <canvas id="chart-monthly-history"></canvas>
           <div id="chart-history-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 text-slate-400 text-sm bg-white/80 dark:bg-dark-card/80">
             <i class="fa-solid fa-chart-line text-4xl mb-2 opacity-40"></i>
-            <span id="chart-history-empty-text">Add a stock trade and click "Fetch Monthly API Data" to load monthly historical trends.</span>
+            <span id="chart-history-empty-text">Record a stock trade (e.g. 2800.HK or VOO) to view your monthly portfolio balance and accumulative total return.</span>
+            <button type="button" onclick="openTradeModal('2800.HK', 'BUY')" class="mt-3 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition shadow-sm">
+              + Record First Trade
+            </button>
           </div>
         </div>
       </div>
@@ -404,7 +410,7 @@
             <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
               <i class="fa-solid fa-briefcase text-brand-500"></i> Active Stock Holdings
             </h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Weighted average cost basis, live API prices, unrealized P&amp;L, and monthly chart shortcuts</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Weighted average cost basis, live API prices &amp; unrealized P&amp;L — click any stock row to view its historical monthly price chart below</p>
           </div>
           <div class="flex items-center gap-2">
             <button id="btn-holdings-new-trade" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center gap-1.5 shadow-sm">
@@ -442,6 +448,39 @@
           <i class="fa-solid fa-folder-open text-4xl mb-3 opacity-30"></i>
           <p class="font-medium text-slate-600 dark:text-slate-300">Your portfolio has no active stock positions yet</p>
           <p class="text-xs text-slate-500 mt-1">Click "+ New Trade" to record a purchase (e.g. 2800.HK, AAPL, HSBA.L) or restore from an Excel backup.</p>
+        </div>
+      </div>
+
+      <!-- Inline Stock Monthly Historical Price Chart (Shown below Holdings table when clicking a stock) -->
+      <div id="holdings-stock-chart-card" class="hidden bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-brand-500"></i>
+              <h3 id="holdings-chart-stock-title" class="font-bold text-base sm:text-lg text-slate-900 dark:text-white">Select a Stock</h3>
+            </div>
+            <p id="holdings-chart-stock-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Click any stock row in Holdings above to inspect its monthly closing price trend</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div id="holdings-chart-period-stats" class="flex flex-wrap items-center gap-1.5"></div>
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
+              <button type="button" data-stock-tab="holdings" data-stock-range="12" class="holdings-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1-Y</button>
+              <button type="button" data-stock-tab="holdings" data-stock-range="24" class="holdings-stock-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">2-Y</button>
+              <button type="button" data-stock-tab="holdings" data-stock-range="36" class="holdings-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">3-Y</button>
+              <button type="button" data-stock-tab="holdings" data-stock-range="60" class="holdings-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">5-Y</button>
+              <button type="button" data-stock-tab="holdings" data-stock-range="120" class="holdings-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">ALL</button>
+            </div>
+            <button type="button" id="btn-close-holdings-chart" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Hide Chart">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+        <div class="pt-4 relative chart-container min-h-[260px] sm:min-h-[300px]">
+          <canvas id="chart-holdings-stock-history"></canvas>
+          <div id="holdings-chart-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 text-slate-400 text-sm bg-white/80 dark:bg-dark-card/80">
+            <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-brand-500"></i>
+            <span>Loading monthly historical price series...</span>
+          </div>
         </div>
       </div>
     </div>
@@ -578,7 +617,7 @@
             <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
               <i class="fa-solid fa-binoculars text-purple-500"></i> Target Price Watchlist &amp; Alerts
             </h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Track HK, US &amp; London stocks via API with target entry prices and automatic buy signals</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Track HK, US &amp; London stocks via API — click any stock row below to view its historical monthly price chart (1-Y, 2-Y, 3-Y, 5-Y, ALL)</p>
           </div>
           <div class="flex items-center gap-2">
             <button id="btn-open-watchlist-modal" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition flex items-center gap-1.5 shadow-sm">
@@ -608,6 +647,39 @@
 
         <div id="watchlist-empty-state" class="hidden p-8 text-center text-slate-400 text-xs">
           No tickers in your watchlist yet. Click "Add Ticker" to monitor target prices via API.
+        </div>
+      </div>
+
+      <!-- Inline Stock Monthly Historical Price Chart (Shown below Watchlist table when clicking a stock) -->
+      <div id="watchlist-stock-chart-card" class="hidden bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-purple-500"></i>
+              <h3 id="watchlist-chart-stock-title" class="font-bold text-base sm:text-lg text-slate-900 dark:text-white">Select a Watchlist Stock</h3>
+            </div>
+            <p id="watchlist-chart-stock-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Click any stock row in Watchlist above to inspect its monthly closing price trend</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div id="watchlist-chart-period-stats" class="flex flex-wrap items-center gap-1.5"></div>
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
+              <button type="button" data-stock-tab="watchlist" data-stock-range="12" class="watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1-Y</button>
+              <button type="button" data-stock-tab="watchlist" data-stock-range="24" class="watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">2-Y</button>
+              <button type="button" data-stock-tab="watchlist" data-stock-range="36" class="watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">3-Y</button>
+              <button type="button" data-stock-tab="watchlist" data-stock-range="60" class="watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">5-Y</button>
+              <button type="button" data-stock-tab="watchlist" data-stock-range="120" class="watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">ALL</button>
+            </div>
+            <button type="button" id="btn-close-watchlist-chart" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Hide Chart">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+        <div class="pt-4 relative chart-container min-h-[260px] sm:min-h-[300px]">
+          <canvas id="chart-watchlist-stock-history"></canvas>
+          <div id="watchlist-chart-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 text-slate-400 text-sm bg-white/80 dark:bg-dark-card/80">
+            <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-purple-500"></i>
+            <span>Loading monthly historical price series...</span>
+          </div>
         </div>
       </div>
 
@@ -828,13 +900,13 @@
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v2.1.0 • Build 20261018_1158</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v2.2.0 • Build 20261018_1315</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /stock_portfolio/<span id="settings-drive-folder-label">20261018_1158</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /stock_portfolio/<span id="settings-drive-folder-label">20261018_1315</span>/
           </span>
         </div>
 
@@ -910,7 +982,7 @@
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v2.1.0 (Build 20261018_1158)</span> &bull; Compartmentalized 6-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v2.2.0 (Build 20261018_1315)</span> &bull; Compartmentalized 6-Module Architecture
       </div>
       <div class="flex items-center gap-4 text-slate-400">
         <span><i class="fa-solid fa-globe text-brand-500"></i> HK, US &amp; London API</span>
@@ -1277,7 +1349,7 @@
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container" class="fixed bottom-16 md:bottom-5 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
 
-  <!-- Compartmentalized Application JS Modules (v2.1.0 • Build 20261018_1158) -->
+  <!-- Compartmentalized Application JS Modules (v2.2.0 • Build 20261018_1315) -->
   <script src="version.js" defer></script>
   <script src="utils.js" defer></script>
   <script src="api.js" defer></script>
