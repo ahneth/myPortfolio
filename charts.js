@@ -1,8 +1,8 @@
 /**
  * @file charts.js
  * @module PortfolioChartsModule
- * @version 2.3.2
- * @build 20261018_2130
+ * @version 2.4.0
+ * @build 20261018_2345
  * @description Chart.js controllers for:
  *   1. Dashboard "Portfolio Historical Balance & Return" (Monthly Balance vs. Monthly Accumulative Total Return)
  *   2. Holdings Tab inline clickable stock monthly price chart (1-Y, 2-Y, 3-Y, 5-Y, ALL)
@@ -53,19 +53,22 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
     return null;
   }
 
+  // Strictly require real monthly historical price data from ./historical_prices.json or live API.
+  // Never synthesize chart points from transaction cost basis if no real historical series is loaded.
   const monthSet = new Set();
+  let hasRealHistoricalSeries = false;
   relevantTickers.forEach(t => {
-    (state.historicalPrices[t] || []).forEach(r => monthSet.add(r.month));
-  });
-  state.transactions.forEach(tx => {
-    if (tx.date) monthSet.add(tx.date.slice(0, 7));
-  });
-  state.dividends.forEach(div => {
-    if (div.payDate) monthSet.add(div.payDate.slice(0, 7));
+    const series = state.historicalPrices[t];
+    if (Array.isArray(series) && series.length > 0) {
+      hasRealHistoricalSeries = true;
+      series.forEach(r => {
+        if (r && r.month) monthSet.add(r.month);
+      });
+    }
   });
 
-  if (monthSet.size === 0) {
-    (state.historicalPrices['2800.HK'] || state.historicalPrices['VOO'] || []).forEach(r => monthSet.add(r.month));
+  if (!hasRealHistoricalSeries || monthSet.size === 0) {
+    return null;
   }
 
   let allMonths = Array.from(monthSet).sort();
@@ -228,9 +231,13 @@ function renderMonthlyHistoryChart() {
   if (!seriesData || seriesData.labels.length === 0 || (portfolio.activeHoldings.length === 0 && state.transactions.length === 0)) {
     if (emptyOverlay) emptyOverlay.classList.remove('hidden');
     if (emptyText) {
-      emptyText.textContent = 'Record a stock trade (e.g. 2800.HK or VOO) to view your monthly portfolio balance and accumulative total return.';
+      if (portfolio.activeHoldings.length > 0 || state.transactions.length > 0) {
+        emptyText.textContent = 'No real historical monthly price data available yet. Populate historical_prices.json (via update_historical_prices.py or GitHub Actions) or click "Sync Monthly API Data".';
+      } else {
+        emptyText.textContent = 'Record a stock trade and sync real historical prices (or load historical_prices.json) to view your monthly portfolio balance and return.';
+      }
     }
-    if (metricSummaryBadge) metricSummaryBadge.textContent = 'Balance: $0.00';
+    if (metricSummaryBadge) metricSummaryBadge.textContent = 'No Historical Data';
     return;
   }
 
@@ -449,8 +456,15 @@ function renderInlineStockChart(tabType) {
   }
 
   if (series.length === 0) {
-    if (emptyEl) emptyEl.classList.remove('hidden');
-    if (subEl) subEl.textContent = `Fetching monthly historical closing prices for ${ticker}...`;
+    if (emptyEl) {
+      emptyEl.classList.remove('hidden');
+      emptyEl.innerHTML = `
+        <i class="fa-solid fa-chart-line text-3xl mb-2 opacity-35"></i>
+        <span class="font-medium text-slate-500 dark:text-slate-300">No historical monthly price data available for ${ticker}</span>
+        <span class="text-xs text-slate-400 mt-1">Run <code>update_historical_prices.py</code> / GitHub Action to populate <code>historical_prices.json</code> or click "Sync Market Data".</span>
+      `;
+    }
+    if (subEl) subEl.textContent = `No historical price series loaded for ${ticker} — chart stays empty until real data is available`;
     if (statsEl) statsEl.innerHTML = '';
     return;
   }

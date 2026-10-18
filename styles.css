@@ -160,3 +160,14 @@ body[data-device="tablet"] .chart-container {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Collapsible Sector Group Headers in Holdings Table (v2.4.0) */
+.sector-group-header {
+  transition: background-color 0.15s ease;
+}
+
+@media (max-width: 768px) {
+  .sector-group-header .sticky-col-mobile {
+    z-index: 12;
+  }
+}

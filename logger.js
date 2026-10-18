@@ -1,8 +1,8 @@
 /**
  * @file logger.js
  * @module RuntimeLoggerAndDiagnostics
- * @version 2.3.2
- * @build 20261018_2130
+ * @version 2.4.0
+ * @build 20261018_2345
  * @description Real-time runtime log & error interceptor, global exception handler,
  *   console wrapper, and 8-point Page & DOM Health Check suite for the Log Tab.
  */
@@ -310,13 +310,17 @@ var AppLogger = (function() {
         : 'Portfolio calculation returned invalid numeric state'
     });
 
-    // 6. MarketAPI & Verified Dataset Check
-    const vmdCount = typeof VERIFIED_MARKET_DATA === 'object' ? Object.keys(VERIFIED_MARKET_DATA).length : 0;
-    const histCachedCount = state?.historicalPrices ? Object.keys(state.historicalPrices).length : 0;
+    // 6. MarketAPI & Historical Price Cache Check
+    const histCachedCount = state?.historicalPrices
+      ? Object.keys(state.historicalPrices).filter(k => Array.isArray(state.historicalPrices[k]) && state.historicalPrices[k].length > 0).length
+      : 0;
+    const jsonStatus = window.__HISTORICAL_PRICES_JSON_LOADED__
+      ? 'historical_prices.json loaded'
+      : 'no preloaded history (charts stay empty until real data is loaded)';
     checks.push({
-      name: 'MarketAPI & Historical Cache',
-      status: vmdCount >= 25 ? 'PASS' : 'WARN',
-      detail: `Provider: ${MarketAPI.getProvider().toUpperCase()} • ${vmdCount} verified fallback tickers • ${histCachedCount} cached series`
+      name: 'MarketAPI & Historical Price Cache',
+      status: MarketAPI.hasKey() ? 'PASS' : 'WARN',
+      detail: `Provider: ${MarketAPI.getProvider().toUpperCase()} • ${histCachedCount} real historical series • ${jsonStatus}`
     });
 
     // 7. Chart.js Canvas Rendering Check
@@ -446,7 +450,7 @@ var AppLogger = (function() {
     runHealthCheck
   };
 
-  addEntry('INFO', 'Boot', 'Runtime Logger & Global Error Interceptor initialized (v2.3.2 • Build 20261018_2130).');
+  addEntry('INFO', 'Boot', 'Runtime Logger & Global Error Interceptor initialized (v2.4.0 • Build 20261018_2345).');
   return api;
 })();
 

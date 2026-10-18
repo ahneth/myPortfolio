@@ -1,8 +1,8 @@
 /**
  * @file app.js
  * @module AppUIController
- * @version 2.3.2
- * @build 20261018_2130
+ * @version 2.4.0
+ * @build 20261018_2345
  * @description Main UI controller, table renderers, modal handlers, intrinsic valuation calculators, and event listeners.
  */
 
@@ -83,6 +83,11 @@ async function selectStockForInlineChart(tabType, rawTicker, scrollIntoView = fa
   if (tabType === 'holdings') {
     window.__holdingsChartManuallyClosed = false;
     selectedHoldingsTicker = ticker;
+    const heldItem = portfolio?.activeHoldings?.find(h => h.ticker === ticker);
+    if (heldItem && state?.settings?.collapsedSectors) {
+      const secKey = getCanonicalHoldingsSector(heldItem);
+      state.settings.collapsedSectors[secKey] = false;
+    }
     renderHoldingsTable();
     renderInlineStockChart('holdings');
   } else {
@@ -274,6 +279,48 @@ function populateHistorySelector() {
   }
 }
 
+function getCanonicalHoldingsSector(holding) {
+  const rawSector = String(holding?.sector || 'Equities').trim();
+  if (MarketAPI.isEtfSector(rawSector, holding?.ticker, holding?.companyName)) {
+    return 'Index ETF';
+  }
+  return rawSector || 'Equities';
+}
+
+function getSectorIconClass(sectorName, isEtf) {
+  if (isEtf) return 'fa-layer-group text-brand-500';
+  const s = sectorName.toLowerCase();
+  if (s.includes('energy')) return 'fa-bolt-lightning text-amber-500';
+  if (s.includes('financial')) return 'fa-building-columns text-indigo-500';
+  if (s.includes('health')) return 'fa-notes-medical text-rose-500';
+  if (s.includes('industrial')) return 'fa-industry text-sky-500';
+  if (s.includes('real estate') || s.includes('property')) return 'fa-city text-purple-500';
+  if (s.includes('utilit')) return 'fa-plug-circle-bolt text-cyan-500';
+  if (s.includes('tech')) return 'fa-microchip text-emerald-500';
+  if (s.includes('consumer')) return 'fa-bag-shopping text-pink-500';
+  if (s.includes('comm')) return 'fa-tower-cell text-violet-500';
+  return 'fa-folder-tree text-slate-500';
+}
+
+function toggleHoldingsSector(sectorName) {
+  if (!state.settings.collapsedSectors) state.settings.collapsedSectors = {};
+  state.settings.collapsedSectors[sectorName] = !state.settings.collapsedSectors[sectorName];
+  saveState();
+  renderHoldingsTable();
+}
+window.toggleHoldingsSector = toggleHoldingsSector;
+
+function setAllHoldingsSectorsCollapsed(collapsed) {
+  if (!state.settings.collapsedSectors) state.settings.collapsedSectors = {};
+  (portfolio?.activeHoldings || []).forEach(h => {
+    const sec = getCanonicalHoldingsSector(h);
+    state.settings.collapsedSectors[sec] = Boolean(collapsed);
+  });
+  saveState();
+  renderHoldingsTable();
+}
+window.setAllHoldingsSectorsCollapsed = setAllHoldingsSectorsCollapsed;
+
 function renderHoldingsTable() {
   const tbody = document.getElementById('holdings-table-body');
   const emptyState = document.getElementById('holdings-empty-state');
@@ -287,72 +334,182 @@ function renderHoldingsTable() {
   }
   emptyState.classList.add('hidden');
 
+  if (!state.settings.collapsedSectors) state.settings.collapsedSectors = {};
+
+  // 1. Group active holdings by canonical sector
+  const groupsMap = {};
   portfolio.activeHoldings.forEach(h => {
-    const isSelected = selectedHoldingsTicker === h.ticker;
-    const tr = document.createElement('tr');
-    tr.className = `cursor-pointer transition ${
-      isSelected
-        ? 'bg-brand-50/70 dark:bg-brand-950/30 border-l-4 border-l-brand-500'
-        : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
+    const secName = getCanonicalHoldingsSector(h);
+    if (!groupsMap[secName]) {
+      groupsMap[secName] = {
+        sector: secName,
+        isEtf: MarketAPI.isEtfSector(secName, h.ticker, h.companyName),
+        items: [],
+        totalCostBasis: 0,
+        totalMarketValue: 0,
+        totalUnrealizedGain: 0,
+        totalDividends: 0,
+        currency: h.currency || 'HKD'
+      };
+    }
+    const g = groupsMap[secName];
+    g.items.push(h);
+    g.totalCostBasis = Fin.round(g.totalCostBasis + h.totalCostBasis, 2);
+    g.totalMarketValue = Fin.round(g.totalMarketValue + h.marketValue, 2);
+    g.totalUnrealizedGain = Fin.round(g.totalUnrealizedGain + h.unrealizedGain, 2);
+    g.totalDividends = Fin.round(g.totalDividends + (h.totalDividends || 0), 2);
+  });
+
+  // 2. Sort sector groups: ETFs at the top, then alphabetical by sector name (A-Z)
+  const sortedGroups = Object.values(groupsMap).sort((a, b) => {
+    if (a.isEtf !== b.isEtf) return a.isEtf ? -1 : 1;
+    return a.sector.localeCompare(b.sector, undefined, { sensitivity: 'base' });
+  });
+
+  // 3. Sort holdings within each sector alphabetically by ticker (A-Z) and render collapsible groups
+  sortedGroups.forEach(group => {
+    group.items.sort((a, b) => a.ticker.localeCompare(b.ticker, undefined, { sensitivity: 'base' }));
+
+    const isCollapsed = Boolean(state.settings.collapsedSectors[group.sector]);
+    const groupUnrealizedPct = group.totalCostBasis > 0
+      ? Fin.round((group.totalUnrealizedGain / group.totalCostBasis) * 100, 2)
+      : 0;
+    const groupYoC = group.totalCostBasis > 0
+      ? Fin.round((group.totalDividends / group.totalCostBasis) * 100, 2)
+      : 0;
+    const weightPct = portfolio.totalStockMarketValue > 0
+      ? Fin.round((group.totalMarketValue / portfolio.totalStockMarketValue) * 100, 1)
+      : 0;
+    const groupPnlColor = group.totalUnrealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+    const iconCls = getSectorIconClass(group.sector, group.isEtf);
+    const escapedSector = group.sector.replace(/'/g, "\'");
+
+    // Collapsible Sector Header Row
+    const headerTr = document.createElement('tr');
+    headerTr.className = `sector-group-header cursor-pointer select-none transition border-y border-slate-200 dark:border-slate-700/80 ${
+      group.isEtf
+        ? 'bg-emerald-50/70 dark:bg-emerald-950/25 hover:bg-emerald-100/70 dark:hover:bg-emerald-950/40'
+        : 'bg-slate-100/85 dark:bg-slate-800/75 hover:bg-slate-200/70 dark:hover:bg-slate-800'
     }`;
-    tr.id = `holding-row-${h.ticker}`;
-    tr.title = `Click to view ${h.ticker} historical monthly price chart below`;
-    tr.addEventListener('click', (e) => {
-      if (e.target.closest('button')) return;
-      selectStockForInlineChart('holdings', h.ticker, true);
-    });
+    headerTr.setAttribute('data-sector-group', group.sector);
+    headerTr.setAttribute('aria-expanded', String(!isCollapsed));
+    headerTr.title = `Click to ${isCollapsed ? 'expand' : 'collapse'} ${group.sector} (${group.items.length} holding${group.items.length === 1 ? '' : 's'})`;
+    headerTr.addEventListener('click', () => toggleHoldingsSector(group.sector));
 
-    const pnlColor = h.unrealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
-    const priceChangeColor = h.priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
-
-    tr.innerHTML = `
-      <td class="py-3 px-4 sticky-col-mobile">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg ${isSelected ? 'bg-brand-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'} flex items-center justify-center font-bold text-xs shrink-0">
-            ${h.ticker.replace(/\..*$/, '').slice(0, 4)}
-          </div>
-          <div>
-            <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <span class="hover:text-brand-500 underline decoration-dotted underline-offset-2">${h.ticker}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium">${h.currency}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">${h.sector}</span>
-            </div>
-            <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[120px] sm:max-w-none">${h.companyName}</div>
-          </div>
+    headerTr.innerHTML = `
+      <td colspan="3" class="py-2.5 px-4 sticky-col-mobile ${
+        group.isEtf ? 'bg-emerald-50/95 dark:bg-slate-900' : 'bg-slate-100/95 dark:bg-slate-800'
+      }">
+        <div class="flex items-center gap-2.5">
+          <span class="w-5 h-5 rounded-md bg-white/80 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-[10px] text-slate-600 dark:text-slate-300 transition-transform duration-200">
+            <i class="fa-solid ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'}"></i>
+          </span>
+          <i class="fa-solid ${iconCls} text-xs"></i>
+          <span class="font-extrabold text-xs sm:text-sm tracking-tight text-slate-900 dark:text-white">${group.sector}</span>
+          ${group.isEtf ? '<span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30">TOP ETF GROUP</span>' : ''}
+          <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+            ${group.items.length} ${group.items.length === 1 ? 'ticker' : 'tickers'}
+          </span>
+          <span class="text-[10px] font-mono text-slate-500 dark:text-slate-400 hidden sm:inline">
+            ${weightPct}% weight
+          </span>
         </div>
       </td>
-      <td class="py-3 px-4 text-right num-font font-medium text-slate-800 dark:text-slate-200">${Fin.shares(h.shares)}</td>
-      <td class="py-3 px-4 text-right num-font text-slate-600 dark:text-slate-300">${Fin.currency(h.avgCost, false, h.currency)}</td>
-      <td class="py-3 px-4 text-right num-font text-slate-600 dark:text-slate-300">${Fin.currency(h.totalCostBasis, false, h.currency)}</td>
-      <td class="py-3 px-4 text-right">
-        <div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(h.currentPrice, false, h.currency)}</div>
-        <div class="text-[11px] num-font ${priceChangeColor}">${Fin.percent(h.priceChangePct)}</div>
+      <td class="py-2.5 px-4 text-right num-font text-xs font-bold text-slate-700 dark:text-slate-300">
+        ${Fin.currency(group.totalCostBasis, false, group.currency)}
       </td>
-      <td class="py-3 px-4 text-right font-bold num-font text-slate-900 dark:text-white">${Fin.currency(h.marketValue, false, h.currency)}</td>
-      <td class="py-3 px-4 text-right">
-        <div class="font-bold num-font ${pnlColor}">${Fin.currency(h.unrealizedGain, true, h.currency)}</div>
-        <div class="text-[11px] num-font ${pnlColor} font-semibold">${Fin.percent(h.unrealizedGainPct)}</div>
+      <td class="py-2.5 px-4 text-right text-[11px] text-slate-400 font-medium">
+        Subtotal
       </td>
-      <td class="py-3 px-4 text-right">
-        <span class="px-2 py-0.5 rounded-full text-xs font-bold num-font ${h.yieldOnCost > 0 ? 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
-          ${h.yieldOnCost.toFixed(2)}%
+      <td class="py-2.5 px-4 text-right num-font text-xs font-extrabold text-slate-900 dark:text-white">
+        ${Fin.currency(group.totalMarketValue, false, group.currency)}
+      </td>
+      <td class="py-2.5 px-4 text-right num-font text-xs font-bold ${groupPnlColor}">
+        <span>${Fin.currency(group.totalUnrealizedGain, true, group.currency)}</span>
+        <span class="text-[10px] ml-1">(${Fin.percent(groupUnrealizedPct)})</span>
+      </td>
+      <td class="py-2.5 px-4 text-right num-font text-xs font-semibold text-slate-500 dark:text-slate-400">
+        ${groupYoC.toFixed(2)}%
+      </td>
+      <td class="py-2.5 px-4 text-center text-[11px] font-semibold text-brand-600 dark:text-brand-400">
+        <span class="inline-flex items-center gap-1">
+          <span>${isCollapsed ? 'Expand' : 'Collapse'}</span>
         </span>
       </td>
-      <td class="py-3 px-4 text-center">
-        <div class="flex items-center justify-center gap-1">
-          <button onclick="event.stopPropagation(); selectStockForInlineChart('holdings', '${h.ticker}', true)" class="p-1.5 text-xs ${isSelected ? 'bg-brand-500 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Monthly Price Chart Below">
-            <i class="fa-solid fa-chart-line"></i>
-          </button>
-          <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'BUY')" class="p-1.5 text-xs text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded" title="Buy More">
-            <i class="fa-solid fa-cart-plus"></i>
-          </button>
-          <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'SELL')" class="p-1.5 text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded" title="Sell Shares">
-            <i class="fa-solid fa-arrow-trend-down"></i>
-          </button>
-        </div>
-      </td>
     `;
-    tbody.appendChild(tr);
+    tbody.appendChild(headerTr);
+
+    // Child Stock Rows (hidden when sector is collapsed)
+    if (!isCollapsed) {
+      group.items.forEach(h => {
+        const isSelected = selectedHoldingsTicker === h.ticker;
+        const tr = document.createElement('tr');
+        tr.className = `cursor-pointer transition ${
+          isSelected
+            ? 'bg-brand-50/70 dark:bg-brand-950/30 border-l-4 border-l-brand-500'
+            : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
+        }`;
+        tr.id = `holding-row-${h.ticker}`;
+        tr.setAttribute('data-sector-item', group.sector);
+        tr.title = `Click to view ${h.ticker} historical monthly price chart below`;
+        tr.addEventListener('click', (e) => {
+          if (e.target.closest('button')) return;
+          selectStockForInlineChart('holdings', h.ticker, true);
+        });
+
+        const pnlColor = h.unrealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        const priceChangeColor = h.priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
+
+        tr.innerHTML = `
+          <td class="py-3 pl-7 pr-4 sticky-col-mobile">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-lg ${isSelected ? 'bg-brand-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'} flex items-center justify-center font-bold text-xs shrink-0">
+                ${h.ticker.replace(/\..*$/, '').slice(0, 4)}
+              </div>
+              <div>
+                <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span class="hover:text-brand-500 underline decoration-dotted underline-offset-2">${h.ticker}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium">${h.currency}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">${group.sector}</span>
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[120px] sm:max-w-none">${h.companyName}</div>
+              </div>
+            </div>
+          </td>
+          <td class="py-3 px-4 text-right num-font font-medium text-slate-800 dark:text-slate-200">${Fin.shares(h.shares)}</td>
+          <td class="py-3 px-4 text-right num-font text-slate-600 dark:text-slate-300">${Fin.currency(h.avgCost, false, h.currency)}</td>
+          <td class="py-3 px-4 text-right num-font text-slate-600 dark:text-slate-300">${Fin.currency(h.totalCostBasis, false, h.currency)}</td>
+          <td class="py-3 px-4 text-right">
+            <div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(h.currentPrice, false, h.currency)}</div>
+            <div class="text-[11px] num-font ${priceChangeColor}">${Fin.percent(h.priceChangePct)}</div>
+          </td>
+          <td class="py-3 px-4 text-right font-bold num-font text-slate-900 dark:text-white">${Fin.currency(h.marketValue, false, h.currency)}</td>
+          <td class="py-3 px-4 text-right">
+            <div class="font-bold num-font ${pnlColor}">${Fin.currency(h.unrealizedGain, true, h.currency)}</div>
+            <div class="text-[11px] num-font ${pnlColor} font-semibold">${Fin.percent(h.unrealizedGainPct)}</div>
+          </td>
+          <td class="py-3 px-4 text-right">
+            <span class="px-2 py-0.5 rounded-full text-xs font-bold num-font ${h.yieldOnCost > 0 ? 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
+              ${h.yieldOnCost.toFixed(2)}%
+            </span>
+          </td>
+          <td class="py-3 px-4 text-center">
+            <div class="flex items-center justify-center gap-1">
+              <button onclick="event.stopPropagation(); selectStockForInlineChart('holdings', '${h.ticker}', true)" class="p-1.5 text-xs ${isSelected ? 'bg-brand-500 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Monthly Price Chart Below">
+                <i class="fa-solid fa-chart-line"></i>
+              </button>
+              <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'BUY')" class="p-1.5 text-xs text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded" title="Buy More">
+                <i class="fa-solid fa-cart-plus"></i>
+              </button>
+              <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'SELL')" class="p-1.5 text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded" title="Sell Shares">
+                <i class="fa-solid fa-arrow-trend-down"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
   });
 }
 
@@ -1212,6 +1369,8 @@ function setupEventListeners() {
   // Open Trade Modals
   on('btn-open-trade-modal', 'click', () => openTradeModal());
   on('btn-holdings-new-trade', 'click', () => openTradeModal());
+  on('btn-expand-all-sectors', 'click', () => setAllHoldingsSectorsCollapsed(false));
+  on('btn-collapse-all-sectors', 'click', () => setAllHoldingsSectorsCollapsed(true));
   on('btn-tx-add', 'click', () => openTradeModal());
   on('btn-quick-cash', 'click', () => openTradeModal(null, 'DEPOSIT'));
   on('btn-deposit-quick', 'click', () => openTradeModal(null, 'DEPOSIT'));
@@ -1446,7 +1605,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v2.3.2 • Build 20261018_2130)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v2.4.0 • Build 20261018_2345)...');
   }
 
   try {
