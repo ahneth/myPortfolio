@@ -2,7 +2,8 @@
  * myPortfolio - Modular Client-Side Stock Portfolio & Historical Wealth Engine (app.js)
  * Features:
  *  - Zero simulated/sample data: 100% API-driven quotes, monthly historical series & fundamentals
- *  - Multi-provider Stock API client (Alpha Vantage, Twelve Data, Finnhub)
+ *  - Keyless Global Yahoo Finance support (HKEX .HK, US NYSE/NASDAQ, London LSE .L) + Alpha Vantage, Twelve Data & Finnhub
+ *  - Smart Ticker Normalizer (auto-converts 2800.HKG / 02800.HK -> 2800.HK, 700.HK -> 0700.HK, .LON -> .L)
  *  - Automatic Device Detection (Mobile / Tablet / Desktop + OS/Touch adaptation)
  *  - High-precision WACB, Realized/Unrealized P&L, DRIP & Yield on Cost engine
  *  - SheetJS 6-Sheet Excel (.xlsx) Backup & Restore including Monthly Historical Prices
@@ -18,14 +19,24 @@ const Fin = {
     if (val === null || val === undefined || isNaN(val)) return 0;
     return Number(Math.round(Number(val + 'e' + decimals)) + 'e-' + decimals);
   },
-  currency: (val, showPlus = false) => {
+  currency: (val, showPlus = false, currencyCode = 'USD') => {
     const n = Fin.round(val, 2);
-    const formatted = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(Math.abs(n));
+    // Handle UK pence (GBp / GBX) or standard ISO currency codes
+    if (currencyCode === 'GBp' || currencyCode === 'GBX') {
+      const sign = n < 0 ? '-' : (showPlus && n > 0 ? '+' : '');
+      return `${sign}${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}p`;
+    }
+    let formatted;
+    try {
+      formatted = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currencyCode || 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(Math.abs(n));
+    } catch (_) {
+      formatted = '$' + Math.abs(n).toFixed(2);
+    }
     if (showPlus && n > 0) return '+' + formatted;
     if (n < 0) return '-' + formatted;
     return formatted;
@@ -84,7 +95,6 @@ const DeviceDetector = {
       (navigator.maxTouchPoints > 0) ||
       window.matchMedia('(pointer: coarse)').matches;
 
-    // Detect OS
     let os = 'Desktop OS';
     if (/iPhone|iPod/i.test(ua)) os = 'iOS (iPhone)';
     else if (/iPad/i.test(ua) || (/Macintosh/i.test(ua) && isTouch)) os = 'iPadOS';
@@ -93,14 +103,12 @@ const DeviceDetector = {
     else if (/Windows NT/i.test(ua)) os = 'Windows';
     else if (/Linux/i.test(ua)) os = 'Linux';
 
-    // Detect Browser
     let browser = 'Web Browser';
     if (/Edg\//i.test(ua)) browser = 'Edge';
     else if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) browser = 'Chrome';
     else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) browser = 'Safari';
     else if (/Firefox\//i.test(ua)) browser = 'Firefox';
 
-    // Classify Hardware Form Factor
     let deviceType = 'desktop';
     if (width <= 768 || /iPhone|iPod|Android.*Mobile/i.test(ua)) {
       deviceType = 'mobile';
@@ -121,9 +129,7 @@ const DeviceDetector = {
       height
     };
 
-    // Apply to DOM body attribute for CSS layout rules
     document.body.setAttribute('data-device', effectiveMode);
-
     this.updateUI();
   },
 
@@ -160,26 +166,27 @@ const DeviceDetector = {
 };
 
 // ============================================================================
-// 3. CLEAN INITIAL STATE (NO SIMULATIONS OR SAMPLE SEED DATA)
+// 3. CLEAN INITIAL STATE (DEFAULTING TO KEYLESS YAHOO FINANCE)
 // ============================================================================
 function createEmptyState() {
   return {
     settings: {
       currency: 'USD',
-      apiProvider: 'alphavantage', // 'alphavantage' | 'twelvedata' | 'finnhub'
+      apiProvider: 'yahoo', // 'yahoo' | 'alphavantage' | 'twelvedata' | 'finnhub'
       apiKey: '',
       deviceOverride: 'auto',
       darkMode: true,
-      lastApiSync: null
+      lastApiSync: null,
+      yahooDefaultApplied: true
     },
     cashBalance: 0,
     initialCash: 0,
     transactions: [],
-    prices: {},            // { 'AAPL': { price, prevPrice, change, changePct, lastUpdated } }
-    historicalPrices: {},  // { 'AAPL': [ { month: '2025-01', close: 220.5, high: 225, low: 215, volume: 10000 }, ... ] }
+    prices: {},            // { '2800.HK': { price, prevPrice, change, changePct, currency, lastUpdated } }
+    historicalPrices: {},  // { '2800.HK': [ { month: '2025-01', close: 21.15, high: 21.5, low: 19.8, volume: 10000 }, ... ] }
     dividends: [],
     watchlist: [],
-    fundamentals: {}       // { 'AAPL': { name, sector, pe, fwdPe, eps, marketCap, debtEquity, roe, fcf, divYield, bvps, fcfPerShare, ... } }
+    fundamentals: {}       // { '2800.HK': { name, sector, pe, fwdPe, eps, marketCap, debtEquity, roe, fcf, divYield, bvps, fcfPerShare, ... } }
   };
 }
 
@@ -196,15 +203,64 @@ const charts = {
 };
 
 // ============================================================================
-// 4. UNIFIED STOCK MARKET API CLIENT (LIVE QUOTES, MONTHLY HISTORY & FUNDAMENTALS)
+// 4. UNIFIED GLOBAL STOCK MARKET API CLIENT (YAHOO, ALPHA VANTAGE, TWELVE DATA, FINNHUB)
 // ============================================================================
 const MarketAPI = {
+  /**
+   * Normalizes HK, US, and London tickers into canonical exchange format:
+   *  - HKEX: '2800.HKG', 'HKG:2800', '02800.HK', '2800', '700.HK', '5.HK' -> '2800.HK', '0700.HK', '0005.HK'
+   *  - London (LSE): 'HSBA.LON', 'LON:HSBA', 'LSE:SHEL' -> 'HSBA.L', 'SHEL.L'
+   *  - US: 'NASDAQ:AAPL', 'NYSE:BRK.B' -> 'AAPL', 'BRK-B'
+   */
+  normalizeTicker(raw) {
+    if (!raw) return '';
+    let s = String(raw).trim().toUpperCase();
+
+    // Handle Google Finance / prefix notations like HKG:2800, LON:HSBA, NASDAQ:AAPL
+    if (s.includes(':')) {
+      const [prefix, code] = s.split(':');
+      if (['HKG', 'HKEX', 'HK'].includes(prefix)) {
+        s = `${code}.HK`;
+      } else if (['LON', 'LSE', 'XLON'].includes(prefix)) {
+        s = `${code}.L`;
+      } else if (['NYSE', 'NASDAQ', 'AMEX', 'ARCA', 'BATS'].includes(prefix)) {
+        s = code;
+      }
+    }
+
+    // Normalize common suffix variations
+    s = s.replace(/\.(HKG|HKEX)$/i, '.HK');
+    s = s.replace(/\.(LON|LSE|XLON)$/i, '.L');
+
+    // If bare numeric code (e.g. '2800', '02800', '0700', '0005'), treat as HKEX
+    if (/^\d{1,5}$/.test(s)) {
+      s = `${s}.HK`;
+    }
+
+    // Format HKEX numeric codes to Yahoo Finance's standard 4-digit zero-padded .HK format
+    // (while preserving 5-digit RMB counters starting with 8 like 82800.HK)
+    const hkMatch = s.match(/^(\d+)\.HK$/);
+    if (hkMatch) {
+      let digits = hkMatch[1];
+      if (digits.length === 5 && digits.startsWith('0')) {
+        digits = digits.slice(1); // '02800' -> '2800', '00700' -> '0700'
+      }
+      if (digits.length < 4) {
+        digits = digits.padStart(4, '0'); // '5' -> '0005', '700' -> '0700'
+      }
+      s = `${digits}.HK`;
+    }
+
+    return s;
+  },
+
   hasKey() {
+    if (this.getProvider() === 'yahoo') return true;
     return Boolean(state?.settings?.apiKey && state.settings.apiKey.trim().length > 0);
   },
 
   getProvider() {
-    return state?.settings?.apiProvider || 'alphavantage';
+    return state?.settings?.apiProvider || 'yahoo';
   },
 
   getKey() {
@@ -212,13 +268,113 @@ const MarketAPI = {
   },
 
   /**
-   * Fetches real-time / latest quote for a single ticker via selected API provider
+   * Fetches Yahoo Finance JSON using a resilient multi-proxy fallback chain for browser CORS compatibility
+   */
+  async fetchYahooJson(yahooPaths) {
+    const urls = Array.isArray(yahooPaths) ? yahooPaths : [yahooPaths];
+    const proxyBuilders = [
+      (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+      (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+      (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
+    ];
+
+    let lastError = null;
+
+    for (const targetUrl of urls) {
+      for (const buildProxyUrl of proxyBuilders) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 8500);
+        try {
+          const proxyUrl = buildProxyUrl(targetUrl);
+          const res = await fetch(proxyUrl, {
+            signal: controller.signal,
+            headers: { 'Accept': 'application/json' }
+          });
+          clearTimeout(timer);
+
+          if (!res.ok) {
+            lastError = new Error(`HTTP ${res.status}`);
+            continue;
+          }
+
+          const text = await res.text();
+          if (!text || text.trim().startsWith('<')) {
+            lastError = new Error('Invalid non-JSON proxy response');
+            continue;
+          }
+
+          const data = JSON.parse(text);
+          if (data?.chart?.error) {
+            throw new Error(data.chart.error.description || `Ticker not found on Yahoo Finance`);
+          }
+          if (data?.chart?.result?.[0] || data?.quoteSummary?.result?.[0]) {
+            return data;
+          }
+        } catch (err) {
+          clearTimeout(timer);
+          lastError = err;
+          // If Yahoo explicitly returned "No data found, symbol may be delisted", stop trying proxies for same URL
+          if (err.message && /delisted|not found/i.test(err.message)) {
+            break;
+          }
+        }
+      }
+    }
+
+    throw lastError || new Error('Unable to reach Yahoo Finance API via browser proxy.');
+  },
+
+  /**
+   * Fetches real-time / latest quote for a single ticker (HK, US, London, or Global)
    */
   async fetchQuote(ticker) {
-    const symbol = ticker.trim().toUpperCase();
+    const symbol = this.normalizeTicker(ticker);
     const provider = this.getProvider();
+
+    if (provider === 'yahoo') {
+      const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=false`;
+      const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=false`;
+
+      const data = await this.fetchYahooJson([q1, q2]);
+      const result = data?.chart?.result?.[0];
+      if (!result || !result.meta) {
+        throw new Error(`No Yahoo Finance quote found for ${symbol}`);
+      }
+
+      const meta = result.meta;
+      const closes = (result.indicators?.quote?.[0]?.close || []).filter(v => v !== null && v !== undefined && !isNaN(v));
+      const price = parseFloat(meta.regularMarketPrice ?? closes[closes.length - 1]);
+      if (!price || isNaN(price)) {
+        throw new Error(`No valid market price returned for ${symbol}`);
+      }
+
+      let prevPrice = parseFloat(meta.chartPreviousClose ?? meta.previousClose);
+      if (closes.length >= 2) {
+        prevPrice = parseFloat(closes[closes.length - 2]) || prevPrice || price;
+      } else if (!prevPrice || isNaN(prevPrice)) {
+        prevPrice = price;
+      }
+
+      const change = Fin.round(price - prevPrice, 3);
+      const changePct = prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0;
+      const currency = meta.currency || 'USD';
+      const longName = meta.longName || meta.shortName || symbol;
+
+      // Enrich company/ETF metadata automatically
+      const existingFund = state.fundamentals[symbol] || {};
+      const inferredSector = meta.instrumentType === 'ETF' ? 'Index ETF' : (existingFund.sector || 'Equities');
+      state.fundamentals[symbol] = {
+        ...existingFund,
+        name: existingFund.name && existingFund.name !== symbol ? existingFund.name : longName,
+        sector: existingFund.sector || inferredSector,
+        currency
+      };
+
+      return { price, prevPrice, change, changePct, currency, name: longName };
+    }
+
     const key = this.getKey();
-    if (!key) throw new Error('API key is not configured.');
+    if (!key) throw new Error('API key is not configured. Select Yahoo Finance (Keyless) or enter an API key in Settings.');
 
     if (provider === 'alphavantage') {
       const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(key)}`;
@@ -229,7 +385,7 @@ const MarketAPI = {
       }
       const q = data['Global Quote'];
       if (!q || !q['05. price']) {
-        throw new Error(`No quote returned for ${symbol}`);
+        throw new Error(`No quote returned for ${symbol} on Alpha Vantage (try switching provider to Yahoo Finance for HK/London stocks).`);
       }
       const price = parseFloat(q['05. price']);
       const prevPrice = parseFloat(q['08. previous close']) || price;
@@ -260,7 +416,7 @@ const MarketAPI = {
       const res = await fetch(url);
       const data = await res.json();
       if (data.error || !data.c) {
-        throw new Error(data.error || `No quote returned for ${symbol}`);
+        throw new Error(data.error || `No quote returned for ${symbol} on Finnhub (free tier is US-only; switch to Yahoo Finance for HK/UK).`);
       }
       return {
         price: parseFloat(data.c),
@@ -272,11 +428,48 @@ const MarketAPI = {
   },
 
   /**
-   * Fetches monthly historical prices (up to 5-10 years of monthly closes)
+   * Fetches monthly historical prices (up to 10 years of monthly closes)
    */
   async fetchMonthlyHistory(ticker) {
-    const symbol = ticker.trim().toUpperCase();
+    const symbol = this.normalizeTicker(ticker);
     const provider = this.getProvider();
+
+    if (provider === 'yahoo') {
+      const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=10y&interval=1mo&includeAdjustedClose=true`;
+      const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=10y&interval=1mo&includeAdjustedClose=true`;
+
+      const data = await this.fetchYahooJson([q1, q2]);
+      const result = data?.chart?.result?.[0];
+      if (!result || !Array.isArray(result.timestamp)) {
+        throw new Error(`No monthly historical series found for ${symbol}`);
+      }
+
+      const timestamps = result.timestamp;
+      const quote = result.indicators?.quote?.[0] || {};
+      const adjCloses = result.indicators?.adjclose?.[0]?.adjclose || [];
+
+      const byMonth = {};
+      timestamps.forEach((ts, idx) => {
+        const rawClose = quote.close?.[idx];
+        const adjClose = adjCloses[idx] ?? rawClose;
+        if (rawClose === null || rawClose === undefined || isNaN(rawClose)) return;
+
+        const d = new Date(ts * 1000).toISOString().split('T')[0];
+        const month = d.slice(0, 7);
+        byMonth[month] = {
+          month,
+          date: d,
+          close: Fin.round(parseFloat(adjClose || rawClose), 2),
+          rawClose: Fin.round(parseFloat(rawClose), 2),
+          high: Fin.round(parseFloat(quote.high?.[idx] ?? rawClose), 2),
+          low: Fin.round(parseFloat(quote.low?.[idx] ?? rawClose), 2),
+          volume: parseInt(quote.volume?.[idx] || 0, 10)
+        };
+      });
+
+      return Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
+    }
+
     const key = this.getKey();
     if (!key) throw new Error('API key is not configured.');
 
@@ -305,7 +498,6 @@ const MarketAPI = {
         };
       });
 
-      // Deduplicate by YYYY-MM and sort ascending chronologically
       const byMonth = {};
       records.forEach(r => { byMonth[r.month] = r; });
       return Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
@@ -332,7 +524,7 @@ const MarketAPI = {
 
     if (provider === 'finnhub') {
       const toUnix = Math.floor(Date.now() / 1000);
-      const fromUnix = toUnix - (5 * 365 * 24 * 60 * 60); // 5 years
+      const fromUnix = toUnix - (5 * 365 * 24 * 60 * 60);
       const url = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=M&from=${fromUnix}&to=${toUnix}&token=${encodeURIComponent(key)}`;
       const res = await fetch(url);
       const data = await res.json();
@@ -359,12 +551,61 @@ const MarketAPI = {
    * Fetches company fundamentals (P/E, Forward P/E, EPS, Market Cap, ROE, Book Value, Div Yield)
    */
   async fetchFundamentals(ticker) {
-    const symbol = ticker.trim().toUpperCase();
+    const symbol = this.normalizeTicker(ticker);
     const provider = this.getProvider();
+    const existing = state.fundamentals[symbol] || {};
+
+    if (provider === 'yahoo') {
+      // First ensure quote meta (name, currency, instrumentType) is populated
+      try {
+        const q = await this.fetchQuote(symbol);
+        if (q?.name) existing.name = q.name;
+      } catch (_) {}
+
+      // Try Yahoo quoteSummary endpoint for deeper fundamental ratios if available
+      try {
+        const qsUrl = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(symbol)}?modules=summaryDetail,defaultKeyStatistics,financialData,price`;
+        const data = await this.fetchYahooJson([qsUrl]);
+        const res = data?.quoteSummary?.result?.[0];
+        if (res) {
+          const sd = res.summaryDetail || {};
+          const ks = res.defaultKeyStatistics || {};
+          const fd = res.financialData || {};
+          const pr = res.price || {};
+
+          const eps = ks.trailingEps?.raw ?? existing.eps ?? 0;
+          const bvps = ks.bookValue?.raw ?? existing.bvps ?? 0;
+          const pe = sd.trailingPE?.raw ?? existing.pe ?? 0;
+          const fwdPe = (sd.forwardPE?.raw ?? ks.forwardPE?.raw) ?? existing.fwdPe ?? 0;
+          const mcapRaw = (pr.marketCap?.raw ?? sd.marketCap?.raw);
+          const roeRaw = fd.returnOnEquity?.raw;
+          const divYieldRaw = sd.dividendYield?.raw;
+          const deRaw = fd.debtToEquity?.raw;
+          const fcfRaw = fd.freeCashflow?.raw;
+
+          return {
+            ...existing,
+            name: pr.longName || pr.shortName || existing.name || symbol,
+            pe: pe ? Fin.round(pe, 2) : (existing.pe || 0),
+            fwdPe: fwdPe ? Fin.round(fwdPe, 2) : (existing.fwdPe || 0),
+            eps: eps ? Fin.round(eps, 2) : (existing.eps || 0),
+            bvps: bvps ? Fin.round(bvps, 2) : (existing.bvps || 0),
+            marketCap: mcapRaw ? Fin.compactNumber(mcapRaw) : (existing.marketCap || '-'),
+            debtEquity: deRaw ? Fin.round(deRaw / 100, 2) : (existing.debtEquity || 0),
+            roe: roeRaw ? Fin.round(roeRaw * 100, 2) : (existing.roe || 0),
+            fcf: fcfRaw ? Fin.compactNumber(fcfRaw) : (existing.fcf || ''),
+            divYield: divYieldRaw ? Fin.round(divYieldRaw * 100, 2) : (existing.divYield || 0),
+            fcfPerShare: existing.fcfPerShare || (eps > 0 ? Fin.round(eps * 0.9, 2) : 0)
+          };
+        }
+      } catch (_) {
+        // quoteSummary may require crumb on some edges; return enriched basic meta gracefully
+      }
+      return state.fundamentals[symbol] || existing;
+    }
+
     const key = this.getKey();
     if (!key) throw new Error('API key is not configured.');
-
-    const existing = state.fundamentals[symbol] || {};
 
     if (provider === 'alphavantage') {
       const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(key)}`;
@@ -420,18 +661,18 @@ const MarketAPI = {
 };
 
 // ============================================================================
-// 5. STATE PERSISTENCE & PORTFOLIO RECALCULATION ENGINE
+// 5. STATE PERSISTENCE, TICKER MIGRATION & PORTFOLIO RECALCULATION ENGINE
 // ============================================================================
 function initAppState() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    try {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
       state = JSON.parse(stored);
-    } catch (e) {
-      console.error('Failed to parse localStorage state, initializing clean state:', e);
+    } else {
       state = createEmptyState();
     }
-  } else {
+  } catch (e) {
+    console.error('Failed to parse localStorage state, initializing clean state:', e);
     state = createEmptyState();
   }
 
@@ -443,6 +684,35 @@ function initAppState() {
   if (!state.transactions) state.transactions = [];
   if (!state.dividends) state.dividends = [];
   if (!state.watchlist) state.watchlist = [];
+
+  // Automatically enable Yahoo Finance global provider if not yet migrated
+  if (!state.settings.yahooDefaultApplied) {
+    state.settings.apiProvider = 'yahoo';
+    state.settings.yahooDefaultApplied = true;
+  }
+
+  // Auto-normalize any legacy tickers in transactions, dividends, watchlist & caches (e.g. 2800.HKG -> 2800.HK)
+  state.transactions.forEach(tx => {
+    if (tx.ticker && tx.type !== 'DEPOSIT' && tx.type !== 'WITHDRAW') {
+      tx.ticker = MarketAPI.normalizeTicker(tx.ticker);
+    }
+  });
+  state.dividends.forEach(div => {
+    if (div.ticker) div.ticker = MarketAPI.normalizeTicker(div.ticker);
+  });
+  state.watchlist.forEach(w => {
+    if (w.ticker) w.ticker = MarketAPI.normalizeTicker(w.ticker);
+  });
+
+  ['prices', 'historicalPrices', 'fundamentals'].forEach(mapKey => {
+    const mapObj = state[mapKey] || {};
+    const normalizedMap = {};
+    Object.keys(mapObj).forEach(k => {
+      const normKey = MarketAPI.normalizeTicker(k);
+      normalizedMap[normKey] = mapObj[k];
+    });
+    state[mapKey] = normalizedMap;
+  });
 
   if (state.settings.darkMode === false) {
     document.documentElement.classList.remove('dark');
@@ -456,7 +726,11 @@ function initAppState() {
 
 function saveState() {
   if (!state) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.warn('Could not save state to localStorage:', e);
+  }
 }
 
 function recalculatePortfolio() {
@@ -469,7 +743,7 @@ function recalculatePortfolio() {
   sortedTx.forEach(tx => {
     const fees = Fin.round(tx.fees || 0, 2);
     const shares = Fin.round(tx.shares || 0, 4);
-    const price = Fin.round(tx.price || 0, 2);
+    const price = Fin.round(tx.price || 0, 4);
 
     if (tx.type === 'DEPOSIT') {
       runningCash = Fin.round(runningCash + (tx.amount || 0), 2);
@@ -584,11 +858,13 @@ function recalculatePortfolio() {
       const unrealizedGainPct = h.totalCostBasis > 0 ? Fin.round((unrealizedGain / h.totalCostBasis) * 100, 2) : 0;
       const yieldOnCost = h.totalCostBasis > 0 ? Fin.round((h.totalDividends / h.totalCostBasis) * 100, 2) : 0;
       const fund = state.fundamentals[ticker] || {};
+      const currency = priceObj.currency || fund.currency || (ticker.endsWith('.HK') ? 'HKD' : (ticker.endsWith('.L') ? 'GBp' : 'USD'));
 
       activeHoldings.push({
         ticker,
         companyName: fund.name || ticker,
-        sector: fund.sector || 'Technology',
+        sector: fund.sector || (ticker === '2800.HK' ? 'Index ETF' : 'Equities'),
+        currency,
         shares: h.shares,
         avgCost: h.avgCost,
         totalCostBasis: h.totalCostBasis,
@@ -648,16 +924,24 @@ function renderAll() {
 }
 
 function renderApiStatusUI() {
+  const providerRaw = MarketAPI.getProvider();
+  const providerNames = {
+    yahoo: 'Yahoo Finance (Global)',
+    alphavantage: 'Alpha Vantage',
+    twelvedata: 'Twelve Data',
+    finnhub: 'Finnhub'
+  };
   const hasKey = MarketAPI.hasKey();
-  const provider = MarketAPI.getProvider().toUpperCase();
   const dot = document.getElementById('api-status-dot');
   const text = document.getElementById('api-status-text');
   const banner = document.getElementById('api-setup-banner');
   const syncLabel = document.getElementById('last-api-sync-label');
+  const optBadge = document.getElementById('api-key-optional-badge');
+  const keyInput = document.getElementById('setting-api-key');
 
   if (hasKey) {
     dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
-    text.textContent = `API: ${provider} Ready`;
+    text.textContent = `API: ${providerNames[providerRaw] || providerRaw.toUpperCase()} Ready`;
     banner.classList.add('hidden');
   } else {
     dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse';
@@ -665,15 +949,26 @@ function renderApiStatusUI() {
     banner.classList.remove('hidden');
   }
 
+  if (optBadge && keyInput) {
+    if (providerRaw === 'yahoo') {
+      optBadge.textContent = '(Not required for Yahoo Finance)';
+      optBadge.className = 'text-[11px] font-normal text-emerald-500';
+      keyInput.placeholder = 'No API key required for Yahoo Finance...';
+    } else {
+      optBadge.textContent = `(Required for ${providerNames[providerRaw]})`;
+      optBadge.className = 'text-[11px] font-normal text-amber-500';
+      keyInput.placeholder = `Paste your ${providerNames[providerRaw]} API Key...`;
+    }
+  }
+
   if (syncLabel && state.settings.lastApiSync) {
     syncLabel.textContent = `Last synced: ${new Date(state.settings.lastApiSync).toLocaleTimeString()}`;
   }
 
-  const keyInput = document.getElementById('setting-api-key');
   const provSelect = document.getElementById('setting-api-provider');
   const devSelect = document.getElementById('setting-device-override');
   if (keyInput && document.activeElement !== keyInput) keyInput.value = state.settings.apiKey || '';
-  if (provSelect) provSelect.value = state.settings.apiProvider || 'alphavantage';
+  if (provSelect) provSelect.value = state.settings.apiProvider || 'yahoo';
   if (devSelect) devSelect.value = state.settings.deviceOverride || 'auto';
 }
 
@@ -719,8 +1014,8 @@ function renderKPIs() {
         </div>
       </div>
       <div class="text-right">
-        <span class="text-[11px] text-slate-400 block">Live Price</span>
-        <span class="text-sm font-bold num-font text-slate-800 dark:text-slate-200">${Fin.currency(top.currentPrice)}</span>
+        <span class="text-[11px] text-slate-400 block">Live Price (${top.currency})</span>
+        <span class="text-sm font-bold num-font text-slate-800 dark:text-slate-200">${Fin.currency(top.currentPrice, false, top.currency)}</span>
       </div>
     `;
   } else {
@@ -811,11 +1106,12 @@ function renderHoldingsTable() {
       <td class="py-3 px-4 sticky-col-mobile">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-300 shrink-0">
-            ${h.ticker.slice(0, 4)}
+            ${h.ticker.replace(/\..*$/, '').slice(0, 4)}
           </div>
           <div>
             <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
               <span>${h.ticker}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium">${h.currency}</span>
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">${h.sector}</span>
             </div>
             <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[120px] sm:max-w-none">${h.companyName}</div>
@@ -901,7 +1197,7 @@ function renderTransactionsTable() {
     tr.innerHTML = `
       <td class="py-3 px-4 font-mono text-slate-500">${tx.date}</td>
       <td class="py-3 px-4">${badgeMap[tx.type] || tx.type}</td>
-      <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">${isCashOnly ? 'USD CASH' : tx.ticker}</td>
+      <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">${isCashOnly ? 'CASH' : tx.ticker}</td>
       <td class="py-3 px-4 text-right num-font font-medium">${isCashOnly ? '-' : Fin.shares(tx.shares)}</td>
       <td class="py-3 px-4 text-right num-font">${isCashOnly ? '-' : Fin.currency(tx.price)}</td>
       <td class="py-3 px-4 text-right num-font text-slate-400">${isCashOnly ? '-' : Fin.currency(tx.fees || 0)}</td>
@@ -1098,11 +1394,6 @@ function renderCharts() {
   renderPnlBreakdownChart();
 }
 
-/**
- * Renders either:
- *  1) Entire Portfolio Monthly Historical Value vs. Cost Basis
- *  2) Individual Stock Monthly Historical Closing Prices + Cost Basis / Target Price Line
- */
 function renderMonthlyHistoryChart() {
   const ctx = document.getElementById('chart-monthly-history');
   const emptyOverlay = document.getElementById('chart-history-empty');
@@ -1138,7 +1429,7 @@ function renderMonthlyHistoryChart() {
 
     const datasets = [
       {
-        label: `${target} Monthly Close ($)`,
+        label: `${target} Monthly Close`,
         data: closeData,
         borderColor: '#10b981',
         backgroundColor: 'rgba(16, 185, 129, 0.12)',
@@ -1201,17 +1492,15 @@ function renderMonthlyHistoryChart() {
   const heldTickers = portfolio.activeHoldings.map(h => h.ticker);
   if (heldTickers.length === 0) {
     emptyOverlay.classList.remove('hidden');
-    emptyText.textContent = 'Record your first stock trade and sync your API key to view monthly historical portfolio trends.';
+    emptyText.textContent = 'Record your first stock trade and click "Fetch Monthly API Data" to view monthly historical portfolio trends.';
     return;
   }
 
-  // Collect all unique months available in state.historicalPrices across held tickers
   const monthSet = new Set();
   heldTickers.forEach(t => {
     (state.historicalPrices[t] || []).forEach(r => monthSet.add(r.month));
   });
 
-  // Also include transaction months if API history hasn't been fetched yet
   state.transactions.forEach(tx => {
     if (tx.date) monthSet.add(tx.date.slice(0, 7));
   });
@@ -1232,7 +1521,6 @@ function renderMonthlyHistoryChart() {
     let monthMarketVal = 0;
     portfolio.activeHoldings.forEach(h => {
       const hist = state.historicalPrices[h.ticker] || [];
-      // Find matching month or closest prior month
       let priceForMonth = h.currentPrice;
       const exact = hist.find(item => item.month === monthStr);
       if (exact) {
@@ -1329,7 +1617,7 @@ function renderAllocationChart() {
   } else {
     const sectorMap = {};
     portfolio.activeHoldings.forEach(h => {
-      const s = h.sector || 'Technology';
+      const s = h.sector || 'Equities';
       sectorMap[s] = (sectorMap[s] || 0) + h.marketValue;
     });
     Object.keys(sectorMap).forEach(s => {
@@ -1461,7 +1749,7 @@ function renderPnlBreakdownChart() {
 // ============================================================================
 async function syncAllMarketData(includeMonthly = true) {
   if (!MarketAPI.hasKey()) {
-    showToast('Please configure your Stock API Key in Settings first.', 'error');
+    showToast('Please select Yahoo Finance (Keyless) or configure your API Key in Settings.', 'error');
     switchTab('settings');
     return;
   }
@@ -1478,12 +1766,14 @@ async function syncAllMarketData(includeMonthly = true) {
 
   const syncIcon = document.getElementById('header-sync-icon');
   if (syncIcon) syncIcon.classList.add('fa-spin');
-  showToast(`Syncing live API quotes${includeMonthly ? ' & monthly history' : ''} for ${allTickers.length} ticker(s)...`, 'info');
+  showToast(`Syncing live quotes${includeMonthly ? ' & monthly history' : ''} for ${allTickers.length} ticker(s)...`, 'info');
 
   let updatedQuotes = 0;
   let updatedHistory = 0;
+  const errors = [];
 
-  for (const ticker of allTickers) {
+  for (const rawTicker of allTickers) {
+    const ticker = MarketAPI.normalizeTicker(rawTicker);
     try {
       const q = await MarketAPI.fetchQuote(ticker);
       if (q && q.price > 0) {
@@ -1493,6 +1783,7 @@ async function syncAllMarketData(includeMonthly = true) {
           prevPrice: q.prevPrice,
           change: q.change,
           changePct: q.changePct,
+          currency: q.currency || 'USD',
           lastUpdated: new Date().toISOString()
         };
         updatedQuotes++;
@@ -1500,6 +1791,7 @@ async function syncAllMarketData(includeMonthly = true) {
       }
     } catch (err) {
       console.warn(`Quote fetch failed for ${ticker}:`, err.message);
+      errors.push(`${ticker}: ${err.message}`);
     }
 
     if (includeMonthly) {
@@ -1521,12 +1813,16 @@ async function syncAllMarketData(includeMonthly = true) {
   renderAll();
 
   if (syncIcon) syncIcon.classList.remove('fa-spin');
-  showToast(`Synced ${updatedQuotes} live quote(s) and ${updatedHistory} monthly series via API.`, 'success');
+  if (errors.length > 0 && updatedQuotes === 0) {
+    showToast(`Sync error — ${errors[0]}`, 'error');
+  } else {
+    showToast(`Synced ${updatedQuotes} live quote(s) and ${updatedHistory} monthly series via ${MarketAPI.getProvider().toUpperCase()}.`, 'success');
+  }
 }
 
 async function syncFundamentalsViaAPI() {
   if (!MarketAPI.hasKey()) {
-    showToast('Configure your Stock API Key in Settings to fetch fundamentals.', 'error');
+    showToast('Configure your API settings first.', 'error');
     switchTab('settings');
     return;
   }
@@ -1570,7 +1866,8 @@ function triggerRowPriceFlash(ticker, isUp) {
   }
 }
 
-window.viewStockHistoryOnDashboard = async function(ticker) {
+window.viewStockHistoryOnDashboard = async function(rawTicker) {
+  const ticker = MarketAPI.normalizeTicker(rawTicker);
   switchTab('dashboard');
   const select = document.getElementById('history-target-select');
   if (select) {
@@ -1622,6 +1919,7 @@ function exportPortfolioToExcel() {
       Ticker: h.ticker,
       'Company Name': h.companyName,
       Sector: h.sector,
+      Currency: h.currency || 'USD',
       'Shares Held': h.shares,
       'Avg Cost Basis ($)': h.avgCost,
       'Total Cost Basis ($)': h.totalCostBasis,
@@ -1639,7 +1937,7 @@ function exportPortfolioToExcel() {
       'Transaction ID': t.id,
       Date: t.date,
       Type: t.type,
-      Ticker: t.ticker || 'USD CASH',
+      Ticker: t.ticker || 'CASH',
       Shares: t.shares || 0,
       'Price per Share ($)': t.price || 0,
       'Fees ($)': t.fees || 0,
@@ -1674,7 +1972,7 @@ function exportPortfolioToExcel() {
       return {
         Ticker: ticker,
         'Company Name': w.name || f.name || ticker,
-        Sector: w.sector || f.sector || 'Technology',
+        Sector: w.sector || f.sector || 'Equities',
         'Current Price ($)': state.prices[ticker]?.price || 0,
         'Target Buy Price ($)': w.targetBuyPrice || 0,
         'On Watchlist': w.ticker ? 'YES' : 'NO',
@@ -1733,23 +2031,27 @@ function restorePortfolioFromExcel(file) {
 
       if (wb.SheetNames.includes('Transactions')) {
         const rawTx = XLSX.utils.sheet_to_json(wb.Sheets['Transactions']);
-        state.transactions = rawTx.map((row, idx) => ({
-          id: row['Transaction ID'] || `TX-${idx + 1}`,
-          date: row['Date'] || new Date().toISOString().split('T')[0],
-          type: (row['Type'] || 'BUY').toUpperCase(),
-          ticker: (row['Ticker'] || '').toUpperCase(),
-          shares: Number(row['Shares']) || 0,
-          price: Number(row['Price per Share ($)']) || 0,
-          fees: Number(row['Fees ($)']) || 0,
-          amount: Number(row['Net Total ($)']) || 0,
-          notes: row['Notes'] || ''
-        }));
+        state.transactions = rawTx.map((row, idx) => {
+          const type = (row['Type'] || 'BUY').toUpperCase();
+          const rawTicker = (row['Ticker'] || '').toUpperCase();
+          return {
+            id: row['Transaction ID'] || `TX-${idx + 1}`,
+            date: row['Date'] || new Date().toISOString().split('T')[0],
+            type,
+            ticker: type === 'DEPOSIT' || type === 'WITHDRAW' ? '' : MarketAPI.normalizeTicker(rawTicker),
+            shares: Number(row['Shares']) || 0,
+            price: Number(row['Price per Share ($)']) || 0,
+            fees: Number(row['Fees ($)']) || 0,
+            amount: Number(row['Net Total ($)']) || 0,
+            notes: row['Notes'] || ''
+          };
+        });
       }
 
       if (wb.SheetNames.includes('Holdings')) {
         const rawHoldings = XLSX.utils.sheet_to_json(wb.Sheets['Holdings']);
         rawHoldings.forEach(row => {
-          const t = (row['Ticker'] || '').toUpperCase();
+          const t = MarketAPI.normalizeTicker(row['Ticker'] || '');
           const curP = Number(row['Current Price ($)'] || row['Current Market Price ($)']) || 0;
           if (t && curP > 0) {
             state.prices[t] = { price: curP, prevPrice: curP, change: 0, changePct: 0, lastUpdated: new Date().toISOString() };
@@ -1761,7 +2063,7 @@ function restorePortfolioFromExcel(file) {
         const rawDiv = XLSX.utils.sheet_to_json(wb.Sheets['Dividends']);
         state.dividends = rawDiv.map((row, idx) => ({
           id: row['Dividend ID'] || `DIV-${idx + 1}`,
-          ticker: (row['Ticker'] || '').toUpperCase(),
+          ticker: MarketAPI.normalizeTicker(row['Ticker'] || ''),
           payDate: row['Pay Date'] || new Date().toISOString().split('T')[0],
           exDate: row['Ex Date'] || '',
           amountPerShare: Number(row['Payout Per Share ($)']) || 0,
@@ -1776,19 +2078,19 @@ function restorePortfolioFromExcel(file) {
         const rawWl = XLSX.utils.sheet_to_json(wb.Sheets['Watchlist_Fundamentals']);
         state.watchlist = [];
         rawWl.forEach(row => {
-          const t = (row['Ticker'] || '').toUpperCase();
+          const t = MarketAPI.normalizeTicker(row['Ticker'] || '');
           if (!t) return;
           if ((row['On Watchlist'] || 'YES').toString().toUpperCase() !== 'NO' && Number(row['Target Buy Price ($)']) > 0) {
             state.watchlist.push({
               ticker: t,
               name: row['Company Name'] || t,
-              sector: row['Sector'] || 'Technology',
+              sector: row['Sector'] || 'Equities',
               targetBuyPrice: Number(row['Target Buy Price ($)']) || 0
             });
           }
           state.fundamentals[t] = {
             name: row['Company Name'] || t,
-            sector: row['Sector'] || 'Technology',
+            sector: row['Sector'] || 'Equities',
             pe: Number(row['P/E Ratio']) || 0,
             fwdPe: Number(row['Forward P/E']) || 0,
             eps: Number(row['EPS ($)']) || 0,
@@ -1807,7 +2109,7 @@ function restorePortfolioFromExcel(file) {
         const rawHist = XLSX.utils.sheet_to_json(wb.Sheets['Historical_Prices']);
         state.historicalPrices = {};
         rawHist.forEach(row => {
-          const t = (row['Ticker'] || '').toUpperCase();
+          const t = MarketAPI.normalizeTicker(row['Ticker'] || '');
           if (!t || !row['Month']) return;
           if (!state.historicalPrices[t]) state.historicalPrices[t] = [];
           state.historicalPrices[t].push({
@@ -1872,7 +2174,7 @@ function showToast(message, type = 'info') {
     <button class="text-slate-400 hover:text-white" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
   `;
   container.appendChild(toast);
-  setTimeout(() => toast.remove(), 4200);
+  setTimeout(() => toast.remove(), 4500);
 }
 
 function openModal(id) {
@@ -1900,10 +2202,11 @@ function openTradeModal(ticker = null, forceType = 'BUY', defaultPrice = null) {
   updateTradeModalFields(type);
 
   if (ticker) {
-    document.getElementById('trade-ticker').value = ticker;
-    const price = defaultPrice || state.prices[ticker]?.price || '';
+    const norm = MarketAPI.normalizeTicker(ticker);
+    document.getElementById('trade-ticker').value = norm;
+    const price = defaultPrice || state.prices[norm]?.price || '';
     document.getElementById('trade-price').value = price;
-    updateHoldingHint(ticker);
+    updateHoldingHint(norm);
   } else {
     document.getElementById('trade-ticker').value = '';
     document.getElementById('trade-price').value = '';
@@ -1944,7 +2247,8 @@ function updateTradeModalFields(type) {
 
 function updateHoldingHint(ticker) {
   const hint = document.getElementById('trade-holding-hint');
-  const active = portfolio.activeHoldings.find(h => h.ticker === ticker);
+  const norm = MarketAPI.normalizeTicker(ticker);
+  const active = portfolio.activeHoldings.find(h => h.ticker === norm);
   hint.textContent = `Currently held: ${active ? Fin.shares(active.shares) : 0} shares`;
 }
 
@@ -1994,7 +2298,8 @@ async function handleTradeSubmit(e) {
     return;
   }
 
-  const ticker = document.getElementById('trade-ticker').value.trim().toUpperCase();
+  const rawTicker = document.getElementById('trade-ticker').value.trim();
+  const ticker = MarketAPI.normalizeTicker(rawTicker);
   const shares = parseFloat(document.getElementById('trade-shares').value);
   const price = parseFloat(document.getElementById('trade-price').value);
   const fees = parseFloat(document.getElementById('trade-fees').value) || 0;
@@ -2038,7 +2343,7 @@ async function handleTradeSubmit(e) {
   closeModal('modal-trade');
   showToast(`Recorded ${type} order for ${Fin.shares(shares)} ${ticker}`, 'success');
 
-  // Proactively fetch live quote, monthly historicals & fundamentals via API if key exists
+  // Proactively fetch live quote, monthly historicals & fundamentals via API
   if (MarketAPI.hasKey()) {
     try {
       const q = await MarketAPI.fetchQuote(ticker);
@@ -2047,9 +2352,10 @@ async function handleTradeSubmit(e) {
         const hist = await MarketAPI.fetchMonthlyHistory(ticker);
         if (hist?.length) state.historicalPrices[ticker] = hist;
       }
-      if (!state.fundamentals[ticker]) {
+      if (!state.fundamentals[ticker] || !state.fundamentals[ticker].pe) {
         state.fundamentals[ticker] = await MarketAPI.fetchFundamentals(ticker);
       }
+      state.settings.lastApiSync = new Date().toISOString();
       recalculatePortfolio();
       saveState();
       renderAll();
@@ -2061,7 +2367,7 @@ async function handleTradeSubmit(e) {
 
 function handleDividendSubmit(e) {
   e.preventDefault();
-  const ticker = document.getElementById('div-ticker').value.trim().toUpperCase();
+  const ticker = MarketAPI.normalizeTicker(document.getElementById('div-ticker').value);
   const payDate = document.getElementById('div-pay-date').value;
   const exDate = document.getElementById('div-ex-date').value;
   const totalAmount = parseFloat(document.getElementById('div-amount').value);
@@ -2106,7 +2412,7 @@ function handleDividendSubmit(e) {
 
 async function handleWatchlistSubmit(e) {
   e.preventDefault();
-  const ticker = document.getElementById('wl-ticker').value.trim().toUpperCase();
+  const ticker = MarketAPI.normalizeTicker(document.getElementById('wl-ticker').value);
   const name = document.getElementById('wl-name').value.trim();
   const sector = document.getElementById('wl-sector').value;
   const targetBuyPrice = parseFloat(document.getElementById('wl-target-price').value);
@@ -2130,7 +2436,13 @@ async function handleWatchlistSubmit(e) {
   if (MarketAPI.hasKey()) {
     try {
       const q = await MarketAPI.fetchQuote(ticker);
-      if (q?.price) state.prices[ticker] = { ...q, lastUpdated: new Date().toISOString() };
+      if (q?.price) {
+        state.prices[ticker] = { ...q, lastUpdated: new Date().toISOString() };
+        const wlItem = state.watchlist.find(w => w.ticker === ticker);
+        if (wlItem && (!wlItem.name || wlItem.name === ticker) && q.name) {
+          wlItem.name = q.name;
+        }
+      }
       const fund = await MarketAPI.fetchFundamentals(ticker);
       if (fund) state.fundamentals[ticker] = fund;
       const hist = await MarketAPI.fetchMonthlyHistory(ticker);
@@ -2144,7 +2456,6 @@ async function handleWatchlistSubmit(e) {
 }
 
 window.deleteTransaction = function(id) {
-  if (!confirm('Delete this transaction?')) return;
   state.transactions = state.transactions.filter(t => t.id !== id);
   recalculatePortfolio();
   saveState();
@@ -2153,7 +2464,6 @@ window.deleteTransaction = function(id) {
 };
 
 window.deleteDividend = function(id) {
-  if (!confirm('Delete this dividend record?')) return;
   state.dividends = state.dividends.filter(d => d.id !== id);
   recalculatePortfolio();
   saveState();
@@ -2309,7 +2619,7 @@ function setupEventListeners() {
   // Banner Configure API button
   document.getElementById('banner-configure-api-btn').addEventListener('click', () => {
     switchTab('settings');
-    document.getElementById('setting-api-key').focus();
+    document.getElementById('setting-api-provider').focus();
   });
 
   // API Sync Buttons
@@ -2350,10 +2660,13 @@ function setupEventListeners() {
 
   // Lookup Live Price inside Trade Modal
   document.getElementById('btn-lookup-ticker-price').addEventListener('click', async () => {
-    const ticker = document.getElementById('trade-ticker').value.trim().toUpperCase();
-    if (!ticker) return;
+    const rawInput = document.getElementById('trade-ticker').value.trim();
+    if (!rawInput) return;
+    const ticker = MarketAPI.normalizeTicker(rawInput);
+    document.getElementById('trade-ticker').value = ticker;
+
     if (!MarketAPI.hasKey()) {
-      showToast('Configure your API Key in Settings first.', 'error');
+      showToast('Select Yahoo Finance (Keyless) or configure your API Key in Settings.', 'error');
       return;
     }
     try {
@@ -2363,7 +2676,7 @@ function setupEventListeners() {
         state.prices[ticker] = { ...q, lastUpdated: new Date().toISOString() };
         document.getElementById('trade-price').value = q.price;
         updateTradeCalculatedTotal();
-        showToast(`${ticker} live price: ${Fin.currency(q.price)}`, 'success');
+        showToast(`${ticker} (${q.name || ticker}): ${Fin.currency(q.price, false, q.currency)}`, 'success');
       }
     } catch (err) {
       showToast(err.message, 'error');
@@ -2399,7 +2712,7 @@ function setupEventListeners() {
     const fields = document.getElementById('div-drip-fields');
     if (e.target.checked) {
       fields.classList.remove('hidden');
-      const ticker = document.getElementById('div-ticker').value.trim().toUpperCase();
+      const ticker = MarketAPI.normalizeTicker(document.getElementById('div-ticker').value);
       document.getElementById('div-drip-price').value = state.prices[ticker]?.price || '';
     } else {
       fields.classList.add('hidden');
@@ -2443,13 +2756,19 @@ function setupEventListeners() {
   document.getElementById('tx-search-ticker').addEventListener('input', renderTransactionsTable);
   document.getElementById('tx-filter-type').addEventListener('change', renderTransactionsTable);
 
-  // Save API Key & Provider
+  // Provider Select Change & Save API Settings
+  document.getElementById('setting-api-provider').addEventListener('change', (e) => {
+    state.settings.apiProvider = e.target.value;
+    saveState();
+    renderApiStatusUI();
+  });
+
   document.getElementById('btn-save-api-key').addEventListener('click', () => {
     state.settings.apiProvider = document.getElementById('setting-api-provider').value;
     state.settings.apiKey = document.getElementById('setting-api-key').value.trim();
     saveState();
     renderApiStatusUI();
-    showToast(`Saved ${state.settings.apiProvider.toUpperCase()} API settings!`, 'success');
+    showToast(`Active API Provider: ${state.settings.apiProvider.toUpperCase()}`, 'success');
   });
 
   // Device Override Setting
@@ -2472,7 +2791,6 @@ function setupEventListeners() {
 
   // Reset Database
   document.getElementById('btn-reset-data').addEventListener('click', () => {
-    if (!confirm('Are you sure you want to permanently clear all portfolio records from this browser?')) return;
     const savedKey = state.settings.apiKey;
     const savedProvider = state.settings.apiProvider;
     state = createEmptyState();

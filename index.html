@@ -76,15 +76,15 @@
                 <span id="device-indicator-text">Desktop</span>
               </span>
             </div>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">API-Driven Stock &amp; Historical Wealth Tracker</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Global HK, US &amp; London Stock Portfolio Tracker</p>
           </div>
         </div>
 
         <!-- Center: API Connection Status & Sync Controls -->
         <div class="hidden md:flex items-center gap-3 bg-slate-100 dark:bg-slate-800/80 px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
           <div class="flex items-center gap-2">
-            <span id="api-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-            <span id="api-status-text" class="text-xs font-medium text-slate-700 dark:text-slate-300">API: Not Configured</span>
+            <span id="api-status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span id="api-status-text" class="text-xs font-medium text-slate-700 dark:text-slate-300">API: Yahoo Finance Ready</span>
           </div>
           <div class="h-3 w-px bg-slate-300 dark:bg-slate-600"></div>
           <button id="header-sync-api-btn" class="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold flex items-center gap-1.5" title="Fetch current & monthly historical prices via API">
@@ -141,21 +141,21 @@
   <!-- MAIN CONTAINER -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
 
-    <!-- API Key Setup Prompt Banner (Shown when no API key is configured) -->
+    <!-- API Key Setup Prompt Banner (Shown only when a keyed provider is selected without a key) -->
     <div id="api-setup-banner" class="hidden mb-5 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
       <div class="flex items-start sm:items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
           <i class="fa-solid fa-key"></i>
         </div>
         <div>
-          <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Connect Your Stock Market API Key</h3>
+          <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Connect Your Stock Market API Key or Use Yahoo Finance (Keyless)</h3>
           <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-            myPortfolio fetches live quotes, company fundamentals, and monthly historical price trends directly via API (Alpha Vantage, Twelve Data, or Finnhub).
+            Switch to <strong>Yahoo Finance (Global Free)</strong> for keyless HK, US, and London stock data, or enter your API key for Alpha Vantage, Twelve Data, or Finnhub.
           </p>
         </div>
       </div>
       <button id="banner-configure-api-btn" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs whitespace-nowrap transition shrink-0">
-        Configure API Key &rarr;
+        Configure API &rarr;
       </button>
     </div>
 
@@ -280,7 +280,7 @@
           <canvas id="chart-monthly-history"></canvas>
           <div id="chart-history-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 text-slate-400 text-sm bg-white/80 dark:bg-dark-card/80">
             <i class="fa-solid fa-chart-line text-4xl mb-2 opacity-40"></i>
-            <span id="chart-history-empty-text">Add a stock trade or configure your API key to load monthly historical trends.</span>
+            <span id="chart-history-empty-text">Add a stock trade and click "Fetch Monthly API Data" to load monthly historical trends.</span>
           </div>
         </div>
       </div>
@@ -397,7 +397,7 @@
             <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
               <i class="fa-solid fa-briefcase text-brand-500"></i> Active Stock Holdings
             </h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Weighted average cost basis, API prices, unrealized P&amp;L, and historical chart shortcuts</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Weighted average cost basis, live API prices, unrealized P&amp;L, and monthly chart shortcuts</p>
           </div>
           <div class="flex items-center gap-2">
             <button id="btn-holdings-new-trade" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center gap-1.5 shadow-sm">
@@ -434,7 +434,7 @@
         <div id="holdings-empty-state" class="hidden p-10 sm:p-12 text-center text-slate-400">
           <i class="fa-solid fa-folder-open text-4xl mb-3 opacity-30"></i>
           <p class="font-medium text-slate-600 dark:text-slate-300">Your portfolio has no active stock positions yet</p>
-          <p class="text-xs text-slate-500 mt-1">Click "+ New Trade" to record a purchase or restore your portfolio from an Excel backup.</p>
+          <p class="text-xs text-slate-500 mt-1">Click "+ New Trade" to record a purchase (e.g. 2800.HK, AAPL, HSBA.L) or restore from an Excel backup.</p>
         </div>
       </div>
     </div>
@@ -571,7 +571,7 @@
             <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
               <i class="fa-solid fa-binoculars text-purple-500"></i> Target Price Watchlist &amp; Alerts
             </h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Track stocks via API with target entry prices and automatic buy signals</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Track HK, US &amp; London stocks via API with target entry prices and automatic buy signals</p>
           </div>
           <div class="flex items-center gap-2">
             <button id="btn-open-watchlist-modal" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition flex items-center gap-1.5 shadow-sm">
@@ -660,7 +660,7 @@
           </div>
           <div>
             <h2 class="font-bold text-slate-900 dark:text-white">Stock Market API Configuration</h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400">All stock quotes, monthly historical closing series, and company fundamentals are retrieved via your chosen API provider</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Supports Yahoo Finance (keyless global coverage for HK, US &amp; London) plus Alpha Vantage, Twelve Data, and Finnhub</p>
           </div>
         </div>
 
@@ -669,16 +669,17 @@
             <div>
               <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Select Stock Data API Provider</label>
               <select id="setting-api-provider" class="w-full px-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+                <option value="yahoo">Yahoo Finance (Global Free • No API Key Needed • HK, US &amp; London)</option>
                 <option value="alphavantage">Alpha Vantage (Live Quotes + Monthly Historicals + Company Fundamentals)</option>
                 <option value="twelvedata">Twelve Data (Live Quotes + Monthly Time-Series 1month)</option>
                 <option value="finnhub">Finnhub (Real-Time Quotes + Basic Financial Metrics)</option>
               </select>
             </div>
 
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">API Key</label>
+            <div id="api-key-input-container">
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">API Key <span id="api-key-optional-badge" class="text-[11px] font-normal text-emerald-500">(Not required for Yahoo Finance)</span></label>
               <div class="flex items-center gap-2">
-                <input type="password" id="setting-api-key" placeholder="Paste your personal API Key here..." class="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+                <input type="password" id="setting-api-key" placeholder="No API key needed for Yahoo Finance..." class="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
                 <button id="btn-save-api-key" class="px-4 py-2 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition whitespace-nowrap">
                   Save &amp; Connect
                 </button>
@@ -695,12 +696,12 @@
 
           <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs space-y-2.5 text-slate-600 dark:text-slate-300">
             <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <i class="fa-solid fa-circle-info text-brand-500"></i> Supported API Endpoints Used by myPortfolio:
+              <i class="fa-solid fa-globe text-brand-500"></i> Global Market Ticker Formats (Yahoo Finance):
             </div>
             <ul class="space-y-1.5 list-disc list-inside text-[11px]">
-              <li><strong>Alpha Vantage:</strong> Uses <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">GLOBAL_QUOTE</code> for live price, <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">TIME_SERIES_MONTHLY_ADJUSTED</code> for monthly historical trends, and <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">OVERVIEW</code> for P/E, EPS, ROE, &amp; Market Cap (<a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener" class="text-brand-500 underline">Get Free Key</a>).</li>
-              <li><strong>Twelve Data:</strong> Uses <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">/quote</code> and <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">/time_series?interval=1month</code> for up to 10 years of monthly closes (<a href="https://twelvedata.com" target="_blank" rel="noopener" class="text-brand-500 underline">Get Free Key</a>).</li>
-              <li><strong>Finnhub:</strong> Uses <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">/quote</code> and <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">/stock/metric</code> (<a href="https://finnhub.io" target="_blank" rel="noopener" class="text-brand-500 underline">Get Free Key</a>).</li>
+              <li><strong>Hong Kong (HKEX):</strong> Use <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">.HK</code> suffix — e.g. <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">2800.HK</code> (Tracker Fund), <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">0700.HK</code> (Tencent), <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">0005.HK</code> (HSBC). Auto-normalizes <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">.HKG</code> or <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">700.HK</code> automatically.</li>
+              <li><strong>United States (NYSE / NASDAQ):</strong> Standard symbol without suffix — e.g. <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">AAPL</code>, <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">NVDA</code>, <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">MSFT</code>, <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">VOO</code>, <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">BRK-B</code>.</li>
+              <li><strong>London (LSE):</strong> Use <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">.L</code> suffix — e.g. <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">HSBA.L</code> (HSBC UK), <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">SHEL.L</code> (Shell), <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">AZN.L</code> (AstraZeneca), <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">VUAG.L</code> (Vanguard S&amp;P 500). Auto-normalizes <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">.LON</code> to <code class="px-1 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">.L</code>.</li>
             </ul>
           </div>
         </div>
@@ -841,10 +842,10 @@
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
       <div>
-        <strong>myPortfolio</strong> &bull; Modular Client-Side Stock &amp; Historical Portfolio Tracker
+        <strong>myPortfolio</strong> &bull; Modular Client-Side Global Stock &amp; Historical Portfolio Tracker
       </div>
       <div class="flex items-center gap-4 text-slate-400">
-        <span><i class="fa-solid fa-cloud text-brand-500"></i> Live &amp; Monthly API</span>
+        <span><i class="fa-solid fa-globe text-brand-500"></i> HK, US &amp; London API</span>
         <span><i class="fa-solid fa-database text-indigo-500"></i> LocalStorage Sync</span>
         <span><i class="fa-solid fa-mobile-screen text-emerald-500"></i> Adaptive UI</span>
       </div>
@@ -882,11 +883,12 @@
             <div>
               <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ticker Symbol</label>
               <div class="flex gap-1.5">
-                <input type="text" id="trade-ticker" placeholder="e.g. AAPL" required class="w-full px-3 py-2 text-sm uppercase bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold">
+                <input type="text" id="trade-ticker" placeholder="2800.HK, AAPL, HSBA.L" required class="w-full px-3 py-2 text-sm uppercase bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold">
                 <button type="button" id="btn-lookup-ticker-price" class="px-2.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-brand-500 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs" title="Fetch current price from API">
                   <i class="fa-solid fa-magnifying-glass-dollar"></i>
                 </button>
               </div>
+              <span class="text-[10px] text-slate-400 mt-0.5 block">HK: .HK | US: symbol | UK: .L</span>
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Trade Date</label>
@@ -897,18 +899,18 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Shares (Qty)</label>
-              <input type="number" id="trade-shares" step="any" min="0.0001" placeholder="10" required class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+              <input type="number" id="trade-shares" step="any" min="0.0001" placeholder="100" required class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
               <span id="trade-holding-hint" class="text-[11px] text-slate-400 mt-1 block"></span>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Price per Share ($)</label>
-              <input type="number" id="trade-price" step="any" min="0.01" placeholder="0.00" required class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Price per Share</label>
+              <input type="number" id="trade-price" step="any" min="0.0001" placeholder="0.00" required class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Commission / Fees ($)</label>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Commission / Fees</label>
               <input type="number" id="trade-fees" step="any" min="0" value="0.00" class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
             </div>
             <div>
@@ -964,7 +966,7 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ticker Symbol</label>
-            <input type="text" id="div-ticker" placeholder="e.g. AAPL" required class="w-full px-3 py-2 text-sm uppercase bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold">
+            <input type="text" id="div-ticker" placeholder="e.g. 2800.HK, AAPL" required class="w-full px-3 py-2 text-sm uppercase bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Payment Date</label>
@@ -999,7 +1001,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Notes</label>
-          <input type="text" id="div-notes" placeholder="Quarterly dividend..." class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+          <input type="text" id="div-notes" placeholder="Semi-annual / quarterly dividend..." class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
         </div>
 
         <div class="pt-2 flex items-center justify-end gap-3">
@@ -1028,21 +1030,22 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Ticker Symbol</label>
-            <input type="text" id="wl-ticker" placeholder="e.g. MSFT" required class="w-full px-3 py-2 text-sm uppercase bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold">
+            <input type="text" id="wl-ticker" placeholder="2800.HK, AAPL, HSBA.L" required class="w-full px-3 py-2 text-sm uppercase bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-bold">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Company Name</label>
-            <input type="text" id="wl-name" placeholder="Optional (Fetched via API)" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Company / ETF Name</label>
+            <input type="text" id="wl-name" placeholder="Auto-filled via Yahoo API" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Sector</label>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Sector / Category</label>
             <select id="wl-sector" class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
+              <option value="Index ETF">Index ETF</option>
               <option value="Technology">Technology</option>
-              <option value="Healthcare">Healthcare</option>
               <option value="Financials">Financials</option>
+              <option value="Healthcare">Healthcare</option>
               <option value="Consumer Discretionary">Consumer Discretionary</option>
               <option value="Consumer Staples">Consumer Staples</option>
               <option value="Energy">Energy</option>
@@ -1053,8 +1056,8 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Buy Price ($)</label>
-            <input type="number" id="wl-target-price" step="any" min="0.01" placeholder="150.00" required class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Buy Price</label>
+            <input type="number" id="wl-target-price" step="any" min="0.0001" placeholder="20.00" required class="w-full px-3 py-2 text-sm num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
           </div>
         </div>
 
