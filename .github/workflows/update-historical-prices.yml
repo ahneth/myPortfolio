@@ -1,0 +1,47 @@
+name: Update Historical Stock Prices
+
+on:
+  schedule:
+    # Runs daily at 21:30 UTC (05:30 HKT next morning — after HK, London, and US market close)
+    - cron: '30 21 * * *'
+  workflow_dispatch: # Allows manual one-click trigger from the GitHub Actions tab
+    inputs:
+      extra_tickers:
+        description: 'Optional comma-separated tickers to add (e.g. 2840.HK, 0005.HK, VOO)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write # Required so GitHub Actions can commit and push historical_prices.json
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch latest month-end & current prices from Yahoo Finance
+        env:
+          EXTRA_TICKERS: ${{ github.event.inputs.extra_tickers }}
+        run: |
+          python3 update_historical_prices.py
+
+      - name: Commit and push updated historical_prices.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add historical_prices.json
+          if git diff --staged --quiet; then
+            echo "No price changes detected in historical_prices.json."
+          else
+            git commit -m "chore(data): update historical_prices.json ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            git push
+          fi
