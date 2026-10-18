@@ -1,36 +1,39 @@
 /**
  * @file utils.js
  * @module UtilsAndDeviceDetector
- * @version 2.1.0
- * @build 20261018_1158
+ * @version 2.3.0
+ * @build 20261018_1431
  * @description Financial precision arithmetic utilities (Fin) and automatic client DeviceDetector.
  */
 
-// ============================================================================
-// 1. FINANCIAL PRECISION ARITHMETIC UTILITIES
-// ============================================================================
-const Fin = {
+var Fin = {
   round: (val, decimals = 2) => {
     if (val === null || val === undefined || isNaN(val)) return 0;
     return Number(Math.round(Number(val + 'e' + decimals)) + 'e-' + decimals);
   },
   currency: (val, showPlus = false, currencyCode = 'USD') => {
-    const n = Fin.round(val, 2);
-    // Handle UK pence (GBp / GBX) or standard ISO currency codes
+    const rawNum = Number(val);
+    if (val === null || val === undefined || isNaN(rawNum)) return '$0.00';
+    // Preserve 3-decimal precision when displaying fractional HKD share prices (e.g. 9.995, 7.215, 9.865)
+    const hasSubCent = Math.abs(rawNum * 100 - Math.round(rawNum * 100)) > 1e-4;
+    const minDec = 2;
+    const maxDec = hasSubCent ? 3 : 2;
+    const n = Fin.round(rawNum, maxDec);
+
     if (currencyCode === 'GBp' || currencyCode === 'GBX') {
       const sign = n < 0 ? '-' : (showPlus && n > 0 ? '+' : '');
-      return `${sign}${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}p`;
+      return `${sign}${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: minDec, maximumFractionDigits: maxDec })}p`;
     }
     let formatted;
     try {
       formatted = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: currencyCode || 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        minimumFractionDigits: minDec,
+        maximumFractionDigits: maxDec
       }).format(Math.abs(n));
     } catch (_) {
-      formatted = '$' + Math.abs(n).toFixed(2);
+      formatted = '$' + Math.abs(n).toFixed(maxDec);
     }
     if (showPlus && n > 0) return '+' + formatted;
     if (n < 0) return '-' + formatted;
@@ -58,22 +61,22 @@ const Fin = {
   }
 };
 
-// ============================================================================
-// 2. AUTOMATIC DEVICE DETECTION ENGINE
-// ============================================================================
-const DeviceDetector = {
+var DeviceDetector = {
   profile: {
-    deviceType: 'desktop', // 'mobile' | 'tablet' | 'desktop'
+    deviceType: 'desktop',
     effectiveMode: 'desktop',
     os: 'Unknown OS',
     browser: 'Browser',
     isTouch: false,
-    width: window.innerWidth,
-    height: window.innerHeight
+    width: typeof window !== 'undefined' ? window.innerWidth : 1280,
+    height: typeof window !== 'undefined' ? window.innerHeight : 800
   },
 
   init() {
     this.detect();
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.info('DeviceDetector', `Detected ${this.profile.deviceType.toUpperCase()} (${this.profile.os} • ${this.profile.browser} • ${this.profile.width}x${this.profile.height}px)`);
+    }
     window.addEventListener('resize', () => {
       this.detect();
       if (typeof renderCharts === 'function') {
@@ -84,11 +87,11 @@ const DeviceDetector = {
 
   detect() {
     const ua = navigator.userAgent || '';
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const width = window.innerWidth || 1280;
+    const height = window.innerHeight || 800;
     const isTouch = ('ontouchstart' in window) ||
       (navigator.maxTouchPoints > 0) ||
-      window.matchMedia('(pointer: coarse)').matches;
+      (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 
     let os = 'Desktop OS';
     if (/iPhone|iPod/i.test(ua)) os = 'iOS (iPhone)';
@@ -111,7 +114,7 @@ const DeviceDetector = {
       deviceType = 'tablet';
     }
 
-    const override = state?.settings?.deviceOverride || 'auto';
+    const override = (typeof state !== 'undefined' && state?.settings?.deviceOverride) ? state.settings.deviceOverride : 'auto';
     const effectiveMode = override === 'auto' ? deviceType : override;
 
     this.profile = {
@@ -124,7 +127,9 @@ const DeviceDetector = {
       height
     };
 
-    document.body.setAttribute('data-device', effectiveMode);
+    if (document.body) {
+      document.body.setAttribute('data-device', effectiveMode);
+    }
     this.updateUI();
   },
 
@@ -153,9 +158,9 @@ const DeviceDetector = {
 
     if (diagType) {
       diagType.textContent = `${deviceType.toUpperCase()} (Active Layout: ${effectiveMode.toUpperCase()})`;
-      diagOs.textContent = `${os} • ${browser}`;
-      diagVp.textContent = `${width}px × ${height}px`;
-      diagTouch.textContent = isTouch ? 'Touchscreen / Coarse Pointer Detected' : 'Mouse & Trackpad / Fine Pointer';
+      if (diagOs) diagOs.textContent = `${os} • ${browser}`;
+      if (diagVp) diagVp.textContent = `${width}px × ${height}px`;
+      if (diagTouch) diagTouch.textContent = isTouch ? 'Touchscreen / Coarse Pointer Detected' : 'Mouse & Trackpad / Fine Pointer';
     }
   }
 };

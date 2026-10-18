@@ -1,8 +1,8 @@
 /**
  * @file charts.js
  * @module PortfolioChartsModule
- * @version 2.2.0
- * @build 20261018_1315
+ * @version 2.3.0
+ * @build 20261018_1431
  * @description Chart.js controllers for:
  *   1. Dashboard "Portfolio Historical Balance & Return" (Monthly Balance vs. Monthly Accumulative Total Return)
  *   2. Holdings Tab inline clickable stock monthly price chart (1-Y, 2-Y, 3-Y, 5-Y, ALL)
@@ -11,12 +11,28 @@
  */
 
 function renderCharts() {
-  renderMonthlyHistoryChart();
-  renderAllocationChart();
-  renderDividendsChart();
-  renderPnlBreakdownChart();
-  renderInlineStockChart('holdings');
-  renderInlineStockChart('watchlist');
+  if (typeof Chart === 'undefined') {
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.warn('Charts', 'Chart.js library is not yet available; skipping chart rendering.');
+    }
+    return;
+  }
+  try { renderMonthlyHistoryChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderMonthlyHistoryChart failed: ${err.message}`, err); }
+  try { renderAllocationChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderAllocationChart failed: ${err.message}`, err); }
+  try { renderDividendsChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderDividendsChart failed: ${err.message}`, err); }
+  try { renderPnlBreakdownChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderPnlBreakdownChart failed: ${err.message}`, err); }
+  try {
+    const holdingsPane = document.getElementById('tab-content-holdings');
+    if (holdingsPane && !holdingsPane.classList.contains('hidden')) {
+      renderInlineStockChart('holdings');
+    }
+  } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderInlineStockChart(holdings) failed: ${err.message}`, err); }
+  try {
+    const watchlistPane = document.getElementById('tab-content-watchlist');
+    if (watchlistPane && !watchlistPane.classList.contains('hidden')) {
+      renderInlineStockChart('watchlist');
+    }
+  } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderInlineStockChart(watchlist) failed: ${err.message}`, err); }
 }
 
 /**

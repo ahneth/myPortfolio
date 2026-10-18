@@ -1,8 +1,8 @@
 /**
  * @file app.js
  * @module AppUIController
- * @version 2.2.0
- * @build 20261018_1315
+ * @version 2.3.0
+ * @build 20261018_1431
  * @description Main UI controller, table renderers, modal handlers, intrinsic valuation calculators, and event listeners.
  */
 
@@ -10,18 +10,27 @@
 // 6. UI RENDERING CONTROLLERS
 // ============================================================================
 function renderAll() {
-  if (!portfolio) recalculatePortfolio();
-
-  renderApiStatusUI();
-  renderKPIs();
-  populateHistorySelector();
-  renderHoldingsTable();
-  renderTransactionsTable();
-  renderDividendsTable();
-  renderWatchlistAndFundamentals();
-  renderCharts();
-  updateTabCounters();
-  renderVersionRegistryUI();
+  try {
+    if (!portfolio) recalculatePortfolio();
+  } catch (err) {
+    if (typeof AppLogger !== 'undefined') AppLogger.error('Portfolio', `recalculatePortfolio failed: ${err.message}`, err);
+  }
+  try { renderApiStatusUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderApiStatusUI failed: ${err.message}`, err); }
+  try { renderKPIs(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderKPIs failed: ${err.message}`, err); }
+  try { populateHistorySelector(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `populateHistorySelector failed: ${err.message}`, err); }
+  try { renderHoldingsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderHoldingsTable failed: ${err.message}`, err); }
+  try { renderTransactionsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderTransactionsTable failed: ${err.message}`, err); }
+  try { renderDividendsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderDividendsTable failed: ${err.message}`, err); }
+  try { renderWatchlistAndFundamentals(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderWatchlistAndFundamentals failed: ${err.message}`, err); }
+  try { renderCharts(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderCharts failed: ${err.message}`, err); }
+  try { updateTabCounters(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `updateTabCounters failed: ${err.message}`, err); }
+  try { renderVersionRegistryUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderVersionRegistryUI failed: ${err.message}`, err); }
+  try {
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.updateLogBadgesAndUI();
+      AppLogger.renderHealthCheckPanel();
+    }
+  } catch (_) {}
 }
 
 function renderVersionRegistryUI() {
@@ -620,6 +629,11 @@ function switchTab(target) {
     setTimeout(() => renderInlineStockChart('holdings'), 40);
   } else if (target === 'watchlist') {
     setTimeout(() => renderInlineStockChart('watchlist'), 40);
+  } else if (target === 'logs') {
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.renderHealthCheckPanel();
+      AppLogger.renderLogTable();
+    }
   }
 }
 
@@ -1063,7 +1077,33 @@ function saveValuationFromModal() {
 // ============================================================================
 // 12. EVENT LISTENERS & INITIALIZATION
 // ============================================================================
+function copyTextWithFallback(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).catch(() => fallbackExecCopy(text));
+  }
+  return Promise.resolve(fallbackExecCopy(text));
+}
+
+function fallbackExecCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    document.execCommand('copy');
+  } catch (_) {}
+  ta.remove();
+}
+
 function setupEventListeners() {
+  const on = (id, evt, fn) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener(evt, fn);
+  };
+
   // Desktop & Mobile Navigation Tabs
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -1072,37 +1112,33 @@ function setupEventListeners() {
   });
 
   // Theme Toggle
-  document.getElementById('theme-toggle').addEventListener('click', () => {
+  on('theme-toggle', 'click', () => {
     const isDark = document.documentElement.classList.toggle('dark');
     state.settings.darkMode = isDark;
     saveState();
     renderCharts();
+    if (typeof AppLogger !== 'undefined') AppLogger.action('UI', `Switched theme to ${isDark ? 'Dark' : 'Light'} mode.`);
   });
 
   // Banner Configure API button
-  document.getElementById('banner-configure-api-btn').addEventListener('click', () => {
+  on('banner-configure-api-btn', 'click', () => {
     switchTab('settings');
-    document.getElementById('setting-api-provider').focus();
+    const provEl = document.getElementById('setting-api-provider');
+    if (provEl) provEl.focus();
   });
 
   // API Sync & Diagnostic Test Buttons
-  document.getElementById('header-sync-api-btn').addEventListener('click', () => syncAllMarketData(true));
-  const headerTestBtn = document.getElementById('header-test-api-btn');
-  if (headerTestBtn) {
-    headerTestBtn.addEventListener('click', () => {
-      switchTab('settings');
-      runAndRenderApiDiagnostics();
-    });
-  }
-  const diagBtn = document.getElementById('btn-run-api-diagnostic');
-  if (diagBtn) {
-    diagBtn.addEventListener('click', () => runAndRenderApiDiagnostics());
-  }
-  document.getElementById('mobile-sync-api-btn').addEventListener('click', () => syncAllMarketData(true));
-  document.getElementById('btn-refresh-prices-now').addEventListener('click', () => syncAllMarketData(false));
-  document.getElementById('btn-sync-all-api').addEventListener('click', () => syncAllMarketData(true));
-  document.getElementById('btn-fetch-monthly-history').addEventListener('click', () => syncAllMarketData(true));
-  document.getElementById('btn-fetch-fundamentals-api').addEventListener('click', syncFundamentalsViaAPI);
+  on('header-sync-api-btn', 'click', () => syncAllMarketData(true));
+  on('header-test-api-btn', 'click', () => {
+    switchTab('settings');
+    runAndRenderApiDiagnostics();
+  });
+  on('btn-run-api-diagnostic', 'click', () => runAndRenderApiDiagnostics());
+  on('mobile-sync-api-btn', 'click', () => syncAllMarketData(true));
+  on('btn-refresh-prices-now', 'click', () => syncAllMarketData(false));
+  on('btn-sync-all-api', 'click', () => syncAllMarketData(true));
+  on('btn-fetch-monthly-history', 'click', () => syncAllMarketData(true));
+  on('btn-fetch-fundamentals-api', 'click', syncFundamentalsViaAPI);
 
   // Dashboard "Portfolio Historical Balance & Return" Chart Controls
   document.querySelectorAll('.port-history-mode-btn').forEach(btn => {
@@ -1139,15 +1175,12 @@ function setupEventListeners() {
     });
   });
 
-  const closeHoldingsChartBtn = document.getElementById('btn-close-holdings-chart');
-  if (closeHoldingsChartBtn) {
-    closeHoldingsChartBtn.addEventListener('click', () => {
-      window.__holdingsChartManuallyClosed = true;
-      selectedHoldingsTicker = null;
-      renderHoldingsTable();
-      renderInlineStockChart('holdings');
-    });
-  }
+  on('btn-close-holdings-chart', 'click', () => {
+    window.__holdingsChartManuallyClosed = true;
+    selectedHoldingsTicker = null;
+    renderHoldingsTable();
+    renderInlineStockChart('holdings');
+  });
 
   // Watchlist Tab Inline Stock Historical Price Chart Period Buttons (1-Y, 2-Y, 3-Y, 5-Y, ALL)
   document.querySelectorAll('.watchlist-stock-range-btn').forEach(btn => {
@@ -1161,15 +1194,12 @@ function setupEventListeners() {
     });
   });
 
-  const closeWatchlistChartBtn = document.getElementById('btn-close-watchlist-chart');
-  if (closeWatchlistChartBtn) {
-    closeWatchlistChartBtn.addEventListener('click', () => {
-      window.__watchlistChartManuallyClosed = true;
-      selectedWatchlistTicker = null;
-      renderWatchlistAndFundamentals();
-      renderInlineStockChart('watchlist');
-    });
-  }
+  on('btn-close-watchlist-chart', 'click', () => {
+    window.__watchlistChartManuallyClosed = true;
+    selectedWatchlistTicker = null;
+    renderWatchlistAndFundamentals();
+    renderInlineStockChart('watchlist');
+  });
 
   // Close Modals
   document.querySelectorAll('.close-modal').forEach(btn => {
@@ -1180,15 +1210,15 @@ function setupEventListeners() {
   });
 
   // Open Trade Modals
-  document.getElementById('btn-open-trade-modal').addEventListener('click', () => openTradeModal());
-  document.getElementById('btn-holdings-new-trade').addEventListener('click', () => openTradeModal());
-  document.getElementById('btn-tx-add').addEventListener('click', () => openTradeModal());
-  document.getElementById('btn-quick-cash').addEventListener('click', () => openTradeModal(null, 'DEPOSIT'));
-  document.getElementById('btn-deposit-quick').addEventListener('click', () => openTradeModal(null, 'DEPOSIT'));
+  on('btn-open-trade-modal', 'click', () => openTradeModal());
+  on('btn-holdings-new-trade', 'click', () => openTradeModal());
+  on('btn-tx-add', 'click', () => openTradeModal());
+  on('btn-quick-cash', 'click', () => openTradeModal(null, 'DEPOSIT'));
+  on('btn-deposit-quick', 'click', () => openTradeModal(null, 'DEPOSIT'));
 
   // Lookup Live Price inside Trade Modal
-  document.getElementById('btn-lookup-ticker-price').addEventListener('click', async () => {
-    const rawInput = document.getElementById('trade-ticker').value.trim();
+  on('btn-lookup-ticker-price', 'click', async () => {
+    const rawInput = document.getElementById('trade-ticker')?.value.trim();
     if (!rawInput) return;
     const ticker = MarketAPI.normalizeTicker(rawInput);
     document.getElementById('trade-ticker').value = ticker;
@@ -1225,18 +1255,18 @@ function setupEventListeners() {
   });
 
   ['trade-shares', 'trade-price', 'trade-fees'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateTradeCalculatedTotal);
+    on(id, 'input', updateTradeCalculatedTotal);
   });
-  document.getElementById('form-trade').addEventListener('submit', handleTradeSubmit);
+  on('form-trade', 'submit', handleTradeSubmit);
 
   // Dividend Modal
-  document.getElementById('btn-open-dividend-modal').addEventListener('click', () => {
+  on('btn-open-dividend-modal', 'click', () => {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('div-pay-date').value = today;
     document.getElementById('div-ex-date').value = today;
     openModal('modal-dividend');
   });
-  document.getElementById('div-drip-toggle').addEventListener('change', (e) => {
+  on('div-drip-toggle', 'change', (e) => {
     const fields = document.getElementById('div-drip-fields');
     if (e.target.checked) {
       fields.classList.remove('hidden');
@@ -1246,34 +1276,34 @@ function setupEventListeners() {
       fields.classList.add('hidden');
     }
   });
-  document.getElementById('form-dividend').addEventListener('submit', handleDividendSubmit);
+  on('form-dividend', 'submit', handleDividendSubmit);
 
   // Watchlist Modal
-  document.getElementById('btn-open-watchlist-modal').addEventListener('click', () => openModal('modal-watchlist'));
-  document.getElementById('form-watchlist').addEventListener('submit', handleWatchlistSubmit);
+  on('btn-open-watchlist-modal', 'click', () => openModal('modal-watchlist'));
+  on('form-watchlist', 'submit', handleWatchlistSubmit);
 
   // Fair-Value Calculator Modal
-  document.getElementById('btn-open-calc-modal').addEventListener('click', () => {
+  on('btn-open-calc-modal', 'click', () => {
     populateCalculatorTickers();
     openModal('modal-calc');
   });
-  document.getElementById('calc-ticker-select').addEventListener('change', (e) => loadCalculatorForTicker(e.target.value));
+  on('calc-ticker-select', 'change', (e) => loadCalculatorForTicker(e.target.value));
   ['calc-graham-eps', 'calc-graham-bvps'].forEach(id => {
-    document.getElementById(id).addEventListener('input', computeGrahamNumberInModal);
+    on(id, 'input', computeGrahamNumberInModal);
   });
   ['calc-dcf-fcf', 'calc-dcf-growth', 'calc-dcf-discount', 'calc-dcf-terminal'].forEach(id => {
-    document.getElementById(id).addEventListener('input', computeDCFInModal);
+    on(id, 'input', computeDCFInModal);
   });
-  document.getElementById('btn-save-valuation-to-stock').addEventListener('click', saveValuationFromModal);
+  on('btn-save-valuation-to-stock', 'click', saveValuationFromModal);
 
   // Allocation View Toggle
-  document.getElementById('toggle-alloc-ticker').addEventListener('click', () => {
+  on('toggle-alloc-ticker', 'click', () => {
     allocationViewMode = 'ticker';
     document.getElementById('toggle-alloc-ticker').className = 'px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition';
     document.getElementById('toggle-alloc-sector').className = 'px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
     renderAllocationChart();
   });
-  document.getElementById('toggle-alloc-sector').addEventListener('click', () => {
+  on('toggle-alloc-sector', 'click', () => {
     allocationViewMode = 'sector';
     document.getElementById('toggle-alloc-sector').className = 'px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition';
     document.getElementById('toggle-alloc-ticker').className = 'px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
@@ -1281,17 +1311,18 @@ function setupEventListeners() {
   });
 
   // Transaction Filters
-  document.getElementById('tx-search-ticker').addEventListener('input', renderTransactionsTable);
-  document.getElementById('tx-filter-type').addEventListener('change', renderTransactionsTable);
+  on('tx-search-ticker', 'input', renderTransactionsTable);
+  on('tx-filter-type', 'change', renderTransactionsTable);
 
   // Provider Select Change & Save API Settings
-  document.getElementById('setting-api-provider').addEventListener('change', (e) => {
+  on('setting-api-provider', 'change', (e) => {
     state.settings.apiProvider = e.target.value;
     saveState();
     renderApiStatusUI();
+    if (typeof AppLogger !== 'undefined') AppLogger.action('Settings', `Selected API provider: ${e.target.value.toUpperCase()}`);
   });
 
-  document.getElementById('btn-save-api-key').addEventListener('click', () => {
+  on('btn-save-api-key', 'click', () => {
     state.settings.apiProvider = document.getElementById('setting-api-provider').value;
     state.settings.apiKey = document.getElementById('setting-api-key').value.trim();
     saveState();
@@ -1300,7 +1331,7 @@ function setupEventListeners() {
   });
 
   // Device Override Setting
-  document.getElementById('setting-device-override').addEventListener('change', (e) => {
+  on('setting-device-override', 'change', (e) => {
     state.settings.deviceOverride = e.target.value;
     saveState();
     DeviceDetector.detect();
@@ -1309,16 +1340,17 @@ function setupEventListeners() {
   });
 
   // SheetJS Export & Import
-  document.getElementById('btn-export-excel').addEventListener('click', exportPortfolioToExcel);
-  document.getElementById('btn-trigger-import-excel').addEventListener('click', () => {
-    document.getElementById('excel-file-input').click();
+  on('btn-export-excel', 'click', exportPortfolioToExcel);
+  on('btn-trigger-import-excel', 'click', () => {
+    const fileInput = document.getElementById('excel-file-input');
+    if (fileInput) fileInput.click();
   });
-  document.getElementById('excel-file-input').addEventListener('change', (e) => {
+  on('excel-file-input', 'change', (e) => {
     if (e.target.files?.[0]) restorePortfolioFromExcel(e.target.files[0]);
   });
 
   // Reset Database
-  document.getElementById('btn-reset-data').addEventListener('click', () => {
+  on('btn-reset-data', 'click', () => {
     const savedKey = state.settings.apiKey;
     const savedProvider = state.settings.apiProvider;
     state = createEmptyState();
@@ -1327,17 +1359,129 @@ function setupEventListeners() {
     recalculatePortfolio();
     saveState();
     renderAll();
+    if (typeof AppLogger !== 'undefined') AppLogger.warn('Portfolio', 'Local portfolio database reset by user.');
     showToast('Portfolio database cleared.', 'info');
+  });
+
+  // ==================== LOG TAB EVENT LISTENERS ====================
+  document.querySelectorAll('.log-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const level = btn.getAttribute('data-log-level') || 'ALL';
+      document.querySelectorAll('.log-filter-btn').forEach(b => {
+        b.className = 'log-filter-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition';
+      });
+      btn.className = 'log-filter-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition';
+      if (typeof AppLogger !== 'undefined') AppLogger.setLevelFilter(level);
+    });
+  });
+
+  on('log-filter-module', 'change', (e) => {
+    if (typeof AppLogger !== 'undefined') AppLogger.setModuleFilter(e.target.value);
+  });
+
+  on('log-search-input', 'input', (e) => {
+    if (typeof AppLogger !== 'undefined') AppLogger.setSearchQuery(e.target.value);
+  });
+
+  on('btn-run-health-check', 'click', () => {
+    if (typeof AppLogger !== 'undefined') {
+      const report = AppLogger.runHealthCheck();
+      const fails = report.filter(r => r.status === 'FAIL').length;
+      showToast(fails === 0 ? 'All 8 Page & Runtime Health Checks passed!' : `${fails} health check(s) reported issues.`, fails === 0 ? 'success' : 'error');
+    }
+  });
+
+  on('btn-log-test-entry', 'click', () => {
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.info('DiagnosticTest', `Manual diagnostic probe triggered by user — Portfolio Value: ${Fin.currency(portfolio?.totalPortfolioValue || 0)}, Active Holdings: ${portfolio?.activeHoldings?.length || 0}`, {
+        userAgent: navigator.userAgent,
+        deviceProfile: DeviceDetector?.profile,
+        activeHoldingsCount: portfolio?.activeHoldings?.length || 0,
+        watchlistCount: state?.watchlist?.length || 0
+      });
+      showToast('Recorded diagnostic test entry in Log stream.', 'success');
+    }
+  });
+
+  on('btn-copy-logs', 'click', async () => {
+    if (typeof AppLogger !== 'undefined') {
+      const text = AppLogger.exportText();
+      await copyTextWithFallback(text || 'No logs recorded.');
+      showToast('Copied runtime logs to clipboard!', 'success');
+    }
+  });
+
+  on('btn-download-logs', 'click', () => {
+    if (typeof AppLogger !== 'undefined') {
+      const text = AppLogger.exportText() || 'No logs recorded.';
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      a.href = url;
+      a.download = `myPortfolio_Runtime_Logs_${dateStr}.log`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showToast('Downloaded runtime log file (.log)', 'success');
+    }
+  });
+
+  on('btn-clear-logs', 'click', () => {
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.clear();
+      showToast('Cleared runtime log stream.', 'info');
+    }
   });
 }
 
 function bootstrapPortfolioApp() {
-  if (window.__MYPORTFOLIO_BOOTSTRAPPED__) return;
+  if (window.__MYPORTFOLIO_BOOTSTRAPPED__) {
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.info('Boot', 'Duplicate bootstrapPortfolioApp() call skipped safely (idempotent guard).');
+    }
+    return;
+  }
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
-  initAppState();
-  DeviceDetector.init();
-  setupEventListeners();
-  renderAll();
+
+  if (typeof AppLogger !== 'undefined') {
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v2.3.0 • Build 20261018_1431)...');
+  }
+
+  try {
+    initAppState();
+  } catch (err) {
+    if (typeof AppLogger !== 'undefined') AppLogger.error('Boot', `initAppState failed: ${err.message}`, err);
+  }
+
+  try {
+    DeviceDetector.init();
+  } catch (err) {
+    if (typeof AppLogger !== 'undefined') AppLogger.error('Boot', `DeviceDetector.init failed: ${err.message}`, err);
+  }
+
+  try {
+    setupEventListeners();
+    if (typeof AppLogger !== 'undefined') AppLogger.info('Boot', 'DOM event listeners bound across all 7 tabs & modals.');
+  } catch (err) {
+    if (typeof AppLogger !== 'undefined') AppLogger.error('Boot', `setupEventListeners failed: ${err.message}`, err);
+  }
+
+  try {
+    renderAll();
+    if (typeof AppLogger !== 'undefined') AppLogger.info('Boot', 'Initial UI & Dashboard charts rendered cleanly.');
+  } catch (err) {
+    if (typeof AppLogger !== 'undefined') AppLogger.error('Boot', `renderAll failed: ${err.message}`, err);
+  }
+
+  try {
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.runHealthCheck();
+    }
+  } catch (err) {
+    if (typeof AppLogger !== 'undefined') AppLogger.error('Boot', `runHealthCheck failed: ${err.message}`, err);
+  }
 }
 
 if (document.readyState === 'loading') {

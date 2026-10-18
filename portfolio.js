@@ -1,12 +1,12 @@
 /**
  * @file portfolio.js
  * @module PortfolioEngineAndExcelIO
- * @version 2.2.0
- * @build 20261018_1315
+ * @version 2.3.0
+ * @build 20261018_1431
  * @description Application state persistence, WACB & P&L accounting engine, and SheetJS 6-worksheet Excel backup/restore.
  */
 
-const STORAGE_KEY = 'MYPORTFOLIO_STATE_V1';
+var STORAGE_KEY = 'MYPORTFOLIO_STATE_V1';
 
 // ============================================================================
 // 3. CLEAN INITIAL STATE (DEFAULTING TO KEYLESS YAHOO FINANCE)
@@ -33,19 +33,19 @@ function createEmptyState() {
   };
 }
 
-let state = null;
-let portfolio = null;
-let allocationViewMode = 'ticker';
-let historyRangeMonths = 24;
-let portfolioHistoryMode = 'balance'; // 'balance' | 'return'
+var state = null;
+var portfolio = null;
+var allocationViewMode = 'ticker';
+var historyRangeMonths = 24;
+var portfolioHistoryMode = 'balance';
 
-let selectedHoldingsTicker = null;
-let holdingsStockRangeMonths = 24; // default 2-Y (12 = 1-Y, 24 = 2-Y, 36 = 3-Y, 60 = 5-Y, 120 = ALL)
+var selectedHoldingsTicker = null;
+var holdingsStockRangeMonths = 24;
 
-let selectedWatchlistTicker = null;
-let watchlistStockRangeMonths = 24; // default 2-Y
+var selectedWatchlistTicker = null;
+var watchlistStockRangeMonths = 24;
 
-const charts = {
+var charts = {
   monthlyHistory: null,
   holdingsStockHistory: null,
   watchlistStockHistory: null,
@@ -114,21 +114,29 @@ function initAppState() {
     document.documentElement.classList.add('dark');
   }
 
-  // Ensure 2800.HK and VOO live quotes, 70-month history, and fundamentals are pre-cached for immediate inspection
-  ['2800.HK', 'VOO'].forEach(sym => {
-    const vd = VERIFIED_MARKET_DATA[sym];
+  // Ensure 2800.HK, VOO, and any held/watched tickers in VERIFIED_MARKET_DATA have quotes, history & fundamentals ready
+  const seedTickers = Array.from(new Set([
+    '2800.HK', 'VOO',
+    ...state.transactions.map(t => t.ticker).filter(Boolean),
+    ...state.watchlist.map(w => w.ticker).filter(Boolean)
+  ]));
+  seedTickers.forEach(sym => {
+    const vd = (typeof VERIFIED_MARKET_DATA !== 'undefined') ? VERIFIED_MARKET_DATA[sym] : null;
     if (vd) {
       if (!state.prices[sym] || !state.prices[sym].price) {
         state.prices[sym] = { ...vd.quote, lastUpdated: new Date().toISOString() };
       }
-      if (!state.historicalPrices[sym] || state.historicalPrices[sym].length < 12) {
-        state.historicalPrices[sym] = [...vd.history];
+      if (!state.historicalPrices[sym] || state.historicalPrices[sym].length < 6) {
+        state.historicalPrices[sym] = [...(vd.history || [])];
       }
-      if (!state.fundamentals[sym] || !state.fundamentals[sym].pe) {
-        state.fundamentals[sym] = { ...vd.fundamentals };
+      if (!state.fundamentals[sym] || !state.fundamentals[sym].name) {
+        state.fundamentals[sym] = { ...vd.fundamentals, ...(state.fundamentals[sym] || {}) };
       }
     }
   });
+  if (typeof AppLogger !== 'undefined') {
+    AppLogger.info('Portfolio', `State initialized (${state.transactions.length} transactions, ${state.watchlist.length} watchlist items, ${Object.keys(state.historicalPrices).length} historical series).`);
+  }
 
   if (state.watchlist.length === 0 && state.transactions.length === 0) {
     state.watchlist = [
@@ -269,7 +277,7 @@ function recalculatePortfolio() {
     const h = holdingsMap[ticker];
     if (h.shares > 0.0001) {
       const priceObj = state.prices[ticker] || { price: h.avgCost, change: 0, changePct: 0 };
-      const currentPrice = Fin.round(priceObj.price || h.avgCost, 2);
+      const currentPrice = Fin.round(priceObj.price || h.avgCost, 4);
       const marketValue = Fin.round(h.shares * currentPrice, 2);
       const unrealizedGain = Fin.round(marketValue - h.totalCostBasis, 2);
       const unrealizedGainPct = h.totalCostBasis > 0 ? Fin.round((unrealizedGain / h.totalCostBasis) * 100, 2) : 0;
@@ -460,23 +468,34 @@ function restorePortfolioFromExcel(file) {
         throw new Error('Invalid backup workbook: missing Transactions or Holdings sheet.');
       }
 
+      const normalizeExcelDate = (val) => {
+        if (!val) return new Date().toISOString().split('T')[0];
+        if (typeof val === 'number' && val > 20000 && val < 90000) {
+          const utcDays = Math.floor(val - 25569);
+          return new Date(utcDays * 86400 * 1000).toISOString().split('T')[0];
+        }
+        return String(val).trim().slice(0, 10);
+      };
+
       if (wb.SheetNames.includes('Transactions')) {
         const rawTx = XLSX.utils.sheet_to_json(wb.Sheets['Transactions']);
-        state.transactions = rawTx.map((row, idx) => {
-          const type = (row['Type'] || 'BUY').toUpperCase();
-          const rawTicker = (row['Ticker'] || '').toUpperCase();
-          return {
-            id: row['Transaction ID'] || `TX-${idx + 1}`,
-            date: row['Date'] || new Date().toISOString().split('T')[0],
-            type,
-            ticker: type === 'DEPOSIT' || type === 'WITHDRAW' ? '' : MarketAPI.normalizeTicker(rawTicker),
-            shares: Number(row['Shares']) || 0,
-            price: Number(row['Price per Share ($)']) || 0,
-            fees: Number(row['Fees ($)']) || 0,
-            amount: Number(row['Net Total ($)']) || 0,
-            notes: row['Notes'] || ''
-          };
-        });
+        state.transactions = rawTx
+          .filter(row => row && (row['Type'] || row['Transaction ID']) && !String(row['Transaction ID'] || '').toUpperCase().includes('TOTAL'))
+          .map((row, idx) => {
+            const type = String(row['Type'] || 'BUY').trim().toUpperCase();
+            const rawTicker = String(row['Ticker'] || '').trim().toUpperCase();
+            return {
+              id: row['Transaction ID'] || `TX-${idx + 1}`,
+              date: normalizeExcelDate(row['Date']),
+              type,
+              ticker: (type === 'DEPOSIT' || type === 'WITHDRAW' || rawTicker === 'CASH') ? '' : MarketAPI.normalizeTicker(rawTicker),
+              shares: Number(row['Shares']) || 0,
+              price: Number(row['Price per Share ($)']) || 0,
+              fees: Number(row['Fees ($)']) || 0,
+              amount: Number(row['Net Total ($)']) || 0,
+              notes: row['Notes'] || ''
+            };
+          });
       }
 
       if (wb.SheetNames.includes('Holdings')) {
@@ -557,10 +576,14 @@ function restorePortfolioFromExcel(file) {
       saveState();
       renderAll();
 
-      statusMsg.innerHTML = '<span class="text-emerald-500 font-bold"><i class="fa-solid fa-check"></i> Workbook restored!</span>';
+      if (typeof AppLogger !== 'undefined') {
+        AppLogger.action('Excel-IO', `Restored workbook: ${state.transactions.length} transactions, ${portfolio.activeHoldings.length} active holdings, ${state.watchlist.length} watchlist items, ${Object.keys(state.historicalPrices).length} historical series.`);
+      }
+      if (statusMsg) statusMsg.innerHTML = '<span class="text-emerald-500 font-bold"><i class="fa-solid fa-check"></i> Workbook restored!</span>';
       showToast('Portfolio restored from Excel backup!', 'success');
     } catch (err) {
-      statusMsg.innerHTML = `<span class="text-rose-500 font-bold">${err.message}</span>`;
+      if (typeof AppLogger !== 'undefined') AppLogger.error('Excel-IO', `Excel restore error: ${err.message}`, err);
+      if (statusMsg) statusMsg.innerHTML = `<span class="text-rose-500 font-bold">${err.message}</span>`;
       showToast('Restore failed: ' + err.message, 'error');
     }
   };
