@@ -1,732 +1,590 @@
 /**
- * @file charts.js
- * @module PortfolioChartsModule
- * @version 2.4.0
- * @build 20261018_2345
- * @description Chart.js controllers for:
- *   1. Dashboard "Portfolio Historical Balance & Return" (Monthly Balance vs. Monthly Accumulative Total Return)
- *   2. Holdings Tab inline clickable stock monthly price chart (1-Y, 2-Y, 3-Y, 5-Y, ALL)
- *   3. Watchlist Tab inline clickable stock monthly price chart (1-Y, 2-Y, 3-Y, 5-Y, ALL)
- *   4. Asset Allocation, Monthly Dividends & P&L Breakdown charts
+ * ============================================================================
+ * myFinance - Chart.js Visualization Module (charts.js)
+ * Renders and updates interactive financial health charts on the Balance Sheet
+ * and Yearly Cashflows & Forecast tabs with executive fintech styling.
+ * ============================================================================
  */
+(function (global) {
+  'use strict';
 
-function renderCharts() {
-  if (typeof Chart === 'undefined') {
-    if (typeof AppLogger !== 'undefined') {
-      AppLogger.warn('Charts', 'Chart.js library is not yet available; skipping chart rendering.');
-    }
-    return;
-  }
-  try { renderMonthlyHistoryChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderMonthlyHistoryChart failed: ${err.message}`, err); }
-  try { renderAllocationChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderAllocationChart failed: ${err.message}`, err); }
-  try { renderDividendsChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderDividendsChart failed: ${err.message}`, err); }
-  try { renderPnlBreakdownChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderPnlBreakdownChart failed: ${err.message}`, err); }
-  try {
-    const holdingsPane = document.getElementById('tab-content-holdings');
-    if (holdingsPane && !holdingsPane.classList.contains('hidden')) {
-      renderInlineStockChart('holdings');
-    }
-  } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderInlineStockChart(holdings) failed: ${err.message}`, err); }
-  try {
-    const watchlistPane = document.getElementById('tab-content-watchlist');
-    if (watchlistPane && !watchlistPane.classList.contains('hidden')) {
-      renderInlineStockChart('watchlist');
-    }
-  } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderInlineStockChart(watchlist) failed: ${err.message}`, err); }
-}
+  const myFinance = (global.myFinance = global.myFinance || {});
 
-/**
- * Computes month-by-month portfolio series across all historical months:
- *  - balanceSeries: Monthly Portfolio Balance (Holdings Market Value + Cash Balance)
- *  - costBasisSeries: Invested Capital & Cash Basis
- *  - accumReturnDollarSeries: Monthly Accumulative Total Return ($) = Unrealized Gain + Cumulative Realized P&L + Cumulative Dividends
- *  - accumReturnPctSeries: Monthly Accumulative Total Return (%) relative to Invested Capital
- */
-function computeMonthlyPortfolioSeries(rangeMonths) {
-  const heldTickers = portfolio.activeHoldings.map(h => h.ticker);
-  const allTxTickers = Array.from(new Set(
-    state.transactions.filter(t => t.ticker).map(t => t.ticker)
-  ));
-  const relevantTickers = Array.from(new Set([...heldTickers, ...allTxTickers]));
-
-  if (relevantTickers.length === 0 && state.transactions.length === 0) {
-    return null;
-  }
-
-  // Strictly require real monthly historical price data from ./historical_prices.json or live API.
-  // Never synthesize chart points from transaction cost basis if no real historical series is loaded.
-  const monthSet = new Set();
-  let hasRealHistoricalSeries = false;
-  relevantTickers.forEach(t => {
-    const series = state.historicalPrices[t];
-    if (Array.isArray(series) && series.length > 0) {
-      hasRealHistoricalSeries = true;
-      series.forEach(r => {
-        if (r && r.month) monthSet.add(r.month);
-      });
-    }
-  });
-
-  if (!hasRealHistoricalSeries || monthSet.size === 0) {
-    return null;
-  }
-
-  let allMonths = Array.from(monthSet).sort();
-  if (allMonths.length === 0) return null;
-
-  const txMonths = state.transactions
-    .filter(tx => tx.date)
-    .map(tx => tx.date.slice(0, 7))
-    .sort();
-  const earliestTxMonth = txMonths.length > 0 ? txMonths[0] : null;
-
-  const slicedMonths = allMonths.slice(-rangeMonths);
-
-  const labels = [];
-  const balanceSeries = [];
-  const holdingsValueSeries = [];
-  const costBasisSeries = [];
-  const accumReturnDollarSeries = [];
-  const accumReturnPctSeries = [];
-
-  const sortedTx = [...state.transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
-  const sortedDiv = [...state.dividends].sort((a, b) => new Date(a.payDate) - new Date(b.payDate));
-
-  slicedMonths.forEach(monthStr => {
-    const txUpToMonth = earliestTxMonth && monthStr >= earliestTxMonth
-      ? sortedTx.filter(tx => (tx.date || '').slice(0, 7) <= monthStr)
-      : [];
-
-    let monthMarketVal = 0;
-    let monthCostBasis = 0;
-    let monthCash = Fin.round(state.initialCash || 0, 2);
-    let cumRealized = 0;
-    let cumDividends = 0;
-
-    if (txUpToMonth.length > 0) {
-      const posMap = {};
-      txUpToMonth.forEach(tx => {
-        const fees = Fin.round(tx.fees || 0, 2);
-        const shares = Fin.round(tx.shares || 0, 4);
-        const price = Fin.round(tx.price || 0, 4);
-        if (tx.type === 'DEPOSIT') {
-          monthCash = Fin.round(monthCash + (tx.amount || 0), 2);
-        } else if (tx.type === 'WITHDRAW') {
-          monthCash = Fin.round(monthCash - (tx.amount || 0), 2);
-        } else if (tx.type === 'BUY') {
-          const outlay = Fin.round(shares * price + fees, 2);
-          monthCash = Fin.round(monthCash - outlay, 2);
-          if (!posMap[tx.ticker]) posMap[tx.ticker] = { shares: 0, cost: 0, avg: 0 };
-          posMap[tx.ticker].shares = Fin.round(posMap[tx.ticker].shares + shares, 4);
-          posMap[tx.ticker].cost = Fin.round(posMap[tx.ticker].cost + outlay, 2);
-          posMap[tx.ticker].avg = posMap[tx.ticker].shares > 0 ? posMap[tx.ticker].cost / posMap[tx.ticker].shares : 0;
-        } else if (tx.type === 'DRIP') {
-          const dripVal = Fin.round(shares * price, 2);
-          if (!posMap[tx.ticker]) posMap[tx.ticker] = { shares: 0, cost: 0, avg: 0 };
-          posMap[tx.ticker].shares = Fin.round(posMap[tx.ticker].shares + shares, 4);
-          posMap[tx.ticker].cost = Fin.round(posMap[tx.ticker].cost + dripVal, 2);
-          posMap[tx.ticker].avg = posMap[tx.ticker].shares > 0 ? posMap[tx.ticker].cost / posMap[tx.ticker].shares : 0;
-        } else if (tx.type === 'SELL') {
-          const netProceeds = Fin.round(shares * price - fees, 2);
-          monthCash = Fin.round(monthCash + netProceeds, 2);
-          if (!posMap[tx.ticker]) posMap[tx.ticker] = { shares: 0, cost: 0, avg: 0 };
-          const soldCost = Fin.round(shares * posMap[tx.ticker].avg, 2);
-          cumRealized = Fin.round(cumRealized + (netProceeds - soldCost), 2);
-          posMap[tx.ticker].shares = Fin.round(posMap[tx.ticker].shares - shares, 4);
-          posMap[tx.ticker].cost = Fin.round(posMap[tx.ticker].cost - soldCost, 2);
-          if (posMap[tx.ticker].shares <= 0.0001) {
-            posMap[tx.ticker] = { shares: 0, cost: 0, avg: 0 };
-          } else {
-            posMap[tx.ticker].avg = posMap[tx.ticker].cost / posMap[tx.ticker].shares;
-          }
-        }
-      });
-
-      sortedDiv.filter(d => (d.payDate || '').slice(0, 7) <= monthStr).forEach(d => {
-        const amt = Fin.round(d.totalAmount || 0, 2);
-        cumDividends = Fin.round(cumDividends + amt, 2);
-        if (!d.isDrip) {
-          monthCash = Fin.round(monthCash + amt, 2);
-        }
-      });
-
-      Object.keys(posMap).forEach(ticker => {
-        const p = posMap[ticker];
-        if (p.shares > 0.0001) {
-          const hist = state.historicalPrices[ticker] || [];
-          let closePrice = state.prices[ticker]?.price || p.avg;
-          const exact = hist.find(item => item.month === monthStr);
-          if (exact) {
-            closePrice = exact.close;
-          } else if (hist.length > 0) {
-            const prior = hist.filter(item => item.month <= monthStr);
-            closePrice = prior.length > 0 ? prior[prior.length - 1].close : hist[0].close;
-          }
-          monthMarketVal += p.shares * closePrice;
-          monthCostBasis += p.cost;
-        }
-      });
-    } else {
-      monthCash = Math.max(0, portfolio.cashBalance);
-      portfolio.activeHoldings.forEach(h => {
-        const hist = state.historicalPrices[h.ticker] || [];
-        let closePrice = h.currentPrice;
-        const exact = hist.find(item => item.month === monthStr);
-        if (exact) {
-          closePrice = exact.close;
-        } else if (hist.length > 0) {
-          const prior = hist.filter(item => item.month <= monthStr);
-          closePrice = prior.length > 0 ? prior[prior.length - 1].close : hist[0].close;
-        }
-        monthMarketVal += h.shares * closePrice;
-        monthCostBasis += h.totalCostBasis;
-      });
-      sortedDiv.filter(d => (d.payDate || '').slice(0, 7) <= monthStr).forEach(d => {
-        cumDividends = Fin.round(cumDividends + (d.totalAmount || 0), 2);
-      });
-      cumRealized = portfolio.totalRealizedPnL || 0;
-    }
-
-    const totalBalance = Fin.round(monthMarketVal + Math.max(0, monthCash), 2);
-    const unrealized = Fin.round(monthMarketVal - monthCostBasis, 2);
-    const accumReturnDollar = Fin.round(unrealized + cumRealized + cumDividends, 2);
-    const accumReturnPct = monthCostBasis > 0 ? Fin.round((accumReturnDollar / monthCostBasis) * 100, 2) : 0;
-
-    labels.push(monthStr);
-    balanceSeries.push(totalBalance);
-    holdingsValueSeries.push(Fin.round(monthMarketVal, 2));
-    costBasisSeries.push(Fin.round(monthCostBasis + Math.max(0, monthCash), 2));
-    accumReturnDollarSeries.push(accumReturnDollar);
-    accumReturnPctSeries.push(accumReturnPct);
-  });
-
-  return {
-    labels,
-    balanceSeries,
-    holdingsValueSeries,
-    costBasisSeries,
-    accumReturnDollarSeries,
-    accumReturnPctSeries
+  const instances = {
+    assetAllocation: null,
+    balanceStructure: null,
+    productiveYield: null,
+    wealthTrajectory: null,
+    cashflowComponents: null,
+    incomeVsSpending: null
   };
-}
 
-/**
- * Dashboard Chart: "Portfolio Historical Balance & Return"
- * Exclusively displays portfolio-level monthly balance OR monthly accumulative total return.
- */
-function renderMonthlyHistoryChart() {
-  const ctx = document.getElementById('chart-monthly-history');
-  const emptyOverlay = document.getElementById('chart-history-empty');
-  const emptyText = document.getElementById('chart-history-empty-text');
-  const subtitle = document.getElementById('historical-chart-subtitle');
-  const metricSummaryBadge = document.getElementById('portfolio-history-metric-badge');
+  const TOOLTIP_STYLE = {
+    backgroundColor: 'rgba(15, 23, 42, 0.94)',
+    titleColor: '#f8fafc',
+    bodyColor: '#e2e8f0',
+    borderColor: 'rgba(148, 163, 184, 0.2)',
+    borderWidth: 1,
+    padding: 11,
+    cornerRadius: 10,
+    titleFont: { family: 'Inter, sans-serif', size: 12, weight: '600' },
+    bodyFont: { family: 'JetBrains Mono, monospace', size: 11 }
+  };
 
-  if (!ctx) return;
-  if (charts.monthlyHistory) charts.monthlyHistory.destroy();
-
-  const isDark = document.documentElement.classList.contains('dark');
-  const isMobile = DeviceDetector.profile.effectiveMode === 'mobile';
-
-  const seriesData = computeMonthlyPortfolioSeries(historyRangeMonths);
-  if (!seriesData || seriesData.labels.length === 0 || (portfolio.activeHoldings.length === 0 && state.transactions.length === 0)) {
-    if (emptyOverlay) emptyOverlay.classList.remove('hidden');
-    if (emptyText) {
-      if (portfolio.activeHoldings.length > 0 || state.transactions.length > 0) {
-        emptyText.textContent = 'No real historical monthly price data available yet. Populate historical_prices.json (via update_historical_prices.py or GitHub Actions) or click "Sync Monthly API Data".';
-      } else {
-        emptyText.textContent = 'Record a stock trade and sync real historical prices (or load historical_prices.json) to view your monthly portfolio balance and return.';
-      }
-    }
-    if (metricSummaryBadge) metricSummaryBadge.textContent = 'No Historical Data';
-    return;
+  function formatCompactCurrency(val) {
+    const abs = Math.abs(val);
+    const sign = val < 0 ? '-' : '';
+    if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return sign + '$' + (abs / 1e3).toFixed(0) + 'k';
+    return sign + '$' + abs.toFixed(0);
   }
 
-  if (emptyOverlay) emptyOverlay.classList.add('hidden');
-
-  const {
-    labels,
-    balanceSeries,
-    costBasisSeries,
-    accumReturnDollarSeries,
-    accumReturnPctSeries
-  } = seriesData;
-
-  const latestBalance = balanceSeries[balanceSeries.length - 1] || 0;
-  const latestReturnDollar = accumReturnDollarSeries[accumReturnDollarSeries.length - 1] || 0;
-  const latestReturnPct = accumReturnPctSeries[accumReturnPctSeries.length - 1] || 0;
-
-  if (portfolioHistoryMode === 'return') {
-    if (subtitle) {
-      subtitle.textContent = `Monthly Accumulative Total Return ($ & %) including Unrealized Gains, Realized P&L & Dividends (${labels.length} months)`;
-    }
-    if (metricSummaryBadge) {
-      const signColor = latestReturnDollar >= 0
-        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
-      metricSummaryBadge.className = `text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${signColor}`;
-      metricSummaryBadge.textContent = `Total Return: ${Fin.currency(latestReturnDollar, true)} (${Fin.percent(latestReturnPct, true)})`;
+  function renderBalanceSheetCharts(summary, assets) {
+    if (typeof global.Chart === 'undefined') {
+      myFinance.Logger.warn('Charts', 'Chart.js is not loaded; skipping Balance Sheet charts.');
+      return;
     }
 
-    const isPositiveEnd = latestReturnDollar >= 0;
-    const lineColor = isPositiveEnd ? '#10b981' : '#f43f5e';
-    const fillColor = isPositiveEnd ? 'rgba(16, 185, 129, 0.14)' : 'rgba(244, 63, 94, 0.14)';
+    try {
+      // 1. Asset Allocation & Productivity Doughnut Chart
+      const ctxAlloc = document.getElementById('chart-asset-allocation');
+      if (ctxAlloc) {
+        let liqProd = 0,
+          liqNonProd = 0,
+          fixProd = 0,
+          fixNonProd = 0;
 
-    charts.monthlyHistory = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          {
-            label: 'Accumulative Total Return ($)',
-            data: accumReturnDollarSeries,
-            borderColor: lineColor,
-            backgroundColor: fillColor,
-            fill: true,
-            tension: 0.32,
-            pointRadius: isMobile ? 2 : 3.5,
-            pointBackgroundColor: lineColor,
-            yAxisID: 'y'
-          },
-          {
-            label: 'Accumulative Return (%)',
-            data: accumReturnPctSeries,
-            borderColor: '#6366f1',
-            borderDash: [4, 4],
-            fill: false,
-            tension: 0.32,
-            pointRadius: 0,
-            yAxisID: 'y1'
+        assets.forEach(function (a) {
+          if (a.category === 'Liquid') {
+            if (a.productive) liqProd += a.amount;
+            else liqNonProd += a.amount;
+          } else {
+            if (a.productive) fixProd += a.amount;
+            else fixNonProd += a.amount;
           }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        scales: {
-          x: {
-            grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
-            ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: isMobile ? 9 : 10 }, maxTicksLimit: isMobile ? 6 : 12 }
+        });
+
+        const dataValues = [liqProd, liqNonProd, fixProd, fixNonProd];
+        const total = dataValues.reduce((s, v) => s + v, 0);
+
+        if (instances.assetAllocation) {
+          instances.assetAllocation.destroy();
+        }
+
+        instances.assetAllocation = new global.Chart(ctxAlloc, {
+          type: 'doughnut',
+          data: {
+            labels: [
+              'Liquid • Productive',
+              'Liquid • Non-Productive',
+              'Fixed • Productive',
+              'Fixed • Non-Productive'
+            ],
+            datasets: [
+              {
+                data: total > 0 ? dataValues : [1],
+                backgroundColor:
+                  total > 0
+                    ? ['#10b981', '#38bdf8', '#4f46e5', '#94a3b8']
+                    : ['#e2e8f0'],
+                borderWidth: 3,
+                borderColor: '#ffffff',
+                hoverOffset: 6
+              }
+            ]
           },
-          y: {
-            position: 'left',
-            grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
-            ticks: {
-              color: isDark ? '#94a3b8' : '#64748b',
-              font: { size: isMobile ? 9 : 10 },
-              callback: (v) => (v >= 0 ? '+$' : '-$') + Math.abs(v).toLocaleString()
-            }
-          },
-          y1: {
-            position: 'right',
-            grid: { drawOnChartArea: false },
-            ticks: {
-              color: '#6366f1',
-              font: { size: isMobile ? 9 : 10 },
-              callback: (v) => (v >= 0 ? '+' : '') + v.toFixed(1) + '%'
-            }
-          }
-        },
-        plugins: {
-          legend: {
-            labels: { color: isDark ? '#cbd5e1' : '#334155', font: { size: 11 } }
-          },
-          tooltip: {
-            callbacks: {
-              label: (c) => {
-                if (c.dataset.yAxisID === 'y1') {
-                  return ` ${c.dataset.label}: ${Fin.percent(c.raw, true)}`;
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                  boxWidth: 8,
+                  padding: 14,
+                  font: { family: 'Inter, sans-serif', size: 11, weight: '500' },
+                  color: '#475569'
                 }
-                return ` ${c.dataset.label}: ${Fin.currency(c.raw, true)}`;
+              },
+              tooltip: Object.assign({}, TOOLTIP_STYLE, {
+                callbacks: {
+                  label: function (ctx) {
+                    if (total === 0) return 'No assets entered';
+                    const val = ctx.parsed || 0;
+                    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
+                    return ' ' + ctx.label + ': $' + val.toLocaleString() + ' (' + pct + '%)';
+                  }
+                }
+              })
+            }
+          }
+        });
+      }
+
+      // 2. Balance Sheet Structure Bar Chart
+      const ctxStruct = document.getElementById('chart-balance-structure');
+      if (ctxStruct) {
+        if (instances.balanceStructure) {
+          instances.balanceStructure.destroy();
+        }
+
+        instances.balanceStructure = new global.Chart(ctxStruct, {
+          type: 'bar',
+          data: {
+            labels: ['Liquid Assets', 'Fixed Assets', 'Short-Term Debt', 'Long-Term Debt', 'Net Worth'],
+            datasets: [
+              {
+                label: 'Amount ($)',
+                data: [
+                  summary.liquidAssets,
+                  summary.fixedAssets,
+                  summary.shortTermLiabilities,
+                  summary.longTermLiabilities,
+                  summary.netWorth
+                ],
+                backgroundColor: [
+                  '#0ea5e9',
+                  '#4f46e5',
+                  '#fb7185',
+                  '#e11d48',
+                  summary.netWorth >= 0 ? '#10b981' : '#f43f5e'
+                ],
+                borderRadius: 8,
+                maxBarThickness: 44
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: Object.assign({}, TOOLTIP_STYLE, {
+                callbacks: {
+                  label: function (ctx) {
+                    return ' $' + Number(ctx.parsed.y || 0).toLocaleString();
+                  }
+                }
+              })
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (value) {
+                    return formatCompactCurrency(value);
+                  },
+                  font: { family: 'JetBrains Mono, monospace', size: 10 },
+                  color: '#64748b'
+                },
+                grid: { color: '#f1f5f9' },
+                border: { display: false }
+              },
+              x: {
+                ticks: {
+                  font: { family: 'Inter, sans-serif', size: 11, weight: '500' },
+                  color: '#475569'
+                },
+                grid: { display: false },
+                border: { display: false }
               }
             }
           }
-        }
+        });
       }
-    });
-    return;
-  }
 
-  // DEFAULT MODE: MONTHLY PORTFOLIO BALANCE
-  if (subtitle) {
-    subtitle.textContent = `Monthly Portfolio Balance vs. Invested Capital across ${labels.length} months`;
-  }
-  if (metricSummaryBadge) {
-    metricSummaryBadge.className = 'text-xs font-mono font-bold px-2.5 py-1 rounded-lg border bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-500/30';
-    metricSummaryBadge.textContent = `Balance: ${Fin.currency(latestBalance)}`;
-  }
-
-  charts.monthlyHistory = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Monthly Portfolio Balance ($)',
-          data: balanceSeries,
-          borderColor: '#10b981',
-          backgroundColor: 'rgba(16, 185, 129, 0.14)',
-          fill: true,
-          tension: 0.32,
-          pointRadius: isMobile ? 2 : 3.5,
-          pointBackgroundColor: '#10b981'
-        },
-        {
-          label: 'Invested Capital & Cash Basis ($)',
-          data: costBasisSeries,
-          borderColor: '#f59e0b',
-          borderDash: [5, 5],
-          fill: false,
-          tension: 0.2,
-          pointRadius: 0
+      // 3. Productive Assets Annual Return Chart
+      const ctxYield = document.getElementById('chart-productive-yield');
+      if (ctxYield) {
+        if (instances.productiveYield) {
+          instances.productiveYield.destroy();
         }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      scales: {
-        x: {
-          grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
-          ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: isMobile ? 9 : 10 }, maxTicksLimit: isMobile ? 6 : 12 }
-        },
-        y: {
-          grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
-          ticks: {
-            color: isDark ? '#94a3b8' : '#64748b',
-            font: { size: isMobile ? 9 : 10 },
-            callback: (v) => '$' + v.toLocaleString()
-          }
-        }
-      },
-      plugins: {
-        legend: {
-          labels: { color: isDark ? '#cbd5e1' : '#334155', font: { size: 11 } }
-        },
-        tooltip: {
-          callbacks: {
-            label: (c) => ` ${c.dataset.label}: ${Fin.currency(c.raw)}`
-          }
-        }
-      }
-    }
-  });
-}
 
-/**
- * Renders the inline historical monthly price chart below the Holdings table or Watchlist table
- * when a stock row is clicked.
- */
-function renderInlineStockChart(tabType) {
-  const isHoldings = tabType === 'holdings';
-  const ticker = isHoldings ? selectedHoldingsTicker : selectedWatchlistTicker;
-  const rangeMonths = isHoldings ? holdingsStockRangeMonths : watchlistStockRangeMonths;
+        const prodAssets = assets
+          .filter((a) => a.productive && a.amount > 0)
+          .map((a) => ({
+            name: a.name.length > 22 ? a.name.slice(0, 20) + '…' : a.name,
+            annualReturn: (a.amount * a.returnRate) / 100,
+            rate: a.returnRate
+          }))
+          .sort((a, b) => b.annualReturn - a.annualReturn);
 
-  const cardEl = document.getElementById(isHoldings ? 'holdings-stock-chart-card' : 'watchlist-stock-chart-card');
-  const canvasEl = document.getElementById(isHoldings ? 'chart-holdings-stock-history' : 'chart-watchlist-stock-history');
-  const titleEl = document.getElementById(isHoldings ? 'holdings-chart-stock-title' : 'watchlist-chart-stock-title');
-  const subEl = document.getElementById(isHoldings ? 'holdings-chart-stock-subtitle' : 'watchlist-chart-stock-subtitle');
-  const statsEl = document.getElementById(isHoldings ? 'holdings-chart-period-stats' : 'watchlist-chart-period-stats');
-  const emptyEl = document.getElementById(isHoldings ? 'holdings-chart-empty' : 'watchlist-chart-empty');
-
-  if (!cardEl || !canvasEl) return;
-
-  const chartKey = isHoldings ? 'holdingsStockHistory' : 'watchlistStockHistory';
-  if (charts[chartKey]) {
-    charts[chartKey].destroy();
-    charts[chartKey] = null;
-  }
-
-  if (!ticker) {
-    cardEl.classList.add('hidden');
-    return;
-  }
-
-  cardEl.classList.remove('hidden');
-
-  const series = state.historicalPrices[ticker] || [];
-  const fund = state.fundamentals[ticker] || {};
-  const priceObj = state.prices[ticker] || {};
-  const currency = priceObj.currency || fund.currency || (ticker.endsWith('.HK') ? 'HKD' : (ticker.endsWith('.L') ? 'GBp' : 'USD'));
-  const companyName = fund.name || ticker;
-
-  if (titleEl) {
-    titleEl.innerHTML = `<span class="font-mono text-brand-600 dark:text-brand-400">${ticker}</span> <span class="text-slate-400 font-normal">&mdash;</span> <span>${companyName}</span>`;
-  }
-
-  if (series.length === 0) {
-    if (emptyEl) {
-      emptyEl.classList.remove('hidden');
-      emptyEl.innerHTML = `
-        <i class="fa-solid fa-chart-line text-3xl mb-2 opacity-35"></i>
-        <span class="font-medium text-slate-500 dark:text-slate-300">No historical monthly price data available for ${ticker}</span>
-        <span class="text-xs text-slate-400 mt-1">Run <code>update_historical_prices.py</code> / GitHub Action to populate <code>historical_prices.json</code> or click "Sync Market Data".</span>
-      `;
-    }
-    if (subEl) subEl.textContent = `No historical price series loaded for ${ticker} — chart stays empty until real data is available`;
-    if (statsEl) statsEl.innerHTML = '';
-    return;
-  }
-  if (emptyEl) emptyEl.classList.add('hidden');
-
-  const sliced = series.slice(-rangeMonths);
-  const labels = sliced.map(r => r.month);
-  const closeData = sliced.map(r => r.close);
-
-  const firstClose = closeData[0] || 0;
-  const lastClose = closeData[closeData.length - 1] || 0;
-  const periodChange = Fin.round(lastClose - firstClose, 2);
-  const periodChangePct = firstClose > 0 ? Fin.round(((lastClose - firstClose) / firstClose) * 100, 2) : 0;
-  const periodHigh = Math.max(...closeData);
-  const periodLow = Math.min(...closeData);
-
-  const periodLabelMap = { 12: '1-Y', 24: '2-Y', 36: '3-Y', 60: '5-Y', 120: 'ALL' };
-  const periodTag = periodLabelMap[rangeMonths] || `${sliced.length}M`;
-
-  if (subEl) {
-    subEl.textContent = `Monthly Historical Adjusted Closing Prices (${sliced.length} months shown • ${labels[0]} to ${labels[labels.length - 1]} • ${currency})`;
-  }
-
-  if (statsEl) {
-    const chgClass = periodChange >= 0 ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 'text-rose-500 bg-rose-500/10 border-rose-500/20';
-    statsEl.innerHTML = `
-      <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${chgClass}">
-        ${periodTag} Change: ${Fin.percent(periodChangePct, true)} (${Fin.currency(periodChange, true, currency)})
-      </span>
-      <span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-        High: <strong>${Fin.currency(periodHigh, false, currency)}</strong> &bull; Low: <strong>${Fin.currency(periodLow, false, currency)}</strong>
-      </span>
-    `;
-  }
-
-  const holding = portfolio.activeHoldings.find(h => h.ticker === ticker);
-  const watched = state.watchlist.find(w => w.ticker === ticker);
-  const refValue = isHoldings
-    ? (holding ? holding.avgCost : null)
-    : (watched ? watched.targetBuyPrice : (holding ? holding.avgCost : null));
-  const refLabel = isHoldings
-    ? (holding ? `Your Avg Cost (${Fin.currency(refValue, false, currency)})` : null)
-    : (watched ? `Target Buy Price (${Fin.currency(refValue, false, currency)})` : null);
-
-  const isDark = document.documentElement.classList.contains('dark');
-  const isMobile = DeviceDetector.profile.effectiveMode === 'mobile';
-  const mainColor = isHoldings ? '#10b981' : '#8b5cf6';
-  const mainFill = isHoldings ? 'rgba(16, 185, 129, 0.14)' : 'rgba(139, 92, 246, 0.14)';
-
-  const datasets = [
-    {
-      label: `${ticker} Monthly Close (${currency})`,
-      data: closeData,
-      borderColor: mainColor,
-      backgroundColor: mainFill,
-      fill: true,
-      tension: 0.3,
-      pointRadius: isMobile ? 2 : 3.5,
-      pointBackgroundColor: mainColor
-    }
-  ];
-
-  if (refValue && refValue > 0) {
-    datasets.push({
-      label: refLabel,
-      data: labels.map(() => refValue),
-      borderColor: isHoldings ? '#f59e0b' : '#ec4899',
-      borderDash: [6, 6],
-      borderWidth: 2,
-      pointRadius: 0,
-      fill: false
-    });
-  }
-
-  charts[chartKey] = new Chart(canvasEl, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      scales: {
-        x: {
-          grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
-          ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: isMobile ? 9 : 10 }, maxTicksLimit: isMobile ? 6 : 12 }
-        },
-        y: {
-          grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
-          ticks: {
-            color: isDark ? '#94a3b8' : '#64748b',
-            font: { size: isMobile ? 9 : 10 },
-            callback: (v) => Fin.currency(v, false, currency)
-          }
-        }
-      },
-      plugins: {
-        legend: {
-          labels: { color: isDark ? '#cbd5e1' : '#334155', font: { size: 11 } }
-        },
-        tooltip: {
-          callbacks: {
-            label: (c) => ` ${c.dataset.label}: ${Fin.currency(c.raw, false, currency)}`
-          }
-        }
-      }
-    }
-  });
-}
-
-function renderAllocationChart() {
-  const ctx = document.getElementById('chart-allocation');
-  const emptyDiv = document.getElementById('chart-alloc-empty');
-  if (charts.allocation) charts.allocation.destroy();
-
-  if (!portfolio.activeHoldings || portfolio.activeHoldings.length === 0) {
-    emptyDiv.classList.remove('hidden');
-    return;
-  }
-  emptyDiv.classList.add('hidden');
-
-  const labels = [];
-  const data = [];
-  const palette = ['#10b981', '#6366f1', '#06b6d4', '#f59e0b', '#ec4899', '#8b5cf6', '#3b82f6', '#14b8a6', '#f97316', '#84cc16'];
-
-  if (allocationViewMode === 'ticker') {
-    portfolio.activeHoldings.forEach(h => {
-      labels.push(h.ticker);
-      data.push(h.marketValue);
-    });
-  } else {
-    const sectorMap = {};
-    portfolio.activeHoldings.forEach(h => {
-      const s = h.sector || 'Equities';
-      sectorMap[s] = (sectorMap[s] || 0) + h.marketValue;
-    });
-    Object.keys(sectorMap).forEach(s => {
-      labels.push(s);
-      data.push(Fin.round(sectorMap[s], 2));
-    });
-  }
-
-  const isDark = document.documentElement.classList.contains('dark');
-  charts.allocation = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: palette.slice(0, labels.length),
-        borderWidth: 2,
-        borderColor: isDark ? '#111827' : '#ffffff',
-        hoverOffset: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '66%',
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { boxWidth: 11, color: isDark ? '#94a3b8' : '#475569', font: { size: 11 } }
-        },
-        tooltip: {
-          callbacks: {
-            label: (c) => {
-              const val = c.raw || 0;
-              const total = data.reduce((a, b) => a + b, 0);
-              const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
-              return ` ${c.label}: ${Fin.currency(val)} (${pct}%)`;
+        instances.productiveYield = new global.Chart(ctxYield, {
+          type: 'bar',
+          data: {
+            labels: prodAssets.length ? prodAssets.map((p) => p.name) : ['No Productive Assets'],
+            datasets: [
+              {
+                label: 'Expected Annual Return ($)',
+                data: prodAssets.length ? prodAssets.map((p) => p.annualReturn) : [0],
+                backgroundColor: '#10b981',
+                borderRadius: 6,
+                maxBarThickness: 26
+              }
+            ]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: Object.assign({}, TOOLTIP_STYLE, {
+                callbacks: {
+                  label: function (ctx) {
+                    const item = prodAssets[ctx.dataIndex];
+                    if (!item) return ' $0';
+                    return (
+                      ' $' +
+                      Math.round(item.annualReturn).toLocaleString() +
+                      '/yr (' +
+                      item.rate.toFixed(2) +
+                      '% yield)'
+                    );
+                  }
+                }
+              })
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (val) {
+                    return formatCompactCurrency(val);
+                  },
+                  font: { family: 'JetBrains Mono, monospace', size: 10 },
+                  color: '#64748b'
+                },
+                grid: { color: '#f1f5f9' },
+                border: { display: false }
+              },
+              y: {
+                ticks: {
+                  font: { family: 'Inter, sans-serif', size: 11, weight: '500' },
+                  color: '#334155'
+                },
+                grid: { display: false },
+                border: { display: false }
+              }
             }
           }
-        }
+        });
       }
+    } catch (err) {
+      myFinance.Logger.error('Charts', 'Error rendering Balance Sheet charts: ' + err.message);
     }
-  });
-}
+  }
 
-function renderDividendsChart() {
-  const ctx = document.getElementById('chart-dividends');
-  if (charts.dividends) charts.dividends.destroy();
+  function renderCashflowCharts(forecast) {
+    if (typeof global.Chart === 'undefined') {
+      myFinance.Logger.warn('Charts', 'Chart.js is not loaded; skipping Cashflow charts.');
+      return;
+    }
 
-  const monthlyMap = {};
-  state.dividends.forEach(d => {
-    const m = (d.payDate || '').slice(0, 7) || 'Unknown';
-    monthlyMap[m] = (monthlyMap[m] || 0) + (d.totalAmount || 0);
-  });
+    try {
+      const rows = forecast.rows || [];
+      const labels = rows.map((r) => 'Age ' + r.age + ' (' + r.year + ')');
 
-  const months = Object.keys(monthlyMap).sort();
-  const totals = months.map(m => Fin.round(monthlyMap[m], 2));
-  document.getElementById('chart-div-total-badge').textContent = `${Fin.currency(portfolio.totalDividendsEarned)} Total`;
-
-  const isDark = document.documentElement.classList.contains('dark');
-  charts.dividends = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: months.length > 0 ? months : ['No Dividends Logged'],
-      datasets: [{
-        label: 'Monthly Dividend ($)',
-        data: totals.length > 0 ? totals : [0],
-        backgroundColor: '#06b6d4',
-        borderRadius: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { grid: { display: false }, ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 } } },
-        y: {
-          grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
-          ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 }, callback: (v) => '$' + v }
+      // 1. Accumulated Savings Forecast (Nominal vs Present Value)
+      const ctxWealth = document.getElementById('chart-wealth-trajectory');
+      if (ctxWealth) {
+        if (instances.wealthTrajectory) {
+          instances.wealthTrajectory.destroy();
         }
-      },
-      plugins: { legend: { display: false } }
-    }
-  });
-}
 
-function renderPnlBreakdownChart() {
-  const ctx = document.getElementById('chart-pnl-breakdown');
-  if (charts.pnlBreakdown) charts.pnlBreakdown.destroy();
+        instances.wealthTrajectory = new global.Chart(ctxWealth, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Ending Savings (Nominal $)',
+                data: rows.map((r) => Math.round(r.endSavings)),
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79, 70, 229, 0.12)',
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 1.5,
+                pointHoverRadius: 5
+              },
+              {
+                label: 'Remaining Savings Pre-Return ($)',
+                data: rows.map((r) => Math.round(r.remainingSavings)),
+                borderColor: '#6366f1',
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                borderDash: [2, 2],
+                fill: false,
+                tension: 0.3,
+                pointRadius: 0
+              },
+              {
+                label: 'Ending Savings (Inflation-Adjusted PV $)',
+                data: rows.map((r) => Math.round(r.endSavingsPV)),
+                borderColor: '#0d9488',
+                backgroundColor: 'rgba(13, 148, 136, 0.08)',
+                borderWidth: 2,
+                borderDash: [5, 4],
+                fill: true,
+                tension: 0.3,
+                pointRadius: 1.5,
+                pointHoverRadius: 5
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                  boxWidth: 8,
+                  font: { family: 'Inter, sans-serif', size: 11, weight: '500' },
+                  color: '#475569'
+                }
+              },
+              tooltip: Object.assign({}, TOOLTIP_STYLE, {
+                callbacks: {
+                  label: function (ctx) {
+                    return ' ' + ctx.dataset.label + ': $' + Number(ctx.parsed.y || 0).toLocaleString();
+                  }
+                }
+              })
+            },
+            scales: {
+              y: {
+                ticks: {
+                  callback: function (value) {
+                    return formatCompactCurrency(value);
+                  },
+                  font: { family: 'JetBrains Mono, monospace', size: 10 },
+                  color: '#64748b'
+                },
+                grid: { color: '#f1f5f9' },
+                border: { display: false }
+              },
+              x: {
+                ticks: {
+                  maxTicksLimit: 10,
+                  font: { family: 'Inter, sans-serif', size: 10 },
+                  color: '#64748b'
+                },
+                grid: { display: false },
+                border: { display: false }
+              }
+            }
+          }
+        });
+      }
 
-  const tickers = Array.from(new Set([
-    ...portfolio.activeHoldings.map(h => h.ticker),
-    ...Object.keys(portfolio.allHoldingsMap).filter(t => (portfolio.allHoldingsMap[t].realizedGain || 0) !== 0)
-  ]));
-
-  const unrealizedSeries = tickers.map(t => {
-    const active = portfolio.activeHoldings.find(h => h.ticker === t);
-    return active ? active.unrealizedGain : 0;
-  });
-  const realizedSeries = tickers.map(t => portfolio.allHoldingsMap[t]?.realizedGain || 0);
-
-  const isDark = document.documentElement.classList.contains('dark');
-  charts.pnlBreakdown = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: tickers.length > 0 ? tickers : ['No Positions'],
-      datasets: [
-        { label: 'Unrealized P&L ($)', data: unrealizedSeries.length > 0 ? unrealizedSeries : [0], backgroundColor: '#10b981', borderRadius: 5 },
-        { label: 'Realized P&L ($)', data: realizedSeries.length > 0 ? realizedSeries : [0], backgroundColor: '#6366f1', borderRadius: 5 }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { grid: { display: false }, ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 } } },
-        y: {
-          grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
-          ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 }, callback: (v) => (v >= 0 ? '+$' : '-$') + Math.abs(v) }
+      // 2. Yearly Cashflows Breakdown
+      const ctxComp = document.getElementById('chart-cashflow-components');
+      if (ctxComp) {
+        if (instances.cashflowComponents) {
+          instances.cashflowComponents.destroy();
         }
-      },
-      plugins: { legend: { position: 'top', labels: { color: isDark ? '#94a3b8' : '#475569', font: { size: 11 } } } }
-    }
-  });
-}
 
-window.renderCharts = renderCharts;
-window.renderMonthlyHistoryChart = renderMonthlyHistoryChart;
-window.renderInlineStockChart = renderInlineStockChart;
-window.renderAllocationChart = renderAllocationChart;
-window.renderDividendsChart = renderDividendsChart;
-window.renderPnlBreakdownChart = renderPnlBreakdownChart;
+        instances.cashflowComponents = new global.Chart(ctxComp, {
+          type: 'bar',
+          data: {
+            labels: rows.map((r) => 'Age ' + r.age),
+            datasets: [
+              {
+                label: 'Invested Salary ($)',
+                data: rows.map((r) => Math.round(r.activeSavings)),
+                backgroundColor: '#3b82f6',
+                stack: 'cashflows',
+                borderRadius: 2
+              },
+              {
+                label: 'Expected Pension Lump Sum ($)',
+                data: rows.map((r) => Math.round(r.pension)),
+                backgroundColor: '#0ea5e9',
+                stack: 'cashflows',
+                borderRadius: 2
+              },
+              {
+                label: 'Cash Return Yield ($)',
+                data: rows.map((r) => Math.round(r.cashReturn)),
+                backgroundColor: '#10b981',
+                stack: 'cashflows',
+                borderRadius: 2
+              },
+              {
+                label: 'Capital Growth ($)',
+                data: rows.map((r) => Math.round(r.capitalGrowth)),
+                backgroundColor: '#8b5cf6',
+                stack: 'cashflows',
+                borderRadius: 2
+              },
+              {
+                label: 'Retirement Spending Outflow ($)',
+                data: rows.map((r) => (r.isRetired ? -Math.round(r.spending) : 0)),
+                backgroundColor: '#f43f5e',
+                stack: 'cashflows',
+                borderRadius: 2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                  boxWidth: 8,
+                  font: { family: 'Inter, sans-serif', size: 10, weight: '500' },
+                  color: '#475569'
+                }
+              },
+              tooltip: Object.assign({}, TOOLTIP_STYLE, {
+                callbacks: {
+                  label: function (ctx) {
+                    const v = Number(ctx.parsed.y || 0);
+                    return ' ' + ctx.dataset.label + ': $' + v.toLocaleString();
+                  }
+                }
+              })
+            },
+            scales: {
+              x: {
+                stacked: true,
+                ticks: {
+                  maxTicksLimit: 10,
+                  font: { family: 'Inter, sans-serif', size: 10 },
+                  color: '#64748b'
+                },
+                grid: { display: false },
+                border: { display: false }
+              },
+              y: {
+                stacked: true,
+                ticks: {
+                  callback: function (value) {
+                    return formatCompactCurrency(value);
+                  },
+                  font: { family: 'JetBrains Mono, monospace', size: 10 },
+                  color: '#64748b'
+                },
+                grid: { color: '#f1f5f9' },
+                border: { display: false }
+              }
+            }
+          }
+        });
+      }
+
+      // 3. Yearly Inflows (Income + Pension), Portfolio Return & Spending Curve
+      const ctxIncSpend = document.getElementById('chart-income-vs-spending');
+      if (ctxIncSpend) {
+        if (instances.incomeVsSpending) {
+          instances.incomeVsSpending.destroy();
+        }
+
+        instances.incomeVsSpending = new global.Chart(ctxIncSpend, {
+          type: 'line',
+          data: {
+            labels: rows.map((r) => 'Age ' + r.age),
+            datasets: [
+              {
+                label: 'Active Income + Pension Lump Sum ($)',
+                data: rows.map((r) => Math.round(r.income + r.pension)),
+                borderColor: '#0284c7',
+                backgroundColor: 'transparent',
+                borderWidth: 2.2,
+                tension: 0.25,
+                pointRadius: 1.5
+              },
+              {
+                label: 'Yearly Spending Outflow ($)',
+                data: rows.map((r) => Math.round(r.spending)),
+                borderColor: '#e11d48',
+                backgroundColor: 'rgba(225, 29, 72, 0.08)',
+                borderWidth: 2.2,
+                fill: true,
+                tension: 0.25,
+                pointRadius: 1.5
+              },
+              {
+                label: 'Cash Return + Capital Growth ($)',
+                data: rows.map((r) => Math.round(r.cashReturn + r.capitalGrowth)),
+                borderColor: '#10b981',
+                backgroundColor: 'transparent',
+                borderWidth: 2.2,
+                borderDash: [4, 3],
+                tension: 0.25,
+                pointRadius: 1.5
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                  boxWidth: 8,
+                  font: { family: 'Inter, sans-serif', size: 11, weight: '500' },
+                  color: '#475569'
+                }
+              },
+              tooltip: Object.assign({}, TOOLTIP_STYLE, {
+                callbacks: {
+                  label: function (ctx) {
+                    return ' ' + ctx.dataset.label + ': $' + Number(ctx.parsed.y || 0).toLocaleString();
+                  }
+                }
+              })
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (value) {
+                    return formatCompactCurrency(value);
+                  },
+                  font: { family: 'JetBrains Mono, monospace', size: 10 },
+                  color: '#64748b'
+                },
+                grid: { color: '#f1f5f9' },
+                border: { display: false }
+              },
+              x: {
+                ticks: {
+                  maxTicksLimit: 10,
+                  font: { family: 'Inter, sans-serif', size: 10 },
+                  color: '#64748b'
+                },
+                grid: { display: false },
+                border: { display: false }
+              }
+            }
+          }
+        });
+      }
+    } catch (err) {
+      myFinance.Logger.error('Charts', 'Error rendering Cashflow charts: ' + err.message);
+    }
+  }
+
+  myFinance.Charts = {
+    renderBalanceSheetCharts: renderBalanceSheetCharts,
+    renderCashflowCharts: renderCashflowCharts
+  };
+})(window);
