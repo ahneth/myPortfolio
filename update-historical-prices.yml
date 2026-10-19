@@ -1,0 +1,72 @@
+name: Update Historical Prices (Yahoo Finance v8)
+
+on:
+  schedule:
+    # Runs daily at 22:30 UTC (06:30 HKT next morning — after HKEX, LSE, and US market closes)
+    - cron: '30 22 * * *'
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: 'Optional comma-separated tickers override (leave blank for full portfolio universe)'
+        required: false
+        default: ''
+      range:
+        description: 'Yahoo Finance v8 historical range (e.g. 5y, 10y, max)'
+        required: false
+        default: '10y'
+      delay:
+        description: 'Base delay in seconds between ticker requests to prevent HTTP 429 (default: 1.25)'
+        required: false
+        default: '1.25'
+  push:
+    paths:
+      - 'update_historical_prices.py'
+      - '.github/workflows/update-historical-prices.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-prices:
+    name: Fetch Yahoo Finance v8 Monthly Prices
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Yahoo Finance TLS client (curl_cffi, yfinance) and Excel reader (openpyxl)
+        run: pip install --quiet --upgrade curl_cffi yfinance openpyxl
+
+      - name: Fetch monthly historical prices from Yahoo Finance v8
+        env:
+          INPUT_TICKERS: ${{ github.event.inputs.tickers }}
+          INPUT_RANGE: ${{ github.event.inputs.range || '10y' }}
+          INPUT_DELAY: ${{ github.event.inputs.delay || '1.25' }}
+        run: |
+          if [ -n "$INPUT_TICKERS" ]; then
+            python3 update_historical_prices.py --output ./historical_prices.json --range "$INPUT_RANGE" --delay "$INPUT_DELAY" --max-retries 5 --tickers "$INPUT_TICKERS"
+          else
+            python3 update_historical_prices.py --output ./historical_prices.json --range "$INPUT_RANGE" --delay "$INPUT_DELAY" --max-retries 5
+          fi
+
+      - name: Validate generated historical_prices.json
+        run: |
+          python3 -m json.tool ./historical_prices.json > /dev/null
+          python3 -c "import json; d=json.load(open('historical_prices.json')); print('Validated historical_prices.json — series count:', len(d.get('prices', {})))"
+
+      - name: Commit and push updated historical_prices.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add historical_prices.json
+          if git diff --staged --quiet; then
+            echo "No changes in historical_prices.json to commit."
+          else
+            git commit -m "chore(data): update historical_prices.json via Yahoo Finance v8 [skip ci]"
+            git push
+          fi

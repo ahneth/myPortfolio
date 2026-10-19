@@ -1,287 +1,457 @@
 /**
- * ============================================================================
- * myFinance - Run-Time Logger & Error Diagnostics Module (logger.js)
- * Captures run-time events, state mutations, calculations, and uncaught errors
- * for live inspection and debugging in the bottom Run-Time Log section.
- * ============================================================================
+ * @file logger.js
+ * @module RuntimeLoggerAndDiagnostics
+ * @version 2.4.0
+ * @build 20261018_2345
+ * @description Real-time runtime log & error interceptor, global exception handler,
+ *   console wrapper, and 8-point Page & DOM Health Check suite for the Log Tab.
  */
-(function (global) {
-  'use strict';
 
-  const myFinance = (global.myFinance = global.myFinance || {});
+var LOG_STORAGE_KEY = 'MYPORTFOLIO_RUNTIME_LOGS_V1';
 
-  const MAX_LOGS = 500;
-  const logs = [];
-  let currentFilterLevel = 'ALL';
-  let currentSearchQuery = '';
-  let logIdCounter = 1;
-
-  function formatTimestamp(date) {
-    const pad = (n, w = 2) => String(n).padStart(w, '0');
-    return (
-      date.getFullYear() + '-' +
-      pad(date.getMonth() + 1) + '-' +
-      pad(date.getDate()) + ' ' +
-      pad(date.getHours()) + ':' +
-      pad(date.getMinutes()) + ':' +
-      pad(date.getSeconds()) + '.' +
-      pad(date.getMilliseconds(), 3)
-    );
+var AppLogger = (function() {
+  if (window.AppLogger && window.AppLogger._initialized) {
+    return window.AppLogger;
   }
 
-  function addEntry(level, moduleName, message, details) {
+  const bootStartPerf = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  const maxEntries = 500;
+  let entries = [];
+  let seqId = 1;
+  let activeLevelFilter = 'ALL';
+  let activeModuleFilter = 'ALL';
+  let searchQuery = '';
+  let lastHealthReport = null;
+
+  // Load any persisted logs from previous session crash if present
+  try {
+    const rawSaved = localStorage.getItem(LOG_STORAGE_KEY);
+    if (rawSaved) {
+      const parsed = JSON.parse(rawSaved);
+      if (Array.isArray(parsed)) {
+        entries = parsed.slice(-150).map(item => ({
+          ...item,
+          id: seqId++,
+          session: 'prev'
+        }));
+      }
+    }
+  } catch (_) {}
+
+  function formatTimestamp(d) {
+    const pad = (n, w = 2) => String(n).padStart(w, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
+  }
+
+  function elapsedMs() {
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    return Math.max(0, Math.round(now - bootStartPerf));
+  }
+
+  function safeSerialize(val) {
+    if (val === undefined || val === null) return '';
+    if (typeof val === 'string') return val;
+    if (val instanceof Error) {
+      return `${val.name || 'Error'}: ${val.message || ''}${val.stack ? '\n' + val.stack : ''}`;
+    }
+    try {
+      return JSON.stringify(val, null, 2);
+    } catch (_) {
+      return String(val);
+    }
+  }
+
+  function persistLogs() {
+    try {
+      localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(entries.slice(-200)));
+    } catch (_) {}
+  }
+
+  function addEntry(level, moduleName, message, details = null) {
     const now = new Date();
     const entry = {
-      id: logIdCounter++,
+      id: seqId++,
       timestamp: formatTimestamp(now),
       iso: now.toISOString(),
+      elapsed: elapsedMs(),
       level: String(level || 'INFO').toUpperCase(),
-      module: String(moduleName || 'System'),
-      message: String(message || ''),
-      details: details !== undefined ? details : null
+      module: String(moduleName || 'App'),
+      message: typeof message === 'string' ? message : safeSerialize(message),
+      details: details ? safeSerialize(details) : '',
+      session: 'current'
     };
 
-    logs.unshift(entry);
-    if (logs.length > MAX_LOGS) {
-      logs.pop();
+    entries.push(entry);
+    if (entries.length > maxEntries) {
+      entries = entries.slice(-maxEntries);
     }
-
-    renderLogs();
-    updateCounts();
+    persistLogs();
+    updateLogBadgesAndUI();
     return entry;
   }
 
+  function getCounts() {
+    let total = entries.length;
+    let errors = 0;
+    let warnings = 0;
+    let apiCalls = 0;
+    let currentErrors = 0;
+
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      if (e.level === 'ERROR') {
+        errors++;
+        if (e.session === 'current') currentErrors++;
+      } else if (e.level === 'WARN') {
+        warnings++;
+      } else if (e.level === 'API') {
+        apiCalls++;
+      }
+    }
+    return { total, errors, warnings, apiCalls, currentErrors };
+  }
+
+  function updateLogBadgesAndUI() {
+    if (typeof document === 'undefined') return;
+    const counts = getCounts();
+
+    const navBadge = document.getElementById('nav-log-badge');
+    const mobileBadge = document.getElementById('mobile-log-badge');
+
+    [navBadge, mobileBadge].forEach(badge => {
+      if (!badge) return;
+      if (counts.errors > 0) {
+        badge.textContent = `${counts.errors} ERR`;
+        badge.className = 'text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-rose-500 text-white animate-pulse';
+      } else if (counts.warnings > 0) {
+        badge.textContent = `${counts.warnings} WARN`;
+        badge.className = 'text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30';
+      } else {
+        badge.textContent = String(counts.total);
+        badge.className = 'text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+      }
+    });
+
+    const totalEl = document.getElementById('log-stat-total');
+    const errEl = document.getElementById('log-stat-errors');
+    const warnEl = document.getElementById('log-stat-warnings');
+    const statusEl = document.getElementById('log-stat-status');
+    const subStatusEl = document.getElementById('log-stat-substatus');
+
+    if (totalEl) totalEl.textContent = String(counts.total);
+    if (errEl) errEl.textContent = String(counts.errors);
+    if (warnEl) warnEl.textContent = String(counts.warnings);
+
+    if (statusEl) {
+      if (counts.currentErrors > 0) {
+        statusEl.textContent = `${counts.currentErrors} Runtime Error(s)`;
+        statusEl.className = 'text-lg sm:text-xl font-bold num-font text-rose-600 dark:text-rose-400 mt-1';
+      } else {
+        statusEl.textContent = 'Healthy (0 Errors)';
+        statusEl.className = 'text-lg sm:text-xl font-bold num-font text-emerald-600 dark:text-emerald-400 mt-1';
+      }
+    }
+    if (subStatusEl) {
+      subStatusEl.textContent = `Session active • ${counts.apiCalls} API events logged`;
+    }
+
+    const logPane = document.getElementById('tab-content-logs');
+    if (logPane && !logPane.classList.contains('hidden')) {
+      renderLogTable();
+    }
+  }
+
   function escapeHtml(str) {
-    return String(str)
+    return String(str || '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+      .replace(/"/g, '&quot;');
   }
 
-  function getBadgeClasses(level) {
-    switch (level) {
-      case 'ERROR':
-        return 'bg-rose-500/20 text-rose-300 border border-rose-500/40';
-      case 'WARN':
-        return 'bg-amber-500/20 text-amber-300 border border-amber-500/40';
-      case 'DEBUG':
-        return 'bg-purple-500/20 text-purple-300 border border-purple-500/40';
-      case 'INFO':
-      default:
-        return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
-    }
-  }
+  function renderLogTable() {
+    const tbody = document.getElementById('log-table-body');
+    const emptyState = document.getElementById('log-empty-state');
+    if (!tbody) return;
 
-  function updateCounts() {
-    const totalEl = document.getElementById('log-count-total');
-    const infoEl = document.getElementById('log-count-info');
-    const warnEl = document.getElementById('log-count-warn');
-    const errorEl = document.getElementById('log-count-error');
-    const headerErrorBadge = document.getElementById('header-error-badge');
-
-    const counts = { TOTAL: logs.length, INFO: 0, WARN: 0, ERROR: 0, DEBUG: 0 };
-    for (let i = 0; i < logs.length; i++) {
-      const lvl = logs[i].level;
-      if (counts[lvl] !== undefined) counts[lvl]++;
-    }
-
-    if (totalEl) totalEl.textContent = String(counts.TOTAL);
-    if (infoEl) infoEl.textContent = String(counts.INFO + counts.DEBUG);
-    if (warnEl) warnEl.textContent = String(counts.WARN);
-    if (errorEl) errorEl.textContent = String(counts.ERROR);
-
-    if (headerErrorBadge) {
-      if (counts.ERROR > 0) {
-        headerErrorBadge.textContent = counts.ERROR + ' Error' + (counts.ERROR > 1 ? 's' : '');
-        headerErrorBadge.classList.remove('hidden');
-      } else {
-        headerErrorBadge.classList.add('hidden');
+    const q = (searchQuery || '').trim().toLowerCase();
+    const filtered = entries.filter(item => {
+      if (activeLevelFilter !== 'ALL' && item.level !== activeLevelFilter) return false;
+      if (activeModuleFilter !== 'ALL' && item.module.toLowerCase() !== activeModuleFilter.toLowerCase()) return false;
+      if (q) {
+        const hay = `${item.level} ${item.module} ${item.message} ${item.details}`.toLowerCase();
+        if (!hay.includes(q)) return false;
       }
-    }
-  }
+      return true;
+    }).slice().reverse();
 
-  function getFilteredLogs() {
-    return logs.filter(function (item) {
-      const matchesLevel =
-        currentFilterLevel === 'ALL' || item.level === currentFilterLevel;
-      if (!matchesLevel) return false;
-      if (!currentSearchQuery) return true;
-      const q = currentSearchQuery.toLowerCase();
-      const detailsStr = item.details ? JSON.stringify(item.details).toLowerCase() : '';
-      return (
-        item.message.toLowerCase().includes(q) ||
-        item.module.toLowerCase().includes(q) ||
-        item.level.toLowerCase().includes(q) ||
-        detailsStr.includes(q)
-      );
-    });
-  }
-
-  function renderLogs() {
-    const container = document.getElementById('log-entries-container');
-    if (!container) return;
-
-    const filtered = getFilteredLogs();
     if (filtered.length === 0) {
-      container.innerHTML =
-        '<div class="py-8 text-center text-slate-400 text-xs font-mono">No run-time log entries match the current filter.</div>';
+      tbody.innerHTML = '';
+      if (emptyState) emptyState.classList.remove('hidden');
       return;
     }
+    if (emptyState) emptyState.classList.add('hidden');
 
-    const htmlParts = [];
-    for (let i = 0; i < filtered.length; i++) {
-      const item = filtered[i];
-      let detailsHtml = '';
-      if (item.details !== null && item.details !== undefined) {
-        let serialized = '';
-        try {
-          serialized =
-            typeof item.details === 'string'
-              ? item.details
-              : JSON.stringify(item.details, null, 2);
-        } catch (e) {
-          serialized = String(item.details);
-        }
-        detailsHtml =
-          '<pre class="mt-1.5 p-2 rounded bg-slate-950/90 text-slate-300 text-[11px] overflow-x-auto border border-slate-800">' +
-          escapeHtml(serialized) +
-          '</pre>';
+    const levelBadgeMap = {
+      ERROR: '<span class="px-2 py-0.5 rounded font-mono font-bold bg-rose-500/15 text-rose-500 border border-rose-500/30 text-[10px]">ERROR</span>',
+      WARN: '<span class="px-2 py-0.5 rounded font-mono font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30 text-[10px]">WARN</span>',
+      API: '<span class="px-2 py-0.5 rounded font-mono font-bold bg-indigo-500/15 text-indigo-500 border border-indigo-500/30 text-[10px]">API</span>',
+      ACTION: '<span class="px-2 py-0.5 rounded font-mono font-bold bg-cyan-500/15 text-cyan-500 border border-cyan-500/30 text-[10px]">ACTION</span>',
+      INFO: '<span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 text-[10px]">INFO</span>'
+    };
+
+    tbody.innerHTML = filtered.map(item => {
+      const badge = levelBadgeMap[item.level] || levelBadgeMap.INFO;
+      const rowBg = item.level === 'ERROR'
+        ? 'bg-rose-500/5 hover:bg-rose-500/10'
+        : (item.level === 'WARN' ? 'bg-amber-500/5 hover:bg-amber-500/10' : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40');
+      const sessionTag = item.session === 'prev'
+        ? '<span class="ml-1 px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-[9px]">PREV SESSION</span>'
+        : `<span class="ml-1 text-[10px] text-slate-400">+${item.elapsed}ms</span>`;
+      const detailsHtml = item.details
+        ? `<details class="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+             <summary class="cursor-pointer font-semibold text-brand-600 dark:text-brand-400 hover:underline select-none">Inspect Details / Stack Trace</summary>
+             <pre class="mt-1 p-2.5 rounded-lg bg-slate-900 text-slate-200 font-mono text-[10px] overflow-x-auto whitespace-pre-wrap">${escapeHtml(item.details)}</pre>
+           </details>`
+        : '';
+
+      return `
+        <tr class="${rowBg} transition text-xs align-top">
+          <td class="py-2.5 px-3 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+            <div>#${item.id} • ${escapeHtml(item.timestamp.split(' ')[1] || item.timestamp)}</div>
+            <div>${sessionTag}</div>
+          </td>
+          <td class="py-2.5 px-3 whitespace-nowrap">${badge}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">
+            <span class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono font-semibold text-slate-700 dark:text-slate-300 text-[11px]">[${escapeHtml(item.module)}]</span>
+          </td>
+          <td class="py-2.5 px-3 text-slate-800 dark:text-slate-200 font-mono text-[11px] break-words min-w-[280px]">
+            <div class="font-medium">${escapeHtml(item.message)}</div>
+            ${detailsHtml}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function runHealthCheck() {
+    addEntry('ACTION', 'HealthCheck', 'Starting 8-point Page & Runtime Diagnostics check...');
+    const checks = [];
+
+    // 1. DOM Core Mount Check
+    const requiredIds = [
+      'tab-content-dashboard', 'tab-content-holdings', 'tab-content-transactions',
+      'tab-content-dividends', 'tab-content-watchlist', 'tab-content-settings', 'tab-content-logs',
+      'kpi-portfolio-value', 'chart-monthly-history', 'holdings-table-body', 'watchlist-table-body'
+    ];
+    const missingIds = requiredIds.filter(id => !document.getElementById(id));
+    checks.push({
+      name: 'DOM Structure & Containers',
+      status: missingIds.length === 0 ? 'PASS' : 'FAIL',
+      detail: missingIds.length === 0
+        ? `All ${requiredIds.length} core layout & tab containers mounted`
+        : `Missing DOM IDs: ${missingIds.join(', ')}`
+    });
+
+    // 2. External CDN Libraries Check
+    const chartLoaded = typeof window.Chart !== 'undefined';
+    const xlsxLoaded = typeof window.XLSX !== 'undefined';
+    checks.push({
+      name: 'CDN Libraries (Chart.js & SheetJS)',
+      status: (chartLoaded && xlsxLoaded) ? 'PASS' : 'WARN',
+      detail: `Chart.js: ${chartLoaded ? 'Loaded' : 'Unavailable'} • SheetJS (XLSX): ${xlsxLoaded ? 'Loaded' : 'Unavailable'}`
+    });
+
+    // 3. Compartmentalized Modules Check
+    const modsReady = Boolean(
+      typeof APP_VERSION_MANIFEST !== 'undefined' &&
+      typeof Fin !== 'undefined' &&
+      typeof DeviceDetector !== 'undefined' &&
+      typeof MarketAPI !== 'undefined' &&
+      typeof recalculatePortfolio === 'function' &&
+      typeof renderCharts === 'function' &&
+      typeof renderAll === 'function'
+    );
+    checks.push({
+      name: 'Compartmentalized JS Modules (7/7)',
+      status: modsReady ? 'PASS' : 'FAIL',
+      detail: modsReady
+        ? `v${APP_VERSION_MANIFEST.appVersion} (${APP_VERSION_MANIFEST.buildId}) — All 7 modules active`
+        : 'One or more core global modules failed to initialize'
+    });
+
+    // 4. LocalStorage Read/Write & State Integrity
+    let lsOk = false;
+    let lsDetail = '';
+    try {
+      const testKey = '__MYPORTFOLIO_DIAG_TEST__';
+      localStorage.setItem(testKey, 'ok');
+      lsOk = localStorage.getItem(testKey) === 'ok';
+      localStorage.removeItem(testKey);
+      const txCount = state?.transactions?.length || 0;
+      const wlCount = state?.watchlist?.length || 0;
+      lsDetail = `Read/Write OK • ${txCount} tx, ${wlCount} watchlist items in state`;
+    } catch (err) {
+      lsDetail = `LocalStorage restricted: ${err.message}`;
+    }
+    checks.push({
+      name: 'LocalStorage & State Schema',
+      status: lsOk ? 'PASS' : 'WARN',
+      detail: lsDetail
+    });
+
+    // 5. Portfolio Accounting Engine Check
+    const portOk = Boolean(portfolio && typeof portfolio.totalPortfolioValue === 'number' && !isNaN(portfolio.totalPortfolioValue));
+    checks.push({
+      name: 'Portfolio Accounting Engine',
+      status: portOk ? 'PASS' : 'FAIL',
+      detail: portOk
+        ? `${portfolio.activeHoldings.length} active holdings • Net Worth: ${Fin.currency(portfolio.totalPortfolioValue)} • Cost: ${Fin.currency(portfolio.totalStockCostBasis)}`
+        : 'Portfolio calculation returned invalid numeric state'
+    });
+
+    // 6. MarketAPI & Historical Price Cache Check
+    const histCachedCount = state?.historicalPrices
+      ? Object.keys(state.historicalPrices).filter(k => Array.isArray(state.historicalPrices[k]) && state.historicalPrices[k].length > 0).length
+      : 0;
+    const jsonStatus = window.__HISTORICAL_PRICES_JSON_LOADED__
+      ? 'historical_prices.json loaded'
+      : 'no preloaded history (charts stay empty until real data is loaded)';
+    checks.push({
+      name: 'MarketAPI & Historical Price Cache',
+      status: MarketAPI.hasKey() ? 'PASS' : 'WARN',
+      detail: `Provider: ${MarketAPI.getProvider().toUpperCase()} • ${histCachedCount} real historical series • ${jsonStatus}`
+    });
+
+    // 7. Chart.js Canvas Rendering Check
+    const allocCanvas = document.getElementById('chart-allocation');
+    const histCanvas = document.getElementById('chart-monthly-history');
+    const chartsOk = Boolean(allocCanvas && histCanvas);
+    checks.push({
+      name: 'Chart Canvases & Contexts',
+      status: chartsOk ? 'PASS' : 'FAIL',
+      detail: chartsOk
+        ? `Dashboard canvases ready (Portfolio HistoryMode: ${typeof portfolioHistoryMode !== 'undefined' ? portfolioHistoryMode : 'balance'})`
+        : 'Missing chart canvas elements'
+    });
+
+    // 8. Device Detector Profile
+    const dp = DeviceDetector?.profile || {};
+    checks.push({
+      name: 'Adaptive Device Profile',
+      status: dp.effectiveMode ? 'PASS' : 'WARN',
+      detail: `${(dp.effectiveMode || 'desktop').toUpperCase()} layout • ${dp.os || 'OS'} • ${dp.width || 0}×${dp.height || 0}px`
+    });
+
+    lastHealthReport = checks;
+    const failCount = checks.filter(c => c.status === 'FAIL').length;
+    const warnCount = checks.filter(c => c.status === 'WARN').length;
+
+    if (failCount > 0) {
+      addEntry('ERROR', 'HealthCheck', `Health check completed with ${failCount} failure(s) and ${warnCount} warning(s).`, checks);
+    } else {
+      addEntry('INFO', 'HealthCheck', `All ${checks.length} diagnostic checks passed (${warnCount} warnings).`, checks);
+    }
+
+    renderHealthCheckPanel();
+    renderLogTable();
+    return checks;
+  }
+
+  function renderHealthCheckPanel() {
+    const box = document.getElementById('log-health-check-panel');
+    if (!box || !lastHealthReport) return;
+
+    box.innerHTML = lastHealthReport.map(item => {
+      const badge = item.status === 'PASS'
+        ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">PASS</span>'
+        : (item.status === 'WARN'
+            ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30">WARN</span>'
+            : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-500 border border-rose-500/30">FAIL</span>');
+      return `
+        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-2">
+          <div>
+            <div class="text-xs font-bold text-slate-900 dark:text-white">${escapeHtml(item.name)}</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">${escapeHtml(item.detail)}</div>
+          </div>
+          <div class="shrink-0">${badge}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Hook global window error & unhandledrejection
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('error', function(event) {
+      // Check if it's a resource load failure (e.g. external script/stylesheet/img)
+      if (event && event.target && event.target !== window && (event.target.tagName === 'SCRIPT' || event.target.tagName === 'LINK' || event.target.tagName === 'IMG')) {
+        const url = event.target.src || event.target.href || 'unknown resource';
+        addEntry('ERROR', 'ResourceLoader', `Failed to load external <${event.target.tagName.toLowerCase()}> resource: ${url}`, {
+          tag: event.target.tagName,
+          url
+        });
+        return;
       }
+      const msg = event?.message || 'Uncaught runtime script error';
+      const loc = event?.filename ? `${event.filename}:${event.lineno || 0}:${event.colno || 0}` : 'inline-script';
+      const stack = event?.error?.stack || `${msg} at ${loc}`;
+      addEntry('ERROR', 'GlobalError', `${msg} (${loc})`, stack);
+    }, true);
 
-      htmlParts.push(
-        '<div class="py-2 px-3 border-b border-slate-800/80 hover:bg-slate-800/40 transition-colors font-mono text-xs">' +
-          '<div class="flex flex-wrap items-center gap-2">' +
-            '<span class="text-slate-400 text-[11px] shrink-0">[' + escapeHtml(item.timestamp) + ']</span>' +
-            '<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold shrink-0 ' + getBadgeClasses(item.level) + '">' +
-              escapeHtml(item.level) +
-            '</span>' +
-            '<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-medium shrink-0">' +
-              escapeHtml(item.module) +
-            '</span>' +
-            '<span class="text-slate-100 break-all">' + escapeHtml(item.message) + '</span>' +
-          '</div>' +
-          detailsHtml +
-        '</div>'
-      );
-    }
-
-    container.innerHTML = htmlParts.join('');
-  }
-
-  function attachGlobalErrorHandlers() {
-    global.addEventListener('error', function (event) {
-      addEntry('ERROR', 'RuntimeException', event.message || 'Uncaught script error', {
-        filename: event.filename || 'inline',
-        lineno: event.lineno || 0,
-        colno: event.colno || 0,
-        stack: event.error && event.error.stack ? event.error.stack : null
-      });
-    });
-
-    global.addEventListener('unhandledrejection', function (event) {
-      const reason = event.reason;
-      addEntry(
-        'ERROR',
-        'PromiseRejection',
-        reason && reason.message ? reason.message : 'Unhandled Promise Rejection',
-        {
-          reason: reason ? String(reason) : 'Unknown',
-          stack: reason && reason.stack ? reason.stack : null
-        }
-      );
+    window.addEventListener('unhandledrejection', function(event) {
+      const reason = event?.reason;
+      const msg = reason?.message || String(reason || 'Unhandled Promise Rejection');
+      addEntry('ERROR', 'PromiseRejection', `Unhandled Promise Rejection: ${msg}`, reason?.stack || reason);
     });
   }
 
-  function bindLogControls() {
-    const levelSelect = document.getElementById('log-filter-level');
-    if (levelSelect) {
-      levelSelect.addEventListener('change', function (e) {
-        currentFilterLevel = e.target.value;
-        renderLogs();
-      });
-    }
+  // Intercept console.warn and console.error so library/runtime warnings appear in Log tab
+  if (typeof console !== 'undefined') {
+    const origWarn = console.warn ? console.warn.bind(console) : () => {};
+    const origError = console.error ? console.error.bind(console) : () => {};
 
-    const searchInput = document.getElementById('log-search-input');
-    if (searchInput) {
-      searchInput.addEventListener('input', function (e) {
-        currentSearchQuery = e.target.value.trim();
-        renderLogs();
-      });
-    }
+    console.warn = function(...args) {
+      origWarn(...args);
+      const msg = args.map(a => (typeof a === 'string' ? a : safeSerialize(a))).join(' ');
+      addEntry('WARN', 'Console', msg);
+    };
 
-    const clearBtn = document.getElementById('btn-clear-logs');
-    if (clearBtn) {
-      clearBtn.addEventListener('click', function () {
-        logs.length = 0;
-        addEntry('INFO', 'Logger', 'Run-time logs cleared by user.');
-      });
-    }
-
-    const testWarnBtn = document.getElementById('btn-simulate-error');
-    if (testWarnBtn) {
-      testWarnBtn.addEventListener('click', function () {
-        try {
-          throw new Error('Simulated diagnostic runtime exception for debugging verification');
-        } catch (err) {
-          addEntry('ERROR', 'Diagnostics', err.message, {
-            simulated: true,
-            stack: err.stack || 'N/A',
-            userAgent: navigator.userAgent
-          });
-          if (myFinance.App && myFinance.App.showToast) {
-            myFinance.App.showToast('Simulated runtime error logged to diagnostics panel.', 'warn');
-          }
-        }
-      });
-    }
-
-    const exportLogsBtn = document.getElementById('btn-export-logs');
-    if (exportLogsBtn) {
-      exportLogsBtn.addEventListener('click', function () {
-        try {
-          const blob = new Blob([JSON.stringify(logs, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'myFinance_runtime_logs_' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-          addEntry('INFO', 'Logger', 'Exported run-time logs to JSON file (' + logs.length + ' entries).');
-        } catch (err) {
-          addEntry('ERROR', 'Logger', 'Failed to export logs: ' + err.message);
-        }
-      });
-    }
+    console.error = function(...args) {
+      origError(...args);
+      const msg = args.map(a => (typeof a === 'string' ? a : safeSerialize(a))).join(' ');
+      addEntry('ERROR', 'Console', msg);
+    };
   }
 
-  myFinance.Logger = {
-    init: function () {
-      attachGlobalErrorHandlers();
-      bindLogControls();
-      addEntry('INFO', 'Logger', 'Run-Time Logger & Error Trap initialized.', {
-        timestamp: new Date().toISOString(),
-        maxBuffer: MAX_LOGS
-      });
+  const api = {
+    _initialized: true,
+    info: (mod, msg, details) => addEntry('INFO', mod, msg, details),
+    warn: (mod, msg, details) => addEntry('WARN', mod, msg, details),
+    error: (mod, msg, details) => addEntry('ERROR', mod, msg, details),
+    api: (mod, msg, details) => addEntry('API', mod, msg, details),
+    action: (mod, msg, details) => addEntry('ACTION', mod, msg, details),
+    getLogs: () => [...entries],
+    getCounts,
+    setLevelFilter: (lvl) => { activeLevelFilter = lvl || 'ALL'; renderLogTable(); },
+    setModuleFilter: (mod) => { activeModuleFilter = mod || 'ALL'; renderLogTable(); },
+    setSearchQuery: (q) => { searchQuery = q || ''; renderLogTable(); },
+    clear: () => {
+      entries = [];
+      try { localStorage.removeItem(LOG_STORAGE_KEY); } catch (_) {}
+      addEntry('INFO', 'Logger', 'Runtime log buffer cleared by user.');
+      renderLogTable();
     },
-    info: function (mod, msg, details) {
-      return addEntry('INFO', mod, msg, details);
+    exportText: () => {
+      return entries.map(e => `[${e.timestamp}] [+${e.elapsed}ms] [${e.level}] [${e.module}] ${e.message}${e.details ? '\n  Details: ' + e.details : ''}`).join('\n');
     },
-    warn: function (mod, msg, details) {
-      return addEntry('WARN', mod, msg, details);
-    },
-    error: function (mod, msg, details) {
-      return addEntry('ERROR', mod, msg, details);
-    },
-    debug: function (mod, msg, details) {
-      return addEntry('DEBUG', mod, msg, details);
-    },
-    getLogs: function () {
-      return logs.slice();
-    },
-    render: renderLogs
+    renderLogTable,
+    renderHealthCheckPanel,
+    updateLogBadgesAndUI,
+    runHealthCheck
   };
-})(window);
+
+  addEntry('INFO', 'Boot', 'Runtime Logger & Global Error Interceptor initialized (v2.4.0 • Build 20261018_2345).');
+  return api;
+})();
+
+window.AppLogger = AppLogger;

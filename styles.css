@@ -1,206 +1,173 @@
 /* ==========================================================================
-   myFinance - Executive Fintech Design System (styles.css)
-   Inspired by industry-leading wealth platforms (Monarch, ProjectionLab, Kubera)
+   myPortfolio - Stylesheet (styles.css)
+   Responsive Mobile & Desktop Styling, Theme Variables & Utility Classes
    ========================================================================== */
 
 :root {
-  --bg-canvas: #f4f6fb;
-  --bg-surface: #ffffff;
-  --bg-subtle: #f8fafc;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --brand-primary: #4f46e5;
-  --brand-primary-hover: #4338ca;
-  --accent-emerald: #10b981;
-  --accent-rose: #f43f5e;
-  --accent-amber: #f59e0b;
-  --accent-sky: #0ea5e9;
-  --border-light: #e2e8f0;
-  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
-  --shadow-card-hover: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 10px 20px -4px rgba(15, 23, 42, 0.08);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: var(--font-sans);
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--bg-canvas);
-  background-image: radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.04) 0px, transparent 50%),
-                    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.04) 0px, transparent 50%);
-  color: var(--text-primary);
-  margin: 0;
-  padding: 0;
+  font-family: var(--font-sans);
   overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
 }
 
-/* Tabular numbers for financial precision */
-.tabular-nums {
+/* Monospace Financial Figures */
+.num-font {
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
-/* Smooth tab transitions */
-.tab-panel {
-  animation: fadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+/* ==========================================================================
+   Device-Specific Adaptive Adjustments (Set via JS DeviceDetector)
+   ========================================================================== */
+
+/* Reserve bottom space on mobile so the sticky bottom nav bar never covers content */
+body[data-device="mobile"] {
+  padding-bottom: calc(4.5rem + var(--safe-bottom));
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
+body[data-device="mobile"] .chart-container {
+  min-height: 230px;
+}
+
+body[data-device="desktop"] .chart-container,
+body[data-device="tablet"] .chart-container {
+  min-height: 280px;
+}
+
+/* Mobile Bottom Navigation Safe Area */
+.mobile-bottom-nav {
+  padding-bottom: var(--safe-bottom);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.dark .mobile-bottom-nav {
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* ==========================================================================
+   Responsive Data Tables & Sticky First Column for Mobile
+   ========================================================================== */
+
+.table-responsive-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Keep the Ticker/Asset column pinned on horizontal scroll on small screens */
+@media (max-width: 768px) {
+  .sticky-col-mobile {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background-color: #ffffff;
+    box-shadow: 2px 0 6px -2px rgba(0, 0, 0, 0.08);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .dark .sticky-col-mobile {
+    background-color: #111827;
+    box-shadow: 2px 0 8px -2px rgba(0, 0, 0, 0.5);
   }
-}
 
-/* Segmented Pill Navigation Tabs */
-.nav-tab-btn {
-  position: relative;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  color: #475569;
-}
-
-.nav-tab-btn:hover:not(.active) {
-  color: #0f172a;
-  background-color: rgba(255, 255, 255, 0.6);
-}
-
-.nav-tab-btn.active {
-  color: #4f46e5;
-  background-color: #ffffff;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
-  font-weight: 600;
-}
-
-/* Fintech Surface Cards */
-.fin-card {
-  background: var(--bg-surface);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 1rem;
-  box-shadow: var(--shadow-card);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.fin-card-interactive:hover {
-  box-shadow: var(--shadow-card-hover);
-}
-
-/* Hero Net Worth Card Gradient */
-.hero-nw-card {
-  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-  color: #ffffff;
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  box-shadow: 0 10px 25px -5px rgba(30, 27, 75, 0.25);
-}
-
-/* Input group with unit adornment */
-.input-shell {
-  display: flex;
-  align-items: center;
-  background-color: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.625rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  overflow: hidden;
-}
-
-.input-shell:focus-within {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
-}
-
-.input-shell input {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-}
-
-/* Custom Scrollbar for Forecast Table and Run-Time Log */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Dark Scrollbar for Terminal Log Viewer */
-.log-terminal::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.log-terminal::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-
-.log-terminal::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
-}
-
-.log-terminal::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
-
-/* Sticky Table Headers */
-.sticky-th th {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  backdrop-filter: blur(8px);
-}
-
-/* Number Input Clean Spinners */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  opacity: 0.65;
-}
-
-/* Ratio Progress Bar Transitions */
-.ratio-bar-fill {
-  transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Toast Notification Animation */
-.toast-enter {
-  animation: slideInUp 0.25s ease-out forwards;
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
+  thead .sticky-col-mobile {
+    background-color: #f8fafc;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .dark thead .sticky-col-mobile {
+    background-color: #1e293b;
+  }
+
+  /* Bottom-sheet style modals on mobile devices */
+  .modal-backdrop {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .modal-card {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    max-height: 92vh !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 
-/* Print Layout Adjustments */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  body {
-    background: #ffffff;
+/* ==========================================================================
+   Price Update Animations & Loading States
+   ========================================================================== */
+
+@keyframes flashGreen {
+  0% { background-color: rgba(16, 185, 129, 0.35); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flashRed {
+  0% { background-color: rgba(244, 63, 94, 0.35); }
+  100% { background-color: transparent; }
+}
+
+.flash-up {
+  animation: flashGreen 1.2s ease-out;
+}
+
+.flash-down {
+  animation: flashRed 1.2s ease-out;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.45);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.75);
+}
+
+/* Hide scrollbar for clean horizontal pill navs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Collapsible Sector Group Headers in Holdings Table (v2.4.0) */
+.sector-group-header {
+  transition: background-color 0.15s ease;
+}
+
+@media (max-width: 768px) {
+  .sector-group-header .sticky-col-mobile {
+    z-index: 12;
   }
 }

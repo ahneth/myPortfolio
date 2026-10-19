@@ -22,7 +22,8 @@ var APP_VERSION_MANIFEST = {
     'styles.css':   { version: '2.4.0', updated: '20261018_2345', role: 'Responsive layout rules, collapsible sector header styles, mobile 7-tab bottom-nav & sticky columns' },
     'historical_prices.json': { version: '2.4.0', updated: '20261018_2345', role: 'External monthly historical price dataset loaded on startup by portfolio.js' },
     'update_historical_prices.py': { version: '2.4.0', updated: '20261018_2345', role: 'Standalone Python 3 Yahoo Finance v8 monthly historical price fetcher' },
-    '.github/workflows/update-historical-prices.yml': { version: '2.4.0', updated: '20261018_2345', role: 'Daily GitHub Action workflow automatically updating and committing historical_prices.json' }
+    '.github/workflows/update-historical-prices.yml': { version: '2.4.0', updated: '20261018_2345', role: 'Daily GitHub Action workflow automatically updating and committing historical_prices.json' },
+    'site.webmanifest': { version: '2.4.0', updated: '20261018_2345', role: 'PWA Web App Manifest & multi-resolution Android/PC bookmark icon suite (favicon.svg, favicon.ico, icon-192.png, icon-512.png, apple-touch-icon.png)' }
   },
   changelog: [
     {
