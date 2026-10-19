@@ -1,8 +1,8 @@
 /**
  * @file charts.js
  * @module PortfolioChartsModule
- * @version 2.4.0
- * @build 20261018_2345
+ * @version 2.4.1
+ * @build 20261019_1950
  * @description Chart.js controllers for:
  *   1. Dashboard "Portfolio Historical Balance & Return" (Monthly Balance vs. Monthly Accumulative Total Return)
  *   2. Holdings Tab inline clickable stock monthly price chart (1-Y, 2-Y, 3-Y, 5-Y, ALL)

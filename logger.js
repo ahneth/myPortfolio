@@ -1,8 +1,8 @@
 /**
  * @file logger.js
  * @module RuntimeLoggerAndDiagnostics
- * @version 2.4.0
- * @build 20261018_2345
+ * @version 2.4.1
+ * @build 20261019_1950
  * @description Real-time runtime log & error interceptor, global exception handler,
  *   console wrapper, and 8-point Page & DOM Health Check suite for the Log Tab.
  */
@@ -450,7 +450,7 @@ var AppLogger = (function() {
     runHealthCheck
   };
 
-  addEntry('INFO', 'Boot', 'Runtime Logger & Global Error Interceptor initialized (v2.4.0 • Build 20261018_2345).');
+  addEntry('INFO', 'Boot', 'Runtime Logger & Global Error Interceptor initialized (v2.4.1 • Build 20261019_1950).');
   return api;
 })();
 

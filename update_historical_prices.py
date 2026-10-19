@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 update_historical_prices.py — Yahoo Finance v8 Monthly Historical Price Fetcher
-Version: 2.4.0 (Build 20261018_2345 — HTTP 429 Rate-Limit & TLS Impersonation Fix)
+Version: 2.4.1 (Build 20261019_1950 — HTTP 429 Rate-Limit & TLS Impersonation Fix)
 
 Fetches real monthly OHLCV + adjusted close series, latest quotes, and trailing 12-month
 dividend yields from Yahoo Finance's v8 Chart endpoint:
@@ -797,8 +797,8 @@ def main() -> int:
     if args.init_empty:
         payload = {
             "_meta": {
-                "version": "2.4.0",
-                "buildId": "20261018_2345",
+                "version": "2.4.1",
+                "buildId": "20261019_1950",
                 "generatedAt": None,
                 "source": "Yahoo Finance v8 Chart API (1mo)",
                 "range": args.range_str,
@@ -886,8 +886,8 @@ def main() -> int:
     now_iso = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     payload = {
         "_meta": {
-            "version": "2.4.0",
-            "buildId": "20261018_2345",
+            "version": "2.4.1",
+            "buildId": "20261019_1950",
             "generatedAt": now_iso,
             "source": "Yahoo Finance v8 Chart API (1mo)",
             "range": args.range_str,

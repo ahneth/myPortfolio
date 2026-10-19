@@ -1,8 +1,8 @@
 /**
  * @file portfolio.js
  * @module PortfolioEngineAndExcelIO
- * @version 2.4.0
- * @build 20261018_2345
+ * @version 2.4.1
+ * @build 20261019_1950
  * @description Application state persistence, automatic startup loading of ./historical_prices.json,
  *   WACB & P&L accounting engine, and SheetJS 6-worksheet Excel backup/restore.
  */
@@ -22,8 +22,8 @@ function createEmptyState() {
       darkMode: true,
       lastApiSync: null,
       yahooDefaultApplied: true,
-      appVersion: '2.4.0',
-      buildId: '20261018_2345',
+      appVersion: '2.4.1',
+      buildId: '20261019_1950',
       collapsedSectors: {}
     },
     cashBalance: 0,
@@ -59,7 +59,7 @@ var charts = {
 };
 
 /**
- * Detects legacy synthetic/hardcoded hardcoded market snapshot data series from pre-v2.4.0 builds
+ * Detects legacy synthetic/hardcoded hardcoded market snapshot data series from pre-v2.4.1 builds
  * (e.g. series where all monthly bars had a constant dummy volume like 1500000 or 395201089
  * or uniform -25 dates) so they are purged from localStorage and Excel imports.
  */
@@ -319,8 +319,8 @@ function initAppState() {
     };
   });
 
-  state.settings.appVersion = (typeof APP_VERSION_MANIFEST !== 'undefined') ? APP_VERSION_MANIFEST.appVersion : '2.4.0';
-  state.settings.buildId = (typeof APP_VERSION_MANIFEST !== 'undefined') ? APP_VERSION_MANIFEST.buildId : '20261018_2345';
+  state.settings.appVersion = (typeof APP_VERSION_MANIFEST !== 'undefined') ? APP_VERSION_MANIFEST.appVersion : '2.4.1';
+  state.settings.buildId = (typeof APP_VERSION_MANIFEST !== 'undefined') ? APP_VERSION_MANIFEST.buildId : '20261019_1950';
 
   if (state.settings.darkMode === false) {
     document.documentElement.classList.remove('dark');

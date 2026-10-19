@@ -1,8 +1,8 @@
 /**
  * @file app.js
  * @module AppUIController
- * @version 2.4.0
- * @build 20261018_2345
+ * @version 2.4.1
+ * @build 20261019_1950
  * @description Main UI controller, table renderers, modal handlers, intrinsic valuation calculators, and event listeners.
  */
 
@@ -1605,7 +1605,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v2.4.0 • Build 20261018_2345)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v2.4.1 • Build 20261019_1950)...');
   }
 
   try {

@@ -1,13 +1,13 @@
 /**
  * @file api.js
  * @module MarketAPIModule
- * @version 2.4.0
- * @build 20261018_2345
+ * @version 2.4.1
+ * @build 20261019_1950
  * @description Compartmentalized Global Stock Market API Client (HKEX, US NYSE/NASDAQ, London LSE).
  *   - Tier 1: Parallel Yahoo Finance v8 Chart Proxy Race (Promise.any) with 30s deduplication cache & 45s circuit breaker
  *   - Tier 2: Zero-CORS Browser script-tag JSONP Quote Fallback (qt.gtimg.cn) for HK & US equities
  *   - Optional keyed providers: Alpha Vantage, Twelve Data, Finnhub
- *   - Note (v2.4.0): All hardcoded/fake hardcoded market snapshot data has been removed. Historical charts
+ *   - Note (v2.4.1): All hardcoded/fake hardcoded market snapshot data has been removed. Historical charts
  *     rely strictly on real data loaded from ./historical_prices.json or live API synchronization.
  */
 

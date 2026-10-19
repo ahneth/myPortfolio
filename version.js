@@ -1,34 +1,34 @@
 /**
  * @file version.js
  * @module VersionRegistry
- * @version 2.4.0
- * @build 20261018_2345
+ * @version 2.4.1
+ * @build 20261019_1950
  * @description Centralized version & build manifest for myPortfolio modular architecture.
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '2.4.0',
-  buildId: '20261018_2345',
-  releaseDate: '2026-10-18 23:45 HKT',
-  driveFolder: '/stock_portfolio/20261018_2345/',
+  appVersion: '2.4.1',
+  buildId: '20261019_1950',
+  releaseDate: '2026-10-19 19:50 HKT',
+  driveFolder: '/stock_portfolio/20261019_1950/',
   modules: {
-    'version.js':   { version: '2.4.0', updated: '20261018_2345', role: 'Version manifest, module registry & changelog history' },
-    'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Real-time runtime log & error interceptor, console hook & 8-point health diagnostics' },
-    'utils.js':     { version: '2.4.0', updated: '20261018_2345', role: 'Financial precision math (Fin 4-decimal share price support) & Automatic DeviceDetector' },
-    'api.js':       { version: '2.4.0', updated: '20261018_2345', role: 'Live Global MarketAPI (Yahoo v8 Chart Race, Tencent JSONP & Keyed Providers; zero fake fallback data)' },
-    'portfolio.js': { version: '2.4.0', updated: '20261018_2345', role: 'Startup ./historical_prices.json loader, WACB/P&L/DRIP accounting & SheetJS 6-sheet Excel I/O' },
-    'charts.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Guarded Chart.js controllers that remain strictly empty when no real historical data is available' },
-    'app.js':       { version: '2.4.0', updated: '20261018_2345', role: 'Collapsible sector-grouped Holdings UI (ETFs at top, A-Z sector & ticker sorting) & DOM controllers' },
-    'styles.css':   { version: '2.4.0', updated: '20261018_2345', role: 'Responsive layout rules, collapsible sector header styles, mobile 7-tab bottom-nav & sticky columns' },
-    'historical_prices.json': { version: '2.4.0', updated: '20261018_2345', role: 'External monthly historical price dataset loaded on startup by portfolio.js' },
-    'update_historical_prices.py': { version: '2.4.0', updated: '20261018_2345', role: 'Standalone Python 3 Yahoo Finance v8 monthly historical price fetcher' },
-    '.github/workflows/update-historical-prices.yml': { version: '2.4.0', updated: '20261018_2345', role: 'Daily GitHub Action workflow automatically updating and committing historical_prices.json' },
-    'site.webmanifest': { version: '2.4.0', updated: '20261018_2345', role: 'PWA Web App Manifest & multi-resolution Android/PC bookmark icon suite (favicon.svg, favicon.ico, icon-192.png, icon-512.png, apple-touch-icon.png)' }
+    'version.js':   { version: '2.4.1', updated: '20261019_1950', role: 'Version manifest, module registry & changelog history' },
+    'logger.js':    { version: '2.4.1', updated: '20261019_1950', role: 'Real-time runtime log & error interceptor, console hook & 8-point health diagnostics' },
+    'utils.js':     { version: '2.4.1', updated: '20261019_1950', role: 'Financial precision math (Fin 4-decimal share price support) & Automatic DeviceDetector' },
+    'api.js':       { version: '2.4.1', updated: '20261019_1950', role: 'Live Global MarketAPI (Yahoo v8 Chart Race, Tencent JSONP & Keyed Providers; zero fake fallback data)' },
+    'portfolio.js': { version: '2.4.1', updated: '20261019_1950', role: 'Startup ./historical_prices.json loader, WACB/P&L/DRIP accounting & SheetJS 6-sheet Excel I/O' },
+    'charts.js':    { version: '2.4.1', updated: '20261019_1950', role: 'Guarded Chart.js controllers that remain strictly empty when no real historical data is available' },
+    'app.js':       { version: '2.4.1', updated: '20261019_1950', role: 'Collapsible sector-grouped Holdings UI (ETFs at top, A-Z sector & ticker sorting) & DOM controllers' },
+    'styles.css':   { version: '2.4.1', updated: '20261019_1950', role: 'Responsive layout rules, collapsible sector header styles, mobile 7-tab bottom-nav & sticky columns' },
+    'historical_prices.json': { version: '2.4.1', updated: '20261019_1950', role: 'External monthly historical price dataset loaded on startup by portfolio.js' },
+    'update_historical_prices.py': { version: '2.4.1', updated: '20261019_1950', role: 'Standalone Python 3 Yahoo Finance v8 monthly historical price fetcher' },
+    '.github/workflows/update-historical-prices.yml': { version: '2.4.1', updated: '20261019_1950', role: 'Daily GitHub Action workflow automatically updating and committing historical_prices.json' },
+    'site.webmanifest': { version: '2.4.1', updated: '20261019_1950', role: 'PWA Web App Manifest & multi-resolution Android/PC bookmark icon suite (favicon.svg, favicon.ico, icon-192.png, icon-512.png, apple-touch-icon.png)' }
   },
   changelog: [
     {
-      buildId: '20261018_2345',
-      version: '2.4.0',
+      buildId: '20261019_1950',
+      version: '2.4.1',
       summary: 'Removed all hardcoded/fake hardcoded market snapshot data from api.js, portfolio.js, and index.html so charts stay empty when no real data is available. Added automatic startup loading of ./historical_prices.json in portfolio.js. Grouped Holdings by sector with collapsible sector headers, ETFs pinned at the top, and alphabetical sector + ticker sorting in app.js. Added historical_prices.json, update_historical_prices.py (Yahoo Finance v8 monthly fetcher), and .github/workflows/update-historical-prices.yml (daily GitHub Action).'
     },
     {
