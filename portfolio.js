@@ -1777,6 +1777,49 @@ function recalculatePortfolio() {
       const costBasisBase = Fin.convertCurrency(h.totalCostBasis, currency, baseCurr);
       const annualDivBase = Fin.convertCurrency(annualDivNative, currency, baseCurr);
 
+      // Compute Per-Stock Annualized XIRR (Nominal & Inflation-Adjusted Real) from dated BUY/SELL/Dividend cash flows + terminal Market Value
+      const stockXirrFlowsNative = [];
+      const stockXirrFlowsBase = [];
+      const evalDateIso = new Date().toISOString().split('T')[0];
+
+      sortedTx.forEach(tx => {
+        if (tx.ticker !== ticker || !tx.date) return;
+        if (tx.type === 'BUY') {
+          const outlay = (Number(tx.shares) || 0) * (Number(tx.price) || 0) + (Number(tx.fees) || 0);
+          if (outlay > 0) {
+            stockXirrFlowsNative.push({ date: tx.date, amount: -outlay });
+            stockXirrFlowsBase.push({ date: tx.date, amount: -Fin.convertCurrency(outlay, currency, baseCurr) });
+          }
+        } else if (tx.type === 'SELL') {
+          const proceeds = (Number(tx.shares) || 0) * (Number(tx.price) || 0) - (Number(tx.fees) || 0);
+          if (proceeds > 0) {
+            stockXirrFlowsNative.push({ date: tx.date, amount: proceeds });
+            stockXirrFlowsBase.push({ date: tx.date, amount: Fin.convertCurrency(proceeds, currency, baseCurr) });
+          }
+        }
+      });
+
+      state.dividends.forEach(div => {
+        if (div.ticker !== ticker) return;
+        const dDate = div.payDate || div.exDate;
+        if (!dDate) return;
+        const dAmt = Number(div.totalAmount) || 0;
+        if (dAmt > 0) {
+          const dCurr = div.currency || currency;
+          stockXirrFlowsNative.push({ date: dDate, amount: Fin.convertCurrency(dAmt, dCurr, currency) });
+          stockXirrFlowsBase.push({ date: dDate, amount: Fin.convertCurrency(dAmt, dCurr, baseCurr) });
+        }
+      });
+
+      if (marketValue > 0) {
+        stockXirrFlowsNative.push({ date: evalDateIso, amount: marketValue });
+        stockXirrFlowsBase.push({ date: evalDateIso, amount: marketValueBase });
+      }
+
+      const stockXirrPct = Fin.xirr(stockXirrFlowsNative);
+      const infRateSetting = Number(state.settings?.inflationRatePct ?? 2.2);
+      const stockRealXirrPct = stockXirrPct !== null ? Fin.realReturn(stockXirrPct, infRateSetting) : null;
+
       activeHoldings.push({
         ticker,
         companyName,
@@ -1820,6 +1863,9 @@ function recalculatePortfolio() {
         unrealizedGainPct,
         totalDividends: h.totalDividends,
         yieldOnCost,
+        xirrPct: stockXirrPct,
+        realXirrPct: stockRealXirrPct,
+        xirrFlowsBase: stockXirrFlowsBase,
         forwardYoC,
         annualForwardDivNative: Fin.round(annualDivNative, 2),
         annualForwardDivBase: Fin.round(annualDivBase, 2),

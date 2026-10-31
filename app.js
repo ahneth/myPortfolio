@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.1.3-20261031_2205') {
+      if (k !== 'myportfolio-cache-v3.1.4-20261031_2235') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -18,8 +18,8 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
 /**
  * @file app.js
  * @module AppUIController
- * @version 3.1.3
- * @build 20261031_2205
+ * @version 3.1.4
+ * @build 20261031_2235
  * @description Main UI controller, Holdings & Watchlist tables with 52W/MoM/QoQ/YoY + Dividend Ex-Date/Yield +
  *   Trend Regime + 0-100 Buy/Sell Signal badges, Auto-Detected 2018+ Dividend Backfill, News & Catalysts Tab,
  *   Smart Cash Deployment & Rebalancing Simulator, Nominal/Real XIRR KPIs, and Full Settings Parameter Customizer.
@@ -665,11 +665,15 @@ function renderHoldingsTable() {
         totalMarketValueBase: 0,
         totalUnrealizedGain: 0,
         totalDividends: 0,
+        xirrFlowsBase: [],
         currency: baseCurr
       };
     }
     const g = groupsMap[secName];
     g.items.push(h);
+    if (Array.isArray(h.xirrFlowsBase)) {
+      g.xirrFlowsBase.push(...h.xirrFlowsBase);
+    }
     g.totalCostBasis = Fin.round(g.totalCostBasis + Fin.convertCurrency(h.totalCostBasis, hCurr, baseCurr), 2);
     g.totalMarketValue = Fin.round(g.totalMarketValue + Fin.convertCurrency(h.marketValue, hCurr, baseCurr), 2);
     g.totalMarketValueBase = Fin.round(g.totalMarketValueBase + (h.marketValueBase || Fin.convertCurrency(h.marketValue, hCurr, baseCurr)), 2);
@@ -696,6 +700,10 @@ function renderHoldingsTable() {
       ? Fin.round((group.totalMarketValueBase / portfolio.totalStockMarketValue) * 100, 1)
       : 0;
     const groupPnlColor = group.totalUnrealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+    const groupXirrPct = Fin.xirr(group.xirrFlowsBase || []);
+    const infRate = Number(state.settings?.inflationRatePct ?? 2.2);
+    const groupRealXirrPct = groupXirrPct !== null ? Fin.realReturn(groupXirrPct, infRate) : null;
+    const groupXirrColor = groupXirrPct === null ? 'text-slate-400' : (groupXirrPct >= 0 ? 'text-emerald-500' : 'text-rose-500');
     const iconCls = getSectorIconClass(group.sector, group.isEtf);
 
     const headerTr = document.createElement('tr');
@@ -709,41 +717,45 @@ function renderHoldingsTable() {
     headerTr.addEventListener('click', () => toggleHoldingsSector(group.sector));
 
     headerTr.innerHTML = `
-      <td colspan="3" class="py-2.5 px-4 sticky-col-mobile ${
+      <td class="py-2 px-2.5 sm:py-2.5 sm:px-4 sticky-col-mobile max-w-[142px] sm:max-w-none ${
         group.isEtf ? 'bg-emerald-50/95 dark:bg-slate-900' : 'bg-slate-100/95 dark:bg-slate-800'
       }">
-        <div class="flex items-center gap-2.5">
-          <span class="w-5 h-5 rounded-md bg-white/80 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-[10px] text-slate-600 dark:text-slate-300">
+        <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <span class="w-4 h-4 sm:w-5 sm:h-5 rounded bg-white/80 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-[9px] sm:text-[10px] text-slate-600 dark:text-slate-300 shrink-0">
             <i class="fa-solid ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'}"></i>
           </span>
-          <i class="fa-solid ${iconCls} text-xs"></i>
-          <span class="font-extrabold text-xs sm:text-sm tracking-tight text-slate-900 dark:text-white">${group.sector}</span>
-          ${group.isEtf ? '<span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30">TOP ETF GROUP</span>' : ''}
-          <span class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
-            ${group.items.length} ${group.items.length === 1 ? 'ticker' : 'tickers'}
-          </span>
-          <span class="text-[10px] font-mono text-slate-500 dark:text-slate-400 hidden sm:inline">
-            ${weightPct}% weight
+          <i class="fa-solid ${iconCls} text-[11px] sm:text-xs shrink-0"></i>
+          <span class="font-extrabold text-[11px] sm:text-sm tracking-tight text-slate-900 dark:text-white truncate" title="${group.sector}">${group.sector}</span>
+          <span class="text-[9px] sm:text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded-full bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 shrink-0">
+            ${group.items.length}<span class="hidden sm:inline"> ${group.items.length === 1 ? 'ticker' : 'tickers'}</span>
           </span>
         </div>
       </td>
-      <td class="py-2.5 px-3 text-right num-font text-xs font-bold text-slate-700 dark:text-slate-300">
+      <td colspan="2" class="py-2 px-2 text-left text-[10px] font-mono text-slate-500 dark:text-slate-400">
+        ${group.isEtf ? '<span class="px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 font-bold mr-1">TOP ETF</span>' : ''}
+        <span>${weightPct}% wt</span>
+      </td>
+      <td class="py-2 px-3 text-right num-font text-xs font-bold text-slate-700 dark:text-slate-300">
         ${Fin.currency(group.totalCostBasis, false, group.currency)}
       </td>
-      <td colspan="10" class="py-2.5 px-3 text-right text-[11px] text-slate-400 font-medium">
-        Sector Subtotal
+      <td colspan="10" class="py-2 px-3 text-right text-[11px] text-slate-400 font-medium">
+        Sector Subtotal (${group.items.length} ${group.items.length === 1 ? 'holding' : 'holdings'})
       </td>
-      <td class="py-2.5 px-3 text-right num-font text-xs font-extrabold text-slate-900 dark:text-white">
+      <td class="py-2 px-3 text-right num-font text-xs font-extrabold text-slate-900 dark:text-white">
         ${Fin.currency(group.totalMarketValue, false, group.currency)}
       </td>
-      <td class="py-2.5 px-4 text-right num-font text-xs font-bold ${groupPnlColor}">
-        <span>${Fin.currency(group.totalUnrealizedGain, true, group.currency)}</span>
-        <span class="text-[10px] ml-1">(${Fin.percent(groupUnrealizedPct)})</span>
+      <td class="py-2 px-3 text-right num-font text-xs font-bold ${groupPnlColor}">
+        <div>${Fin.currency(group.totalUnrealizedGain, true, group.currency)}</div>
+        <div class="text-[10px] font-semibold">${Fin.percent(groupUnrealizedPct)}</div>
       </td>
-      <td class="py-2.5 px-4 text-right num-font text-xs font-semibold text-slate-500 dark:text-slate-400">
+      <td class="py-2 px-3 text-right num-font text-xs font-bold ${groupXirrColor}" title="${groupXirrPct !== null ? `Sector Money-Weighted Annualized XIRR: ${Fin.percent(groupXirrPct, true)} p.a. (Real Inflation-Adjusted: ${Fin.percent(groupRealXirrPct, true)} p.a.)` : 'Insufficient cash flow span'}">
+        <div>${groupXirrPct !== null ? Fin.percent(groupXirrPct, true) : '-'}</div>
+        ${groupRealXirrPct !== null ? `<div class="text-[9.5px] font-normal text-slate-400">Real ${Fin.percent(groupRealXirrPct, true)}</div>` : ''}
+      </td>
+      <td class="py-2 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
         ${groupYoC.toFixed(2)}%
       </td>
-      <td class="py-2.5 px-4 text-center text-[11px] font-semibold text-brand-600 dark:text-brand-400">
+      <td class="py-2 px-3 text-center text-[11px] font-semibold text-brand-600 dark:text-brand-400">
         <span>${isCollapsed ? 'Expand' : 'Collapse'}</span>
       </td>
     `;
@@ -769,17 +781,17 @@ function renderHoldingsTable() {
         const priceChangeColor = h.priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
 
         tr.innerHTML = `
-          <td class="py-3 pl-7 pr-4 sticky-col-mobile">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg ${isSelected ? 'bg-brand-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'} flex items-center justify-center font-bold text-xs shrink-0">
+          <td class="py-2.5 pl-2.5 pr-2 sm:py-3 sm:pl-7 sm:pr-4 sticky-col-mobile max-w-[142px] sm:max-w-none">
+            <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg ${isSelected ? 'bg-brand-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'} flex items-center justify-center font-bold text-[10px] sm:text-xs shrink-0">
                 ${h.ticker.replace(/\..*$/, '').slice(0, 4)}
               </div>
-              <div>
-                <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <span class="hover:text-brand-500 underline decoration-dotted underline-offset-2">${h.ticker}</span>
-                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium">${h.currency}</span>
+              <div class="min-w-0">
+                <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                  <span class="hover:text-brand-500 underline decoration-dotted underline-offset-2 truncate">${h.ticker}</span>
+                  <span class="text-[9px] sm:text-[10px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium shrink-0">${h.currency}</span>
                 </div>
-                <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[130px] sm:max-w-[180px]">${h.companyName}</div>
+                <div class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[96px] sm:max-w-[180px]">${h.companyName}</div>
               </div>
             </div>
           </td>
@@ -823,6 +835,12 @@ function renderHoldingsTable() {
           <td class="py-3 px-3 text-right">
             <div class="font-bold num-font ${pnlColor}">${Fin.currency(h.unrealizedGain, true, h.currency)}</div>
             <div class="text-[11px] num-font ${pnlColor} font-semibold">${Fin.percent(h.unrealizedGainPct)}</div>
+          </td>
+          <td class="py-3 px-3 text-right num-font" title="${h.xirrPct !== null && h.xirrPct !== undefined ? `Annualized Money-Weighted Return (XIRR): ${Fin.percent(h.xirrPct, true)} p.a. | Real Inflation-Adjusted: ${Fin.percent(h.realXirrPct, true)} p.a. (includes all BUY/SELL cash flows & dividends)` : 'Insufficient cash flow span'}">
+            <div class="font-bold text-xs ${h.xirrPct === null || h.xirrPct === undefined ? 'text-slate-400' : (h.xirrPct >= 0 ? 'text-emerald-500' : 'text-rose-500')}">
+              ${h.xirrPct !== null && h.xirrPct !== undefined ? Fin.percent(h.xirrPct, true) : '-'}
+            </div>
+            ${h.realXirrPct !== null && h.realXirrPct !== undefined ? `<div class="text-[9.5px] text-slate-400">Real ${Fin.percent(h.realXirrPct, true)}</div>` : ''}
           </td>
           <td class="py-3 px-3 text-right">
             <span class="px-2 py-0.5 rounded-full text-xs font-bold num-font ${h.yieldOnCost > 0 ? 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">

@@ -55,8 +55,8 @@ except ImportError:
     yf = None
     HAS_YFINANCE = False
 
-VERSION = "3.1.3"
-BUILD_ID = "20261031_2205"
+VERSION = "3.1.4"
+BUILD_ID = "20261031_2235"
 
 DEFAULT_TICKERS: List[str] = [
     "2800.HK",

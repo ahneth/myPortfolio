@@ -1,12 +1,12 @@
 {
   "_meta": {
     "schemaVersion": "3.1.0",
-    "buildId": "20261031_2205",
-    "generatedAt": "2026-10-31T14:05:00Z",
+    "buildId": "20261031_2235",
+    "generatedAt": "2026-10-31T14:35:00Z",
     "tickerCount": 33,
     "range": "15y",
     "note": "Pre-seeded 36M OHLCV, 52W quotes, 2018-2026 dividends, FX rates & technicals; auto-refreshed daily by GitHub Actions update_historical_prices.py",
-    "version": "3.1.3"
+    "version": "3.1.4"
   },
   "fxRates": {
     "USDHKD": 7.8453,

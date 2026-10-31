@@ -7,8 +7,8 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.1.3',
-  buildId: '20261031_2205',
+  appVersion: '3.1.4',
+  buildId: '20261031_2235',
   releaseDate: '2026-10-31 16:50 HKT',
   driveFolder: '/stock_portfolio/20261031_1650/',
   modules: {
@@ -23,6 +23,15 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with pre-seeded 36M OHLCV, quotes, 2018+ dividends & news' }
   },
   changelog: [
+    {
+      version: '3.1.4',
+      buildId: '20261031_2235',
+      date: '2026-10-31',
+      changes: [
+        'Fixed Holdings sector group header sticky bar width on mobile (changed sticky cell from colspan=3 to colspan=1 matching stock rows) so sector subtotals/aggregates are never blocked during horizontal scroll',
+        'Added Money-Weighted Annualized XIRR (Nominal & Inflation-Adjusted Real XIRR p.a.) per stock holding and per sector in the Holdings table and Excel export'
+      ]
+    },
     {
       version: '3.1.3',
       buildId: '20261031_2205',

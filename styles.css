@@ -241,3 +241,13 @@ header, main {
     padding: 0.35rem 0.45rem !important;
   }
 }
+
+
+@media (max-width: 640px) {
+  .sticky-col-mobile {
+    max-width: 142px !important;
+    min-width: 122px !important;
+    width: 134px !important;
+    overflow: hidden;
+  }
+}
