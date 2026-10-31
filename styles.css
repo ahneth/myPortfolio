@@ -251,3 +251,26 @@ header, main {
     overflow: hidden;
   }
 }
+
+
+/* ==========================================================================
+   v3.1.5 Dark Grey Row Selection Highlight (High Contrast for Dark & Light Mode)
+   ========================================================================== */
+
+tr.selected-table-row,
+tr.selected-table-row > td,
+tr.selected-table-row > td.sticky-col-mobile {
+  background-color: #cbd5e1 !important;
+}
+
+.dark tr.selected-table-row,
+.dark tr.selected-table-row > td,
+.dark tr.selected-table-row > td.sticky-col-mobile {
+  background-color: #1e293b !important; /* Dark slate grey (#1e293b) for high-contrast text readability */
+}
+
+.dark tr.selected-table-row:hover,
+.dark tr.selected-table-row:hover > td,
+.dark tr.selected-table-row:hover > td.sticky-col-mobile {
+  background-color: #334155 !important;
+}

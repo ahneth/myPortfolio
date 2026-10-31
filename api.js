@@ -176,17 +176,19 @@ var MarketAPI = {
   async fetchYahooJson(yahooPaths, cacheKey = null) {
     if (cacheKey && this._chartCache[cacheKey]) {
       const cached = this._chartCache[cacheKey];
-      if (Date.now() - cached.ts < 30000) {
+      if (Date.now() - cached.ts < 300000) {
         return cached.data;
       }
     }
 
     const urls = Array.isArray(yahooPaths) ? yahooPaths : [yahooPaths];
+    const primaryUrl = urls[0];
+    const backupUrl = urls[1] || urls[0];
     const proxySpecs = [
       {
-        name: 'AllOrigins-JSON',
-        unwrapAllOrigins: true,
-        build: (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}&_=${Date.now()}`
+        name: 'CorsProxy-IO',
+        unwrapAllOrigins: false,
+        build: (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`
       },
       {
         name: 'AllOrigins-Raw',
@@ -194,72 +196,226 @@ var MarketAPI = {
         build: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`
       },
       {
-        name: 'CorsProxy-IO',
-        unwrapAllOrigins: false,
-        build: (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`
+        name: 'AllOrigins-JSON',
+        unwrapAllOrigins: true,
+        build: (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}&_=${Date.now()}`
       },
       {
         name: 'CodeTabs',
         unwrapAllOrigins: false,
         build: (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
-      },
-      {
-        name: 'ThingProxy',
-        unwrapAllOrigins: false,
-        build: (u) => `https://thingproxy.freeboard.io/fetch/${u}`
       }
     ];
 
-    if (this._proxyCircuitOpenUntil && Date.now() < this._proxyCircuitOpenUntil) {
-      throw new Error('CORS proxy circuit breaker active; try again shortly.');
+    // Staggered 2-stage proxy query to avoid triggering HTTP 429 rate-limits on public proxies
+    try {
+      const stage1 = [
+        this._tryProxyFetch(primaryUrl, proxySpecs[0], 4800),
+        this._tryProxyFetch(backupUrl, proxySpecs[1], 4800)
+      ];
+      const winner1 = await Promise.any(stage1);
+      if (winner1) {
+        if (cacheKey) this._chartCache[cacheKey] = { ts: Date.now(), data: winner1 };
+        return winner1;
+      }
+    } catch (err1) {
+      const errors1 = err1?.errors || [err1];
+      const symErr1 = errors1.find(e => e?.isYahooSymbolError);
+      if (symErr1) throw symErr1;
     }
 
     try {
-      const tasks = [];
-      for (const targetUrl of urls) {
-        for (const spec of proxySpecs) {
-          tasks.push(this._tryProxyFetch(targetUrl, spec, 2600));
-        }
+      const stage2 = [
+        this._tryProxyFetch(primaryUrl, proxySpecs[2], 5500),
+        this._tryProxyFetch(backupUrl, proxySpecs[3], 5500)
+      ];
+      const winner2 = await Promise.any(stage2);
+      if (winner2) {
+        if (cacheKey) this._chartCache[cacheKey] = { ts: Date.now(), data: winner2 };
+        return winner2;
       }
-      const winner = await Promise.any(tasks);
-      if (winner) {
-        this._proxyCircuitOpenUntil = 0;
-        if (cacheKey) {
-          this._chartCache[cacheKey] = { ts: Date.now(), data: winner };
-        }
-        return winner;
-      }
-    } catch (aggErr) {
-      const errors = aggErr?.errors || [aggErr];
-      const symbolErr = errors.find(e => e?.isYahooSymbolError);
-      if (symbolErr) throw symbolErr;
-      this._proxyCircuitOpenUntil = Date.now() + 45000;
+    } catch (err2) {
+      const errors2 = err2?.errors || [err2];
+      const symErr2 = errors2.find(e => e?.isYahooSymbolError);
+      if (symErr2) throw symErr2;
     }
 
     throw new Error('Browser CORS proxies rate-limited or unreachable.');
   },
 
-  async fetchTencentJsonpQuote(symbol) {
-    if (this._jsonpCircuitOpenUntil && Date.now() < this._jsonpCircuitOpenUntil) {
-      throw new Error('JSONP circuit breaker active');
+  _toTencentCode(symbol) {
+    const hkMatch = String(symbol || '').match(/^(\d+)\.HK$/);
+    if (hkMatch) return `r_hk${hkMatch[1].padStart(5, '0')}`;
+    if (/^[A-Z]+(-[A-Z]+)?$/.test(symbol)) return `us${symbol.replace('-', '.')}`;
+    return null;
+  },
+
+  _parseTencentQuoteString(symbol, raw) {
+    if (!raw || typeof raw !== 'string') return null;
+    const parts = raw.split('~');
+    if (parts.length < 35) return null;
+    const price = parseFloat(parts[3]);
+    const prevPrice = parseFloat(parts[4]) || price;
+    if (!price || isNaN(price) || price <= 0) return null;
+    const change = Fin.round(price - prevPrice, 3);
+    const changePct = prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0;
+    const high52w = parseFloat(parts[48]) > 0 ? Fin.round(parseFloat(parts[48]), 4) : null;
+    const low52w = parseFloat(parts[49]) > 0 ? Fin.round(parseFloat(parts[49]), 4) : null;
+    const currency = symbol.endsWith('.HK') ? 'HKD' : 'USD';
+    const staticMeta = this.getStaticProfile(symbol);
+    const name = state?.fundamentals?.[symbol]?.name || staticMeta.name || parts[1] || symbol;
+    return { price, prevPrice, change, changePct, high52w, low52w, currency, name, source: 'Direct Browser JSONP (qt.gtimg.cn)' };
+  },
+
+  async fetchTencentBatchQuotes(tickers = []) {
+    const codeMap = {};
+    tickers.forEach(t => {
+      const sym = this.normalizeTicker(t);
+      const qCode = this._toTencentCode(sym);
+      if (qCode) codeMap[sym] = qCode;
+    });
+    const syms = Object.keys(codeMap);
+    if (syms.length === 0) return {};
+
+    return new Promise((resolve) => {
+      const qList = syms.map(s => codeMap[s]).join(',');
+      const script = document.createElement('script');
+      const timer = setTimeout(() => {
+        if (script && script.remove) script.remove();
+        resolve({});
+      }, 5500);
+
+      script.src = `https://qt.gtimg.cn/q=${qList}&_=${Date.now()}`;
+      script.onload = () => {
+        clearTimeout(timer);
+        if (script && script.remove) script.remove();
+        const out = {};
+        syms.forEach(sym => {
+          const qCode = codeMap[sym];
+          const parsed = this._parseTencentQuoteString(sym, window[`v_${qCode}`]);
+          if (parsed) out[sym] = parsed;
+        });
+        if (Object.keys(out).length > 0) {
+          this.lastRouteUsed = 'Direct Browser Batch JSONP (qt.gtimg.cn)';
+        }
+        resolve(out);
+      };
+      script.onerror = () => {
+        clearTimeout(timer);
+        if (script && script.remove) script.remove();
+        resolve({});
+      };
+      document.head.appendChild(script);
+    });
+  },
+
+  async fetchTencentMonthlyHistory(symbol) {
+    const hkMatch = String(symbol || '').match(/^(\d+)\.HK$/);
+    let kCode = null;
+    if (hkMatch) {
+      kCode = `hk${hkMatch[1].padStart(5, '0')}`;
+    } else if (/^[A-Z]+$/.test(symbol)) {
+      kCode = `us${symbol}`;
+    } else {
+      return null;
     }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    try {
+      const url = `https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${kCode},month,,,180,qfq&_=${Date.now()}`;
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) return null;
+      const json = await res.json();
+      const stockNode = json?.data?.[kCode];
+      const bars = stockNode?.qfqmonth || stockNode?.month || [];
+      if (!Array.isArray(bars) || bars.length === 0) return null;
+
+      const byMonth = {};
+      bars.forEach(b => {
+        if (!Array.isArray(b) || b.length < 5) return;
+        const dStr = String(b[0] || '');
+        const closeVal = parseFloat(b[2]);
+        const highVal = parseFloat(b[3]) || closeVal;
+        const lowVal = parseFloat(b[4]) || closeVal;
+        const volVal = parseInt(b[5] || 0, 10);
+        if (!dStr || isNaN(closeVal) || closeVal <= 0) return;
+        const month = dStr.slice(0, 7);
+        byMonth[month] = {
+          month,
+          date: dStr,
+          close: Fin.round(closeVal, 4),
+          rawClose: Fin.round(closeVal, 4),
+          high: Fin.round(highVal, 4),
+          low: Fin.round(lowVal, 4),
+          volume: isNaN(volVal) ? 0 : volVal
+        };
+      });
+      const sorted = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
+      if (sorted.length > 0) {
+        this.lastRouteUsed = 'Direct CORS Kline API (web.ifzq.gtimg.cn)';
+        return sorted;
+      }
+      return null;
+    } catch (_) {
+      clearTimeout(timer);
+      return null;
+    }
+  },
+
+  getEmbeddedOrCachedQuote(symbol) {
+    const staticMeta = this.getStaticProfile(symbol);
+    const snapQuotes = (typeof window !== 'undefined' && window.EMBEDDED_HISTORICAL_PRICES?.quotes) || {};
+    const sq = snapQuotes[symbol] || state?.prices?.[symbol];
+    if (sq && Number(sq.price) > 0) {
+      const price = Fin.round(Number(sq.price), 4);
+      const prevPrice = Fin.round(Number(sq.prevClose || sq.prevPrice || price), 4);
+      const change = sq.change !== undefined ? Fin.round(Number(sq.change), 3) : Fin.round(price - prevPrice, 3);
+      const changePct = sq.changePct !== undefined
+        ? Fin.round(Number(sq.changePct), 2)
+        : (prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0);
+      this.lastRouteUsed = 'Verified Portfolio Snapshot (historical_prices.json)';
+      return {
+        price,
+        prevPrice,
+        change,
+        changePct,
+        high52w: sq.high52w || state?.fundamentals?.[symbol]?.high52w || null,
+        low52w: sq.low52w || state?.fundamentals?.[symbol]?.low52w || null,
+        currency: sq.currency || staticMeta.currency,
+        name: sq.name || state?.fundamentals?.[symbol]?.name || staticMeta.name || symbol,
+        source: this.lastRouteUsed
+      };
+    }
+    return null;
+  },
+
+  getEmbeddedOrCachedHistory(symbol) {
+    if (Array.isArray(state?.historicalPrices?.[symbol]) && state.historicalPrices[symbol].length > 0) {
+      this.lastRouteUsed = 'Verified Portfolio Snapshot (historical_prices.json)';
+      return state.historicalPrices[symbol];
+    }
+    const snapHist = (typeof window !== 'undefined' && window.EMBEDDED_HISTORICAL_PRICES?.tickers?.[symbol]) || null;
+    if (Array.isArray(snapHist) && snapHist.length > 0) {
+      this.lastRouteUsed = 'Embedded Portfolio Snapshot (historical_prices.json)';
+      return snapHist;
+    }
+    return null;
+  },
+
+  async fetchTencentJsonpQuote(symbol) {
     return new Promise((resolve, reject) => {
-      let qCode = null;
-      const hkMatch = symbol.match(/^(\d+)\.HK$/);
-      if (hkMatch) {
-        qCode = `r_hk${hkMatch[1].padStart(5, '0')}`;
-      } else if (/^[A-Z]+(-[A-Z]+)?$/.test(symbol)) {
-        qCode = `us${symbol.replace('-', '.')}`;
-      } else {
+      const qCode = this._toTencentCode(symbol);
+      if (!qCode) {
         return reject(new Error('JSONP fallback supports HK and US tickers'));
       }
 
       const script = document.createElement('script');
       const timer = setTimeout(() => {
-        this._jsonpCircuitOpenUntil = Date.now() + 45000;
         if (script && script.remove) script.remove();
         reject(new Error('JSONP quote timeout'));
-      }, 1200);
+      }, 5500);
 
       script.src = `https://qt.gtimg.cn/q=${qCode}&_=${Date.now()}`;
       script.onload = () => {
@@ -371,6 +527,11 @@ var MarketAPI = {
             return jsonpQuote;
           }
         } catch (_) {}
+
+        const cachedQuote = this.getEmbeddedOrCachedQuote(symbol);
+        if (cachedQuote) {
+          return cachedQuote;
+        }
         throw yahooErr;
       }
     }
@@ -442,10 +603,11 @@ var MarketAPI = {
     const provider = this.getProvider();
 
     if (provider === 'yahoo') {
-      const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=15y&interval=1mo&includeAdjustedClose=true&events=div`;
-      const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=15y&interval=1mo&includeAdjustedClose=true&events=div`;
+      try {
+        const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=15y&interval=1mo&includeAdjustedClose=true&events=div`;
+        const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=15y&interval=1mo&includeAdjustedClose=true&events=div`;
 
-      const data = await this.fetchYahooJson([q1, q2], `hist15y_${symbol}`);
+        const data = await this.fetchYahooJson([q1, q2], `hist15y_${symbol}`);
       const result = data?.chart?.result?.[0];
       if (result && Array.isArray(result.timestamp) && result.timestamp.length > 0) {
         const timestamps = result.timestamp;
@@ -508,6 +670,23 @@ var MarketAPI = {
           };
           return sorted;
         }
+      }
+      } catch (yahooHistErr) {
+        // Tier 2: Direct CORS-enabled Tencent Monthly Kline API
+        const tencentHist = await this.fetchTencentMonthlyHistory(symbol);
+        if (Array.isArray(tencentHist) && tencentHist.length > 0) {
+          return tencentHist;
+        }
+        // Tier 3: Verified Same-Origin / Embedded Snapshot (historical_prices.json)
+        const cachedHist = this.getEmbeddedOrCachedHistory(symbol);
+        if (Array.isArray(cachedHist) && cachedHist.length > 0) {
+          return cachedHist;
+        }
+        throw yahooHistErr;
+      }
+      const fallbackHist = this.getEmbeddedOrCachedHistory(symbol);
+      if (Array.isArray(fallbackHist) && fallbackHist.length > 0) {
+        return fallbackHist;
       }
       throw new Error(`No monthly historical data returned by Yahoo Finance for ${symbol}.`);
     }
@@ -889,14 +1068,25 @@ async function syncAllMarketData(includeMonthly = true) {
   let updatedHistory = 0;
   const errors = [];
 
-  try {
-    await MarketAPI.fetchLiveFxRates();
-  } catch (_) {}
+  // Step 1: Refresh same-origin ./historical_prices.json snapshot first (zero CORS, updated daily by GitHub Actions)
+  if (typeof loadHistoricalPricesFromJson === 'function') {
+    try {
+      await loadHistoricalPricesFromJson();
+    } catch (_) {}
+  }
+
+  // Step 2: Fast single-request batch quote fetch via zero-CORS qt.gtimg.cn for all HK & US holdings
+  let batchQuotes = {};
+  if (MarketAPI.getProvider() === 'yahoo') {
+    try {
+      batchQuotes = await MarketAPI.fetchTencentBatchQuotes(allTickers);
+    } catch (_) {}
+  }
 
   for (const rawTicker of allTickers) {
     const ticker = MarketAPI.normalizeTicker(rawTicker);
     try {
-      const q = await MarketAPI.fetchQuote(ticker);
+      const q = batchQuotes[ticker] || await MarketAPI.fetchQuote(ticker);
       if (q && q.price > 0) {
         const prev = state.prices[ticker]?.price || q.prevPrice;
         state.prices[ticker] = {
@@ -917,8 +1107,10 @@ async function syncAllMarketData(includeMonthly = true) {
       errors.push(`${ticker}: ${err.message}`);
     }
 
-    const needsMonthlyHistory = !state.historicalPrices[ticker] || state.historicalPrices[ticker].length === 0;
-    if (includeMonthly || needsMonthlyHistory) {
+    const hasExistingHistory = Array.isArray(state.historicalPrices[ticker]) && state.historicalPrices[ticker].length >= 6;
+    if (hasExistingHistory) {
+      updatedHistory++;
+    } else if (includeMonthly || !hasExistingHistory) {
       try {
         const history = await MarketAPI.fetchMonthlyHistory(ticker);
         if (Array.isArray(history) && history.length > 0) {

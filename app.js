@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.1.4-20261031_2235') {
+      if (k !== 'myportfolio-cache-v3.1.5-20261031_2300') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -18,8 +18,8 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
 /**
  * @file app.js
  * @module AppUIController
- * @version 3.1.4
- * @build 20261031_2235
+ * @version 3.1.5
+ * @build 20261031_2300
  * @description Main UI controller, Holdings & Watchlist tables with 52W/MoM/QoQ/YoY + Dividend Ex-Date/Yield +
  *   Trend Regime + 0-100 Buy/Sell Signal badges, Auto-Detected 2018+ Dividend Backfill, News & Catalysts Tab,
  *   Smart Cash Deployment & Rebalancing Simulator, Nominal/Real XIRR KPIs, and Full Settings Parameter Customizer.
@@ -767,7 +767,7 @@ function renderHoldingsTable() {
         const tr = document.createElement('tr');
         tr.className = `cursor-pointer transition ${
           isSelected
-            ? 'bg-brand-50/70 dark:bg-brand-950/30 border-l-4 border-l-brand-500'
+            ? 'selected-table-row bg-slate-300/80 dark:bg-slate-800 border-l-4 border-l-brand-500'
             : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
         }`;
         tr.id = `holding-row-${h.ticker}`;
@@ -852,7 +852,7 @@ function renderHoldingsTable() {
               <button onclick="event.stopPropagation(); selectStockForInlineChart('holdings', '${h.ticker}', true)" class="p-1.5 text-xs ${isSelected ? 'bg-brand-500 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Price & Trend Chart Below">
                 <i class="fa-solid fa-chart-line"></i>
               </button>
-              <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'BUY')" class="p-1.5 text-xs text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded" title="Buy More">
+              <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'BUY')" class="p-1.5 text-xs text-brand-600 dark:text-brand-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded" title="Buy More">
                 <i class="fa-solid fa-cart-plus"></i>
               </button>
               <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'SELL')" class="p-1.5 text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded" title="Sell Shares">
@@ -1119,7 +1119,7 @@ function renderWatchlistAndFundamentals() {
       const tr = document.createElement('tr');
       tr.className = `cursor-pointer transition text-xs ${
         isSelected
-          ? 'bg-purple-50/70 dark:bg-purple-950/30 border-l-4 border-l-purple-500'
+          ? 'selected-table-row bg-slate-300/80 dark:bg-slate-800 border-l-4 border-l-purple-500'
           : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
       }`;
       tr.addEventListener('click', (e) => {
@@ -1694,10 +1694,10 @@ function switchTab(target) {
   document.querySelectorAll('.nav-tab').forEach(t => {
     const isMatch = t.getAttribute('data-tab') === target;
     if (isMatch) {
-      t.classList.add('active', 'text-brand-600', 'dark:text-brand-400', 'bg-brand-50', 'dark:bg-brand-950/40');
+      t.classList.add('active', 'text-brand-600', 'dark:text-brand-400', 'bg-slate-200/80', 'dark:bg-slate-800');
       t.classList.remove('text-slate-600', 'dark:text-slate-400', 'text-slate-500');
     } else {
-      t.classList.remove('active', 'text-brand-600', 'dark:text-brand-400', 'bg-brand-50', 'dark:bg-brand-950/40');
+      t.classList.remove('active', 'text-brand-600', 'dark:text-brand-400', 'bg-brand-50', 'dark:bg-brand-950/40', 'bg-slate-200/80', 'dark:bg-slate-800');
       t.classList.add('text-slate-600', 'dark:text-slate-400');
     }
   });
@@ -1759,7 +1759,7 @@ function openTradeModal(ticker = null, forceType = 'BUY', defaultPrice = null) {
   document.querySelectorAll('.tx-type-btn').forEach(b => {
     const bType = b.getAttribute('data-tx-type');
     b.className = bType === type
-      ? 'tx-type-btn py-2 text-xs font-bold rounded-lg border border-brand-500 bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400'
+      ? 'tx-type-btn py-2 text-xs font-bold rounded-lg border border-brand-500 bg-slate-200 dark:bg-slate-800 text-brand-600 dark:text-brand-400'
       : 'tx-type-btn py-2 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400';
   });
 
@@ -2354,7 +2354,7 @@ function setupEventListeners() {
       document.querySelectorAll('.tx-type-btn').forEach(b => {
         b.className = 'tx-type-btn py-2 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400';
       });
-      btn.className = 'tx-type-btn py-2 text-xs font-bold rounded-lg border border-brand-500 bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400';
+      btn.className = 'tx-type-btn py-2 text-xs font-bold rounded-lg border border-brand-500 bg-slate-200 dark:bg-slate-800 text-brand-600 dark:text-brand-400';
       updateTradeModalFields(type);
     });
   });
