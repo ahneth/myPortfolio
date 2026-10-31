@@ -1,22 +1,33 @@
-name: Update Historical Stock Prices
+name: Update Historical Stock Prices, Dividends & Technical Signals
 
 on:
   schedule:
-    # Runs daily at 21:30 UTC (05:30 HKT next morning — after HK, London, and US market close)
-    - cron: '30 21 * * *'
-  workflow_dispatch: # Allows manual one-click trigger from the GitHub Actions tab
+    # Runs daily at 22:15 UTC (06:15 HKT next morning, after US, London & HK market closes)
+    - cron: '15 22 * * *'
+  workflow_dispatch:
     inputs:
-      extra_tickers:
-        description: 'Optional comma-separated tickers to add (e.g. 2840.HK, 0005.HK, VOO)'
+      tickers:
+        description: 'Optional comma-separated tickers override (e.g. 2800.HK,0002.HK,3433.HK,VOO)'
         required: false
         default: ''
+      range:
+        description: 'Yahoo Finance chart history range (e.g. 10y, 15y, max)'
+        required: false
+        default: '15y'
 
 permissions:
-  contents: write # Required so GitHub Actions can commit and push historical_prices.json
+  contents: write
+
+concurrency:
+  # Shared concurrency group with update-company-news so git commits never collide
+  group: myportfolio-data-sync
+  cancel-in-progress: false
 
 jobs:
-  update-prices:
+  fetch-and-commit-prices:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,20 +39,34 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Fetch latest month-end & current prices from Yahoo Finance
-        env:
-          EXTRA_TICKERS: ${{ github.event.inputs.extra_tickers }}
+      - name: Install anti-429 TLS impersonation & Excel discovery dependencies
         run: |
-          python3 update_historical_prices.py
+          python -m pip install --upgrade pip
+          pip install curl_cffi yfinance openpyxl
 
-      - name: Commit and push updated historical_prices.json
+      - name: Fetch historical prices, 2018+ dividends, FX rates & daily technicals
+        env:
+          INPUT_TICKERS: ${{ github.event.inputs.tickers }}
+          INPUT_RANGE: ${{ github.event.inputs.range }}
+        run: |
+          RANGE_ARG="${INPUT_RANGE:-15y}"
+          if [ -n "$INPUT_TICKERS" ]; then
+            python3 update_historical_prices.py --output ./historical_prices.json --range "$RANGE_ARG" --delay 1.4 --jitter 0.7 --max-retries 5 --tickers "$INPUT_TICKERS"
+          else
+            python3 update_historical_prices.py --output ./historical_prices.json --range "$RANGE_ARG" --delay 1.4 --jitter 0.7 --max-retries 5
+          fi
+
+      - name: Commit and push updated historical_prices.json (with pull-rebase guard)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add historical_prices.json
           if git diff --staged --quiet; then
-            echo "No price changes detected in historical_prices.json."
+            echo "No changes in historical_prices.json to commit."
           else
-            git commit -m "chore(data): update historical_prices.json ($(date -u +'%Y-%m-%d %H:%M UTC'))"
-            git push
+            git commit -m "chore(data): update historical prices, 2018+ dividends, FX & technicals ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+            for attempt in 1 2 3; do
+              git pull --rebase origin "${{ github.ref_name }}" && git push && break
+              sleep 3
+            done
           fi
