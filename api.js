@@ -1,25 +1,16 @@
 /**
  * @file api.js
  * @module MarketAPIModule
- * @version 2.4.1
- * @build 20261019_1950
+ * @version 3.0.1
+ * @build 20261031_1115
  * @description Compartmentalized Global Stock Market API Client (HKEX, US NYSE/NASDAQ, London LSE).
- *   - Tier 1: Parallel Yahoo Finance v8 Chart Proxy Race (Promise.any) with 30s deduplication cache & 45s circuit breaker
+ *   - Tier 1: Parallel Yahoo Finance v8 Chart Proxy Race (Promise.any) with 15y history + events=div
  *   - Tier 2: Zero-CORS Browser script-tag JSONP Quote Fallback (qt.gtimg.cn) for HK & US equities
+ *   - Live Multi-Currency FX Rate Sync (USDHKD=X, GBPUSD=X, GBPHKD=X)
+ *   - Live Company & Watchlist News Search (/v1/finance/search) with Catalyst & Sentiment Tagger
  *   - Optional keyed providers: Alpha Vantage, Twelve Data, Finnhub
- *   - Note (v2.4.1): All hardcoded/fake hardcoded market snapshot data has been removed. Historical charts
- *     rely strictly on real data loaded from ./historical_prices.json or live API synchronization.
  */
 
-// ============================================================================
-// 4. UNIFIED GLOBAL STOCK MARKET API CLIENT (YAHOO, TENCENT JSONP, ALPHA VANTAGE, TWELVE DATA, FINNHUB)
-// ============================================================================
-
-/**
- * Lightweight static symbol directory containing ONLY canonical company names, GICS sectors,
- * and trading currencies (zero hardcoded prices, quotes, fundamental ratios, or price histories).
- * Used when Yahoo Finance v8 Chart metadata returns instrumentType without a GICS sector label.
- */
 var TICKER_STATIC_DIRECTORY = {
   '2800.HK': { name: 'Tracker Fund of Hong Kong', sector: 'Index ETF', currency: 'HKD' },
   '2840.HK': { name: 'SPDR Gold Trust', sector: 'Index ETF', currency: 'HKD' },
@@ -62,12 +53,6 @@ var MarketAPI = {
   _chartCache: {},
   lastRouteUsed: 'Yahoo Finance v8 Chart',
 
-  /**
-   * Normalizes HK, US, and London tickers into canonical exchange format:
-   *  - HKEX: '2800.HKG', 'HKG:2800', '02800.HK', '2800', '700.HK', '5.HK' -> '2800.HK', '0700.HK', '0005.HK'
-   *  - London (LSE): 'HSBA.LON', 'LON:HSBA', 'LSE:SHEL' -> 'HSBA.L', 'SHEL.L'
-   *  - US: 'NASDAQ:AAPL', 'NYSEARCA:VOO', 'NYSE:BRK.B' -> 'AAPL', 'VOO', 'BRK-B'
-   */
   normalizeTicker(raw) {
     if (!raw) return '';
     let s = String(raw).trim().toUpperCase();
@@ -105,16 +90,12 @@ var MarketAPI = {
     return s;
   },
 
-  /**
-   * Returns static reference metadata (name, sector, currency) without any fake market prices
-   */
   getStaticProfile(rawTicker) {
     const sym = this.normalizeTicker(rawTicker);
     if (TICKER_STATIC_DIRECTORY[sym]) {
       return { ...TICKER_STATIC_DIRECTORY[sym] };
     }
     const currency = sym.endsWith('.HK') ? 'HKD' : (sym.endsWith('.L') ? 'GBp' : 'USD');
-    // HKEX ETFs typically start with 28xx, 30xx, 31xx, 34xx, 72xx, 73xx, 75xx, 828xx, 90xx
     const isHkEtfCode = /^(28|30|31|34|72|73|75|828|90|91)\d{2,3}\.HK$/.test(sym);
     return {
       name: sym,
@@ -123,9 +104,6 @@ var MarketAPI = {
     };
   },
 
-  /**
-   * Checks whether a given sector label or ticker belongs to the ETF category
-   */
   isEtfSector(sectorName, ticker = '', companyName = '') {
     const sec = String(sectorName || '').trim();
     if (/\betf\b|index fund|exchange traded|inverse product/i.test(sec)) return true;
@@ -149,9 +127,6 @@ var MarketAPI = {
     return (state?.settings?.apiKey || '').trim();
   },
 
-  /**
-   * Fetches a single URL via a specific CORS proxy builder and validates Yahoo JSON structure
-   */
   async _tryProxyFetch(targetUrl, proxySpec, timeoutMs = 3200) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -187,8 +162,8 @@ var MarketAPI = {
         throw err;
       }
 
-      if (data?.chart?.result?.[0] || data?.quoteSummary?.result?.[0]) {
-        this.lastRouteUsed = `Yahoo Finance v8 (${proxySpec.name})`;
+      if (data?.chart?.result?.[0] || data?.quoteSummary?.result?.[0] || Array.isArray(data?.news)) {
+        this.lastRouteUsed = `Yahoo Finance (${proxySpec.name})`;
         return data;
       }
       throw new Error(`${proxySpec.name} returned empty Yahoo payload`);
@@ -198,9 +173,6 @@ var MarketAPI = {
     }
   },
 
-  /**
-   * Fetches Yahoo Finance JSON using a fast parallel raced multi-proxy chain
-   */
   async fetchYahooJson(yahooPaths, cacheKey = null) {
     if (cacheKey && this._chartCache[cacheKey]) {
       const cached = this._chartCache[cacheKey];
@@ -267,10 +239,6 @@ var MarketAPI = {
     throw new Error('Browser CORS proxies rate-limited or unreachable.');
   },
 
-  /**
-   * Zero-CORS Browser script-tag JSONP fallback via Tencent/GTJA Finance (qt.gtimg.cn)
-   * Works natively in browsers without CORS proxies for HK (.HK) and US stocks.
-   */
   async fetchTencentJsonpQuote(symbol) {
     if (this._jsonpCircuitOpenUntil && Date.now() < this._jsonpCircuitOpenUntil) {
       throw new Error('JSONP circuit breaker active');
@@ -312,11 +280,13 @@ var MarketAPI = {
         }
         const change = Fin.round(price - prevPrice, 3);
         const changePct = prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0;
+        const high52w = parseFloat(parts[48]) > 0 ? Fin.round(parseFloat(parts[48]), 4) : null;
+        const low52w = parseFloat(parts[49]) > 0 ? Fin.round(parseFloat(parts[49]), 4) : null;
         const currency = hkMatch ? 'HKD' : 'USD';
         const staticMeta = this.getStaticProfile(symbol);
         const name = state?.fundamentals?.[symbol]?.name || staticMeta.name || parts[1] || symbol;
         this.lastRouteUsed = 'Direct Browser JSONP (qt.gtimg.cn)';
-        resolve({ price, prevPrice, change, changePct, currency, name, source: this.lastRouteUsed });
+        resolve({ price, prevPrice, change, changePct, high52w, low52w, currency, name, source: this.lastRouteUsed });
       };
       script.onerror = () => {
         clearTimeout(timer);
@@ -327,10 +297,6 @@ var MarketAPI = {
     });
   },
 
-  /**
-   * Fetches real-time / latest quote for a single ticker (HK, US, London, or Global)
-   * Returns only real API data (never hardcoded fallback quotes).
-   */
   async fetchQuote(ticker) {
     const symbol = this.normalizeTicker(ticker);
     const provider = this.getProvider();
@@ -364,16 +330,18 @@ var MarketAPI = {
             const inferredSector = (meta.instrumentType === 'ETF' || this.isEtfSector(existingFund.sector, symbol, longName))
               ? 'Index ETF'
               : (existingFund.sector || staticMeta.sector || 'Equities');
+            const high52w = meta.fiftyTwoWeekHigh ? Fin.round(parseFloat(meta.fiftyTwoWeekHigh), 4) : (existingFund.high52w || null);
+            const low52w = meta.fiftyTwoWeekLow ? Fin.round(parseFloat(meta.fiftyTwoWeekLow), 4) : (existingFund.low52w || null);
             state.fundamentals[symbol] = {
               ...existingFund,
               name: existingFund.name && existingFund.name !== symbol ? existingFund.name : longName,
               sector: inferredSector,
               currency,
-              high52w: meta.fiftyTwoWeekHigh || existingFund.high52w,
-              low52w: meta.fiftyTwoWeekLow || existingFund.low52w
+              high52w,
+              low52w
             };
 
-            return { price, prevPrice, change, changePct, currency, name: longName, source: this.lastRouteUsed };
+            return { price, prevPrice, change, changePct, high52w, low52w, currency, name: longName, source: this.lastRouteUsed };
           }
         }
       } catch (yahooErr) {
@@ -385,7 +353,9 @@ var MarketAPI = {
               ...existingFund,
               name: existingFund.name || jsonpQuote.name || staticMeta.name || symbol,
               sector: existingFund.sector || staticMeta.sector || 'Equities',
-              currency: jsonpQuote.currency
+              currency: jsonpQuote.currency,
+              high52w: jsonpQuote.high52w || existingFund.high52w || null,
+              low52w: jsonpQuote.low52w || existingFund.low52w || null
             };
             return jsonpQuote;
           }
@@ -454,19 +424,17 @@ var MarketAPI = {
   },
 
   /**
-   * Fetches monthly historical prices (up to 10 years of monthly closes + dividend events).
-   * Returns only real API series; if unavailable, throws an error so charts stay empty unless
-   * ./historical_prices.json has already populated state.historicalPrices.
+   * Fetches monthly historical prices (up to 15 years of monthly closes + full 2018+ dividend events).
    */
   async fetchMonthlyHistory(ticker) {
     const symbol = this.normalizeTicker(ticker);
     const provider = this.getProvider();
 
     if (provider === 'yahoo') {
-      const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=10y&interval=1mo&includeAdjustedClose=true&events=div`;
-      const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=10y&interval=1mo&includeAdjustedClose=true&events=div`;
+      const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=15y&interval=1mo&includeAdjustedClose=true&events=div`;
+      const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=15y&interval=1mo&includeAdjustedClose=true&events=div`;
 
-      const data = await this.fetchYahooJson([q1, q2], `hist10y_${symbol}`);
+      const data = await this.fetchYahooJson([q1, q2], `hist15y_${symbol}`);
       const result = data?.chart?.result?.[0];
       if (result && Array.isArray(result.timestamp) && result.timestamp.length > 0) {
         const timestamps = result.timestamp;
@@ -493,23 +461,42 @@ var MarketAPI = {
         });
 
         const divEvents = result.events?.dividends;
-        if (divEvents && typeof divEvents === 'object') {
-          const oneYearAgo = (Date.now() / 1000) - (370 * 24 * 3600);
-          const ttmDiv = Object.values(divEvents)
-            .filter(ev => ev.date >= oneYearAgo && ev.amount > 0)
-            .reduce((sum, ev) => sum + Number(ev.amount), 0);
-          const refPrice = result.meta?.regularMarketPrice || state.prices[symbol]?.price || 0;
-          if (ttmDiv > 0 && refPrice > 0) {
+        const refPrice = result.meta?.regularMarketPrice || state.prices[symbol]?.price || 0;
+        const curr = result.meta?.currency || this.getStaticProfile(symbol).currency;
+
+        if (divEvents && typeof divEvents === 'object' && typeof buildDividendScheduleForTicker === 'function') {
+          const sched = buildDividendScheduleForTicker(symbol, divEvents, refPrice, curr);
+          if (sched) {
+            if (!state.dividendSchedules) state.dividendSchedules = {};
+            state.dividendSchedules[symbol] = sched;
             const existingFund = state.fundamentals[symbol] || {};
             state.fundamentals[symbol] = {
               ...existingFund,
-              divYield: Fin.round((ttmDiv / refPrice) * 100, 2)
+              divYield: sched.trailingYieldPct || existingFund.divYield || 0,
+              forwardDivYield: sched.forwardYieldPct || 0,
+              netDivYield: sched.netYieldPct || 0,
+              nextExDate: sched.nextExDate || null,
+              nextPayDate: sched.nextPayDate || null,
+              divFrequency: sched.frequency || 'None'
             };
           }
         }
 
         const sorted = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
-        if (sorted.length > 0) return sorted;
+        if (sorted.length > 0) {
+          const trailing12 = sorted.slice(-12);
+          const t12High = Math.max(...trailing12.map(r => Number(r.high || r.rawClose || r.close || 0)).filter(v => v > 0));
+          const t12Low = Math.min(...trailing12.map(r => Number(r.low || r.rawClose || r.close || 0)).filter(v => v > 0));
+          const existingFund = state.fundamentals[symbol] || {};
+          const metaHigh52 = result.meta?.fiftyTwoWeekHigh ? Fin.round(parseFloat(result.meta.fiftyTwoWeekHigh), 4) : null;
+          const metaLow52 = result.meta?.fiftyTwoWeekLow ? Fin.round(parseFloat(result.meta.fiftyTwoWeekLow), 4) : null;
+          state.fundamentals[symbol] = {
+            ...existingFund,
+            high52w: metaHigh52 || existingFund.high52w || (isFinite(t12High) && t12High > 0 ? Fin.round(t12High, 4) : null),
+            low52w: metaLow52 || existingFund.low52w || (isFinite(t12Low) && t12Low > 0 ? Fin.round(t12Low, 4) : null)
+          };
+          return sorted;
+        }
       }
       throw new Error(`No monthly historical data returned by Yahoo Finance for ${symbol}.`);
     }
@@ -591,9 +578,6 @@ var MarketAPI = {
     }
   },
 
-  /**
-   * Fetches company/ETF fundamentals using Yahoo v8 Chart metadata + dividend events or keyed APIs
-   */
   async fetchFundamentals(ticker) {
     const symbol = this.normalizeTicker(ticker);
     const provider = this.getProvider();
@@ -682,8 +666,99 @@ var MarketAPI = {
   },
 
   /**
-   * Runs a comprehensive end-to-end diagnostic test on a list of tickers (default: ['2800.HK', 'VOO'])
+   * Classifies a news headline into Catalyst Tag & Financial Sentiment Score (-1.0 to +1.0)
    */
+  classifyHeadline(title, summary = '') {
+    const text = `${title || ''} ${summary || ''}`.toLowerCase();
+    let catalyst = 'CORPORATE';
+    if (/\b(dividend|ex-dividend|payout|distribution|yield)\b/i.test(text)) catalyst = 'DIVIDEND';
+    else if (/\b(buyback|repurchase|share cancellation)\b/i.test(text)) catalyst = 'BUYBACK';
+    else if (/\b(earnings|quarterly results|interim results|annual results|operating profit|net profit|revenue)\b/i.test(text)) catalyst = 'EARNINGS';
+    else if (/\b(target price|upgraded|downgraded|overweight|outperform|broker|rating)\b/i.test(text)) catalyst = 'ANALYST';
+    else if (/\b(hang seng|fed|interest rate|treasury|gold|etf|inflows|pboc|stimulus|a50)\b/i.test(text)) catalyst = 'MACRO / ETF';
+
+    const bullPatterns = [
+      /\bbeats?\b/i, /\bsurge[sd]?\b/i, /\brecord\b.*\b(profit|inflows?|high|revenue|distribution)\b/i,
+      /\bbuyback\b/i, /\brepurchase\b/i, /\b(raises?|declares?|approves?|maintains?|hikes?|increases?)\b.*\b(dividend|payout|distribution)\b/i,
+      /\bspecial dividend\b/i, /\bupgrade[sd]?\b/i, /\boutperform\b/i, /\boverweight\b/i, /\bresilient\b/i,
+      /\bnet profit up\b/i, /\bstrong\b.*\b(inflows?|growth|demand|value|earnings|results)\b/i, /\brally\b/i
+    ];
+    const bearPatterns = [
+      /\bmiss(es|ed)?\b/i, /\bprofit warning\b/i, /\b(cuts?|suspends?|omits?|reduces?)\b.*\b(dividend|payout)\b/i,
+      /\bdowngrade[sd]?\b/i, /\bunderperform\b/i, /\bunderweight\b/i, /\bplunge[sd]?\b/i, /\bnet profit down\b/i,
+      /\bprobe\b/i, /\blawsuit\b/i, /\boutflows?\b/i, /\bslump[sd]?\b/i
+    ];
+
+    let bullHits = 0;
+    let bearHits = 0;
+    bullPatterns.forEach(p => { if (p.test(text)) bullHits++; });
+    bearPatterns.forEach(p => { if (p.test(text)) bearHits++; });
+
+    const score = Fin.round(Math.max(-1.0, Math.min(1.0, bullHits * 0.45 - bearHits * 0.50)), 2);
+    const label = score >= 0.25 ? 'BULLISH' : (score <= -0.25 ? 'BEARISH' : 'NEUTRAL');
+    return { catalyst, sentimentScore: score, sentimentLabel: label };
+  },
+
+  /**
+   * Fetches live news for a ticker via Yahoo Finance Search API through CORS proxy
+   */
+  async fetchTickerNewsLive(rawTicker, maxArticles = 5) {
+    const symbol = this.normalizeTicker(rawTicker);
+    const staticMeta = this.getStaticProfile(symbol);
+    const companyName = state?.fundamentals?.[symbol]?.name || staticMeta.name || symbol;
+    const sector = state?.fundamentals?.[symbol]?.sector || staticMeta.sector || 'Equities';
+
+    const u1 = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol)}&quotesCount=1&newsCount=${maxArticles}`;
+    const u2 = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol)}&quotesCount=1&newsCount=${maxArticles}`;
+    const data = await this.fetchYahooJson([u1, u2], `news_${symbol}`);
+    const newsList = data?.news || [];
+    const articles = [];
+
+    newsList.forEach(item => {
+      const title = String(item.title || '').trim();
+      const link = String(item.link || '').trim();
+      if (!title || !link) return;
+      const ts = Number(item.providerPublishTime || 0);
+      const pubIso = ts > 0 ? new Date(ts * 1000).toISOString() : new Date().toISOString();
+      const cls = this.classifyHeadline(title);
+      articles.push({
+        id: `live_${symbol}_${ts || Date.now()}`,
+        ticker: symbol,
+        companyName,
+        sector,
+        title,
+        publisher: item.publisher || 'Yahoo Finance',
+        publishedAt: pubIso,
+        url: link,
+        sourceType: 'YahooSearchLive',
+        catalyst: cls.catalyst,
+        sentimentScore: cls.sentimentScore,
+        sentimentLabel: cls.sentimentLabel,
+        summary: title
+      });
+    });
+    return articles;
+  },
+
+  async fetchLiveFxRates() {
+    const pairs = [
+      { key: 'fxUsdHkd', sym: 'USDHKD=X' },
+      { key: 'fxGbpUsd', sym: 'GBPUSD=X' },
+      { key: 'fxGbpHkd', sym: 'GBPHKD=X' }
+    ];
+    let updated = 0;
+    for (const p of pairs) {
+      try {
+        const q = await this.fetchQuote(p.sym);
+        if (q && q.price > 0) {
+          state.settings[p.key] = Fin.round(q.price, 4);
+          updated++;
+        }
+      } catch (_) {}
+    }
+    return updated;
+  },
+
   async runDiagnosticTest(tickers = ['2800.HK', 'VOO']) {
     const results = [];
     for (const raw of tickers) {
@@ -778,9 +853,6 @@ var MarketAPI = {
   }
 };
 
-// ============================================================================
-// 8. API SYNCHRONIZATION WORKFLOWS
-// ============================================================================
 async function syncAllMarketData(includeMonthly = true) {
   if (!MarketAPI.hasKey()) {
     showToast('Please select Yahoo Finance (Keyless) or configure your API Key in Settings.', 'error');
@@ -800,11 +872,15 @@ async function syncAllMarketData(includeMonthly = true) {
 
   const syncIcon = document.getElementById('header-sync-icon');
   if (syncIcon) syncIcon.classList.add('fa-spin');
-  showToast(`Syncing live quotes${includeMonthly ? ' & monthly history' : ''} for ${allTickers.length} ticker(s)...`, 'info');
+  showToast(`Syncing live quotes, FX${includeMonthly ? ', 15y history & dividends' : ''} for ${allTickers.length} ticker(s)...`, 'info');
 
   let updatedQuotes = 0;
   let updatedHistory = 0;
   const errors = [];
+
+  try {
+    await MarketAPI.fetchLiveFxRates();
+  } catch (_) {}
 
   for (const rawTicker of allTickers) {
     const ticker = MarketAPI.normalizeTicker(rawTicker);
@@ -817,6 +893,8 @@ async function syncAllMarketData(includeMonthly = true) {
           prevPrice: q.prevPrice,
           change: q.change,
           changePct: q.changePct,
+          high52w: q.high52w || state.fundamentals[ticker]?.high52w || null,
+          low52w: q.low52w || state.fundamentals[ticker]?.low52w || null,
           currency: q.currency || 'USD',
           lastUpdated: new Date().toISOString()
         };
@@ -828,7 +906,8 @@ async function syncAllMarketData(includeMonthly = true) {
       errors.push(`${ticker}: ${err.message}`);
     }
 
-    if (includeMonthly) {
+    const needsMonthlyHistory = !state.historicalPrices[ticker] || state.historicalPrices[ticker].length === 0;
+    if (includeMonthly || needsMonthlyHistory) {
       try {
         const history = await MarketAPI.fetchMonthlyHistory(ticker);
         if (Array.isArray(history) && history.length > 0) {
@@ -850,9 +929,45 @@ async function syncAllMarketData(includeMonthly = true) {
   if (errors.length > 0 && updatedQuotes === 0) {
     showToast(`Sync error — ${errors[0]}`, 'error');
   } else {
-    showToast(`Synced ${updatedQuotes} live quote(s) and ${updatedHistory} monthly series via ${MarketAPI.getProvider().toUpperCase()}.`, 'success');
+    showToast(`Synced ${updatedQuotes} live quote(s) and ${updatedHistory} historical/dividend series.`, 'success');
   }
 }
+
+async function syncCompanyNewsLive() {
+  const allTickers = Array.from(new Set([
+    ...(portfolio?.activeHoldings || []).map(h => h.ticker),
+    ...(state?.watchlist || []).map(w => w.ticker)
+  ]));
+  const targetList = allTickers.length > 0 ? allTickers.slice(0, 12) : ['2800.HK', '0002.HK', '2318.HK', 'VOO'];
+  showToast(`Fetching live news headlines for ${targetList.length} ticker(s)...`, 'info');
+
+  let added = 0;
+  if (!Array.isArray(state.companyNews)) state.companyNews = [];
+  const existingUrls = new Set(state.companyNews.map(a => a.url));
+
+  for (const sym of targetList) {
+    try {
+      const fetched = await MarketAPI.fetchTickerNewsLive(sym, 4);
+      fetched.forEach(art => {
+        if (!existingUrls.has(art.url)) {
+          existingUrls.add(art.url);
+          state.companyNews.unshift(art);
+          added++;
+        }
+      });
+    } catch (_) {}
+  }
+
+  state.companyNews.sort((a, b) => String(b.publishedAt || '').localeCompare(String(a.publishedAt || '')));
+  state.companyNews = state.companyNews.slice(0, 200);
+  saveState();
+  if (typeof renderNewsTab === 'function') renderNewsTab();
+  showToast(
+    added > 0 ? `Fetched ${added} new live company news article(s)!` : 'News feed is up to date (run update_company_news.py for full RSS aggregation).',
+    added > 0 ? 'success' : 'info'
+  );
+}
+window.syncCompanyNewsLive = syncCompanyNewsLive;
 
 async function runAndRenderApiDiagnostics(customTickers = null) {
   const inputEl = document.getElementById('diag-test-tickers-input');
@@ -1005,4 +1120,4 @@ window.TICKER_STATIC_DIRECTORY = TICKER_STATIC_DIRECTORY;
 window.MarketAPI = MarketAPI;
 window.syncAllMarketData = syncAllMarketData;
 window.syncFundamentalsViaAPI = syncFundamentalsViaAPI;
-window.runAndRenderApiDiagnostics = runAndRenderApiDiagnostics;
+window.triggerRowPriceFlash = triggerRowPriceFlash;

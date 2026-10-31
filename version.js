@@ -1,65 +1,55 @@
 /**
  * @file version.js
  * @module VersionRegistry
- * @version 2.4.1
- * @build 20261019_1950
- * @description Centralized version & build manifest for myPortfolio modular architecture.
+ * @version 3.0.1
+ * @build 20261031_1115
+ * @description Centralized version & build manifest for myPortfolio v3.0.1 modular architecture.
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '2.4.1',
-  buildId: '20261019_1950',
-  releaseDate: '2026-10-19 19:50 HKT',
-  driveFolder: '/stock_portfolio/20261019_1950/',
+  appVersion: '3.0.1',
+  buildId: '20261031_1115',
+  releaseDate: '2026-10-31 11:15 HKT',
+  driveFolder: '/stock_portfolio/20261031_1115/',
   modules: {
-    'version.js':   { version: '2.4.1', updated: '20261019_1950', role: 'Version manifest, module registry & changelog history' },
-    'logger.js':    { version: '2.4.1', updated: '20261019_1950', role: 'Real-time runtime log & error interceptor, console hook & 8-point health diagnostics' },
-    'utils.js':     { version: '2.4.1', updated: '20261019_1950', role: 'Financial precision math (Fin 4-decimal share price support) & Automatic DeviceDetector' },
-    'api.js':       { version: '2.4.1', updated: '20261019_1950', role: 'Live Global MarketAPI (Yahoo v8 Chart Race, Tencent JSONP & Keyed Providers; zero fake fallback data)' },
-    'portfolio.js': { version: '2.4.1', updated: '20261019_1950', role: 'Startup ./historical_prices.json loader, WACB/P&L/DRIP accounting & SheetJS 6-sheet Excel I/O' },
-    'charts.js':    { version: '2.4.1', updated: '20261019_1950', role: 'Guarded Chart.js controllers that remain strictly empty when no real historical data is available' },
-    'app.js':       { version: '2.4.1', updated: '20261019_1950', role: 'Collapsible sector-grouped Holdings UI (ETFs at top, A-Z sector & ticker sorting) & DOM controllers' },
-    'styles.css':   { version: '2.4.1', updated: '20261019_1950', role: 'Responsive layout rules, collapsible sector header styles, mobile 7-tab bottom-nav & sticky columns' },
-    'historical_prices.json': { version: '2.4.1', updated: '20261019_1950', role: 'External monthly historical price dataset loaded on startup by portfolio.js' },
-    'update_historical_prices.py': { version: '2.4.1', updated: '20261019_1950', role: 'Standalone Python 3 Yahoo Finance v8 monthly historical price fetcher' },
-    '.github/workflows/update-historical-prices.yml': { version: '2.4.1', updated: '20261019_1950', role: 'Daily GitHub Action workflow automatically updating and committing historical_prices.json' },
-    'site.webmanifest': { version: '2.4.1', updated: '20261019_1950', role: 'PWA Web App Manifest & multi-resolution Android/PC bookmark icon suite (favicon.svg, favicon.ico, icon-192.png, icon-512.png, apple-touch-icon.png)' }
+    'version.js':   { version: '3.0.1', updated: '20261031_1115', role: 'Version manifest, module registry & v3.0.1 changelog history' },
+    'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
+    'utils.js':     { version: '3.0.1', updated: '20261031_1115', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
+    'api.js':       { version: '3.0.1', updated: '20261031_1115', role: 'Yahoo v8 15y Dividend Events, Live FX Rates, Canonical News & Catalyst RSS/Search Engine' },
+    'portfolio.js': { version: '3.0.1', updated: '20261031_1115', role: '2018+ Dividend Auto-Backfill, TTM Yield Boundary Fix, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
+    'charts.js':    { version: '3.0.1', updated: '20261031_1115', role: 'FX-Normalized Portfolio Charts + Interactive SMA 20/50/200 & 12M Regression Channel Overlays' },
+    'app.js':       { version: '3.0.1', updated: '20261031_1115', role: 'Startup JSON Auto-Sync, Signal Breakdown Modal, News Scope Filters, Rebalance Trim Alerts & Order Staging, Settings Customizer' },
+    'styles.css':   { version: '3.0.1', updated: '20261031_1115', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
+    'index.html':   { version: '3.0.1', updated: '20261031_1115', role: 'Self-contained single-file production bundle with pre-seeded 36M OHLCV, quotes, 2018+ dividends & news' }
   },
   changelog: [
     {
-      buildId: '20261019_1950',
-      version: '2.4.1',
-      summary: 'Removed all hardcoded/fake hardcoded market snapshot data from api.js, portfolio.js, and index.html so charts stay empty when no real data is available. Added automatic startup loading of ./historical_prices.json in portfolio.js. Grouped Holdings by sector with collapsible sector headers, ETFs pinned at the top, and alphabetical sector + ticker sorting in app.js. Added historical_prices.json, update_historical_prices.py (Yahoo Finance v8 monthly fetcher), and .github/workflows/update-historical-prices.yml (daily GitHub Action).'
+      version: '3.0.1',
+      buildId: '20261031_1115',
+      date: '2026-10-31 11:15 HKT',
+      title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
+      changes: [
+        'Pre-seeded historical_prices.json (and embedded fallback) with 36-month OHLCV series, 52W High/Low quotes, fundamentals, and technicals for all 33 HK/US/LSE tickers, and wired bootstrapPortfolioApp() + tab-focus listener to auto-load ./historical_prices.json and ./company_news.json on startup.',
+        'Fixed Excel Restore cash balance calculation when importing un-cached formula DEPOSIT rows (TX-DEP-001 =SUM(H3:H80)), automatically reconciling funded capital against imported BUY lot cost basis so Cash Balance restores cleanly at HK$0.00.',
+        'Unified News & Catalysts schema across update_company_news.py, company_news.json, and app.js (canonical BULLISH/NEUTRAL/BEARISH sentimentLabel, companyName, and catalyst tags) plus added a Portfolio Scope filter (All / Holdings Only / Watchlist Only).',
+        'Fixed TTM Dividend Yield boundary double-counting in buildDividendScheduleForTicker() by capping regular trailing 12-month payouts to paymentsPerYear (e.g., 2 semi-annual payouts for 2800.HK = HK$0.77 / 3.10% yield).',
+        'Fixed 12M Benchmark Alpha self-comparison so benchmark tickers (2800.HK, VOO) report 0.00% alpha against themselves and non-benchmark tickers compare over identical YoY horizons.',
+        'Added a 9th Excel sheet (Quant_Settings) for lossless round-trip backup/restore of all 32 customizable Settings parameters and included transaction fees in exported Net Totals.',
+        'Added direct SMA Overlay and 12M Regression Channel toggle buttons on inline stock chart cards, converted Sector Subtotals into Base Currency, refined Stage 2 Uptrend regime classification, and added Overweight (>15%) Trim Alerts + 1-Click Stage Order buttons in the Rebalance Simulator.'
+      ]
     },
     {
-      buildId: '20261018_2130',
-      version: '2.3.2',
-      summary: 'Audited HKEX trajectories and added automatic cache & Excel import reconciliation in portfolio.js.'
-    },
-    {
-      buildId: '20261018_1431',
-      version: '2.3.0',
-      summary: 'Added dedicated Runtime Log & Error Diagnostics tab (logger.js) capturing page-load milestones, uncaught errors, unhandled promise rejections, console warnings/errors, API telemetry, and an 8-point automated DOM/Runtime Health Check.'
-    },
-    {
-      buildId: '20261018_1315',
-      version: '2.2.0',
-      summary: 'Renamed Dashboard chart to "Portfolio Historical Balance & Return" (portfolio-only with Monthly Balance vs. Monthly Accumulative Total Return switch) and added interactive per-stock monthly historical price charts (1-Y, 2-Y, 3-Y, 5-Y, ALL) below the Holdings and Watchlist tables when clicking any stock.'
-    },
-    {
-      buildId: '20261018_1158',
-      version: '2.1.0',
-      summary: 'Compartmentalized JS into dedicated modules and added timestamped versioned releases.'
-    },
-    {
-      buildId: '20261018_0830',
-      version: '2.0.2',
-      summary: 'Upgraded MarketAPI with Promise.any parallel proxy racing, circuit breaker, Tencent JSONP fallback, crumb-free Yahoo v8 dividend yield extraction, and 2800.HK & VOO diagnostic test suite.'
-    },
-    {
-      buildId: '20261017_1730',
-      version: '2.0.0',
-      summary: 'Added global keyless Yahoo Finance support for HK (.HK), US, and London (.L) stocks with smart ticker auto-normalization.'
+      version: '3.0.0',
+      buildId: '20261030_2330',
+      date: '2026-10-30 23:30 HKT',
+      title: 'Full Quantitative Suite: 2018+ Auto-Dividends, Buy/Sell Signal Engine, Scheduled News, Trend Regimes, Real XIRR & Settings Customizer',
+      changes: [
+        'Added 2018-2026+ Historical & Forward Dividend Engine with automatic unlogged dividend entitlement detection and 1-click backfill.',
+        'Added 4-Pillar Qualitative & Technical Signal Engine (0-100 score) with interactive breakdown modal and ATR(14) trailing stop-loss.',
+        'Added 6-State Market Regime & 12M Log-Linear Regression Trend Analysis with SMA & Regression Channel chart overlays.',
+        'Added Scheduled Company & Watchlist News pipeline (update_company_news.py + GitHub Action) and in-app News & Catalysts tab.',
+        'Added Nominal & Real (Inflation-Adjusted) XIRR via Fisher equation and full manual customization of 32 parameters in Settings.'
+      ]
     }
   ]
 };

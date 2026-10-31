@@ -1,0 +1,44 @@
+{
+  "id": "/myPortfolio/index.html",
+  "name": "myPortfolio \u2014 Quantitative Portfolio & Dividend Intelligence",
+  "short_name": "myPortfolio",
+  "description": "Quantitative Multi-Market Stock Portfolio Tracker with 2018+ Dividend Auto-Tracking, Technical Buy/Sell Signals, Trend Regimes, Real XIRR & Scheduled News.",
+  "start_url": "/myPortfolio/index.html",
+  "scope": "/myPortfolio/",
+  "display": "standalone",
+  "background_color": "#0b0f19",
+  "theme_color": "#0b0f19",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

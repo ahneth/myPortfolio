@@ -1,8 +1,10 @@
-# myPortfolio v2.4.1 (Build 20261019_1950)
+# myPortfolio v3.0.1 (Build 20261031_1115)
 
-## Page Icon & Android / PC Shortcut Suite
-- **`icon-512.png` & `icon-512-maskable.png`**: 512×512 high-resolution Android PWA & splash screen icons.
-- **`icon-192.png` & `icon-192-maskable.png`**: 192×192 Android Home Screen shortcut icons (`rel="icon" sizes="192x192"` & `site.webmanifest`).
-- **`apple-touch-icon.png`**: 180×180 touch icon used by mobile browsers when pinning shortcuts to the home screen.
-- **`favicon.ico`, `favicon.svg`, `favicon-32x32.png`, `favicon-16x16.png`**: Desktop PC browser tab & bookmark icons.
-- **`site.webmanifest`**: Web App Manifest enabling Android Chrome's **"Add to Home screen" / "Install app"** shortcut with the custom icon.
+Serverless Global Stock & Wealth Tracker PWA (`HKEX`, `US NYSE/NASDAQ`, `London LSE`) with:
+- **Auto Dividend Ex-Date, Payout & Yield Tracking (2018–Present)** + 1-Click Historical Entitlement Backfill
+- **4-Pillar Qualitative & Technical Buy/Sell Signal Engine (0–100)** (`RSI-14`, `MACD`, `SMA 20/50/200`, `Bollinger %B`, `ATR-14` Stop-Loss)
+- **6-State Trend Regime & 12M Log-Linear Regression Channel** ($R^2$ consistency & Benchmark Alpha vs. `2800.HK` / `VOO`)
+- **Decoupled Scheduled Company & Watchlist News Pipeline** (`update_company_news.py` + `company_news.json`)
+- **Nominal & Real (Inflation-Adjusted) XIRR** + Multi-Currency FX & `GBp` Pence Normalization
+- **Full Manual Customization of All Parameters in Settings**
+- **Subpath-Scoped `manifest.json`** (`"scope": "./"`, `"start_url": "./index.html"`, `"id": "./"`) for multi-app GitHub Pages isolation
