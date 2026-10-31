@@ -10,8 +10,8 @@ var OFFICIAL_NAMES_MAP = {
 /**
  * @file portfolio.js
  * @module PortfolioEngineAndExcelIO
- * @version 3.1.1
- * @build 20261031_1905
+ * @version 3.1.2
+ * @build 20261031_1955
  * @description Application state persistence, startup ./historical_prices.json & ./company_news.json loaders,
  *   2018+ Dividend Ex-Date/Payout/Entitlement & Auto-Backfill Engine, 4-Pillar Technical & Qualitative Buy/Sell
  *   Signal Engine (0-100), 6-State Trend Regime & 12M Regression Analyzer, Nominal & Real (Inflation-Adjusted)
@@ -68,24 +68,24 @@ var DEFAULT_QUANT_SETTINGS = {
  */
 var BASELINE_DIVIDEND_HISTORY_2018_2026 = {
   '2800.HK': [
-    ['2018-05-02', 0.23, '2018-05-30'],
-    ['2018-10-31', 0.67, '2018-11-28'],
-    ['2019-05-02', 0.24, '2019-05-30'],
-    ['2019-10-31', 0.67, '2019-11-28'],
-    ['2020-05-04', 0.14, '2020-05-29'],
-    ['2020-10-30', 0.64, '2020-11-27'],
-    ['2021-05-03', 0.17, '2021-05-31'],
-    ['2021-10-29', 0.59, '2021-11-26'],
-    ['2022-05-03', 0.18, '2022-05-31'],
-    ['2022-10-31', 0.56, '2022-11-28'],
-    ['2023-05-02', 0.19, '2023-05-30'],
-    ['2023-10-31', 0.57, '2023-11-28'],
-    ['2024-05-02', 0.22, '2024-05-30'],
-    ['2024-10-31', 0.55, '2024-11-28'],
-    ['2025-05-02', 0.23, '2025-05-30'],
-    ['2025-10-30', 0.54, '2025-11-27'],
-    ['2026-05-04', 0.24, '2026-06-01'],
-    ['2026-10-29', 0.53, '2026-11-26'],
+    ['2018-04-27', 0.16, '2018-05-30'],
+    ['2018-10-31', 0.79, '2018-11-30'],
+    ['2019-04-29', 0.15, '2019-05-31'],
+    ['2019-10-31', 0.78, '2019-11-29'],
+    ['2020-04-28', 0.09, '2020-05-29'],
+    ['2020-10-30', 0.66, '2020-11-30'],
+    ['2021-04-29', 0.13, '2021-05-31'],
+    ['2021-10-29', 0.54, '2021-11-30'],
+    ['2022-04-28', 0.08, '2022-05-31'],
+    ['2022-10-28', 0.56, '2022-11-30'],
+    ['2023-04-28', 0.1, '2023-05-31'],
+    ['2023-10-30', 0.55, '2023-11-30'],
+    ['2024-04-29', 0.15, '2024-05-31'],
+    ['2024-10-30', 0.62, '2024-11-29'],
+    ['2025-04-29', 0.22, '2025-05-30'],
+    ['2025-10-30', 0.55, '2025-11-28'],
+    ['2026-04-29', 0.19, '2026-05-29'],
+    ['2026-10-30', 0.57, '2026-11-30'],
   ],
   '3476.HK': [
     ['2025-08-01', 0.0957, '2025-08-11'],
@@ -127,173 +127,233 @@ var BASELINE_DIVIDEND_HISTORY_2018_2026 = {
     ['2025-05-14', 44.55, '2025-05-20'],
     ['2025-08-07', 37.58, '2025-08-12'],
     ['2025-11-05', 41.97, '2025-11-11'],
-    ['2026-01-05', 10.5, '2026-02-02'],
-    ['2026-04-06', 10.4, '2026-05-04'],
-    ['2026-07-06', 10.35, '2026-08-03'],
-    ['2026-10-05', 10.3, '2026-11-02'],
+    ['2026-02-06', 37.66, '2026-02-12'],
+    ['2026-05-07', 34.52, '2026-05-13'],
+    ['2026-08-05', 32.17, '2026-08-11'],
   ],
   '0002.HK': [
-    ['2024-03-05', 1.21, '2024-03-26'],
-    ['2024-06-04', 0.63, '2024-06-25'],
-    ['2024-09-03', 0.63, '2024-09-24'],
-    ['2024-12-03', 0.63, '2024-12-24'],
-    ['2025-03-04', 1.26, '2025-03-25'],
-    ['2025-06-03', 0.63, '2025-06-24'],
-    ['2025-09-02', 0.63, '2025-09-23'],
-    ['2025-12-02', 0.63, '2025-12-23'],
-    ['2026-03-03', 1.26, '2026-03-24'],
-    ['2026-06-02', 0.63, '2026-06-23'],
-    ['2026-09-01', 0.63, '2026-09-22'],
+    ['2024-03-08', 1.21, '2024-03-21'],
+    ['2024-05-31', 0.63, '2024-06-14'],
+    ['2024-09-02', 0.63, '2024-09-13'],
+    ['2024-12-02', 0.63, '2024-12-13'],
+    ['2025-03-07', 1.26, '2025-03-20'],
+    ['2025-06-02', 0.63, '2025-06-13'],
+    ['2025-09-02', 0.63, '2025-09-15'],
+    ['2025-12-02', 0.63, '2025-12-15'],
+    ['2026-03-11', 1.31, '2026-03-24'],
+    ['2026-06-02', 0.63, '2026-06-15'],
+    ['2026-09-02', 0.63, '2026-09-15'],
+    ['2026-12-02', 0.63, '2026-12-15'],
   ],
   '0003.HK': [
-    ['2024-06-06', 0.23, '2024-06-27'],
-    ['2024-09-05', 0.12, '2024-09-26'],
-    ['2025-06-05', 0.23, '2025-06-26'],
-    ['2025-09-04', 0.12, '2025-09-25'],
-    ['2026-06-04', 0.23, '2026-06-25'],
-    ['2026-09-03', 0.12, '2026-09-24'],
+    ['2024-06-06', 0.23, '2024-06-24'],
+    ['2024-08-29', 0.12, '2024-09-11'],
+    ['2025-06-06', 0.23, '2025-06-23'],
+    ['2025-09-02', 0.12, '2025-09-15'],
+    ['2026-06-03', 0.23, '2026-06-18'],
+    ['2026-08-31', 0.12, '2026-09-11'],
   ],
   '0005.HK': [
-    ['2024-05-09', 2.42, '2024-05-30'],
-    ['2024-08-08', 0.78, '2024-08-29'],
-    ['2024-11-07', 0.78, '2024-11-28'],
-    ['2025-03-06', 2.8, '2025-03-27'],
-    ['2025-05-08', 0.78, '2025-05-29'],
-    ['2025-08-07', 0.78, '2025-08-28'],
-    ['2025-11-06', 0.78, '2025-11-27'],
-    ['2026-03-05', 2.88, '2026-03-26'],
-    ['2026-05-07', 0.78, '2026-05-28'],
-    ['2026-08-06', 0.78, '2026-08-27'],
+    ['2024-03-07', 2.426355, '2024-04-25'],
+    ['2024-05-09', 2.420133, '2024-06-21'],
+    ['2024-08-15', 0.779073, '2024-09-27'],
+    ['2024-11-07', 0.777313, '2024-12-19'],
+    ['2025-03-06', 2.791007, '2025-04-25'],
+    ['2025-05-08', 0.783972, '2025-06-20'],
+    ['2025-08-14', 0.777678, '2025-09-26'],
+    ['2025-11-06', 0.777722, '2025-12-18'],
+    ['2026-03-12', 3.522942, '2026-04-30'],
+    ['2026-05-14', 0.783188, '2026-06-26'],
+    ['2026-08-13', 0.784088, '2026-09-25'],
+    ['2026-11-05', 0.7845, '2026-12-17'],
   ],
   '0006.HK': [
-    ['2024-05-29', 2.04, '2024-06-19'],
-    ['2024-09-04', 0.78, '2024-09-25'],
-    ['2025-05-28', 2.04, '2025-06-18'],
-    ['2025-09-03', 0.78, '2025-09-24'],
-    ['2026-05-27', 2.04, '2026-06-17'],
-    ['2026-09-02', 0.78, '2026-09-23'],
+    ['2024-05-27', 2.04, '2024-06-11'],
+    ['2024-09-11', 0.78, '2024-09-24'],
+    ['2025-05-26', 2.04, '2025-06-10'],
+    ['2025-09-10', 0.78, '2025-09-23'],
+    ['2026-05-26', 2.04, '2026-06-09'],
+    ['2026-09-09', 0.78, '2026-09-22'],
   ],
   '0012.HK': [
-    ['2024-06-06', 1.3, '2024-06-27'],
-    ['2024-09-10', 0.5, '2024-10-01'],
-    ['2025-06-05', 1.3, '2025-06-26'],
-    ['2025-09-09', 0.5, '2025-09-30'],
-    ['2026-06-04', 1.3, '2026-06-25'],
-    ['2026-09-08', 0.5, '2026-09-29'],
+    ['2024-06-05', 1.3, '2024-06-21'],
+    ['2024-09-03', 0.5, '2024-09-17'],
+    ['2025-06-05', 1.3, '2025-06-20'],
+    ['2025-09-03', 0.5, '2025-09-17'],
+    ['2026-06-04', 0.76, '2026-06-23'],
+    ['2026-09-03', 0.5, '2026-09-17'],
   ],
   '0066.HK': [
-    ['2024-05-23', 0.89, '2024-06-13'],
-    ['2024-09-05', 0.42, '2024-09-26'],
-    ['2025-05-22', 0.89, '2025-06-12'],
-    ['2025-09-04', 0.42, '2025-09-25'],
-    ['2026-05-21', 0.89, '2026-06-11'],
-    ['2026-09-03', 0.42, '2026-09-24'],
+    ['2024-05-24', 0.89, '2024-07-16'],
+    ['2024-08-28', 0.42, '2024-09-17'],
+    ['2025-05-23', 0.89, '2025-06-13'],
+    ['2025-08-27', 0.42, '2025-09-16'],
+    ['2026-05-29', 0.89, '2026-06-22'],
+    ['2026-08-26', 0.42, '2026-09-15'],
   ],
   '0101.HK': [
-    ['2024-05-09', 0.6, '2024-05-30'],
-    ['2024-09-05', 0.12, '2024-09-26'],
-    ['2025-05-08', 0.4, '2025-05-29'],
-    ['2025-09-04', 0.12, '2025-09-25'],
-    ['2026-05-07', 0.4, '2026-05-28'],
-    ['2026-09-03', 0.12, '2026-09-24'],
+    ['2024-05-08', 0.6, '2024-06-14'],
+    ['2024-08-14', 0.12, '2024-09-25'],
+    ['2025-05-07', 0.4, '2025-06-16'],
+    ['2025-08-13', 0.12, '2025-09-24'],
+    ['2026-05-06', 0.4, '2026-06-15'],
+    ['2026-08-12', 0.12, '2026-09-25'],
   ],
   '0386.HK': [
-    ['2024-06-12', 0.22, '2024-07-03'],
-    ['2024-09-11', 0.16, '2024-10-02'],
-    ['2025-06-11', 0.153, '2025-07-02'],
-    ['2025-09-10', 0.16, '2025-10-01'],
-    ['2026-06-10', 0.155, '2026-07-01'],
-    ['2026-09-09', 0.158, '2026-09-30'],
+    ['2024-07-08', 0.2194, '2024-07-26'],
+    ['2024-09-05', 0.1593, '2024-09-26'],
+    ['2025-06-09', 0.1523, '2025-06-27'],
+    ['2025-09-04', 0.0967, '2025-09-25'],
+    ['2026-06-08', 0.1289, '2026-06-26'],
+    ['2026-09-21', 0.1223, '2026-10-14'],
   ],
   '0700.HK': [
-    ['2024-05-16', 3.4, '2024-06-06'],
-    ['2025-05-15', 4.0, '2025-06-05'],
-    ['2026-05-14', 4.5, '2026-06-04'],
+    ['2024-05-17', 3.4, '2024-05-31'],
+    ['2025-05-16', 4.5, '2025-05-30'],
+    ['2026-05-15', 5.3, '2026-06-01'],
   ],
   '0857.HK': [
-    ['2024-06-18', 0.25, '2024-07-09'],
-    ['2024-09-17', 0.24, '2024-10-08'],
-    ['2025-06-17', 0.268, '2025-07-08'],
-    ['2025-09-16', 0.24, '2025-10-07'],
-    ['2026-06-16', 0.275, '2026-07-07'],
-    ['2026-09-15', 0.245, '2026-10-06'],
+    ['2024-06-18', 0.25287, '2024-07-29'],
+    ['2024-09-11', 0.24033, '2024-10-28'],
+    ['2025-06-17', 0.2727, '2025-07-24'],
+    ['2025-09-09', 0.24105, '2025-10-23'],
+    ['2026-06-18', 0.2873, '2026-07-31'],
+    ['2026-09-10', 0.30047, '2026-10-26'],
   ],
   '0939.HK': [
-    ['2024-07-11', 0.435, '2024-08-01'],
-    ['2025-01-16', 0.214, '2025-02-06'],
-    ['2025-07-10', 0.215, '2025-07-31'],
-    ['2026-01-15', 0.214, '2026-02-05'],
-    ['2026-07-09', 0.22, '2026-07-30'],
+    ['2024-07-04', 0.438393, '2024-08-02'],
+    ['2025-01-02', 0.213131, '2025-01-27'],
+    ['2025-04-30', 0.221775, '2025-05-28'],
+    ['2025-12-03', 0.204656, '2026-01-26'],
+    ['2026-07-02', 0.234256, '2026-08-21'],
   ],
   '1088.HK': [
-    ['2024-06-26', 2.47, '2024-07-17'],
-    ['2025-06-25', 2.46, '2025-07-16'],
-    ['2026-06-24', 2.48, '2026-07-15'],
+    ['2024-06-27', 2.491, '2024-08-21'],
+    ['2025-06-26', 2.4486, '2025-08-20'],
+    ['2025-10-30', 1.074, '2025-12-24'],
+    ['2026-07-02', 1.185, '2026-08-26'],
+    ['2026-10-08', 1.139, '2026-11-23'],
   ],
   '1093.HK': [
-    ['2024-06-13', 0.14, '2024-07-04'],
-    ['2024-09-19', 0.16, '2024-10-10'],
-    ['2025-06-12', 0.16, '2025-07-03'],
-    ['2025-09-18', 0.16, '2025-10-09'],
-    ['2026-06-11', 0.16, '2026-07-02'],
-    ['2026-09-17', 0.16, '2026-10-08'],
+    ['2024-05-31', 0.14, '2024-06-26'],
+    ['2024-10-31', 0.16, '2024-11-20'],
+    ['2025-06-04', 0.1, '2025-07-18'],
+    ['2025-10-17', 0.14, '2025-11-18'],
+    ['2026-06-24', 0.15, '2026-07-15'],
+    ['2026-10-20', 0.18, '2026-11-10'],
   ],
   '1288.HK': [
-    ['2024-07-09', 0.252, '2024-07-30'],
-    ['2025-01-13', 0.125, '2025-02-03'],
-    ['2025-07-08', 0.128, '2025-07-29'],
-    ['2026-01-12', 0.125, '2026-02-02'],
-    ['2026-07-07', 0.132, '2026-07-28'],
+    ['2024-05-30', 0.25331, '2024-06-28'],
+    ['2025-01-02', 0.126035, '2025-01-24'],
+    ['2025-07-09', 0.137534, '2025-08-27'],
+    ['2025-12-05', 0.131628, '2026-01-26'],
+    ['2026-05-04', 0.149634, '2026-06-16'],
+    ['2026-10-09', 0.152217, '2026-11-25'],
   ],
   '1299.HK': [
-    ['2024-05-30', 1.19, '2024-06-20'],
-    ['2024-09-09', 0.445, '2024-09-30'],
-    ['2025-05-29', 1.305, '2025-06-19'],
-    ['2025-09-08', 0.445, '2025-09-29'],
-    ['2026-05-28', 1.35, '2026-06-18'],
-    ['2026-09-07', 0.46, '2026-09-28'],
+    ['2024-05-29', 1.1907, '2024-06-14'],
+    ['2024-09-09', 0.445, '2024-09-25'],
+    ['2025-05-28', 1.3098, '2025-06-12'],
+    ['2025-09-05', 0.49, '2025-09-23'],
+    ['2026-05-28', 1.4408, '2026-06-12'],
+    ['2026-09-04', 0.539, '2026-09-22'],
   ],
   '1378.HK': [
-    ['2024-06-06', 0.29, '2024-06-27'],
-    ['2024-09-13', 0.59, '2024-10-04'],
-    ['2025-06-05', 0.59, '2025-06-26'],
-    ['2025-09-12', 0.59, '2025-10-03'],
-    ['2026-06-04', 0.62, '2026-06-25'],
-    ['2026-09-11', 0.6, '2026-10-02'],
+    ['2024-05-22', 0.29, '2024-06-14'],
+    ['2024-11-14', 0.59, '2024-12-06'],
+    ['2025-05-21', 1.02, '2025-06-13'],
+    ['2026-05-22', 1.65, '2026-06-12'],
   ],
   '1398.HK': [
-    ['2024-07-12', 0.334, '2024-08-02'],
-    ['2025-01-17', 0.158, '2025-02-07'],
-    ['2025-07-11', 0.178, '2025-08-01'],
-    ['2026-01-16', 0.158, '2026-02-06'],
-    ['2026-07-10', 0.182, '2026-07-31'],
+    ['2024-07-08', 0.335715, '2024-08-19'],
+    ['2025-01-02', 0.155291, '2025-01-24'],
+    ['2025-07-03', 0.180384, '2025-08-22'],
+    ['2025-12-04', 0.15575, '2026-01-26'],
+    ['2026-05-04', 0.19441, '2026-06-16'],
+    ['2026-10-09', 0.177332, '2026-11-25'],
   ],
   '2318.HK': [
-    ['2024-06-11', 1.6, '2024-07-02'],
-    ['2024-09-20', 1.02, '2024-10-11'],
-    ['2025-06-10', 1.62, '2025-07-01'],
-    ['2025-09-19', 1.02, '2025-10-10'],
-    ['2026-06-09', 1.68, '2026-06-30'],
-    ['2026-09-18', 1.05, '2026-10-09'],
+    ['2024-06-07', 1.64678, '2024-07-26'],
+    ['2024-09-04', 1.02048, '2024-10-18'],
+    ['2025-05-15', 1.76266, '2025-06-30'],
+    ['2025-09-10', 1.04048, '2025-10-24'],
+    ['2026-06-02', 2.011291, '2026-07-15'],
+    ['2026-09-02', 1.13347, '2026-10-16'],
   ],
   '2388.HK': [
-    ['2024-05-21', 1.145, '2024-06-11'],
-    ['2024-09-12', 0.57, '2024-10-03'],
-    ['2025-05-20', 1.419, '2025-06-10'],
-    ['2025-09-11', 0.57, '2025-10-02'],
-    ['2026-05-19', 1.45, '2026-06-09'],
-    ['2026-09-10', 0.58, '2026-10-01'],
+    ['2024-07-02', 1.145, '2024-07-15'],
+    ['2024-09-12', 0.57, '2024-09-27'],
+    ['2025-05-14', 0.29, '2025-05-29'],
+    ['2025-06-30', 1.419, '2025-07-17'],
+    ['2025-09-11', 0.29, '2025-09-26'],
+    ['2025-11-12', 0.29, '2025-11-26'],
+    ['2026-05-13', 0.29, '2026-05-28'],
+    ['2026-06-29', 1.255, '2026-07-17'],
+    ['2026-09-10', 0.5288, '2026-09-25'],
+    ['2026-11-12', 0.29, '2026-11-26'],
   ],
   'VOO': [
-    ['2018-03-26', 1.093], ['2018-06-28', 1.157], ['2018-09-26', 1.206], ['2018-12-18', 1.289],
-    ['2019-03-22', 1.455], ['2019-06-27', 1.386], ['2019-09-26', 1.301], ['2019-12-23', 1.429],
-    ['2020-03-10', 1.178], ['2020-06-29', 1.433], ['2020-09-28', 1.308], ['2020-12-22', 1.383],
-    ['2021-03-26', 1.263], ['2021-06-28', 1.333], ['2021-09-27', 1.308], ['2021-12-21', 1.496],
-    ['2022-03-24', 1.374], ['2022-06-28', 1.432], ['2022-09-27', 1.468], ['2022-12-20', 1.672],
-    ['2023-03-24', 1.487], ['2023-06-29', 1.576], ['2023-09-27', 1.493], ['2023-12-20', 1.812],
-    ['2024-03-22', 1.543], ['2024-06-28', 1.783], ['2024-09-27', 1.638], ['2024-12-20', 1.739],
-    ['2025-03-27', 1.682], ['2025-06-27', 1.795], ['2025-09-26', 1.710], ['2025-12-22', 1.815],
-    ['2026-03-26', 1.745], ['2026-06-26', 1.840], ['2026-09-25', 1.790]
+    ['2018-03-26', 1.093, '2018-03-29'],
+    ['2018-06-28', 1.157, '2018-07-02'],
+    ['2018-09-26', 1.206, '2018-09-28'],
+    ['2018-12-18', 1.289, '2018-12-20'],
+    ['2019-03-22', 1.455, '2019-03-26'],
+    ['2019-06-27', 1.386, '2019-07-01'],
+    ['2019-09-26', 1.301, '2019-09-30'],
+    ['2019-12-23', 1.429, '2019-12-26'],
+    ['2020-03-10', 1.178, '2020-03-12'],
+    ['2020-06-29', 1.433, '2020-07-01'],
+    ['2020-09-28', 1.308, '2020-09-30'],
+    ['2020-12-22', 1.383, '2020-12-24'],
+    ['2021-03-26', 1.263, '2021-03-30'],
+    ['2021-06-28', 1.333, '2021-06-30'],
+    ['2021-09-27', 1.308, '2021-09-29'],
+    ['2021-12-21', 1.496, '2021-12-23'],
+    ['2022-03-24', 1.374, '2022-03-28'],
+    ['2022-06-28', 1.432, '2022-06-30'],
+    ['2022-09-27', 1.468, '2022-09-29'],
+    ['2022-12-20', 1.672, '2022-12-22'],
+    ['2023-03-24', 1.487, '2023-03-28'],
+    ['2023-06-29', 1.576, '2023-07-03'],
+    ['2023-09-27', 1.493, '2023-09-29'],
+    ['2023-12-20', 1.812, '2023-12-22'],
+    ['2024-03-22', 1.543, '2024-03-26'],
+    ['2024-06-28', 1.783, '2024-07-02'],
+    ['2024-09-27', 1.638, '2024-10-01'],
+    ['2024-12-20', 1.739, '2024-12-24'],
+    ['2025-03-27', 1.682, '2025-03-31'],
+    ['2025-06-27', 1.795, '2025-07-01'],
+    ['2025-09-26', 1.71, '2025-09-30'],
+    ['2025-12-22', 1.815, '2025-12-24'],
+    ['2026-03-26', 1.745, '2026-03-30'],
+    ['2026-06-26', 1.84, '2026-06-30'],
+    ['2026-09-25', 1.79, '2026-09-29'],
+  ],
+  'AAPL': [
+    ['2024-02-09', 0.24, '2024-02-15'],
+    ['2024-05-10', 0.25, '2024-05-16'],
+    ['2024-08-12', 0.25, '2024-08-15'],
+    ['2024-11-08', 0.25, '2024-11-14'],
+    ['2025-02-10', 0.25, '2025-02-13'],
+    ['2025-05-12', 0.26, '2025-05-15'],
+    ['2025-08-11', 0.26, '2025-08-14'],
+    ['2025-11-10', 0.26, '2025-11-13'],
+    ['2026-02-09', 0.26, '2026-02-12'],
+    ['2026-05-11', 0.27, '2026-05-14'],
+    ['2026-08-10', 0.27, '2026-08-13'],
+  ],
+  'MSFT': [
+    ['2024-02-14', 0.75, '2024-03-14'],
+    ['2024-05-15', 0.75, '2024-06-13'],
+    ['2024-08-15', 0.75, '2024-09-12'],
+    ['2024-11-21', 0.83, '2024-12-12'],
+    ['2025-02-20', 0.83, '2025-03-13'],
+    ['2025-05-15', 0.83, '2025-06-12'],
+    ['2025-08-21', 0.83, '2025-09-11'],
+    ['2025-11-20', 0.9, '2025-12-11'],
+    ['2026-02-19', 0.9, '2026-03-12'],
+    ['2026-05-21', 0.9, '2026-06-11'],
+    ['2026-08-20', 0.9, '2026-09-10'],
   ],
 };
 
@@ -307,8 +367,8 @@ function createEmptyState() {
       darkMode: true,
       lastApiSync: null,
       yahooDefaultApplied: true,
-      appVersion: '3.1.1',
-      buildId: '20261031_1905',
+      appVersion: '3.1.2',
+      buildId: '20261031_1955',
       collapsedSectors: {}
     },
     cashBalance: 0,
@@ -386,71 +446,108 @@ function buildDividendScheduleForTicker(rawTicker, rawEventsMap = null, fallback
   const currency = fallbackCurrency || state?.prices?.[sym]?.currency || state?.fundamentals?.[sym]?.currency || staticMeta.currency || 'HKD';
   const currentPrice = Number(fallbackPrice || state?.prices?.[sym]?.price || 0);
   const payLagDays = sym.endsWith('.HK') ? 25 : (sym.endsWith('.L') ? 28 : 5);
+  const fxUsdHkd = Number(state?.settings?.fxUsdHkd || 7.8453);
 
-  const byExDate = {};
-
-  // 1. Seed from verified baseline 2018-2026 dictionary
   const baseRows = BASELINE_DIVIDEND_HISTORY_2018_2026[sym] || [];
+  const baseByEx = {};
   baseRows.forEach(row => {
     const exStr = row[0];
-    const amt = row[1];
+    const amt = Number(row[1]);
     const explicitPay = row[2] || null;
     const exMs = new Date(exStr + 'T00:00:00Z').getTime();
     const payStr = explicitPay || new Date(exMs + payLagDays * 86400 * 1000).toISOString().split('T')[0];
-    byExDate[exStr] = {
+    baseByEx[exStr] = {
       exDate: exStr,
       payDate: payStr,
       payDateEstimated: !explicitPay,
-      amount: Fin.round(Number(amt), 4),
-      currency
+      amount: Fin.round(amt, 6),
+      currency,
+      _priority: 3 // Verified official HKEX / Exchange record with exact payDate & HKD rate
     };
   });
 
-  // 2. Merge any existing schedule history
-  const existingHist = state?.dividendSchedules?.[sym]?.history;
-  if (Array.isArray(existingHist)) {
-    existingHist.forEach(h => {
-      if (h && h.exDate && Number(h.amount) > 0) {
-        byExDate[h.exDate] = {
-          exDate: h.exDate,
-          payDate: h.payDate || h.exDate,
-          payDateEstimated: h.payDateEstimated !== false,
-          amount: Fin.round(Number(h.amount), 4),
-          currency: h.currency || currency
-        };
-      }
-    });
-  }
+  const candidates = Object.values(baseByEx);
 
-  // 3. Merge live Yahoo v8 events.dividends map if passed
+  // Merge live Yahoo v8 events.dividends map if passed (only for dates not already covered or newer dates)
   if (rawEventsMap && typeof rawEventsMap === 'object') {
     Object.values(rawEventsMap).forEach(ev => {
       const ts = Number(ev?.date || 0);
-      const amt = Number(ev?.amount || 0);
+      let amt = Number(ev?.amount || 0);
       if (ts > 0 && amt > 0) {
+        // If 3476.HK or 3077.HK reports raw USD dividend on HKD counter, convert to HKD
+        if (sym === '3476.HK' && amt < 0.03) amt = amt * fxUsdHkd;
+        else if (sym === '3077.HK' && amt < 10.0) amt = amt * fxUsdHkd;
         const exStr = new Date(ts * 1000).toISOString().split('T')[0];
         const payStr = new Date((ts + payLagDays * 86400) * 1000).toISOString().split('T')[0];
-        byExDate[exStr] = {
+        candidates.push({
           exDate: exStr,
           payDate: payStr,
           payDateEstimated: true,
-          amount: Fin.round(amt, 4),
-          currency
-        };
+          amount: Fin.round(amt, 6),
+          currency,
+          _priority: 2
+        });
       }
     });
   }
 
-  const history = Object.values(byExDate).sort((a, b) => a.exDate.localeCompare(b.exDate));
+  // Only merge existing schedule history if baseRows is empty (prevents stale/synthetic localStorage dates from re-contaminating verified HKEX schedules)
+  const existingHist = state?.dividendSchedules?.[sym]?.history;
+  if (baseRows.length === 0 && Array.isArray(existingHist)) {
+    existingHist.forEach(h => {
+      if (h && h.exDate && Number(h.amount) > 0) {
+        candidates.push({
+          exDate: h.exDate,
+          payDate: h.payDate || h.exDate,
+          payDateEstimated: h.payDateEstimated !== false,
+          amount: Fin.round(Number(h.amount), 6),
+          currency: h.currency || currency,
+          _priority: h.payDateEstimated === false ? 2 : 1
+        });
+      }
+    });
+  }
+
+  // Sort chronologically and deduplicate any two events within the same payout cycle window
+  // (18 days for Monthly ETFs like 3476.HK; 35 days for Quarterly/Semi-Annual/Annual tickers)
+  candidates.sort((a, b) => a.exDate.localeCompare(b.exDate) || (b._priority - a._priority));
+  const minCycleGapDays = (sym === '3476.HK') ? 18 : 35;
+  const deduped = [];
+  candidates.forEach(item => {
+    const itemMs = new Date(item.exDate + 'T00:00:00Z').getTime();
+    const cleanItem = {
+      exDate: item.exDate,
+      payDate: item.payDate,
+      payDateEstimated: item.payDateEstimated,
+      amount: Fin.round(Number(item.amount), 6),
+      currency: item.currency || currency,
+      _priority: item._priority || 1
+    };
+    if (deduped.length === 0) {
+      deduped.push(cleanItem);
+      return;
+    }
+    const prev = deduped[deduped.length - 1];
+    const prevMs = new Date(prev.exDate + 'T00:00:00Z').getTime();
+    const diffDays = Math.abs(Math.round((itemMs - prevMs) / (86400 * 1000)));
+    if (diffDays <= minCycleGapDays) {
+      // Same dividend distribution cycle: keep the higher-priority / official record
+      if (cleanItem._priority > prev._priority) {
+        deduped[deduped.length - 1] = cleanItem;
+      }
+    } else {
+      deduped.push(cleanItem);
+    }
+  });
+
+  const history = deduped.map(({ _priority, ...rest }) => rest).sort((a, b) => a.exDate.localeCompare(b.exDate));
   const nowMs = Date.now();
   const todayStr = new Date(nowMs).toISOString().split('T')[0];
   const cutoffTtmStr = new Date(nowMs - 370 * 86400 * 1000).toISOString().split('T')[0];
-  const cutoff3yStr = new Date(nowMs - (365 * 3 + 20) * 86400 * 1000).toISOString().split('T')[0];
 
   const pastHistory = history.filter(h => h.exDate <= todayStr);
   let ttmEvents = pastHistory.filter(h => h.exDate >= cutoffTtmStr);
 
-  // Compute median inter-payout gap in days across recent distributions
   const recentH = (pastHistory.length >= 2 ? pastHistory : history).slice(-8);
   const gaps = [];
   for (let i = 1; i < recentH.length; i++) {
@@ -484,7 +581,7 @@ function buildDividendScheduleForTicker(rawTicker, rawEventsMap = null, fallback
 
   let fwdDiv = 0;
   if (history.length > 0 && paymentsPerYear > 0) {
-    const recentN = history.slice(-paymentsPerYear);
+    const recentN = pastHistory.length >= paymentsPerYear ? pastHistory.slice(-paymentsPerYear) : history.slice(-paymentsPerYear);
     fwdDiv = Fin.round(recentN.reduce((s, h) => s + Number(h.amount || 0), 0), 4);
   }
 
@@ -500,9 +597,8 @@ function buildDividendScheduleForTicker(rawTicker, rawEventsMap = null, fallback
 
   const netYieldPct = Fin.round(trailingYieldPct * (1 - whtPct / 100), 2);
 
-  // 3Y Dividend CAGR
   const byYear = {};
-  history.forEach(h => {
+  pastHistory.forEach(h => {
     const yr = parseInt(h.exDate.slice(0, 4), 10);
     byYear[yr] = (byYear[yr] || 0) + Number(h.amount || 0);
   });
@@ -512,28 +608,32 @@ function buildDividendScheduleForTicker(rawTicker, rawEventsMap = null, fallback
     divCagr3Y = Fin.round((Math.pow(byYear[refYr] / byYear[refYr - 3], 1 / 3) - 1) * 100, 2);
   }
 
-  // Next Ex-Date Resolution (Confirmed or Seasonal Projection)
-  let nextExDate = state?.dividendSchedules?.[sym]?.nextExDate || null;
-  let nextPayDate = state?.dividendSchedules?.[sym]?.nextPayDate || null;
-  let nextEstAmount = state?.dividendSchedules?.[sym]?.nextEstAmount || null;
-  let nextStatus = state?.dividendSchedules?.[sym]?.nextStatus || 'NONE';
+  // Next Ex-Date Resolution (Confirmed future entry in history OR Seasonal Projection)
+  const futureEvents = history.filter(h => h.exDate > todayStr);
+  let nextExDate = null;
+  let nextPayDate = null;
+  let nextEstAmount = null;
+  let nextStatus = 'NONE';
 
-  if (!nextExDate || nextExDate < todayStr) {
-    if (history.length > 0 && paymentsPerYear > 0) {
-      const oneYearAgoStr = new Date(nowMs - 365 * 86400 * 1000).toISOString().split('T')[0];
-      const candidates = history.filter(h => h.exDate > oneYearAgoStr);
-      const tpl = candidates.length > 0 ? candidates[0] : history[history.length - 1];
-      const tplDate = new Date(tpl.exDate + 'T00:00:00Z');
-      let projDate = new Date(tplDate.getTime() + 365 * 86400 * 1000);
-      if (projDate.toISOString().split('T')[0] <= todayStr) {
-        const lastEvDate = new Date(history[history.length - 1].exDate + 'T00:00:00Z');
-        projDate = new Date(lastEvDate.getTime() + Math.round(365 / Math.max(1, paymentsPerYear)) * 86400 * 1000);
-      }
-      nextExDate = projDate.toISOString().split('T')[0];
-      nextPayDate = new Date(projDate.getTime() + payLagDays * 86400 * 1000).toISOString().split('T')[0];
-      nextEstAmount = tpl.amount;
-      nextStatus = 'PROJECTED_SEASONAL';
+  if (futureEvents.length > 0) {
+    nextExDate = futureEvents[0].exDate;
+    nextPayDate = futureEvents[0].payDate;
+    nextEstAmount = futureEvents[0].amount;
+    nextStatus = 'CONFIRMED_ANNOUNCED';
+  } else if (history.length > 0 && paymentsPerYear > 0) {
+    const oneYearAgoStr = new Date(nowMs - 365 * 86400 * 1000).toISOString().split('T')[0];
+    const candidates1Y = history.filter(h => h.exDate > oneYearAgoStr);
+    const tpl = candidates1Y.length > 0 ? candidates1Y[0] : history[history.length - 1];
+    const tplDate = new Date(tpl.exDate + 'T00:00:00Z');
+    let projDate = new Date(tplDate.getTime() + 365 * 86400 * 1000);
+    if (projDate.toISOString().split('T')[0] <= todayStr) {
+      const lastEvDate = new Date(history[history.length - 1].exDate + 'T00:00:00Z');
+      projDate = new Date(lastEvDate.getTime() + Math.round(365 / Math.max(1, paymentsPerYear)) * 86400 * 1000);
     }
+    nextExDate = projDate.toISOString().split('T')[0];
+    nextPayDate = new Date(projDate.getTime() + payLagDays * 86400 * 1000).toISOString().split('T')[0];
+    nextEstAmount = tpl.amount;
+    nextStatus = 'PROJECTED_SEASONAL';
   }
 
   let daysToExDate = null;
@@ -1318,12 +1418,8 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
  * Reconciles user's dated transaction ledger (2018-present) against historical dividend ex-dates.
  * Returns all unlogged dividend entitlements where shares held strictly before exDate > 0.
  */
-function detectUnloggedDividendEntitlements() {
-  if (!state || state.settings?.autoDetectDividends === false) return [];
-  const existingKeys = new Set(
-    (state.dividends || []).map(d => `${MarketAPI.normalizeTicker(d.ticker)}_${d.exDate || d.payDate}`)
-  );
-
+function computeAllEligibleDividendEntitlements() {
+  if (!state) return [];
   const txByTicker = {};
   (state.transactions || []).forEach(tx => {
     const sym = MarketAPI.normalizeTicker(tx.ticker);
@@ -1333,19 +1429,17 @@ function detectUnloggedDividendEntitlements() {
   });
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const detected = [];
+  const entitlements = [];
 
   Object.keys(txByTicker).sort().forEach(sym => {
     const txs = txByTicker[sym].sort((a, b) => new Date(a.date) - new Date(b.date));
-    const sched = buildDividendScheduleForTicker(sym) || state.dividendSchedules?.[sym];
+    const sched = buildDividendScheduleForTicker(sym);
     if (sched) state.dividendSchedules[sym] = sched;
     if (!sched || !Array.isArray(sched.history)) return;
 
     sched.history.forEach(ev => {
       const exDate = ev.exDate;
       if (!exDate || exDate > todayStr) return;
-      const key = `${sym}_${exDate}`;
-      if (existingKeys.has(key)) return;
 
       let eligibleShares = 0;
       txs.forEach(tx => {
@@ -1357,16 +1451,18 @@ function detectUnloggedDividendEntitlements() {
 
       eligibleShares = Fin.round(Math.max(0, eligibleShares), 4);
       if (eligibleShares > 0) {
-        const grossAmt = Fin.round(eligibleShares * Number(ev.amount || 0), 2);
+        const amtPerShare = Fin.round(Number(ev.amount || 0), 6);
+        const grossAmt = Fin.round(eligibleShares * amtPerShare, 2);
         const whtPct = Number(sched.withholdingTaxPct || 0);
         const netAmt = Fin.round(grossAmt * (1 - whtPct / 100), 2);
-        detected.push({
+        entitlements.push({
           id: `AUTO-DIV-${sym}-${exDate}`,
+          divId: `DIV-${sym}-${exDate}`,
           ticker: sym,
           exDate,
           payDate: ev.payDate || exDate,
           eligibleShares,
-          amountPerShare: Fin.round(Number(ev.amount || 0), 4),
+          amountPerShare: amtPerShare,
           grossAmount: grossAmt,
           withholdingTaxPct: whtPct,
           totalAmount: netAmt,
@@ -1376,7 +1472,17 @@ function detectUnloggedDividendEntitlements() {
     });
   });
 
-  return detected.sort((a, b) => b.exDate.localeCompare(a.exDate));
+  return entitlements.sort((a, b) => b.payDate.localeCompare(a.payDate) || b.exDate.localeCompare(a.exDate));
+}
+window.computeAllEligibleDividendEntitlements = computeAllEligibleDividendEntitlements;
+
+function detectUnloggedDividendEntitlements() {
+  if (!state || state.settings?.autoDetectDividends === false) return [];
+  const allEligible = computeAllEligibleDividendEntitlements();
+  const existingKeys = new Set(
+    (state.dividends || []).map(d => `${MarketAPI.normalizeTicker(d.ticker)}_${d.exDate || d.payDate}`)
+  );
+  return allEligible.filter(e => !existingKeys.has(`${e.ticker}_${e.exDate}`));
 }
 window.detectUnloggedDividendEntitlements = detectUnloggedDividendEntitlements;
 
@@ -1531,34 +1637,51 @@ function recalculatePortfolio() {
     }
   });
 
-  // Auto-sync any missing historical dividend entitlements (2018-present, including 3476.HK monthly & 3433.HK quarterly)
-  // directly into state.dividends when autoDetectDividends is enabled so Dividend Payout Logs are always complete.
+  // Self-healing Dividend Ledger Reconciliation:
+  // Rebuilds auto-verified dividend records from canonical deduplicated HKEX/Yahoo entitlements,
+  // automatically purging any duplicate or synthetic baseline entries previously saved in localStorage.
   if (state.settings?.autoDetectDividends !== false && state.transactions.length > 0) {
-    const autoMissing = detectUnloggedDividendEntitlements();
-    if (autoMissing.length > 0) {
-      const existingDivKeys = new Set(
-        (state.dividends || []).map(d => `${MarketAPI.normalizeTicker(d.ticker)}_${d.exDate || d.payDate}`)
-      );
-      autoMissing.forEach(item => {
-        const key = `${item.ticker}_${item.exDate}`;
-        if (!existingDivKeys.has(key)) {
-          existingDivKeys.add(key);
-          state.dividends.push({
-            id: `DIV-${item.ticker}-${item.exDate}`,
-            ticker: item.ticker,
-            payDate: item.payDate,
-            exDate: item.exDate,
-            amountPerShare: item.amountPerShare,
-            totalAmount: item.totalAmount,
-            currency: item.currency,
-            isDrip: false,
-            dripShares: 0,
-            notes: `Auto-verified cash payout (${Fin.shares(item.eligibleShares)} sh held prior to Ex-Date ${item.exDate})`
-          });
-        }
+    const canonicalEntitlements = computeAllEligibleDividendEntitlements();
+    const canonicalByTicker = {};
+    canonicalEntitlements.forEach(e => {
+      if (!canonicalByTicker[e.ticker]) canonicalByTicker[e.ticker] = [];
+      canonicalByTicker[e.ticker].push(e);
+    });
+
+    // Preserve only genuine user-entered manual dividends that do not collide with canonical auto-verified payouts
+    const manualDividends = (state.dividends || []).filter(d => {
+      const idStr = String(d.id || '');
+      const notesStr = String(d.notes || '');
+      const isAuto = idStr.startsWith('DIV-') || idStr.startsWith('AUTO-DIV-') || notesStr.includes('Auto-verified') || notesStr.includes('Auto-backfilled');
+      if (isAuto) return false;
+      const sym = MarketAPI.normalizeTicker(d.ticker);
+      const dDate = d.exDate || d.payDate || '';
+      const dMs = new Date(dDate + 'T00:00:00Z').getTime();
+      const cList = canonicalByTicker[sym] || [];
+      const minGap = (sym === '3476.HK') ? 18 : 35;
+      const collides = cList.some(c => {
+        const cMs = new Date(c.exDate + 'T00:00:00Z').getTime();
+        return Math.abs(Math.round((dMs - cMs) / (86400 * 1000))) <= minGap;
       });
-      state.dividends.sort((a, b) => String(b.payDate || b.exDate || '').localeCompare(String(a.payDate || a.exDate || '')));
-    }
+      return !collides;
+    });
+
+    const autoVerifiedDividends = canonicalEntitlements.map(item => ({
+      id: item.divId,
+      ticker: item.ticker,
+      payDate: item.payDate,
+      exDate: item.exDate,
+      amountPerShare: item.amountPerShare,
+      totalAmount: item.totalAmount,
+      currency: item.currency,
+      isDrip: false,
+      dripShares: 0,
+      notes: `Auto-verified cash payout (${Fin.shares(item.eligibleShares)} sh held prior to Ex-Date ${item.exDate})`
+    }));
+
+    state.dividends = [...autoVerifiedDividends, ...manualDividends].sort((a, b) =>
+      String(b.payDate || b.exDate || '').localeCompare(String(a.payDate || a.exDate || ''))
+    );
   }
 
   // Dividends

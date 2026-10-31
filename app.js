@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.1.1-20261031_1905') {
+      if (k !== 'myportfolio-cache-v3.1.2-20261031_1955') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -18,8 +18,8 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
 /**
  * @file app.js
  * @module AppUIController
- * @version 3.1.1
- * @build 20261031_1905
+ * @version 3.1.2
+ * @build 20261031_1955
  * @description Main UI controller, Holdings & Watchlist tables with 52W/MoM/QoQ/YoY + Dividend Ex-Date/Yield +
  *   Trend Regime + 0-100 Buy/Sell Signal badges, Auto-Detected 2018+ Dividend Backfill, News & Catalysts Tab,
  *   Smart Cash Deployment & Rebalancing Simulator, Nominal/Real XIRR KPIs, and Full Settings Parameter Customizer.

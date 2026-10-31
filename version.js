@@ -7,8 +7,8 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.1.1',
-  buildId: '20261031_1905',
+  appVersion: '3.1.2',
+  buildId: '20261031_1955',
   releaseDate: '2026-10-31 16:50 HKT',
   driveFolder: '/stock_portfolio/20261031_1650/',
   modules: {
@@ -23,6 +23,18 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with pre-seeded 36M OHLCV, quotes, 2018+ dividends & news' }
   },
   changelog: [
+    {
+      version: '3.1.2',
+      buildId: '20261031_1955',
+      date: '2026-10-31',
+      changes: [
+        'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging synthetic baseline dates with live Yahoo Finance ex-dates',
+        'Replaced all synthetic +364d baseline dividend dates and RMB amounts with official HKEX (etnet) Ex-Dates, Payable Dates, and 6-decimal HKD conversion rates',
+        'Added same-cycle proximity deduplication (18d Monthly / 35d Quarterly-SemiAnnual-Annual) in both portfolio.js and update_historical_prices.py',
+        'Preserved 6-decimal per-share dividend precision (Fin.round(amt, 6)) so multi-thousand share H-share payouts match Yahoo Finance to the exact cent (e.g. 2318.HK: HK$4,533.88 + HK$7,039.52 + HK$1,040.48 = HK$12,613.88)',
+        'Added self-healing Dividend Payout Logs reconciliation in recalculatePortfolio() to automatically purge previously cached duplicate dividend entries from localStorage on load'
+      ]
+    },
     {
       version: '3.1.1',
       buildId: '20261031_1905',
