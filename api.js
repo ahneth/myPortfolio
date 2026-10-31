@@ -1,8 +1,8 @@
 /**
  * @file api.js
  * @module MarketAPIModule
- * @version 3.0.1
- * @build 20261031_1115
+ * @version 3.1.0
+ * @build 20261031_1650
  * @description Compartmentalized Global Stock Market API Client (HKEX, US NYSE/NASDAQ, London LSE).
  *   - Tier 1: Parallel Yahoo Finance v8 Chart Proxy Race (Promise.any) with 15y history + events=div
  *   - Tier 2: Zero-CORS Browser script-tag JSONP Quote Fallback (qt.gtimg.cn) for HK & US equities
@@ -15,9 +15,9 @@ var TICKER_STATIC_DIRECTORY = {
   '2800.HK': { name: 'Tracker Fund of Hong Kong', sector: 'Index ETF', currency: 'HKD' },
   '2840.HK': { name: 'SPDR Gold Trust', sector: 'Index ETF', currency: 'HKD' },
   '3077.HK': { name: 'Premia US Treasury Floating Rate ETF', sector: 'Index ETF', currency: 'HKD' },
-  '3195.HK': { name: 'CSOP Hang Seng Index Daily (-1x) Inverse Product', sector: 'Index ETF', currency: 'HKD' },
-  '3433.HK': { name: 'CSOP FTSE China A50 Index ETF', sector: 'Index ETF', currency: 'HKD' },
-  '3476.HK': { name: 'CSOP Hang Seng TECH Index Daily (-2x) Inverse Product', sector: 'Index ETF', currency: 'HKD' },
+  '3195.HK': { name: 'Hang Seng S&P 500 Index ETF', sector: 'Index ETF', currency: 'HKD' },
+  '3433.HK': { name: 'CSOP FTSE US Treasury 20+ Years Index ETF', sector: 'Index ETF', currency: 'HKD' },
+  '3476.HK': { name: 'Hang Seng JPMorgan US Equity Premium Income Active ETF', sector: 'Index ETF', currency: 'HKD' },
   '0002.HK': { name: 'CLP Holdings Ltd', sector: 'Utilities', currency: 'HKD' },
   '0003.HK': { name: 'Hong Kong and China Gas Co Ltd', sector: 'Utilities', currency: 'HKD' },
   '0005.HK': { name: 'HSBC Holdings plc', sector: 'Financials', currency: 'HKD' },
@@ -314,11 +314,22 @@ var MarketAPI = {
           const closes = (result.indicators?.quote?.[0]?.close || []).filter(v => v !== null && v !== undefined && !isNaN(v));
           const price = parseFloat(meta.regularMarketPrice ?? closes[closes.length - 1]);
           if (price && !isNaN(price)) {
-            let prevPrice = parseFloat(meta.chartPreviousClose ?? meta.previousClose);
-            if (closes.length >= 2) {
-              prevPrice = parseFloat(closes[closes.length - 2]) || prevPrice || price;
-            } else if (!prevPrice || isNaN(prevPrice)) {
+            // Priority: yesterday's daily close from 5d/1d bars or regularMarketPreviousClose (NEVER multi-year chartPreviousClose)
+            let prevPrice = (closes.length >= 2 ? parseFloat(closes[closes.length - 2]) : NaN);
+            if (!prevPrice || isNaN(prevPrice)) {
+              prevPrice = parseFloat(meta.regularMarketPreviousClose ?? meta.previousClose);
+            }
+            if (!prevPrice || isNaN(prevPrice) || prevPrice <= 0) {
               prevPrice = price;
+            }
+
+            // Sanity guard: prevent multi-year inception prices (e.g. 1.118 vs 12.30 = +1000%) from polluting 1-day change %
+            if (prevPrice > 0 && Math.abs((price - prevPrice) / prevPrice) > 0.40) {
+              if (closes.length >= 2 && closes[closes.length - 2] > 0 && Math.abs((price - closes[closes.length - 2]) / closes[closes.length - 2]) <= 0.40) {
+                prevPrice = parseFloat(closes[closes.length - 2]);
+              } else {
+                prevPrice = price;
+              }
             }
 
             const change = Fin.round(price - prevPrice, 3);

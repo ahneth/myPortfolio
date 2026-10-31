@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 update_company_news.py — Scheduled Portfolio & Watchlist News & Catalyst Engine
-Version: 3.0.1 (Build 20261031_1115)
+Version: 3.1.0 (Build 20261031_1650)
 
 Fetches, deduplicates, tags, and scores sentiment for recent company & ETF news
 across HKEX, US (NYSE/NASDAQ), and London (LSE) tickers from two zero-key sources:
@@ -53,9 +53,9 @@ TICKER_ENTITY_NAMES: Dict[str, str] = {
     "2388.HK": "BOC Hong Kong (Holdings) Limited",
     "2840.HK": "SPDR Gold Trust ETF",
     "3077.HK": "Premia US Treasury Floating Rate ETF",
-    "3195.HK": "CSOP NASDAQ 100 ETF",
+    "3195.HK": "Hang Seng S&P 500 Index ETF",
     "3433.HK": "CSOP US Large Oil & Gas Companies ETF",
-    "3476.HK": "CSOP Nikkei 225 Index ETF",
+    "3476.HK": "Hang Seng JPMorgan US Equity Premium Income Active ETF",
     "SPYL.L": "SPDR S&P 500 UCITS ETF",
     "VWRA.L": "Vanguard FTSE All-World UCITS ETF",
     "HSBA.L": "HSBC Holdings plc (LSE)",
@@ -285,7 +285,7 @@ def main() -> int:
     for a in merged:
         by_ticker.setdefault(a["ticker"], []).append(a)
     payload = {
-        "schemaVersion": "3.0.1",
+        "schemaVersion": "3.1.0",
         "generatedAt": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "articleCount": len(merged),
         "tickerCount": len(by_ticker),

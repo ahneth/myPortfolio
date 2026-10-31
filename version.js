@@ -1,31 +1,44 @@
 /**
  * @file version.js
  * @module VersionRegistry
- * @version 3.0.1
- * @build 20261031_1115
- * @description Centralized version & build manifest for myPortfolio v3.0.1 modular architecture.
+ * @version 3.1.0
+ * @build 20261031_1650
+ * @description Centralized version & build manifest for myPortfolio v3.1.0 modular architecture.
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.0.1',
-  buildId: '20261031_1115',
-  releaseDate: '2026-10-31 11:15 HKT',
-  driveFolder: '/stock_portfolio/20261031_1115/',
+  appVersion: '3.1.0',
+  buildId: '20261031_1650',
+  releaseDate: '2026-10-31 16:50 HKT',
+  driveFolder: '/stock_portfolio/20261031_1650/',
   modules: {
-    'version.js':   { version: '3.0.1', updated: '20261031_1115', role: 'Version manifest, module registry & v3.0.1 changelog history' },
+    'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
-    'utils.js':     { version: '3.0.1', updated: '20261031_1115', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
-    'api.js':       { version: '3.0.1', updated: '20261031_1115', role: 'Yahoo v8 15y Dividend Events, Live FX Rates, Canonical News & Catalyst RSS/Search Engine' },
-    'portfolio.js': { version: '3.0.1', updated: '20261031_1115', role: '2018+ Dividend Auto-Backfill, TTM Yield Boundary Fix, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
-    'charts.js':    { version: '3.0.1', updated: '20261031_1115', role: 'FX-Normalized Portfolio Charts + Interactive SMA 20/50/200 & 12M Regression Channel Overlays' },
-    'app.js':       { version: '3.0.1', updated: '20261031_1115', role: 'Startup JSON Auto-Sync, Signal Breakdown Modal, News Scope Filters, Rebalance Trim Alerts & Order Staging, Settings Customizer' },
-    'styles.css':   { version: '3.0.1', updated: '20261031_1115', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.0.1', updated: '20261031_1115', role: 'Self-contained single-file production bundle with pre-seeded 36M OHLCV, quotes, 2018+ dividends & news' }
+    'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
+    'api.js':       { version: '3.1.0', updated: '20261031_1650', role: 'Yahoo v8 15y Dividend Events, Live FX Rates, Canonical News & Catalyst RSS/Search Engine' },
+    'portfolio.js': { version: '3.1.0', updated: '20261031_1650', role: '2018+ Dividend Auto-Backfill, TTM Yield Boundary Fix, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
+    'charts.js':    { version: '3.1.0', updated: '20261031_1650', role: 'FX-Normalized Portfolio Charts + Interactive SMA 20/50/200 & 12M Regression Channel Overlays' },
+    'app.js':       { version: '3.1.0', updated: '20261031_1650', role: 'Startup JSON Auto-Sync, Signal Breakdown Modal, News Scope Filters, Rebalance Trim Alerts & Order Staging, Settings Customizer' },
+    'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
+    'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with pre-seeded 36M OHLCV, quotes, 2018+ dividends & news' }
   },
   changelog: [
     {
+      version: '3.1.0',
+      buildId: '20261031_1650',
+      date: '2026-10-31 16:50 HKT',
+      title: '1-Day Quote Previous-Close Fix, 100% Cash Dividends, Dividend Ticker Filter, Complete 3476.HK/3433.HK Dividends & TRIM/OFFLOAD Signal Engine',
+      changes: [
+        'Fixed +1000% live price anomaly (e.g. 3195.HK) and monthly-close quote distortion across api.js, update_historical_prices.py, historical_prices.json, and localStorage state sanitizer by prioritizing daily previousClose / regularMarketPreviousClose and daily_bars[-2] over multi-year chartPreviousClose, plus added an explicit "1D" badge under Live Price.',
+        'Removed DRIP dual-mode across the Dividends tab, Record Dividend modal, and backfill handlers: all dividend payouts are now 100% Cash credited directly to Cash Balance.',
+        'Added Filter by Ticker dropdown (#div-log-filter-ticker), keyword search (#div-log-search-text), and filtered payout summary badge above the Dividend Payout Logs table.',
+        'Completed missing monthly dividend history for 3476.HK (Hang Seng JPMorgan US Equity Premium Income Active ETF, 16 monthly ex-dates 2025-08 to 2026-11) and quarterly dividend history for 3433.HK (CSOP FTSE US Treasury 20+ Years Index ETF, 11 quarterly ex-dates 2024-04 to 2026-10), fixed cadence classification using median inter-payout gap days, and corrected 3433.HK / 0066.HK price series.',
+        'Refined the 4-Pillar Signal Engine to produce actionable TRIM / OFFLOAD and SELL / AVOID signals for Stage 4 downtrend breakdowns (0101.HK), Stage 3 topping stocks, extreme overbought RSI (>= 75/85), extended rallies (>20% above Target Buy), and overweight positions (>15%).'
+      ]
+    },
+    {
       version: '3.0.1',
-      buildId: '20261031_1115',
+      buildId: '20261031_1650',
       date: '2026-10-31 11:15 HKT',
       title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
       changes: [

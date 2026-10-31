@@ -1,8 +1,8 @@
 /**
  * @file utils.js
  * @module UtilsAndDeviceDetector
- * @version 3.0.1
- * @build 20261031_1115
+ * @version 3.1.0
+ * @build 20261031_1650
  * @description Financial precision arithmetic utilities (Fin), Newton-Raphson / Bisection XIRR solver,
  *   Fisher Real (Inflation-Adjusted) Return calculator, Multi-Currency & GBp FX normalizer,
  *   and automatic client DeviceDetector.

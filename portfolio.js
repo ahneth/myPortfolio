@@ -1,8 +1,17 @@
+var OFFICIAL_NAMES_MAP = {
+  '3195.HK': 'Hang Seng S&P 500 Index ETF',
+  '3433.HK': 'CSOP FTSE US Treasury 20+ Years Index ETF',
+  '3476.HK': 'Hang Seng JPMorgan US Equity Premium Income Active ETF',
+  '3077.HK': 'Premia US Treasury Floating Rate ETF',
+  '2800.HK': 'Tracker Fund of Hong Kong',
+  '2840.HK': 'SPDR Gold Trust'
+};
+
 /**
  * @file portfolio.js
  * @module PortfolioEngineAndExcelIO
- * @version 3.0.1
- * @build 20261031_1115
+ * @version 3.1.0
+ * @build 20261031_1650
  * @description Application state persistence, startup ./historical_prices.json & ./company_news.json loaders,
  *   2018+ Dividend Ex-Date/Payout/Entitlement & Auto-Backfill Engine, 4-Pillar Technical & Qualitative Buy/Sell
  *   Signal Engine (0-100), 6-State Trend Regime & 12M Regression Analyzer, Nominal & Real (Inflation-Adjusted)
@@ -35,8 +44,8 @@ var DEFAULT_QUANT_SETTINGS = {
   smaLongPeriod: 200,             // Long SMA period (days; or 10M on monthly fallback)
   atrStopMultiplier: 2.0,         // ATR Stop-Loss distance multiplier (Price - k * ATR)
   signalStrongBuyMin: 78,         // Minimum score (0-100) for STRONG BUY badge
-  signalBuyMin: 64,               // Minimum score (0-100) for ACCUMULATE badge
-  signalHoldMin: 42,              // Minimum score (0-100) for HOLD badge
+  signalBuyMin: 62,               // Minimum score (0-100) for ACCUMULATE badge
+  signalHoldMin: 45,              // Minimum score (0-100) for HOLD badge
   weightMomentum: 30,             // Pillar 1 weight: Technical Momentum & Mean Reversion (%)
   weightTrend: 25,                // Pillar 2 weight: Trend & Moving Average Structure (%)
   weightValuation: 25,            // Pillar 3 weight: Valuation & Target Buy Margin (%)
@@ -59,95 +68,221 @@ var DEFAULT_QUANT_SETTINGS = {
  */
 var BASELINE_DIVIDEND_HISTORY_2018_2026 = {
   '2800.HK': [
-    ['2018-05-02', 0.23], ['2018-10-31', 0.67],
-    ['2019-05-02', 0.24], ['2019-10-31', 0.67],
-    ['2020-05-04', 0.14], ['2020-10-30', 0.64],
-    ['2021-05-03', 0.17], ['2021-10-29', 0.59],
-    ['2022-05-03', 0.18], ['2022-10-31', 0.56],
-    ['2023-05-02', 0.19], ['2023-10-31', 0.57],
-    ['2024-05-02', 0.22], ['2024-10-31', 0.55],
-    ['2025-05-02', 0.23], ['2025-10-30', 0.54],
-    ['2026-05-04', 0.24], ['2026-10-29', 0.53]
+    ['2018-05-02', 0.23, '2018-05-30'],
+    ['2018-10-31', 0.67, '2018-11-28'],
+    ['2019-05-02', 0.24, '2019-05-30'],
+    ['2019-10-31', 0.67, '2019-11-28'],
+    ['2020-05-04', 0.14, '2020-05-29'],
+    ['2020-10-30', 0.64, '2020-11-27'],
+    ['2021-05-03', 0.17, '2021-05-31'],
+    ['2021-10-29', 0.59, '2021-11-26'],
+    ['2022-05-03', 0.18, '2022-05-31'],
+    ['2022-10-31', 0.56, '2022-11-28'],
+    ['2023-05-02', 0.19, '2023-05-30'],
+    ['2023-10-31', 0.57, '2023-11-28'],
+    ['2024-05-02', 0.22, '2024-05-30'],
+    ['2024-10-31', 0.55, '2024-11-28'],
+    ['2025-05-02', 0.23, '2025-05-30'],
+    ['2025-10-30', 0.54, '2025-11-27'],
+    ['2026-05-04', 0.24, '2026-06-01'],
+    ['2026-10-29', 0.53, '2026-11-26'],
   ],
-  '0002.HK': [
-    ['2024-03-05', 1.21], ['2024-06-04', 0.63], ['2024-09-03', 0.63], ['2024-12-03', 0.63],
-    ['2025-03-04', 1.26], ['2025-06-03', 0.63], ['2025-09-02', 0.63], ['2025-12-02', 0.63],
-    ['2026-03-03', 1.26], ['2026-06-02', 0.63], ['2026-09-01', 0.63]
-  ],
-  '0003.HK': [
-    ['2024-06-06', 0.23], ['2024-09-05', 0.12],
-    ['2025-06-05', 0.23], ['2025-09-04', 0.12],
-    ['2026-06-04', 0.23], ['2026-09-03', 0.12]
-  ],
-  '0005.HK': [
-    ['2024-05-09', 2.42], ['2024-08-08', 0.78], ['2024-11-07', 0.78],
-    ['2025-03-06', 2.80], ['2025-05-08', 0.78], ['2025-08-07', 0.78], ['2025-11-06', 0.78],
-    ['2026-03-05', 2.88], ['2026-05-07', 0.78], ['2026-08-06', 0.78]
-  ],
-  '0006.HK': [
-    ['2025-05-28', 2.04], ['2025-09-03', 0.78],
-    ['2026-05-27', 2.04], ['2026-09-02', 0.78]
-  ],
-  '0012.HK': [
-    ['2025-06-05', 1.30], ['2025-09-09', 0.50],
-    ['2026-06-04', 1.30], ['2026-09-08', 0.50]
-  ],
-  '0066.HK': [
-    ['2025-05-22', 0.89], ['2025-09-04', 0.42],
-    ['2026-05-21', 0.89], ['2026-09-03', 0.42]
-  ],
-  '0101.HK': [
-    ['2025-05-08', 0.40], ['2025-09-04', 0.12],
-    ['2026-05-07', 0.40], ['2026-09-03', 0.12]
-  ],
-  '0386.HK': [
-    ['2025-06-11', 0.153], ['2025-09-10', 0.160],
-    ['2026-06-10', 0.155], ['2026-09-09', 0.158]
-  ],
-  '0700.HK': [
-    ['2024-05-16', 3.40], ['2025-05-15', 4.00], ['2026-05-14', 4.50]
-  ],
-  '0857.HK': [
-    ['2025-06-17', 0.268], ['2025-09-16', 0.240],
-    ['2026-06-16', 0.275], ['2026-09-15', 0.245]
-  ],
-  '0939.HK': [
-    ['2025-07-10', 0.215], ['2026-01-15', 0.214], ['2026-07-09', 0.220]
-  ],
-  '1088.HK': [
-    ['2025-06-25', 2.46], ['2026-06-24', 2.48]
-  ],
-  '1093.HK': [
-    ['2025-06-12', 0.16], ['2025-09-18', 0.16],
-    ['2026-06-11', 0.16], ['2026-09-17', 0.16]
-  ],
-  '1288.HK': [
-    ['2025-07-08', 0.128], ['2026-01-12', 0.125], ['2026-07-07', 0.132]
-  ],
-  '1299.HK': [
-    ['2025-05-29', 1.305], ['2025-09-08', 0.445],
-    ['2026-05-28', 1.350], ['2026-09-07', 0.460]
-  ],
-  '1378.HK': [
-    ['2025-06-05', 0.59], ['2025-09-12', 0.59],
-    ['2026-06-04', 0.62], ['2026-09-11', 0.60]
-  ],
-  '1398.HK': [
-    ['2025-07-11', 0.178], ['2026-01-16', 0.158], ['2026-07-10', 0.182]
-  ],
-  '2318.HK': [
-    ['2025-06-10', 1.62], ['2025-09-19', 1.02],
-    ['2026-06-09', 1.68], ['2026-09-18', 1.05]
-  ],
-  '2388.HK': [
-    ['2025-05-20', 1.419], ['2025-09-11', 0.57],
-    ['2026-05-19', 1.450], ['2026-09-10', 0.58]
-  ],
-  '3077.HK': [
-    ['2026-01-05', 10.50], ['2026-04-06', 10.40], ['2026-07-06', 10.35], ['2026-10-05', 10.30]
+  '3476.HK': [
+    ['2025-08-01', 0.0957, '2025-08-11'],
+    ['2025-09-01', 0.1059, '2025-09-09'],
+    ['2025-10-02', 0.1067, '2025-10-14'],
+    ['2025-11-03', 0.1051, '2025-11-12'],
+    ['2025-12-01', 0.1067, '2025-12-09'],
+    ['2026-01-02', 0.0957, '2026-01-12'],
+    ['2026-02-02', 0.0988, '2026-02-10'],
+    ['2026-03-02', 0.0879, '2026-03-10'],
+    ['2026-04-01', 0.0871, '2026-04-14'],
+    ['2026-05-05', 0.0871, '2026-05-13'],
+    ['2026-06-01', 0.0926, '2026-06-09'],
+    ['2026-07-02', 0.0918, '2026-07-10'],
+    ['2026-08-03', 0.0934, '2026-08-11'],
+    ['2026-09-01', 0.1028, '2026-09-10'],
+    ['2026-10-02', 0.1004, '2026-10-13'],
+    ['2026-11-02', 0.1004, '2026-11-10'],
   ],
   '3433.HK': [
-    ['2025-12-18', 0.42]
+    ['2024-04-18', 1.58, '2024-04-25'],
+    ['2024-07-18', 1.52, '2024-07-25'],
+    ['2024-10-18', 0.82, '2024-10-28'],
+    ['2025-01-17', 0.85, '2025-01-27'],
+    ['2025-04-22', 0.82, '2025-04-30'],
+    ['2025-07-18', 0.84, '2025-07-28'],
+    ['2025-10-17', 0.83, '2025-10-28'],
+    ['2026-01-16', 0.83, '2026-01-29'],
+    ['2026-04-22', 0.84, '2026-04-29'],
+    ['2026-07-22', 0.84, '2026-07-29'],
+    ['2026-10-20', 0.84, '2026-10-28'],
+  ],
+  '3077.HK': [
+    ['2024-02-15', 56.1, '2024-02-21'],
+    ['2024-05-10', 59.3, '2024-05-17'],
+    ['2024-08-08', 52.3, '2024-08-13'],
+    ['2024-11-08', 52.0, '2024-11-14'],
+    ['2025-02-14', 46.1, '2025-02-20'],
+    ['2025-05-14', 44.55, '2025-05-20'],
+    ['2025-08-07', 37.58, '2025-08-12'],
+    ['2025-11-05', 41.97, '2025-11-11'],
+    ['2026-01-05', 10.5, '2026-02-02'],
+    ['2026-04-06', 10.4, '2026-05-04'],
+    ['2026-07-06', 10.35, '2026-08-03'],
+    ['2026-10-05', 10.3, '2026-11-02'],
+  ],
+  '0002.HK': [
+    ['2024-03-05', 1.21, '2024-03-26'],
+    ['2024-06-04', 0.63, '2024-06-25'],
+    ['2024-09-03', 0.63, '2024-09-24'],
+    ['2024-12-03', 0.63, '2024-12-24'],
+    ['2025-03-04', 1.26, '2025-03-25'],
+    ['2025-06-03', 0.63, '2025-06-24'],
+    ['2025-09-02', 0.63, '2025-09-23'],
+    ['2025-12-02', 0.63, '2025-12-23'],
+    ['2026-03-03', 1.26, '2026-03-24'],
+    ['2026-06-02', 0.63, '2026-06-23'],
+    ['2026-09-01', 0.63, '2026-09-22'],
+  ],
+  '0003.HK': [
+    ['2024-06-06', 0.23, '2024-06-27'],
+    ['2024-09-05', 0.12, '2024-09-26'],
+    ['2025-06-05', 0.23, '2025-06-26'],
+    ['2025-09-04', 0.12, '2025-09-25'],
+    ['2026-06-04', 0.23, '2026-06-25'],
+    ['2026-09-03', 0.12, '2026-09-24'],
+  ],
+  '0005.HK': [
+    ['2024-05-09', 2.42, '2024-05-30'],
+    ['2024-08-08', 0.78, '2024-08-29'],
+    ['2024-11-07', 0.78, '2024-11-28'],
+    ['2025-03-06', 2.8, '2025-03-27'],
+    ['2025-05-08', 0.78, '2025-05-29'],
+    ['2025-08-07', 0.78, '2025-08-28'],
+    ['2025-11-06', 0.78, '2025-11-27'],
+    ['2026-03-05', 2.88, '2026-03-26'],
+    ['2026-05-07', 0.78, '2026-05-28'],
+    ['2026-08-06', 0.78, '2026-08-27'],
+  ],
+  '0006.HK': [
+    ['2024-05-29', 2.04, '2024-06-19'],
+    ['2024-09-04', 0.78, '2024-09-25'],
+    ['2025-05-28', 2.04, '2025-06-18'],
+    ['2025-09-03', 0.78, '2025-09-24'],
+    ['2026-05-27', 2.04, '2026-06-17'],
+    ['2026-09-02', 0.78, '2026-09-23'],
+  ],
+  '0012.HK': [
+    ['2024-06-06', 1.3, '2024-06-27'],
+    ['2024-09-10', 0.5, '2024-10-01'],
+    ['2025-06-05', 1.3, '2025-06-26'],
+    ['2025-09-09', 0.5, '2025-09-30'],
+    ['2026-06-04', 1.3, '2026-06-25'],
+    ['2026-09-08', 0.5, '2026-09-29'],
+  ],
+  '0066.HK': [
+    ['2024-05-23', 0.89, '2024-06-13'],
+    ['2024-09-05', 0.42, '2024-09-26'],
+    ['2025-05-22', 0.89, '2025-06-12'],
+    ['2025-09-04', 0.42, '2025-09-25'],
+    ['2026-05-21', 0.89, '2026-06-11'],
+    ['2026-09-03', 0.42, '2026-09-24'],
+  ],
+  '0101.HK': [
+    ['2024-05-09', 0.6, '2024-05-30'],
+    ['2024-09-05', 0.12, '2024-09-26'],
+    ['2025-05-08', 0.4, '2025-05-29'],
+    ['2025-09-04', 0.12, '2025-09-25'],
+    ['2026-05-07', 0.4, '2026-05-28'],
+    ['2026-09-03', 0.12, '2026-09-24'],
+  ],
+  '0386.HK': [
+    ['2024-06-12', 0.22, '2024-07-03'],
+    ['2024-09-11', 0.16, '2024-10-02'],
+    ['2025-06-11', 0.153, '2025-07-02'],
+    ['2025-09-10', 0.16, '2025-10-01'],
+    ['2026-06-10', 0.155, '2026-07-01'],
+    ['2026-09-09', 0.158, '2026-09-30'],
+  ],
+  '0700.HK': [
+    ['2024-05-16', 3.4, '2024-06-06'],
+    ['2025-05-15', 4.0, '2025-06-05'],
+    ['2026-05-14', 4.5, '2026-06-04'],
+  ],
+  '0857.HK': [
+    ['2024-06-18', 0.25, '2024-07-09'],
+    ['2024-09-17', 0.24, '2024-10-08'],
+    ['2025-06-17', 0.268, '2025-07-08'],
+    ['2025-09-16', 0.24, '2025-10-07'],
+    ['2026-06-16', 0.275, '2026-07-07'],
+    ['2026-09-15', 0.245, '2026-10-06'],
+  ],
+  '0939.HK': [
+    ['2024-07-11', 0.435, '2024-08-01'],
+    ['2025-01-16', 0.214, '2025-02-06'],
+    ['2025-07-10', 0.215, '2025-07-31'],
+    ['2026-01-15', 0.214, '2026-02-05'],
+    ['2026-07-09', 0.22, '2026-07-30'],
+  ],
+  '1088.HK': [
+    ['2024-06-26', 2.47, '2024-07-17'],
+    ['2025-06-25', 2.46, '2025-07-16'],
+    ['2026-06-24', 2.48, '2026-07-15'],
+  ],
+  '1093.HK': [
+    ['2024-06-13', 0.14, '2024-07-04'],
+    ['2024-09-19', 0.16, '2024-10-10'],
+    ['2025-06-12', 0.16, '2025-07-03'],
+    ['2025-09-18', 0.16, '2025-10-09'],
+    ['2026-06-11', 0.16, '2026-07-02'],
+    ['2026-09-17', 0.16, '2026-10-08'],
+  ],
+  '1288.HK': [
+    ['2024-07-09', 0.252, '2024-07-30'],
+    ['2025-01-13', 0.125, '2025-02-03'],
+    ['2025-07-08', 0.128, '2025-07-29'],
+    ['2026-01-12', 0.125, '2026-02-02'],
+    ['2026-07-07', 0.132, '2026-07-28'],
+  ],
+  '1299.HK': [
+    ['2024-05-30', 1.19, '2024-06-20'],
+    ['2024-09-09', 0.445, '2024-09-30'],
+    ['2025-05-29', 1.305, '2025-06-19'],
+    ['2025-09-08', 0.445, '2025-09-29'],
+    ['2026-05-28', 1.35, '2026-06-18'],
+    ['2026-09-07', 0.46, '2026-09-28'],
+  ],
+  '1378.HK': [
+    ['2024-06-06', 0.29, '2024-06-27'],
+    ['2024-09-13', 0.59, '2024-10-04'],
+    ['2025-06-05', 0.59, '2025-06-26'],
+    ['2025-09-12', 0.59, '2025-10-03'],
+    ['2026-06-04', 0.62, '2026-06-25'],
+    ['2026-09-11', 0.6, '2026-10-02'],
+  ],
+  '1398.HK': [
+    ['2024-07-12', 0.334, '2024-08-02'],
+    ['2025-01-17', 0.158, '2025-02-07'],
+    ['2025-07-11', 0.178, '2025-08-01'],
+    ['2026-01-16', 0.158, '2026-02-06'],
+    ['2026-07-10', 0.182, '2026-07-31'],
+  ],
+  '2318.HK': [
+    ['2024-06-11', 1.6, '2024-07-02'],
+    ['2024-09-20', 1.02, '2024-10-11'],
+    ['2025-06-10', 1.62, '2025-07-01'],
+    ['2025-09-19', 1.02, '2025-10-10'],
+    ['2026-06-09', 1.68, '2026-06-30'],
+    ['2026-09-18', 1.05, '2026-10-09'],
+  ],
+  '2388.HK': [
+    ['2024-05-21', 1.145, '2024-06-11'],
+    ['2024-09-12', 0.57, '2024-10-03'],
+    ['2025-05-20', 1.419, '2025-06-10'],
+    ['2025-09-11', 0.57, '2025-10-02'],
+    ['2026-05-19', 1.45, '2026-06-09'],
+    ['2026-09-10', 0.58, '2026-10-01'],
   ],
   'VOO': [
     ['2018-03-26', 1.093], ['2018-06-28', 1.157], ['2018-09-26', 1.206], ['2018-12-18', 1.289],
@@ -159,7 +294,7 @@ var BASELINE_DIVIDEND_HISTORY_2018_2026 = {
     ['2024-03-22', 1.543], ['2024-06-28', 1.783], ['2024-09-27', 1.638], ['2024-12-20', 1.739],
     ['2025-03-27', 1.682], ['2025-06-27', 1.795], ['2025-09-26', 1.710], ['2025-12-22', 1.815],
     ['2026-03-26', 1.745], ['2026-06-26', 1.840], ['2026-09-25', 1.790]
-  ]
+  ],
 };
 
 function createEmptyState() {
@@ -173,7 +308,7 @@ function createEmptyState() {
       lastApiSync: null,
       yahooDefaultApplied: true,
       appVersion: '3.0.1',
-      buildId: '20261031_1115',
+      buildId: '20261031_1650',
       collapsedSectors: {}
     },
     cashBalance: 0,
@@ -254,15 +389,18 @@ function buildDividendScheduleForTicker(rawTicker, rawEventsMap = null, fallback
 
   const byExDate = {};
 
-  // 1. Seed from verified 2018-2026 baseline history
-  const baseList = BASELINE_DIVIDEND_HISTORY_2018_2026[sym] || [];
-  baseList.forEach(([exStr, amt]) => {
+  // 1. Seed from verified baseline 2018-2026 dictionary
+  const baseRows = BASELINE_DIVIDEND_HISTORY_2018_2026[sym] || [];
+  baseRows.forEach(row => {
+    const exStr = row[0];
+    const amt = row[1];
+    const explicitPay = row[2] || null;
     const exMs = new Date(exStr + 'T00:00:00Z').getTime();
-    const payStr = new Date(exMs + payLagDays * 86400 * 1000).toISOString().split('T')[0];
+    const payStr = explicitPay || new Date(exMs + payLagDays * 86400 * 1000).toISOString().split('T')[0];
     byExDate[exStr] = {
       exDate: exStr,
       payDate: payStr,
-      payDateEstimated: true,
+      payDateEstimated: !explicitPay,
       amount: Fin.round(Number(amt), 4),
       currency
     };
@@ -309,18 +447,29 @@ function buildDividendScheduleForTicker(rawTicker, rawEventsMap = null, fallback
   const cutoffTtmStr = new Date(nowMs - 370 * 86400 * 1000).toISOString().split('T')[0];
   const cutoff3yStr = new Date(nowMs - (365 * 3 + 20) * 86400 * 1000).toISOString().split('T')[0];
 
-  const events3y = history.filter(h => h.exDate >= cutoff3yStr);
-  const avgEventsPerYear = events3y.length / 3.0;
+  const pastHistory = history.filter(h => h.exDate <= todayStr);
+  let ttmEvents = pastHistory.filter(h => h.exDate >= cutoffTtmStr);
+
+  // Compute median inter-payout gap in days across recent distributions
+  const recentH = (pastHistory.length >= 2 ? pastHistory : history).slice(-8);
+  const gaps = [];
+  for (let i = 1; i < recentH.length; i++) {
+    const d1 = new Date(recentH[i - 1].exDate + 'T00:00:00Z').getTime();
+    const d2 = new Date(recentH[i].exDate + 'T00:00:00Z').getTime();
+    const diffDays = Math.round((d2 - d1) / (86400 * 1000));
+    if (diffDays > 5) gaps.push(diffDays);
+  }
+  const avgGapDays = gaps.length > 0 ? (gaps.reduce((a, b) => a + b, 0) / gaps.length) : 365;
 
   let frequency = 'None';
   let paymentsPerYear = 0;
-  if (avgEventsPerYear >= 10) {
+  if (history.length >= 3 && avgGapDays <= 45) {
     frequency = 'Monthly';
     paymentsPerYear = 12;
-  } else if (avgEventsPerYear >= 3.2) {
+  } else if (history.length >= 2 && avgGapDays <= 130) {
     frequency = 'Quarterly';
     paymentsPerYear = 4;
-  } else if (avgEventsPerYear >= 1.4) {
+  } else if (history.length >= 2 && avgGapDays <= 260) {
     frequency = 'Semi-Annual';
     paymentsPerYear = 2;
   } else if (history.length > 0) {
@@ -328,7 +477,6 @@ function buildDividendScheduleForTicker(rawTicker, rawEventsMap = null, fallback
     paymentsPerYear = 1;
   }
 
-  let ttmEvents = history.filter(h => h.exDate >= cutoffTtmStr && h.exDate <= todayStr);
   if (paymentsPerYear > 0 && ttmEvents.length > paymentsPerYear) {
     ttmEvents = ttmEvents.slice(-paymentsPerYear);
   }
@@ -470,9 +618,20 @@ function ingestHistoricalPricesData(data) {
     Object.entries(data.quotes).forEach(([k, q]) => {
       const sym = MarketAPI.normalizeTicker(k);
       if (sym && q && Number(q.price) > 0) {
+        const price = Number(q.price);
+        let prevPrice = Number(q.prevPrice || price);
+        if (!prevPrice || prevPrice <= 0 || Math.abs((price - prevPrice) / prevPrice) > 0.40) {
+          prevPrice = price;
+        }
+        const change = Fin.round(price - prevPrice, 4);
+        const changePct = prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0;
         state.prices[sym] = {
           ...(state.prices[sym] || {}),
           ...q,
+          price,
+          prevPrice,
+          change,
+          changePct,
           lastUpdated: q.lastUpdated || data._meta?.generatedAt || new Date().toISOString()
         };
       }
@@ -707,9 +866,26 @@ function initAppState() {
     document.documentElement.classList.add('dark');
   }
 
-  if (typeof window.EMBEDDED_HISTORICAL_PRICES === 'object' && Object.keys(state.historicalPrices || {}).length === 0) {
+  if (typeof window.EMBEDDED_HISTORICAL_PRICES === 'object') {
     ingestHistoricalPricesData(window.EMBEDDED_HISTORICAL_PRICES);
   }
+  // Sanitize any stale or corrupted prevPrice / changePct (>40%) in localStorage state.prices
+  Object.keys(state.prices || {}).forEach(sym => {
+    const pObj = state.prices[sym];
+    if (pObj && Number(pObj.price) > 0) {
+      const p = Number(pObj.price);
+      let pp = Number(pObj.prevPrice || p);
+      if (!pp || pp <= 0 || Math.abs((p - pp) / pp) > 0.40 || Math.abs(Number(pObj.changePct || 0)) > 40) {
+        const fallbackQ = window.EMBEDDED_HISTORICAL_PRICES?.quotes?.[sym];
+        pp = (fallbackQ && Number(fallbackQ.prevPrice) > 0 && Math.abs((p - fallbackQ.prevPrice) / fallbackQ.prevPrice) <= 0.40)
+          ? Number(fallbackQ.prevPrice)
+          : p;
+        pObj.prevPrice = pp;
+        pObj.change = Fin.round(p - pp, 4);
+        pObj.changePct = pp > 0 ? Fin.round(((p - pp) / pp) * 100, 2) : 0;
+      }
+    }
+  });
   if (typeof window.EMBEDDED_COMPANY_NEWS === 'object') {
     ingestCompanyNewsData(window.EMBEDDED_COMPANY_NEWS);
   }
@@ -736,7 +912,7 @@ function saveState() {
  * Dividend Schedule Metrics, and 4-Pillar Composite Buy/Sell Signal Score (0-100) using
  * the user's customizable parameters in state.settings.
  */
-function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0) {
+function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitPosWeightPct = null) {
   const ticker = MarketAPI.normalizeTicker(rawTicker);
   const cfg = state?.settings || DEFAULT_QUANT_SETTINGS;
   const priceObj = state?.prices?.[ticker] || {};
@@ -923,7 +1099,7 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0) {
     else regime = 'Range-Bound Consolidation';
   }
 
-  // 4-Pillar Composite Buy/Sell Signal Score (0 - 100) using user-configured weights & thresholds
+  // 4-Pillar Composite Buy/Sell Signal Score (0 - 100) — v3.1.0 with genuine TRIM / OFFLOAD & SELL / AVOID signals
   const wMom = Number(cfg.weightMomentum ?? 30);
   const wTrend = Number(cfg.weightTrend ?? 25);
   const wVal = Number(cfg.weightValuation ?? 25);
@@ -936,45 +1112,62 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0) {
 
   // Pillar 1: Momentum & Mean Reversion (normalized 0..1)
   let p1Norm = 0.50;
-  if (rsi14 !== null) {
-    if (rsi14 <= rsiLow) {
-      p1Norm += 0.40;
-      reasons.push(`RSI(${cfg.rsiPeriod || 14}) oversold at ${rsi14} (<= ${rsiLow})`);
-    } else if (rsi14 <= rsiLow + 10) {
-      p1Norm += 0.22;
-      reasons.push(`RSI(${cfg.rsiPeriod || 14}) in accumulation zone (${rsi14})`);
+  if (regime === 'Stage 4 Confirmed Downtrend') {
+    // In confirmed Stage 4 downtrends, low RSI is a symptom of capital erosion, NOT an oversold buy bounce
+    p1Norm = 0.12;
+    reasons.push('Stage 4 Downtrend: Momentum breakdown below key SMAs');
+  } else if (rsi14 !== null) {
+    if (rsi14 >= 85) {
+      p1Norm = 0.05;
+      reasons.push(`Extreme Overbought: RSI(${cfg.rsiPeriod || 14}) at ${rsi14} (>= 85) — Offload/Trim risk`);
     } else if (rsi14 >= rsiHigh) {
-      p1Norm -= 0.35;
-      reasons.push(`RSI(${cfg.rsiPeriod || 14}) overbought at ${rsi14} (>= ${rsiHigh})`);
+      p1Norm = 0.15;
+      reasons.push(`Overbought: RSI(${cfg.rsiPeriod || 14}) at ${rsi14} (>= ${rsiHigh}) — Consider trimming`);
+    } else if (rsi14 <= rsiLow) {
+      p1Norm = 0.88;
+      reasons.push(`RSI(${cfg.rsiPeriod || 14}) oversold at ${rsi14} (<= ${rsiLow}) in constructive structure`);
+    } else if (rsi14 <= rsiLow + 12) {
+      p1Norm = 0.72;
+      reasons.push(`RSI(${cfg.rsiPeriod || 14}) in accumulation zone (${rsi14})`);
     }
   }
   if (pos52wPct !== null) {
-    if (pos52wPct <= 22) {
-      p1Norm += 0.15;
+    if (pos52wPct >= 92 && (rsi14 === null || rsi14 >= 68)) {
+      p1Norm = Math.max(0.05, p1Norm - 0.12);
+      reasons.push(`Stretched near 52W High (${pos52wPct}% of 52W range)`);
+    } else if (pos52wPct <= 22 && regime !== 'Stage 4 Confirmed Downtrend') {
+      p1Norm = Math.min(1.0, p1Norm + 0.15);
       reasons.push(`Trading near 52W Low (${pos52wPct}% of 52W range)`);
-    } else if (pos52wPct >= 92) {
-      p1Norm -= 0.12;
     }
   }
   p1Norm = Math.max(0, Math.min(1, p1Norm));
 
   // Pillar 2: Trend Structure (normalized 0..1)
   let p2Norm = 0.50;
-  if (sma50 && sma200 && refCurrent > 0) {
-    if (refCurrent > sma50 && sma50 > sma200) {
-      p2Norm += 0.32;
-      reasons.push('Golden Cross trend intact (Price > SMA50 > SMA200)');
-    } else if (refCurrent > sma200) {
-      p2Norm += 0.16;
-    } else {
-      p2Norm -= 0.22;
-    }
+  if (regime === 'Stage 4 Confirmed Downtrend') {
+    p2Norm = 0.05;
+    reasons.push('Downtrend structure: Price < SMA50 < SMA200');
+  } else if (regime === 'Stage 3 Topping / Distribution') {
+    p2Norm = 0.22;
+    reasons.push('Stage 3 Topping / Distribution below 50-SMA');
+  } else if (regime === 'Stage 2 Strong Uptrend') {
+    p2Norm = 0.82;
+    reasons.push('Golden Cross & Stage 2 Uptrend intact');
+  } else if (regime === 'Stage 2 Uptrend (Consolidating)') {
+    p2Norm = 0.72;
+    reasons.push('Uptrend consolidating above 50/200 SMA');
+  } else if (regime === 'Bullish Pullback (Buy-the-Dip)') {
+    p2Norm = 0.68;
+    reasons.push('Bullish pullback above 200-SMA support');
+  } else if (sma50 && sma200 && refCurrent > 0) {
+    if (refCurrent > sma50 && sma50 > sma200) p2Norm = 0.78;
+    else if (refCurrent < sma200) p2Norm = 0.20;
   }
+
   if ((momPct || 0) > 0 && (qoqPct || 0) > 0) {
-    p2Norm += 0.16;
-    reasons.push(`Positive MoM (${Fin.percent(momPct)}) & QoQ (${Fin.percent(qoqPct)}) momentum`);
-  } else if (macdHist > 0) {
-    p2Norm += 0.12;
+    p2Norm = Math.min(1.0, p2Norm + 0.10);
+  } else if ((momPct || 0) < 0 && (qoqPct || 0) < 0 && p2Norm > 0.25) {
+    p2Norm = Math.max(0.05, p2Norm - 0.14);
   }
   p2Norm = Math.max(0, Math.min(1, p2Norm));
 
@@ -983,23 +1176,32 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0) {
   const wlItem = (state?.watchlist || []).find(w => w.ticker === ticker);
   const targetBuy = Number(wlItem?.targetBuyPrice || 0);
   if (targetBuy > 0 && refCurrent > 0) {
+    const distFromTargetPct = ((refCurrent - targetBuy) / targetBuy) * 100;
     if (refCurrent <= targetBuy) {
-      p3Norm += 0.40;
+      p3Norm += 0.38;
       reasons.push(`Price at/below Target Buy (${Fin.currency(refCurrent, false, priceObj.currency)} <= ${Fin.currency(targetBuy, false, priceObj.currency)})`);
-    } else if (((refCurrent - targetBuy) / targetBuy) <= 0.06) {
-      p3Norm += 0.20;
-      reasons.push(`Within 6% of Target Buy (${Fin.currency(targetBuy, false, priceObj.currency)})`);
-    } else if (((refCurrent - targetBuy) / targetBuy) >= 0.25) {
-      p3Norm -= 0.20;
+    } else if (distFromTargetPct <= 6.0) {
+      p3Norm += 0.18;
+      reasons.push(`Within ${distFromTargetPct.toFixed(1)}% of Target Buy (${Fin.currency(targetBuy, false, priceObj.currency)})`);
+    } else if (distFromTargetPct >= 25.0) {
+      p3Norm -= 0.35;
+      reasons.push(`Extended +${distFromTargetPct.toFixed(1)}% above Target Buy — Profit-taking zone`);
+    } else if (distFromTargetPct >= 16.0) {
+      p3Norm -= 0.22;
+      reasons.push(`Trading +${distFromTargetPct.toFixed(1)}% above Target Buy (${Fin.currency(targetBuy, false, priceObj.currency)})`);
     }
   }
+
   const pe = Number(fundObj.pe || 0);
   const fwdPe = Number(fundObj.fwdPe || 0);
-  if (fwdPe > 0 && fwdPe <= 12.5) {
-    p3Norm += 0.18;
-    reasons.push(`Attractive Forward P/E (${fwdPe}x)`);
-  } else if (pe > 0 && pe <= 11.0) {
-    p3Norm += 0.15;
+  if (pe > 26 || fwdPe > 23) {
+    p3Norm = Math.max(0.08, p3Norm - 0.30);
+    reasons.push(`Stretched valuation multiple (P/E ${pe || fwdPe}x)`);
+  } else if ((fwdPe > 0 && fwdPe <= 10.5) || (pe > 0 && pe <= 10.5)) {
+    if (rsi14 === null || rsi14 < 80) {
+      p3Norm = Math.min(1.0, p3Norm + 0.20);
+      reasons.push(`Attractive low P/E (${fwdPe || pe}x)`);
+    }
   }
   p3Norm = Math.max(0, Math.min(1, p3Norm));
 
@@ -1007,26 +1209,32 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0) {
   let p4Norm = 0.50;
   const netYield = Number(divInfo?.netYieldPct || fundObj.divYield || 0);
   const roe = Number(fundObj.roe || 0);
-  if (netYield >= 5.0) {
-    p4Norm += 0.32;
+  if (netYield >= 5.0 && regime !== 'Stage 4 Confirmed Downtrend') {
+    p4Norm += 0.28;
     reasons.push(`High Net Dividend Yield (${netYield.toFixed(2)}%)`);
-  } else if (netYield >= 3.2) {
-    p4Norm += 0.18;
+  } else if (netYield >= 3.2 && regime !== 'Stage 4 Confirmed Downtrend') {
+    p4Norm += 0.16;
     reasons.push(`Solid Net Dividend Yield (${netYield.toFixed(2)}%)`);
+  } else if (netYield === 0 && (fundObj.sector || '').includes('ETF')) {
+    p4Norm = 0.40;
   }
+
   if (roe >= 12.0) {
-    p4Norm += 0.18;
-    reasons.push(`Strong Return on Equity (ROE ${roe}%)`);
+    p4Norm = Math.min(1.0, p4Norm + 0.15);
+  } else if (roe > 0 && roe < 4.5) {
+    p4Norm = Math.max(0.10, p4Norm - 0.20);
+    reasons.push(`Weak Return on Equity (ROE ${roe}%)`);
   }
-  // Incorporate 7-day news sentiment if available
+
   const tickerArticles = (state?.companyNews || []).filter(a => a.ticker === ticker);
   if (tickerArticles.length > 0) {
     const avgSent = tickerArticles.reduce((s, a) => s + Number(a.sentimentScore || 0), 0) / tickerArticles.length;
     if (avgSent >= 0.25) {
-      p4Norm += 0.10;
+      p4Norm = Math.min(1.0, p4Norm + 0.08);
       reasons.push('Bullish recent news & catalyst sentiment');
     } else if (avgSent <= -0.25) {
-      p4Norm -= 0.12;
+      p4Norm = Math.max(0.08, p4Norm - 0.16);
+      reasons.push('Bearish news headlines & negative catalyst sentiment');
     }
   }
   p4Norm = Math.max(0, Math.min(1, p4Norm));
@@ -1035,13 +1243,27 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0) {
   const scoreTrend = Fin.round((p2Norm * wTrend / wSum) * 100, 1);
   const scoreVal = Fin.round((p3Norm * wVal / wSum) * 100, 1);
   const scoreQual = Fin.round((p4Norm * wQual / wSum) * 100, 1);
-  const signalScore = Math.max(0, Math.min(100, Math.round(scoreMom + scoreTrend + scoreVal + scoreQual)));
+  let signalScore = Math.max(0, Math.min(100, Math.round(scoreMom + scoreTrend + scoreVal + scoreQual)));
+
+  // Portfolio Concentration Penalty (when active holding weight > maxPositionWeightPct)
+  let posWt = explicitPosWeightPct;
+  if (posWt === null && portfolio?.totalStockMarketValue > 0) {
+    const activeH = (portfolio?.activeHoldings || []).find(h => h.ticker === ticker);
+    if (activeH) {
+      posWt = ((activeH.marketValueBase || activeH.marketValue) / portfolio.totalStockMarketValue) * 100;
+    }
+  }
+  const maxWt = Number(cfg.maxPositionWeightPct ?? 15.0);
+  if (posWt !== null && posWt > maxWt) {
+    signalScore = Math.max(0, signalScore - 12);
+    reasons.unshift(`Overweight position (${posWt.toFixed(1)}% > ${maxWt}% max) — Rebalance trim recommended`);
+  }
 
   let signalLabel = 'HOLD';
   if (signalScore >= Number(cfg.signalStrongBuyMin ?? 78)) signalLabel = 'STRONG BUY';
-  else if (signalScore >= Number(cfg.signalBuyMin ?? 64)) signalLabel = 'ACCUMULATE';
-  else if (signalScore >= Number(cfg.signalHoldMin ?? 42)) signalLabel = 'HOLD';
-  else if (signalScore >= 28) signalLabel = 'TRIM / OVERBOUGHT';
+  else if (signalScore >= Number(cfg.signalBuyMin ?? 62)) signalLabel = 'ACCUMULATE';
+  else if (signalScore >= Number(cfg.signalHoldMin ?? 45)) signalLabel = 'HOLD';
+  else if (signalScore >= 30) signalLabel = 'TRIM / OFFLOAD';
   else signalLabel = 'SELL / AVOID';
 
   const stopMult = Number(cfg.atrStopMultiplier ?? 2.0);
@@ -1147,26 +1369,10 @@ function detectUnloggedDividendEntitlements() {
 }
 window.detectUnloggedDividendEntitlements = detectUnloggedDividendEntitlements;
 
-function approveDetectedDividend(detId, asDrip = false) {
+function approveDetectedDividend(detId) {
   const list = portfolio?.detectedDividends || detectUnloggedDividendEntitlements();
   const item = list.find(d => d.id === detId);
   if (!item) return;
-
-  let dripShares = 0;
-  if (asDrip) {
-    const refPrice = state.prices[item.ticker]?.price || 25;
-    dripShares = Fin.round(item.totalAmount / refPrice, 4);
-    state.transactions.push({
-      id: `TX-DRIP-${item.ticker}-${item.exDate}`,
-      date: item.payDate,
-      type: 'DRIP',
-      ticker: item.ticker,
-      shares: dripShares,
-      price: refPrice,
-      fees: 0,
-      notes: `Auto-reinvested DRIP (Ex-Date ${item.exDate})`
-    });
-  }
 
   state.dividends.push({
     id: `DIV-${item.ticker}-${item.exDate}`,
@@ -1176,42 +1382,29 @@ function approveDetectedDividend(detId, asDrip = false) {
     amountPerShare: item.amountPerShare,
     totalAmount: item.totalAmount,
     currency: item.currency,
-    isDrip: Boolean(asDrip),
-    dripShares,
-    notes: `Auto-verified entitlement (${Fin.shares(item.eligibleShares)} sh held prior to Ex-Date ${item.exDate})`
+    isDrip: false,
+    dripShares: 0,
+    notes: `Auto-verified cash payout (${Fin.shares(item.eligibleShares)} sh held prior to Ex-Date ${item.exDate})`
   });
 
   recalculatePortfolio();
   saveState();
   renderAll();
-  showToast(`Posted ${Fin.currency(item.totalAmount, false, item.currency)} dividend for ${item.ticker} (${item.exDate})`, 'success');
+  showToast(`Posted ${Fin.currency(item.totalAmount, false, item.currency)} cash dividend for ${item.ticker} (${item.exDate})`, 'success');
 }
 window.approveDetectedDividend = approveDetectedDividend;
 
-function approveAllDetectedDividends(asDrip = false) {
+function approveAllDetectedDividends() {
   const list = portfolio?.detectedDividends || detectUnloggedDividendEntitlements();
   if (!list || list.length === 0) {
     showToast('No pending unlogged dividends to backfill.', 'info');
     return;
   }
 
+  const baseCurr = state?.settings?.currency || 'HKD';
   let totalAdded = 0;
+  let totalCashBase = 0;
   list.forEach(item => {
-    let dripShares = 0;
-    if (asDrip) {
-      const refPrice = state.prices[item.ticker]?.price || 25;
-      dripShares = Fin.round(item.totalAmount / refPrice, 4);
-      state.transactions.push({
-        id: `TX-DRIP-${item.ticker}-${item.exDate}`,
-        date: item.payDate,
-        type: 'DRIP',
-        ticker: item.ticker,
-        shares: dripShares,
-        price: refPrice,
-        fees: 0,
-        notes: `Auto-reinvested DRIP (Ex-Date ${item.exDate})`
-      });
-    }
     state.dividends.push({
       id: `DIV-${item.ticker}-${item.exDate}`,
       ticker: item.ticker,
@@ -1220,17 +1413,18 @@ function approveAllDetectedDividends(asDrip = false) {
       amountPerShare: item.amountPerShare,
       totalAmount: item.totalAmount,
       currency: item.currency,
-      isDrip: Boolean(asDrip),
-      dripShares,
-      notes: `Auto-verified entitlement (${Fin.shares(item.eligibleShares)} sh held prior to Ex-Date ${item.exDate})`
+      isDrip: false,
+      dripShares: 0,
+      notes: `Auto-verified cash payout (${Fin.shares(item.eligibleShares)} sh held prior to Ex-Date ${item.exDate})`
     });
     totalAdded++;
+    totalCashBase += Fin.convertCurrency(item.totalAmount, item.currency, baseCurr);
   });
 
   recalculatePortfolio();
   saveState();
   renderAll();
-  showToast(`Backfilled ${totalAdded} historical dividend payouts (2018–Present) into ledger!`, 'success');
+  showToast(`Backfilled ${totalAdded} dividend payouts (+${Fin.currency(totalCashBase, false, baseCurr)}) into Cash Balance!`, 'success');
 }
 window.approveAllDetectedDividends = approveAllDetectedDividends;
 
@@ -1332,20 +1526,16 @@ function recalculatePortfolio() {
   let dripDividendsTotal = 0;
 
   state.dividends.forEach(div => {
-    const amtNative = Fin.round(div.totalAmount || 0, 2);
+    div.isDrip = false;
+    div.dripShares = 0;
+    const amt = Number(div.totalAmount) || 0;
     const dCurr = div.currency || state.prices[div.ticker]?.currency || MarketAPI.getStaticProfile(div.ticker).currency || baseCurr;
-    const amtBase = Fin.convertCurrency(amtNative, dCurr, baseCurr);
+    const amtBase = Fin.convertCurrency(amt, dCurr, baseCurr);
     totalDividendsEarned = Fin.round(totalDividendsEarned + amtBase, 2);
-
-    if (div.isDrip) {
-      dripDividendsTotal = Fin.round(dripDividendsTotal + amtBase, 2);
-    } else {
-      cashDividendsTotal = Fin.round(cashDividendsTotal + amtBase, 2);
-      runningCash = Fin.round(runningCash + amtBase, 2);
-    }
-
+    cashDividendsTotal = Fin.round(cashDividendsTotal + amtBase, 2);
+    runningCash = Fin.round(runningCash + amtBase, 2);
     if (holdingsMap[div.ticker]) {
-      holdingsMap[div.ticker].totalDividends = Fin.round((holdingsMap[div.ticker].totalDividends || 0) + amtNative, 2);
+      holdingsMap[div.ticker].totalDividends = Fin.round(holdingsMap[div.ticker].totalDividends + amt, 2);
     }
   });
 
@@ -1355,6 +1545,19 @@ function recalculatePortfolio() {
   let totalStockMarketValue = 0;
   let totalStockCostBasis = 0;
   let estimatedAnnualForwardDivBase = 0;
+
+  // Pre-compute total stock market value in base currency for accurate concentration weight checks
+  let preTotalStockMvBase = 0;
+  Object.keys(holdingsMap).forEach(ticker => {
+    const h = holdingsMap[ticker];
+    if (h.shares > 0.0001) {
+      const staticProfile = MarketAPI.getStaticProfile(ticker);
+      const priceObj = state.prices[ticker] || { price: h.avgCost };
+      const currentPrice = Fin.round(priceObj.price || h.avgCost, 4);
+      const currency = priceObj.currency || state.fundamentals[ticker]?.currency || staticProfile.currency;
+      preTotalStockMvBase += Fin.convertCurrency(Fin.round(h.shares * currentPrice, 2), currency, baseCurr);
+    }
+  });
 
   Object.keys(holdingsMap).forEach(ticker => {
     const h = holdingsMap[ticker];
@@ -1367,10 +1570,12 @@ function recalculatePortfolio() {
       const unrealizedGainPct = h.totalCostBasis > 0 ? Fin.round((unrealizedGain / h.totalCostBasis) * 100, 2) : 0;
       const fund = state.fundamentals[ticker] || {};
       const currency = priceObj.currency || fund.currency || staticProfile.currency;
-      const companyName = (fund.name && fund.name !== ticker) ? fund.name : staticProfile.name;
+      const companyName = (OFFICIAL_NAMES_MAP[ticker]) || ((fund.name && fund.name !== ticker) ? fund.name : staticProfile.name);
       const rawSector = (fund.sector && fund.sector !== 'Equities') ? fund.sector : staticProfile.sector;
       const sector = MarketAPI.isEtfSector(rawSector, ticker, companyName) ? 'Index ETF' : (rawSector || 'Equities');
-      const priceMetrics = computeStockPriceMetrics(ticker, currentPrice);
+      const mvBaseCandidate = Fin.convertCurrency(marketValue, currency, baseCurr);
+      const posWeightPct = preTotalStockMvBase > 0 ? (mvBaseCandidate / preTotalStockMvBase) * 100 : 0;
+      const priceMetrics = computeStockPriceMetrics(ticker, currentPrice, posWeightPct);
       const divInfo = priceMetrics.divInfo || {};
 
       // Annualized Forward Yield on Cost (or cumulative YoC if higher)
@@ -1701,7 +1906,7 @@ function exportPortfolioToExcel() {
 
     const dateStr = new Date().toISOString().split('T')[0];
     XLSX.writeFile(wb, `myPortfolio_Backup_${dateStr}.xlsx`);
-    showToast('Exported 9-sheet myPortfolio v3.0.1 backup (.xlsx)!', 'success');
+    showToast('Exported 9-sheet myPortfolio v3.1.0 backup (.xlsx)!', 'success');
   } catch (err) {
     console.error('Excel export failed:', err);
     showToast('Export failed: ' + err.message, 'error');

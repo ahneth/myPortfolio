@@ -1,8 +1,8 @@
 /**
  * @file app.js
  * @module AppUIController
- * @version 3.0.1
- * @build 20261031_1115
+ * @version 3.1.0
+ * @build 20261031_1650
  * @description Main UI controller, Holdings & Watchlist tables with 52W/MoM/QoQ/YoY + Dividend Ex-Date/Yield +
  *   Trend Regime + 0-100 Buy/Sell Signal badges, Auto-Detected 2018+ Dividend Backfill, News & Catalysts Tab,
  *   Smart Cash Deployment & Rebalancing Simulator, Nominal/Real XIRR KPIs, and Full Settings Parameter Customizer.
@@ -771,7 +771,9 @@ function renderHoldingsTable() {
           <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">${Fin.currency(h.totalCostBasis, false, h.currency)}</td>
           <td class="py-3 px-3 text-right">
             <div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(h.currentPrice, false, h.currency)}</div>
-            <div class="text-[11px] num-font ${priceChangeColor}">${Fin.percent(h.priceChangePct)}</div>
+            <div class="text-[11px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
+              <span class="text-[10px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct)}
+            </div>
           </td>
           <td class="py-3 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300">
             ${h.low52w !== null && h.low52w !== undefined ? Fin.currency(h.low52w, false, h.currency) : '<span class="text-slate-400 text-[11px]">-</span>'}
@@ -893,20 +895,44 @@ function renderTransactionsTable() {
 }
 
 function renderDividendsTable() {
-  const baseCurr = portfolio.baseCurrency || state.settings.currency || 'HKD';
   const tbody = document.getElementById('dividends-table-body');
   const emptyState = document.getElementById('dividends-empty-state');
+  const tickerFilterEl = document.getElementById('div-log-filter-ticker');
+  const searchFilterEl = document.getElementById('div-log-search-text');
+  const filterSumEl = document.getElementById('div-log-filter-summary');
   tbody.innerHTML = '';
 
-  document.getElementById('div-stat-cumulative').textContent = Fin.currency(portfolio.totalDividendsEarned, false, baseCurr);
-  document.getElementById('div-stat-cash').textContent = Fin.currency(portfolio.cashDividendsTotal, false, baseCurr);
-  document.getElementById('div-stat-drip').textContent = Fin.currency(portfolio.dripDividendsTotal, false, baseCurr);
+  const baseCurr = portfolio?.baseCurrency || state.settings.currency || 'HKD';
+  const statCum = document.getElementById('div-stat-cumulative');
+  const statCash = document.getElementById('div-stat-cash');
+  const statCount = document.getElementById('div-stat-count');
+  const statDrip = document.getElementById('div-stat-drip');
+  const statYoc = document.getElementById('div-stat-yoc');
+
+  if (statCum) statCum.textContent = Fin.currency(portfolio.totalDividendsEarned, false, baseCurr);
+  if (statCash) statCash.textContent = `${Fin.currency(portfolio.estimatedAnnualForwardDivBase || 0, false, baseCurr)}/yr`;
+  if (statCount) statCount.textContent = `${state.dividends.length} Payouts`;
+  if (statDrip) statDrip.textContent = `${state.dividends.length} Payouts`;
   const avgYoc = portfolio.totalStockCostBasis > 0
     ? (portfolio.totalDividendsEarned / portfolio.totalStockCostBasis) * 100
     : 0;
-  document.getElementById('div-stat-yoc').textContent = `${avgYoc.toFixed(2)}%`;
+  if (statYoc) statYoc.textContent = `${avgYoc.toFixed(2)}%`;
 
-  // Render Auto-Detected 2018-Present Dividend Entitlements Panel
+  // Dynamically populate Filter by Ticker dropdown while preserving current selection
+  if (tickerFilterEl) {
+    const prevSelected = tickerFilterEl.value || 'ALL';
+    const distinctTickers = Array.from(new Set(state.dividends.map(d => d.ticker).filter(Boolean))).sort();
+    tickerFilterEl.innerHTML = `<option value="ALL">All Tickers (${state.dividends.length})</option>` +
+      distinctTickers.map(t => {
+        const cnt = state.dividends.filter(d => d.ticker === t).length;
+        return `<option value="${t}" ${t === prevSelected ? 'selected' : ''}>${t} (${cnt})</option>`;
+      }).join('');
+    if (prevSelected !== 'ALL' && !distinctTickers.includes(prevSelected)) {
+      tickerFilterEl.value = 'ALL';
+    }
+  }
+
+  // Render Auto-Detected 2018-Present Dividend Entitlements Panel (100% Cash)
   const detCard = document.getElementById('detected-dividends-card');
   const detTbody = document.getElementById('detected-dividends-tbody');
   const detSumBadge = document.getElementById('detected-dividends-summary-badge');
@@ -915,6 +941,8 @@ function renderDividendsTable() {
   if (detCard && detTbody) {
     if (detectedList.length === 0) {
       detCard.classList.add('hidden');
+      detTbody.innerHTML = '';
+      if (detSumBadge) detSumBadge.textContent = '0 Detected';
     } else {
       detCard.classList.remove('hidden');
       const totalDetBase = detectedList.reduce((s, d) => s + Fin.convertCurrency(d.totalAmount, d.currency, baseCurr), 0);
@@ -928,16 +956,11 @@ function renderDividendsTable() {
           <td class="py-2.5 px-3 font-mono text-slate-500">${d.payDate}</td>
           <td class="py-2.5 px-3 text-right num-font">${Fin.shares(d.eligibleShares)}</td>
           <td class="py-2.5 px-3 text-right num-font">${Fin.currency(d.amountPerShare, false, d.currency)}</td>
-          <td class="py-2.5 px-3 text-right font-bold num-font text-emerald-600 dark:text-emerald-400">${Fin.currency(d.totalAmount, false, d.currency)}</td>
+          <td class="py-2.5 px-3 text-right font-bold num-font text-emerald-600 dark:text-emerald-400">+${Fin.currency(d.totalAmount, false, d.currency)}</td>
           <td class="py-2.5 px-3 text-center">
-            <div class="flex items-center justify-center gap-1.5">
-              <button type="button" onclick="approveDetectedDividend('${d.id}', false)" class="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[10px]">
-                + Cash
-              </button>
-              <button type="button" onclick="approveDetectedDividend('${d.id}', true)" class="px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-[10px]">
-                + DRIP
-              </button>
-            </div>
+            <button type="button" onclick="approveDetectedDividend('${d.id}')" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[10px] shadow-sm transition">
+              + Approve (Cash)
+            </button>
           </td>
         </tr>
       `).join('');
@@ -950,7 +973,7 @@ function renderDividendsTable() {
     const allSyms = Array.from(new Set([
       ...portfolio.activeHoldings.map(h => h.ticker),
       ...state.watchlist.map(w => w.ticker)
-    ]));
+    ])).sort();
     calTbody.innerHTML = allSyms.map(sym => {
       const held = portfolio.activeHoldings.find(h => h.ticker === sym);
       const curP = state.prices[sym]?.price || held?.currentPrice || 0;
@@ -958,7 +981,10 @@ function renderDividendsTable() {
       const estCash = held && d.nextEstAmount ? Fin.round(held.shares * d.nextEstAmount * (1 - (d.withholdingTaxPct || 0) / 100), 2) : null;
       return `
         <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition text-xs border-b border-slate-100 dark:border-slate-800">
-          <td class="py-2.5 px-4 font-bold text-slate-900 dark:text-white">${sym}</td>
+          <td class="py-2.5 px-4 font-bold text-slate-900 dark:text-white">
+            ${sym}
+            ${held ? '<span class="ml-1 text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-500 font-normal">HELD</span>' : ''}
+          </td>
           <td class="py-2.5 px-3 text-slate-500">${d.frequency || 'None'}</td>
           <td class="py-2.5 px-3 text-right num-font">${d.ttmDivPerShare ? Fin.currency(d.ttmDivPerShare, false, d.currency) : '-'}</td>
           <td class="py-2.5 px-3 text-right num-font font-semibold text-cyan-500">${d.trailingYieldPct ? d.trailingYieldPct.toFixed(2) + '%' : '-'}</td>
@@ -966,19 +992,42 @@ function renderDividendsTable() {
           <td class="py-2.5 px-3 text-right num-font">${d.divCagr3Y !== null && d.divCagr3Y !== undefined ? Fin.percent(d.divCagr3Y, true) : '-'}</td>
           <td class="py-2.5 px-3 font-mono text-center">${d.nextExDate || '-'}</td>
           <td class="py-2.5 px-3 font-mono text-center text-slate-400">${d.nextPayDate || '-'}</td>
-          <td class="py-2.5 px-3 text-right num-font font-bold text-slate-900 dark:text-white">${estCash ? Fin.currency(estCash, false, d.currency) : '-'}</td>
+          <td class="py-2.5 px-3 text-right num-font font-bold text-emerald-500">${estCash ? '+' + Fin.currency(estCash, false, d.currency) : '-'}</td>
         </tr>
       `;
     }).join('');
   }
 
-  if (state.dividends.length === 0) {
+  // Filter Logged Dividends by Ticker and Search Query
+  const qTicker = (tickerFilterEl?.value || 'ALL').trim().toUpperCase();
+  const qSearch = (searchFilterEl?.value || '').trim().toUpperCase();
+
+  const filtered = state.dividends.filter(div => {
+    if (qTicker !== 'ALL' && div.ticker !== qTicker) return false;
+    if (qSearch) {
+      const hay = `${div.ticker || ''} ${div.payDate || ''} ${div.exDate || ''} ${div.notes || ''}`.toUpperCase();
+      if (!hay.includes(qSearch)) return false;
+    }
+    return true;
+  });
+
+  if (filterSumEl) {
+    const filteredSumBase = filtered.reduce((s, div) => {
+      const dCurr = div.currency || state.prices[div.ticker]?.currency || MarketAPI.getStaticProfile(div.ticker).currency || baseCurr;
+      return s + Fin.convertCurrency(Number(div.totalAmount || 0), dCurr, baseCurr);
+    }, 0);
+    filterSumEl.textContent = filtered.length > 0
+      ? `${filtered.length} ${filtered.length === 1 ? 'payout' : 'payouts'} (${Fin.currency(filteredSumBase, false, baseCurr)})`
+      : '0 payouts';
+  }
+
+  if (filtered.length === 0) {
     emptyState.classList.remove('hidden');
     return;
   }
   emptyState.classList.add('hidden');
 
-  const sorted = [...state.dividends].sort((a, b) => new Date(b.payDate) - new Date(a.payDate));
+  const sorted = [...filtered].sort((a, b) => new Date(b.payDate || b.exDate) - new Date(a.payDate || a.exDate));
   sorted.forEach(div => {
     const dCurr = div.currency || state.prices[div.ticker]?.currency || MarketAPI.getStaticProfile(div.ticker).currency || 'HKD';
     const tr = document.createElement('tr');
@@ -987,17 +1036,11 @@ function renderDividendsTable() {
       <td class="py-3 px-4 font-mono font-medium text-slate-800 dark:text-slate-200">${div.payDate}</td>
       <td class="py-3 px-4 font-mono text-slate-400">${div.exDate || '-'}</td>
       <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">${div.ticker}</td>
-      <td class="py-3 px-4 text-right num-font text-slate-400">${div.amountPerShare ? Fin.currency(div.amountPerShare, false, dCurr) : '-'}</td>
-      <td class="py-3 px-4 text-right font-bold num-font text-cyan-600 dark:text-cyan-400">${Fin.currency(div.totalAmount, false, dCurr)}</td>
+      <td class="py-3 px-4 text-right num-font text-slate-500 dark:text-slate-400">${div.amountPerShare ? Fin.currency(div.amountPerShare, false, dCurr) : '-'}</td>
+      <td class="py-3 px-4 text-right font-bold num-font text-emerald-600 dark:text-emerald-400">+${Fin.currency(div.totalAmount, false, dCurr)}</td>
+      <td class="py-3 px-4 text-slate-400 max-w-xs truncate">${div.notes || 'Cash Dividend'}</td>
       <td class="py-3 px-4 text-center">
-        ${div.isDrip
-          ? '<span class="px-2 py-0.5 rounded font-bold bg-cyan-500/20 text-cyan-400 text-[10px]">DRIP</span>'
-          : '<span class="px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400 text-[10px]">CASH</span>'}
-      </td>
-      <td class="py-3 px-4 text-right num-font font-medium">${div.dripShares ? `+${Fin.shares(div.dripShares)}` : '-'}</td>
-      <td class="py-3 px-4 text-slate-400 max-w-xs truncate">${div.notes || ''}</td>
-      <td class="py-3 px-4 text-center">
-        <button onclick="deleteDividend('${div.id}')" class="text-slate-400 hover:text-rose-500 transition p-1">
+        <button onclick="deleteDividend('${div.id}')" class="text-slate-400 hover:text-rose-500 transition p-1" title="Delete Dividend Record">
           <i class="fa-solid fa-trash-can text-xs"></i>
         </button>
       </td>
@@ -1051,7 +1094,9 @@ function renderWatchlistAndFundamentals() {
         <td class="py-3 px-3 text-right">
           ${curPrice > 0
             ? `<div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(curPrice, false, wlCurrency)}</div>
-               <div class="text-[10px] num-font ${priceChangeColor}">${Fin.percent(priceChangePct)}</div>`
+               <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
+                 <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(priceChangePct) > 40 ? 0 : priceChangePct)}
+               </div>`
             : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
         </td>
         <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">
@@ -1325,38 +1370,45 @@ window.runRebalanceSimulation = function() {
   const baseCurr = portfolio?.baseCurrency || state.settings.currency || 'HKD';
   const maxWeightPct = Number(state?.settings?.maxPositionWeightPct || 15.0);
 
-  // UX #4: Overweight Position Concentration Trim Alerts (> maxWeightPct)
+  // UX #4: Actionable Trim & Offload Alerts (Overweight > maxWeightPct OR Signal = TRIM / OFFLOAD / SELL)
   if (trimBox) {
     const totalPortStockVal = portfolio?.totalStockMarketValue || 0;
-    const overweightList = (portfolio?.activeHoldings || []).filter(h => {
+    const trimCandidates = (portfolio?.activeHoldings || []).filter(h => {
       const wPct = totalPortStockVal > 0 ? ((h.marketValueBase || h.marketValue) / totalPortStockVal) * 100 : 0;
-      return wPct > maxWeightPct;
+      const isSignalOffload = (h.signalLabel || '').includes('TRIM') || (h.signalLabel || '').includes('SELL');
+      return wPct > maxWeightPct || isSignalOffload;
     }).map(h => {
       const wPct = totalPortStockVal > 0 ? ((h.marketValueBase || h.marketValue) / totalPortStockVal) * 100 : 0;
-      const targetValBase = totalPortStockVal * (maxWeightPct / 100);
-      const excessBase = Math.max(0, (h.marketValueBase || h.marketValue) - targetValBase);
-      const priceBase = Fin.convertCurrency(h.currentPrice, h.currency, baseCurr);
-      const trimShares = priceBase > 0 ? Math.max(1, Math.floor(excessBase / priceBase)) : 0;
-      return { ...h, weightPct: Fin.round(wPct, 1), trimShares };
+      let trimShares = Math.max(100, Math.round((h.shares * 0.25) / 100) * 100);
+      if (trimShares > h.shares) trimShares = Math.max(1, Math.floor(h.shares * 0.25));
+      let reasonTag = `${h.signalLabel} (${h.signalScore}/100)`;
+      if (wPct > maxWeightPct) {
+        const targetValBase = totalPortStockVal * (maxWeightPct / 100);
+        const excessBase = Math.max(0, (h.marketValueBase || h.marketValue) - targetValBase);
+        const priceBase = Fin.convertCurrency(h.currentPrice, h.currency, baseCurr);
+        if (priceBase > 0) trimShares = Math.max(1, Math.floor(excessBase / priceBase));
+        reasonTag = `Overweight ${wPct.toFixed(1)}% (> ${maxWeightPct}%)`;
+      }
+      return { ...h, weightPct: Fin.round(wPct, 1), trimShares, reasonTag };
     });
 
-    if (overweightList.length > 0) {
+    if (trimCandidates.length > 0) {
       trimBox.classList.remove('hidden');
       trimBox.innerHTML = `
         <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-2">
           <div class="font-bold text-amber-600 dark:text-amber-400 flex items-center justify-between">
-            <span><i class="fa-solid fa-scale-unbalanced mr-1.5"></i>Concentration Trim Alerts (&gt;${maxWeightPct}% Max Single-Stock Weight)</span>
-            <span class="font-mono text-[11px]">${overweightList.length} ${overweightList.length === 1 ? 'position' : 'positions'}</span>
+            <span><i class="fa-solid fa-scale-unbalanced mr-1.5"></i>Offload &amp; Concentration Trim Alerts (Signal / &gt;${maxWeightPct}% Weight)</span>
+            <span class="font-mono text-[11px]">${trimCandidates.length} ${trimCandidates.length === 1 ? 'position' : 'positions'}</span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            ${overweightList.map(o => `
+            ${trimCandidates.map(o => `
               <div class="flex items-center justify-between bg-white/80 dark:bg-slate-900/70 px-2.5 py-1.5 rounded-lg border border-amber-500/20">
                 <div>
                   <span class="font-mono font-bold text-slate-900 dark:text-white">${o.ticker}</span>
-                  <span class="text-[11px] text-amber-600 dark:text-amber-400 font-mono ml-1">${o.weightPct}% wt</span>
-                  <div class="text-[10px] text-slate-500">Trim ~${Fin.shares(o.trimShares)} sh to reach ${maxWeightPct}%</div>
+                  <span class="text-[10px] text-amber-600 dark:text-amber-400 font-mono ml-1">${o.reasonTag}</span>
+                  <div class="text-[10px] text-slate-500">Suggested trim: ~${Fin.shares(o.trimShares)} sh @ ${Fin.currency(o.currentPrice, false, o.currency)}</div>
                 </div>
-                <button type="button" onclick="stageRebalanceOrder('${o.ticker}', 'SELL', ${o.trimShares}, ${o.currentPrice})" class="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-300 font-bold text-[10px] transition">
+                <button type="button" onclick="stageRebalanceOrder('${o.ticker}', 'SELL', ${o.trimShares}, ${o.currentPrice})" class="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-300 font-bold text-[10px] transition shrink-0">
                   Stage Trim
                 </button>
               </div>
@@ -1837,43 +1889,32 @@ function handleDividendSubmit(e) {
   const payDate = document.getElementById('div-pay-date').value;
   const exDate = document.getElementById('div-ex-date').value;
   const totalAmount = parseFloat(document.getElementById('div-amount').value);
-  const isDrip = document.getElementById('div-drip-toggle').checked;
   const notes = document.getElementById('div-notes').value.trim();
 
   if (!ticker || !totalAmount || totalAmount <= 0) return;
 
-  let dripShares = 0;
-  if (isDrip) {
-    const dripPrice = parseFloat(document.getElementById('div-drip-price').value) || state.prices[ticker]?.price || 100;
-    dripShares = Fin.round(totalAmount / dripPrice, 4);
-    state.transactions.push({
-      id: `TX-DRIP-${Date.now().toString().slice(-6)}`,
-      date: payDate,
-      type: 'DRIP',
-      ticker,
-      shares: dripShares,
-      price: dripPrice,
-      fees: 0,
-      notes: `Automatic DRIP reinvestment (${payDate})`
-    });
-  }
+  const dCurr = state.prices[ticker]?.currency || MarketAPI.getStaticProfile(ticker).currency || 'HKD';
+  const held = (portfolio?.activeHoldings || []).find(h => h.ticker === ticker);
+  const amountPerShare = (held && held.shares > 0) ? Fin.round(totalAmount / held.shares, 4) : 0;
 
   state.dividends.push({
     id: `DIV-${Date.now().toString().slice(-6)}`,
     ticker,
     payDate,
     exDate,
+    amountPerShare,
     totalAmount,
-    isDrip,
-    dripShares,
-    notes
+    currency: dCurr,
+    isDrip: false,
+    dripShares: 0,
+    notes: notes || 'Cash Dividend'
   });
 
   recalculatePortfolio();
   saveState();
   renderAll();
   closeModal('modal-dividend');
-  showToast(`Logged ${Fin.currency(totalAmount)} dividend for ${ticker}`, 'success');
+  showToast(`Logged ${Fin.currency(totalAmount, false, dCurr)} cash dividend for ${ticker}`, 'success');
 }
 
 async function handleWatchlistSubmit(e) {
@@ -2154,9 +2195,10 @@ function setupEventListeners() {
   on('rebalance-cash-input', 'input', () => runRebalanceSimulation());
   on('rebalance-strategy-select', 'change', () => runRebalanceSimulation());
 
-  // Dividend Auto-Backfill Controls
-  on('btn-approve-all-div-cash', 'click', () => approveAllDetectedDividends(false));
-  on('btn-approve-all-div-drip', 'click', () => approveAllDetectedDividends(true));
+  // Dividend Auto-Backfill & Ledger Filter Controls
+  on('btn-approve-all-div-cash', 'click', () => approveAllDetectedDividends());
+  on('div-log-filter-ticker', 'change', renderDividendsTable);
+  on('div-log-search-text', 'input', renderDividendsTable);
 
   // Quantitative Settings Customization Controls
   on('btn-save-quant-settings', 'click', () => saveQuantSettingsFromUI());
@@ -2283,16 +2325,7 @@ function setupEventListeners() {
     document.getElementById('div-ex-date').value = today;
     openModal('modal-dividend');
   });
-  on('div-drip-toggle', 'change', (e) => {
-    const fields = document.getElementById('div-drip-fields');
-    if (e.target.checked) {
-      fields.classList.remove('hidden');
-      const ticker = MarketAPI.normalizeTicker(document.getElementById('div-ticker').value);
-      document.getElementById('div-drip-price').value = state.prices[ticker]?.price || '';
-    } else {
-      fields.classList.add('hidden');
-    }
-  });
+
   on('form-dividend', 'submit', handleDividendSubmit);
 
   on('btn-open-watchlist-modal', 'click', () => openModal('modal-watchlist'));
@@ -2449,7 +2482,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.0.1 • Build 20261031_1115)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.0 • Build 20261031_1650)...');
   }
 
   try {
@@ -2486,7 +2519,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.0.1 boot sequence complete.');
+      AppLogger.info('Boot', 'myPortfolio v3.1.0 boot sequence complete.');
     }
   }, 120);
 }

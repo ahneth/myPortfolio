@@ -161,7 +161,7 @@ body[data-device="tablet"] .chart-container {
   scrollbar-width: none;
 }
 
-/* Collapsible Sector Group Headers in Holdings Table (v3.0.1) */
+/* Collapsible Sector Group Headers in Holdings Table (v3.1.0) */
 .sector-group-header {
   transition: background-color 0.15s ease;
 }
