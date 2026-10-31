@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.1.2-20261031_1955') {
+      if (k !== 'myportfolio-cache-v3.1.3-20261031_2205') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -18,8 +18,8 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
 /**
  * @file app.js
  * @module AppUIController
- * @version 3.1.2
- * @build 20261031_1955
+ * @version 3.1.3
+ * @build 20261031_2205
  * @description Main UI controller, Holdings & Watchlist tables with 52W/MoM/QoQ/YoY + Dividend Ex-Date/Yield +
  *   Trend Regime + 0-100 Buy/Sell Signal badges, Auto-Detected 2018+ Dividend Backfill, News & Catalysts Tab,
  *   Smart Cash Deployment & Rebalancing Simulator, Nominal/Real XIRR KPIs, and Full Settings Parameter Customizer.
@@ -1009,7 +1009,7 @@ function renderDividendsTable() {
           <td class="py-2.5 px-3 text-right num-font">${d.divCagr3Y !== null && d.divCagr3Y !== undefined ? Fin.percent(d.divCagr3Y, true) : '-'}</td>
           <td class="py-2.5 px-3 font-mono text-center">${d.nextExDate || '-'}</td>
           <td class="py-2.5 px-3 font-mono text-center text-slate-400">${d.nextPayDate || '-'}</td>
-          <td class="py-2.5 px-3 text-right num-font font-bold text-emerald-500">${estCash ? '+' + Fin.currency(estCash, false, d.currency) : '-'}</td>
+          <td class="py-2.5 px-3 text-right num-font font-bold text-amber-500 dark:text-amber-400 unpaid-dividend-amount" title="Estimated upcoming dividend (not yet paid)">${estCash ? '+' + Fin.currency(estCash, false, d.currency) : '-'}</td>
         </tr>
       `;
     }).join('');
@@ -1044,19 +1044,29 @@ function renderDividendsTable() {
   }
   emptyState.classList.add('hidden');
 
+  const todayIso = new Date().toISOString().slice(0, 10);
   const sorted = [...filtered].sort((a, b) => new Date(b.payDate || b.exDate) - new Date(a.payDate || a.exDate));
   sorted.forEach(div => {
     const dCurr = div.currency || state.prices[div.ticker]?.currency || MarketAPI.getStaticProfile(div.ticker).currency || 'HKD';
+    const isUnpaid = Boolean((div.payDate && div.payDate > todayIso) || div.isPending);
+    const amountColorCls = isUnpaid
+      ? 'text-amber-500 dark:text-amber-400 unpaid-dividend-amount'
+      : 'text-emerald-600 dark:text-emerald-400 paid-dividend-amount';
+    const payDateBadge = isUnpaid
+      ? `<span class="ml-1.5 inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-sans font-bold uppercase tracking-wider bg-amber-500/15 text-amber-500 dark:text-amber-400 border border-amber-500/30">Unpaid</span>`
+      : '';
     const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition text-xs';
+    tr.className = isUnpaid
+      ? 'bg-amber-500/[0.03] hover:bg-amber-500/[0.08] transition text-xs'
+      : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition text-xs';
     tr.innerHTML = `
-      <td class="py-3 px-4 font-mono font-medium text-slate-800 dark:text-slate-200">${div.payDate}</td>
-      <td class="py-3 px-4 font-mono text-slate-400">${div.exDate || '-'}</td>
-      <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">${div.ticker}</td>
-      <td class="py-3 px-4 text-right num-font text-slate-500 dark:text-slate-400">${div.amountPerShare ? Fin.currency(div.amountPerShare, false, dCurr) : '-'}</td>
-      <td class="py-3 px-4 text-right font-bold num-font text-emerald-600 dark:text-emerald-400">+${Fin.currency(div.totalAmount, false, dCurr)}</td>
-      <td class="py-3 px-4 text-slate-400 max-w-xs truncate">${div.notes || 'Cash Dividend'}</td>
-      <td class="py-3 px-4 text-center">
+      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 font-mono font-medium ${isUnpaid ? 'text-amber-600 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'} whitespace-nowrap">${div.payDate}${payDateBadge}</td>
+      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 font-mono text-slate-400 whitespace-nowrap">${div.exDate || '-'}</td>
+      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">${div.ticker}</td>
+      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 text-right num-font text-slate-500 dark:text-slate-400 whitespace-nowrap">${div.amountPerShare ? Fin.currency(div.amountPerShare, false, dCurr) : '-'}</td>
+      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 text-right font-bold num-font ${amountColorCls} whitespace-nowrap" title="${isUnpaid ? 'Dividend declared (Ex-Date passed) but not yet paid until ' + div.payDate : 'Paid cash dividend'}">+${Fin.currency(div.totalAmount, false, dCurr)}</td>
+      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 ${isUnpaid ? 'text-amber-600/80 dark:text-amber-300/80' : 'text-slate-400'} max-w-xs truncate">${div.notes || 'Cash Dividend'}</td>
+      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 text-center">
         <button onclick="deleteDividend('${div.id}')" class="text-slate-400 hover:text-rose-500 transition p-1" title="Delete Dividend Record">
           <i class="fa-solid fa-trash-can text-xs"></i>
         </button>

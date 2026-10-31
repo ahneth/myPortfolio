@@ -171,3 +171,73 @@ body[data-device="tablet"] .chart-container {
     z-index: 12;
   }
 }
+
+
+/* ==========================================================================
+   v3.1.3 Mobile Compact Typography & Full-Width Zoom-Out Layout Fixes
+   ========================================================================== */
+
+:root {
+  --unpaid-dividend-color: #f59e0b;
+}
+
+.dark {
+  --unpaid-dividend-color: #fbbf24;
+}
+
+.unpaid-dividend-amount {
+  color: var(--unpaid-dividend-color) !important;
+}
+
+html, body {
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+header, main {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  /* Scale root font size down on mobile so more content fits on screen */
+  html {
+    font-size: 13.5px;
+  }
+
+  body[data-device="mobile"] {
+    padding-bottom: calc(3.6rem + var(--safe-bottom));
+  }
+
+  body[data-device="mobile"] .chart-container {
+    min-height: 195px;
+  }
+
+  /* Prevent KPI figures (e.g. HK$2,010,992.32) from ever clipping inside mobile 2-col cards */
+  #kpi-portfolio-value,
+  #kpi-cash-balance,
+  #kpi-cost-basis,
+  #kpi-unrealized-val,
+  #kpi-realized-val,
+  #kpi-dividends-val {
+    font-size: 0.92rem !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.03em !important;
+    white-space: nowrap;
+  }
+
+  /* Compact table typography & padding on mobile to show more columns/rows */
+  .table-responsive-wrapper table {
+    font-size: 0.72rem !important;
+  }
+
+  .table-responsive-wrapper th,
+  .table-responsive-wrapper td {
+    padding: 0.35rem 0.45rem !important;
+  }
+}

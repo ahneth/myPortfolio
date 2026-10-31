@@ -7,8 +7,8 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.1.2',
-  buildId: '20261031_1955',
+  appVersion: '3.1.3',
+  buildId: '20261031_2205',
   releaseDate: '2026-10-31 16:50 HKT',
   driveFolder: '/stock_portfolio/20261031_1650/',
   modules: {
@@ -23,6 +23,16 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with pre-seeded 36M OHLCV, quotes, 2018+ dividends & news' }
   },
   changelog: [
+    {
+      version: '3.1.3',
+      buildId: '20261031_2205',
+      date: '2026-10-31',
+      changes: [
+        'Styled unpaid/pending dividends (where Ex-Date has passed but Pay Date is in the future) in distinct amber/yellow font color with an Unpaid badge in Dividend Payout Logs',
+        'Fixed mobile header horizontal overflow that caused zoom-out mode to leave empty space on the right side of the page; header and main content now always span 100% full width',
+        'Reduced mobile typography and card/table padding across KPI cards, charts, and data tables so 6-figure currency amounts (e.g. HK$2,010,992.32) never clip and more rows/columns fit on screen'
+      ]
+    },
     {
       version: '3.1.2',
       buildId: '20261031_1955',

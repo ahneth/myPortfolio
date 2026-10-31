@@ -1666,18 +1666,26 @@ function recalculatePortfolio() {
       return !collides;
     });
 
-    const autoVerifiedDividends = canonicalEntitlements.map(item => ({
-      id: item.divId,
-      ticker: item.ticker,
-      payDate: item.payDate,
-      exDate: item.exDate,
-      amountPerShare: item.amountPerShare,
-      totalAmount: item.totalAmount,
-      currency: item.currency,
-      isDrip: false,
-      dripShares: 0,
-      notes: `Auto-verified cash payout (${Fin.shares(item.eligibleShares)} sh held prior to Ex-Date ${item.exDate})`
-    }));
+    const todayIsoStr = new Date().toISOString().slice(0, 10);
+    const autoVerifiedDividends = canonicalEntitlements.map(item => {
+      const isUnpaid = Boolean(item.payDate && item.payDate > todayIsoStr);
+      return {
+        id: item.divId,
+        ticker: item.ticker,
+        payDate: item.payDate,
+        exDate: item.exDate,
+        amountPerShare: item.amountPerShare,
+        totalAmount: item.totalAmount,
+        currency: item.currency,
+        isDrip: false,
+        dripShares: 0,
+        isPaid: !isUnpaid,
+        isPending: isUnpaid,
+        notes: isUnpaid
+          ? `Pending cash payout — Payable ${item.payDate} (${Fin.shares(item.eligibleShares)} sh held prior to Ex-Date ${item.exDate})`
+          : `Auto-verified cash payout (${Fin.shares(item.eligibleShares)} sh held prior to Ex-Date ${item.exDate})`
+      };
+    });
 
     state.dividends = [...autoVerifiedDividends, ...manualDividends].sort((a, b) =>
       String(b.payDate || b.exDate || '').localeCompare(String(a.payDate || a.exDate || ''))
@@ -1688,15 +1696,30 @@ function recalculatePortfolio() {
   let totalDividendsEarned = 0;
   let cashDividendsTotal = 0;
   let dripDividendsTotal = 0;
+  let paidDividendsTotal = 0;
+  let pendingDividendsTotal = 0;
+  let paidDividendsCount = 0;
+  let pendingDividendsCount = 0;
+  const nowIsoDate = new Date().toISOString().slice(0, 10);
 
   state.dividends.forEach(div => {
     div.isDrip = false;
     div.dripShares = 0;
+    const isUnpaid = Boolean(div.payDate && div.payDate > nowIsoDate);
+    div.isPaid = !isUnpaid;
+    div.isPending = isUnpaid;
     const amt = Number(div.totalAmount) || 0;
     const dCurr = div.currency || state.prices[div.ticker]?.currency || MarketAPI.getStaticProfile(div.ticker).currency || baseCurr;
     const amtBase = Fin.convertCurrency(amt, dCurr, baseCurr);
     totalDividendsEarned = Fin.round(totalDividendsEarned + amtBase, 2);
     cashDividendsTotal = Fin.round(cashDividendsTotal + amtBase, 2);
+    if (isUnpaid) {
+      pendingDividendsTotal = Fin.round(pendingDividendsTotal + amtBase, 2);
+      pendingDividendsCount += 1;
+    } else {
+      paidDividendsTotal = Fin.round(paidDividendsTotal + amtBase, 2);
+      paidDividendsCount += 1;
+    }
     runningCash = Fin.round(runningCash + amtBase, 2);
     if (holdingsMap[div.ticker]) {
       holdingsMap[div.ticker].totalDividends = Fin.round(holdingsMap[div.ticker].totalDividends + amt, 2);
@@ -1858,6 +1881,10 @@ function recalculatePortfolio() {
     totalDividendsEarned,
     cashDividendsTotal,
     dripDividendsTotal,
+    paidDividendsTotal,
+    pendingDividendsTotal,
+    paidDividendsCount,
+    pendingDividendsCount,
     estimatedAnnualForwardDivBase,
     nominalXirrPct,
     realXirrPct,
