@@ -7,8 +7,8 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.1.0',
-  buildId: '20261031_1650',
+  appVersion: '3.1.1',
+  buildId: '20261031_1905',
   releaseDate: '2026-10-31 16:50 HKT',
   driveFolder: '/stock_portfolio/20261031_1650/',
   modules: {
@@ -23,6 +23,16 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with pre-seeded 36M OHLCV, quotes, 2018+ dividends & news' }
   },
   changelog: [
+    {
+      version: '3.1.1',
+      buildId: '20261031_1905',
+      date: '2026-10-31',
+      changes: [
+        'Fixed Service Worker (sw.js) cache-first trap by bumping cache version and switching to Network-First plus automatic stale CacheStorage purge on startup',
+        'Fixed ingestHistoricalPricesData() overwriting state.dividendSchedules[3476.HK] when an older historical_prices.json had empty dividend history',
+        'Added automatic startup & recalculation backfill of all verified historical baseline dividends (including all 8 monthly payouts for 3476.HK and 3 quarterly payouts for 3433.HK) directly into Dividend Payout Logs (state.dividends)'
+      ]
+    },
     {
       version: '3.1.0',
       buildId: '20261031_1650',

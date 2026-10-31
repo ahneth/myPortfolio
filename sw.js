@@ -1,4 +1,4 @@
-const CACHE_NAME = "myportfolio-cache-v3.0.1-20261031_1115";
+const CACHE_NAME = "myportfolio-cache-v3.1.1-20261031_1905";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -28,19 +28,18 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Network-First strategy across all assets so new releases take effect immediately on reload
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
-  if (url.pathname.endsWith("historical_prices.json") || url.pathname.endsWith("company_news.json")) {
-    event.respondWith(
-      fetch(event.request, { cache: "no-store" }).then((res) => {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
-        return res;
-      }).catch(() => caches.match(event.request))
-    );
-    return;
-  }
+  if (event.request.method !== "GET") return;
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(event.request, { cache: "no-store" })
+      .then((res) => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(event.request, clone)).catch(() => {});
+        }
+        return res;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

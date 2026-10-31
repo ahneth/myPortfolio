@@ -10,8 +10,8 @@ var OFFICIAL_NAMES_MAP = {
 /**
  * @file portfolio.js
  * @module PortfolioEngineAndExcelIO
- * @version 3.1.0
- * @build 20261031_1650
+ * @version 3.1.1
+ * @build 20261031_1905
  * @description Application state persistence, startup ./historical_prices.json & ./company_news.json loaders,
  *   2018+ Dividend Ex-Date/Payout/Entitlement & Auto-Backfill Engine, 4-Pillar Technical & Qualitative Buy/Sell
  *   Signal Engine (0-100), 6-State Trend Regime & 12M Regression Analyzer, Nominal & Real (Inflation-Adjusted)
@@ -307,8 +307,8 @@ function createEmptyState() {
       darkMode: true,
       lastApiSync: null,
       yahooDefaultApplied: true,
-      appVersion: '3.0.1',
-      buildId: '20261031_1650',
+      appVersion: '3.1.1',
+      buildId: '20261031_1905',
       collapsedSectors: {}
     },
     cashBalance: 0,
@@ -652,7 +652,17 @@ function ingestHistoricalPricesData(data) {
     Object.entries(data.dividends).forEach(([k, dObj]) => {
       const sym = MarketAPI.normalizeTicker(k);
       if (sym && dObj && typeof dObj === 'object') {
-        state.dividendSchedules[sym] = { ...(state.dividendSchedules[sym] || {}), ...dObj };
+        const prevHist = state.dividendSchedules[sym]?.history || [];
+        const incomingHist = Array.isArray(dObj.history) ? dObj.history : [];
+        state.dividendSchedules[sym] = {
+          ...(state.dividendSchedules[sym] || {}),
+          ...dObj,
+          history: incomingHist.length >= prevHist.length ? incomingHist : prevHist
+        };
+        const mergedSched = buildDividendScheduleForTicker(sym, null, state.prices?.[sym]?.price || 0, dObj.currency);
+        if (mergedSched) {
+          state.dividendSchedules[sym] = mergedSched;
+        }
       }
     });
   }
@@ -1327,7 +1337,8 @@ function detectUnloggedDividendEntitlements() {
 
   Object.keys(txByTicker).sort().forEach(sym => {
     const txs = txByTicker[sym].sort((a, b) => new Date(a.date) - new Date(b.date));
-    const sched = state.dividendSchedules?.[sym] || buildDividendScheduleForTicker(sym);
+    const sched = buildDividendScheduleForTicker(sym) || state.dividendSchedules?.[sym];
+    if (sched) state.dividendSchedules[sym] = sched;
     if (!sched || !Array.isArray(sched.history)) return;
 
     sched.history.forEach(ev => {
@@ -1519,6 +1530,36 @@ function recalculatePortfolio() {
       }
     }
   });
+
+  // Auto-sync any missing historical dividend entitlements (2018-present, including 3476.HK monthly & 3433.HK quarterly)
+  // directly into state.dividends when autoDetectDividends is enabled so Dividend Payout Logs are always complete.
+  if (state.settings?.autoDetectDividends !== false && state.transactions.length > 0) {
+    const autoMissing = detectUnloggedDividendEntitlements();
+    if (autoMissing.length > 0) {
+      const existingDivKeys = new Set(
+        (state.dividends || []).map(d => `${MarketAPI.normalizeTicker(d.ticker)}_${d.exDate || d.payDate}`)
+      );
+      autoMissing.forEach(item => {
+        const key = `${item.ticker}_${item.exDate}`;
+        if (!existingDivKeys.has(key)) {
+          existingDivKeys.add(key);
+          state.dividends.push({
+            id: `DIV-${item.ticker}-${item.exDate}`,
+            ticker: item.ticker,
+            payDate: item.payDate,
+            exDate: item.exDate,
+            amountPerShare: item.amountPerShare,
+            totalAmount: item.totalAmount,
+            currency: item.currency,
+            isDrip: false,
+            dripShares: 0,
+            notes: `Auto-verified cash payout (${Fin.shares(item.eligibleShares)} sh held prior to Ex-Date ${item.exDate})`
+          });
+        }
+      });
+      state.dividends.sort((a, b) => String(b.payDate || b.exDate || '').localeCompare(String(a.payDate || a.exDate || '')));
+    }
+  }
 
   // Dividends
   let totalDividendsEarned = 0;

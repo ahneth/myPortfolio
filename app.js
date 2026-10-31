@@ -1,8 +1,25 @@
+
+// Automatically purge stale Service Worker caches from older builds so updated scripts & dividend schedules load immediately
+if (typeof window !== 'undefined' && 'caches' in window) {
+  caches.keys().then(keys => {
+    keys.forEach(k => {
+      if (k !== 'myportfolio-cache-v3.1.1-20261031_1905') {
+        caches.delete(k).catch(() => {});
+      }
+    });
+  }).catch(() => {});
+}
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.update().catch(() => {}));
+  }).catch(() => {});
+}
+
 /**
  * @file app.js
  * @module AppUIController
- * @version 3.1.0
- * @build 20261031_1650
+ * @version 3.1.1
+ * @build 20261031_1905
  * @description Main UI controller, Holdings & Watchlist tables with 52W/MoM/QoQ/YoY + Dividend Ex-Date/Yield +
  *   Trend Regime + 0-100 Buy/Sell Signal badges, Auto-Detected 2018+ Dividend Backfill, News & Catalysts Tab,
  *   Smart Cash Deployment & Rebalancing Simulator, Nominal/Real XIRR KPIs, and Full Settings Parameter Customizer.
