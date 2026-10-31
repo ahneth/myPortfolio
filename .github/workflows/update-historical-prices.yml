@@ -11,9 +11,9 @@ on:
         required: false
         default: ''
       range:
-        description: 'Yahoo Finance chart history range (e.g. 10y, 15y, max)'
+        description: 'Yahoo Finance chart history range (e.g. 5y, 10y, max)'
         required: false
-        default: '15y'
+        default: '5y'
 
 permissions:
   contents: write
@@ -49,7 +49,7 @@ jobs:
           INPUT_TICKERS: ${{ github.event.inputs.tickers }}
           INPUT_RANGE: ${{ github.event.inputs.range }}
         run: |
-          RANGE_ARG="${INPUT_RANGE:-15y}"
+          RANGE_ARG="${INPUT_RANGE:-5y}"
           if [ -n "$INPUT_TICKERS" ]; then
             python3 update_historical_prices.py --output ./historical_prices.json --range "$RANGE_ARG" --delay 1.4 --jitter 0.7 --max-retries 5 --tickers "$INPUT_TICKERS"
           else
