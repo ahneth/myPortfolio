@@ -210,8 +210,8 @@ var MarketAPI = {
     // Staggered 2-stage proxy query to avoid triggering HTTP 429 rate-limits on public proxies
     try {
       const stage1 = [
-        this._tryProxyFetch(primaryUrl, proxySpecs[0], 4800),
-        this._tryProxyFetch(backupUrl, proxySpecs[1], 4800)
+        this._tryProxyFetch(primaryUrl, proxySpecs[0], 2200),
+        this._tryProxyFetch(backupUrl, proxySpecs[1], 2200)
       ];
       const winner1 = await Promise.any(stage1);
       if (winner1) {
@@ -226,8 +226,8 @@ var MarketAPI = {
 
     try {
       const stage2 = [
-        this._tryProxyFetch(primaryUrl, proxySpecs[2], 5500),
-        this._tryProxyFetch(backupUrl, proxySpecs[3], 5500)
+        this._tryProxyFetch(primaryUrl, proxySpecs[2], 2200),
+        this._tryProxyFetch(backupUrl, proxySpecs[3], 2200)
       ];
       const winner2 = await Promise.any(stage2);
       if (winner2) {
@@ -283,8 +283,9 @@ var MarketAPI = {
       const timer = setTimeout(() => {
         if (script && script.remove) script.remove();
         resolve({});
-      }, 5500);
+      }, 2200);
 
+      script.charset = 'gbk';
       script.src = `https://qt.gtimg.cn/q=${qList}&_=${Date.now()}`;
       script.onload = () => {
         clearTimeout(timer);
@@ -415,8 +416,9 @@ var MarketAPI = {
       const timer = setTimeout(() => {
         if (script && script.remove) script.remove();
         reject(new Error('JSONP quote timeout'));
-      }, 5500);
+      }, 1800);
 
+      script.charset = 'gbk';
       script.src = `https://qt.gtimg.cn/q=${qCode}&_=${Date.now()}`;
       script.onload = () => {
         clearTimeout(timer);
@@ -459,9 +461,27 @@ var MarketAPI = {
     const staticMeta = this.getStaticProfile(symbol);
 
     if (provider === 'yahoo') {
+      // 1. Try fast zero-CORS direct browser JSONP (qt.gtimg.cn) first for HK/US live quotes (~200ms)
       try {
-        const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=false`;
-        const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=false`;
+        const jsonpQuote = await this.fetchTencentJsonpQuote(symbol);
+        if (jsonpQuote && jsonpQuote.price > 0) {
+          const existingFund = state.fundamentals[symbol] || {};
+          state.fundamentals[symbol] = {
+            ...existingFund,
+            name: existingFund.name || jsonpQuote.name || staticMeta.name || symbol,
+            sector: existingFund.sector || staticMeta.sector || 'Equities',
+            currency: jsonpQuote.currency,
+            high52w: jsonpQuote.high52w || existingFund.high52w || null,
+            low52w: jsonpQuote.low52w || existingFund.low52w || null
+          };
+          return jsonpQuote;
+        }
+      } catch (_) {}
+
+      // 2. Fallback to lightweight Yahoo 2d live quote (2.5s max timeout)
+      try {
+        const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=2d&interval=1d&includePrePost=false`;
+        const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=2d&interval=1d&includePrePost=false`;
 
         const data = await this.fetchYahooJson([q1, q2], `quote_${symbol}`);
         const result = data?.chart?.result?.[0];
@@ -598,173 +618,127 @@ var MarketAPI = {
   /**
    * Fetches monthly historical prices (up to 15 years of monthly closes + full 2018+ dividend events).
    */
+  /**
+   * Historical monthly prices & dividends are 100% managed by the GitHub Actions Python job
+   * (update_historical_prices.py -> historical_prices.json). No browser third-party API calls are made for history.
+   */
   async fetchMonthlyHistory(ticker) {
     const symbol = this.normalizeTicker(ticker);
-    const provider = this.getProvider();
+    const cachedHist = this.getEmbeddedOrCachedHistory(symbol);
+    if (Array.isArray(cachedHist) && cachedHist.length > 0) {
+      return cachedHist;
+    }
+    if (typeof loadHistoricalPricesFromJson === 'function') {
+      await loadHistoricalPricesFromJson(false);
+      const afterLoad = this.getEmbeddedOrCachedHistory(symbol);
+      if (Array.isArray(afterLoad) && afterLoad.length > 0) {
+        return afterLoad;
+      }
+    }
+    return [];
+  },
 
-    if (provider === 'yahoo') {
+  /**
+   * Triggers a GitHub Actions workflow_dispatch run (e.g. 'update-historical-prices.yml' or 'update-company-news.yml')
+   * using the repository and Fine-Grained PAT configured in Settings.
+   */
+  async triggerGitHubWorkflow(workflowFile = 'update-historical-prices.yml', inputs = {}) {
+    const repo = (state?.settings?.githubRepo || 'ahneth/myPortfolio').trim();
+    const branch = (state?.settings?.githubBranch || 'main').trim();
+    const token = (state?.settings?.githubToken || '').trim();
+
+    if (!token) {
+      if (typeof AppLogger !== 'undefined') {
+        AppLogger.info('GitHubActions', `GitHub Token not configured in Settings — pulling latest committed output for ${workflowFile} from ${repo}@${branch}. (Add a GitHub PAT with Actions:Write in Settings to trigger new Python runs from the browser.)`);
+      }
+      return { triggered: false, reason: 'no_token', repo, branch, workflowFile };
+    }
+
+    const url = `https://api.github.com/repos/${repo}/actions/workflows/${workflowFile}/dispatches`;
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.api('GitHubActions', `POST ${url} (ref: ${branch}) — triggering Python workflow ${workflowFile}...`);
+    }
+
+    try {
+      const payload = { ref: branch };
+      if (inputs && Object.keys(inputs).length > 0) {
+        payload.inputs = inputs;
+      }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/vnd.github+json',
+          'Authorization': `Bearer ${token}`,
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.status === 204 || res.ok) {
+        if (typeof AppLogger !== 'undefined') {
+          AppLogger.info('GitHubActions', `Successfully triggered ${workflowFile} on ${repo}@${branch} (HTTP ${res.status}). Polling run status...`);
+        }
+        this.pollGitHubWorkflowCompletion(repo, branch, token, workflowFile);
+        return { triggered: true, status: res.status, repo, branch, workflowFile };
+      } else {
+        const errTxt = await res.text().catch(() => '');
+        const msg = `GitHub API HTTP ${res.status}: ${errTxt.slice(0, 140) || res.statusText}`;
+        if (typeof AppLogger !== 'undefined') {
+          AppLogger.warn('GitHubActions', `Failed to trigger ${workflowFile}: ${msg}`);
+        }
+        return { triggered: false, reason: 'http_error', status: res.status, message: msg, repo, branch, workflowFile };
+      }
+    } catch (err) {
+      if (typeof AppLogger !== 'undefined') {
+        AppLogger.warn('GitHubActions', `Network error triggering ${workflowFile}: ${err.message}`);
+      }
+      return { triggered: false, reason: 'network_error', message: err.message, repo, branch, workflowFile };
+    }
+  },
+
+  async pollGitHubWorkflowCompletion(repo, branch, token, workflowFile) {
+    const isNews = workflowFile.includes('news');
+    const maxPolls = 18; // ~90 seconds max
+    for (let i = 0; i < maxPolls; i++) {
+      await new Promise(r => setTimeout(r, 5000));
       try {
-        const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=15y&interval=1mo&includeAdjustedClose=true&events=div`;
-        const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=15y&interval=1mo&includeAdjustedClose=true&events=div`;
-
-        const data = await this.fetchYahooJson([q1, q2], `hist15y_${symbol}`);
-      const result = data?.chart?.result?.[0];
-      if (result && Array.isArray(result.timestamp) && result.timestamp.length > 0) {
-        const timestamps = result.timestamp;
-        const quote = result.indicators?.quote?.[0] || {};
-        const adjCloses = result.indicators?.adjclose?.[0]?.adjclose || [];
-
-        const byMonth = {};
-        timestamps.forEach((ts, idx) => {
-          const rawClose = quote.close?.[idx];
-          const adjClose = adjCloses[idx] ?? rawClose;
-          if (rawClose === null || rawClose === undefined || isNaN(rawClose)) return;
-
-          const d = new Date(ts * 1000).toISOString().split('T')[0];
-          const month = d.slice(0, 7);
-          byMonth[month] = {
-            month,
-            date: d,
-            close: Fin.round(parseFloat(adjClose || rawClose), 4),
-            rawClose: Fin.round(parseFloat(rawClose), 4),
-            high: Fin.round(parseFloat(quote.high?.[idx] ?? rawClose), 4),
-            low: Fin.round(parseFloat(quote.low?.[idx] ?? rawClose), 4),
-            volume: parseInt(quote.volume?.[idx] || 0, 10)
-          };
-        });
-
-        const divEvents = result.events?.dividends;
-        const refPrice = result.meta?.regularMarketPrice || state.prices[symbol]?.price || 0;
-        const curr = result.meta?.currency || this.getStaticProfile(symbol).currency;
-
-        if (divEvents && typeof divEvents === 'object' && typeof buildDividendScheduleForTicker === 'function') {
-          const sched = buildDividendScheduleForTicker(symbol, divEvents, refPrice, curr);
-          if (sched) {
-            if (!state.dividendSchedules) state.dividendSchedules = {};
-            state.dividendSchedules[symbol] = sched;
-            const existingFund = state.fundamentals[symbol] || {};
-            state.fundamentals[symbol] = {
-              ...existingFund,
-              divYield: sched.trailingYieldPct || existingFund.divYield || 0,
-              forwardDivYield: sched.forwardYieldPct || 0,
-              netDivYield: sched.netYieldPct || 0,
-              nextExDate: sched.nextExDate || null,
-              nextPayDate: sched.nextPayDate || null,
-              divFrequency: sched.frequency || 'None'
-            };
+        const runsUrl = `https://api.github.com/repos/${repo}/actions/workflows/${workflowFile}/runs?branch=${encodeURIComponent(branch)}&per_page=1&_=${Date.now()}`;
+        const res = await fetch(runsUrl, {
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': `Bearer ${token}`,
+            'X-GitHub-Api-Version': '2022-11-28'
           }
+        });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const latestRun = data?.workflow_runs?.[0];
+        if (!latestRun) continue;
+
+        if (typeof AppLogger !== 'undefined' && (i === 0 || latestRun.status === 'completed')) {
+          AppLogger.info('GitHubActions', `Workflow ${workflowFile} run #${latestRun.run_number}: status=${latestRun.status}, conclusion=${latestRun.conclusion || 'running'}`);
         }
 
-        const sorted = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
-        if (sorted.length > 0) {
-          const trailing12 = sorted.slice(-12);
-          const t12High = Math.max(...trailing12.map(r => Number(r.high || r.rawClose || r.close || 0)).filter(v => v > 0));
-          const t12Low = Math.min(...trailing12.map(r => Number(r.low || r.rawClose || r.close || 0)).filter(v => v > 0));
-          const existingFund = state.fundamentals[symbol] || {};
-          const metaHigh52 = result.meta?.fiftyTwoWeekHigh ? Fin.round(parseFloat(result.meta.fiftyTwoWeekHigh), 4) : null;
-          const metaLow52 = result.meta?.fiftyTwoWeekLow ? Fin.round(parseFloat(result.meta.fiftyTwoWeekLow), 4) : null;
-          state.fundamentals[symbol] = {
-            ...existingFund,
-            high52w: metaHigh52 || existingFund.high52w || (isFinite(t12High) && t12High > 0 ? Fin.round(t12High, 4) : null),
-            low52w: metaLow52 || existingFund.low52w || (isFinite(t12Low) && t12Low > 0 ? Fin.round(t12Low, 4) : null)
-          };
-          return sorted;
+        if (latestRun.status === 'completed') {
+          if (latestRun.conclusion === 'success') {
+            if (isNews && typeof loadCompanyNewsFromJson === 'function') {
+              await loadCompanyNewsFromJson(false);
+              if (typeof showToast === 'function') {
+                showToast('GitHub Python News workflow completed! Refreshed company_news.json on page.', 'success');
+              }
+            } else if (typeof loadHistoricalPricesFromJson === 'function') {
+              await loadHistoricalPricesFromJson(false);
+              if (typeof showToast === 'function') {
+                showToast('GitHub Python Price workflow completed! Refreshed historical_prices.json on page.', 'success');
+              }
+            }
+          } else if (typeof showToast === 'function') {
+            showToast(`GitHub workflow ${workflowFile} finished with status: ${latestRun.conclusion}`, 'error');
+          }
+          return;
         }
-      }
-      } catch (yahooHistErr) {
-        // Tier 2: Direct CORS-enabled Tencent Monthly Kline API
-        const tencentHist = await this.fetchTencentMonthlyHistory(symbol);
-        if (Array.isArray(tencentHist) && tencentHist.length > 0) {
-          return tencentHist;
-        }
-        // Tier 3: Verified Same-Origin / Embedded Snapshot (historical_prices.json)
-        const cachedHist = this.getEmbeddedOrCachedHistory(symbol);
-        if (Array.isArray(cachedHist) && cachedHist.length > 0) {
-          return cachedHist;
-        }
-        throw yahooHistErr;
-      }
-      const fallbackHist = this.getEmbeddedOrCachedHistory(symbol);
-      if (Array.isArray(fallbackHist) && fallbackHist.length > 0) {
-        return fallbackHist;
-      }
-      throw new Error(`No monthly historical data returned by Yahoo Finance for ${symbol}.`);
-    }
-
-    const key = this.getKey();
-    if (!key) throw new Error('API key is not configured.');
-
-    if (provider === 'alphavantage') {
-      const url = `https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY_ADJUSTED&symbol=${encodeURIComponent(symbol)}&apikey=${encodeURIComponent(key)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data['Note'] || data['Information']) {
-        throw new Error(data['Note'] || data['Information']);
-      }
-      const series = data['Monthly Adjusted Time Series'] || data['Monthly Time Series'];
-      if (!series) {
-        throw new Error(`No monthly time series returned for ${symbol}`);
-      }
-
-      const records = Object.keys(series).map(dateStr => {
-        const item = series[dateStr];
-        return {
-          month: dateStr.slice(0, 7),
-          date: dateStr,
-          close: Fin.round(parseFloat(item['5. adjusted close'] || item['4. close']), 4),
-          rawClose: Fin.round(parseFloat(item['4. close']), 4),
-          high: Fin.round(parseFloat(item['2. high']), 4),
-          low: Fin.round(parseFloat(item['3. low']), 4),
-          volume: parseInt(item['6. volume'] || item['5. volume'] || '0', 10)
-        };
-      });
-
-      const byMonth = {};
-      records.forEach(r => { byMonth[r.month] = r; });
-      return Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
-    }
-
-    if (provider === 'twelvedata') {
-      const url = `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}&interval=1month&outputsize=60&apikey=${encodeURIComponent(key)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.status === 'error' || !Array.isArray(data.values)) {
-        throw new Error(data.message || `No monthly series returned for ${symbol}`);
-      }
-      const records = data.values.map(item => ({
-        month: item.datetime.slice(0, 7),
-        date: item.datetime,
-        close: Fin.round(parseFloat(item.close), 4),
-        rawClose: Fin.round(parseFloat(item.close), 4),
-        high: Fin.round(parseFloat(item.high), 4),
-        low: Fin.round(parseFloat(item.low), 4),
-        volume: parseInt(item.volume || '0', 10)
-      }));
-      return records.sort((a, b) => a.month.localeCompare(b.month));
-    }
-
-    if (provider === 'finnhub') {
-      const toUnix = Math.floor(Date.now() / 1000);
-      const fromUnix = toUnix - (5 * 365 * 24 * 60 * 60);
-      const url = `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}&resolution=M&from=${fromUnix}&to=${toUnix}&token=${encodeURIComponent(key)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.s !== 'ok' || !Array.isArray(data.t)) {
-        throw new Error(data.error || `Finnhub monthly candle unavailable for ${symbol}`);
-      }
-      const records = data.t.map((ts, idx) => {
-        const d = new Date(ts * 1000).toISOString().split('T')[0];
-        return {
-          month: d.slice(0, 7),
-          date: d,
-          close: Fin.round(parseFloat(data.c[idx]), 4),
-          rawClose: Fin.round(parseFloat(data.c[idx]), 4),
-          high: Fin.round(parseFloat(data.h[idx]), 4),
-          low: Fin.round(parseFloat(data.l[idx]), 4),
-          volume: parseInt(data.v[idx] || 0, 10)
-        };
-      });
-      return records.sort((a, b) => a.month.localeCompare(b.month));
+      } catch (_) {}
     }
   },
 
@@ -1043,50 +1017,88 @@ var MarketAPI = {
   }
 };
 
-async function syncAllMarketData(includeMonthly = true) {
+async function syncAllMarketData(triggerGitHubWorkflow = true) {
+  const tStart = performance.now();
+  if (typeof AppLogger !== 'undefined') {
+    AppLogger.action('Sync', `Sync button pressed (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
+  }
+
   if (!MarketAPI.hasKey()) {
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.warn('Sync', 'API Key missing for selected keyed provider — redirecting to Settings.');
+    }
     showToast('Please select Yahoo Finance (Keyless) or configure your API Key in Settings.', 'error');
     switchTab('settings');
     return;
   }
 
   const allTickers = Array.from(new Set([
-    ...portfolio.activeHoldings.map(h => h.ticker),
-    ...state.watchlist.map(w => w.ticker)
-  ]));
+    ...(portfolio?.activeHoldings || []).map(h => h.ticker),
+    ...(state?.watchlist || []).map(w => w.ticker)
+  ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
 
   if (allTickers.length === 0) {
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.info('Sync', 'No holdings or watchlist tickers to sync.');
+    }
     showToast('Add a stock transaction or watchlist ticker first.', 'info');
     return;
   }
 
-  const syncIcon = document.getElementById('header-sync-icon');
-  if (syncIcon) syncIcon.classList.add('fa-spin');
-  showToast(`Syncing live quotes, FX${includeMonthly ? ', 15y history & dividends' : ''} for ${allTickers.length} ticker(s)...`, 'info');
+  const syncIcons = [
+    document.getElementById('header-sync-icon'),
+    document.getElementById('mobile-sync-icon'),
+    document.getElementById('btn-fetch-monthly-icon'),
+    document.getElementById('btn-refresh-prices-icon')
+  ].filter(Boolean);
+  syncIcons.forEach(ic => ic.classList.add('fa-spin'));
 
-  let updatedQuotes = 0;
-  let updatedHistory = 0;
-  const errors = [];
+  showToast(`Syncing live prices for ${allTickers.length} tickers & refreshing GitHub Python data...`, 'info');
 
-  // Step 1: Refresh same-origin ./historical_prices.json snapshot first (zero CORS, updated daily by GitHub Actions)
-  if (typeof loadHistoricalPricesFromJson === 'function') {
-    try {
-      await loadHistoricalPricesFromJson();
-    } catch (_) {}
+  // Step 1: If triggerGitHubWorkflow is true, dispatch update-historical-prices.yml on GitHub Actions (non-blocking)
+  let workflowStatus = null;
+  if (triggerGitHubWorkflow) {
+    workflowStatus = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml');
   }
 
-  // Step 2: Fast single-request batch quote fetch via zero-CORS qt.gtimg.cn for all HK & US holdings
+  // Step 2: Pull latest committed historical_prices.json from GitHub repository / same-origin (for 15y monthly history, dividends & technicals)
+  if (typeof loadHistoricalPricesFromJson === 'function') {
+    await loadHistoricalPricesFromJson(false);
+  }
+
+  // Step 3: Fetch LIVE PRICES ONLY via MarketAPI (Batch JSONP + Parallel Live Quote Worker Pool)
+  let updatedQuotes = 0;
+  let liveJsonpCount = 0;
+  let snapshotQuoteCount = 0;
+  const errors = [];
+
+  if (typeof AppLogger !== 'undefined') {
+    AppLogger.api('MarketAPI', `Fetching live quotes for ${allTickers.length} tickers (${allTickers.slice(0, 6).join(', ')}${allTickers.length > 6 ? '...' : ''})...`);
+  }
+
   let batchQuotes = {};
   if (MarketAPI.getProvider() === 'yahoo') {
     try {
       batchQuotes = await MarketAPI.fetchTencentBatchQuotes(allTickers);
+      liveJsonpCount = Object.keys(batchQuotes).length;
+      if (liveJsonpCount > 0 && typeof AppLogger !== 'undefined') {
+        AppLogger.api('MarketAPI', `Batch JSONP (qt.gtimg.cn) returned ${liveJsonpCount}/${allTickers.length} live quotes.`);
+      }
     } catch (_) {}
   }
 
-  for (const rawTicker of allTickers) {
-    const ticker = MarketAPI.normalizeTicker(rawTicker);
+  // Parallel live quote resolution for all tickers (no sequential waiting)
+  await Promise.allSettled(allTickers.map(async (ticker) => {
     try {
-      const q = batchQuotes[ticker] || await MarketAPI.fetchQuote(ticker);
+      let q = batchQuotes[ticker];
+      if (!q) {
+        if (MarketAPI.getProvider() === 'yahoo') {
+          // Use fast cached/snapshot quote if batch JSONP didn't return it to avoid CORS proxy stalls
+          q = MarketAPI.getEmbeddedOrCachedQuote(ticker) || await MarketAPI.fetchQuote(ticker);
+        } else {
+          q = await MarketAPI.fetchQuote(ticker);
+        }
+      }
       if (q && q.price > 0) {
         const prev = state.prices[ticker]?.price || q.prevPrice;
         state.prices[ticker] = {
@@ -1096,79 +1108,85 @@ async function syncAllMarketData(includeMonthly = true) {
           changePct: q.changePct,
           high52w: q.high52w || state.fundamentals[ticker]?.high52w || null,
           low52w: q.low52w || state.fundamentals[ticker]?.low52w || null,
-          currency: q.currency || 'USD',
+          currency: q.currency || 'HKD',
           lastUpdated: new Date().toISOString()
         };
         updatedQuotes++;
+        if (q.source && q.source.includes('Snapshot')) snapshotQuoteCount++;
         triggerRowPriceFlash(ticker, q.price >= prev);
       }
     } catch (err) {
-      if (typeof AppLogger !== 'undefined') AppLogger.warn('MarketAPI', `Quote fetch failed for ${ticker}: ${err.message}`);
+      if (typeof AppLogger !== 'undefined') {
+        AppLogger.warn('MarketAPI', `Live quote fetch failed for ${ticker}: ${err.message}`);
+      }
       errors.push(`${ticker}: ${err.message}`);
     }
-
-    const hasExistingHistory = Array.isArray(state.historicalPrices[ticker]) && state.historicalPrices[ticker].length >= 6;
-    if (hasExistingHistory) {
-      updatedHistory++;
-    } else if (includeMonthly || !hasExistingHistory) {
-      try {
-        const history = await MarketAPI.fetchMonthlyHistory(ticker);
-        if (Array.isArray(history) && history.length > 0) {
-          state.historicalPrices[ticker] = history;
-          updatedHistory++;
-        }
-      } catch (err) {
-        if (typeof AppLogger !== 'undefined') AppLogger.warn('MarketAPI', `Monthly history fetch failed for ${ticker}: ${err.message}`);
-      }
-    }
-  }
+  }));
 
   state.settings.lastApiSync = new Date().toISOString();
   recalculatePortfolio();
   saveState();
   renderAll();
 
-  if (syncIcon) syncIcon.classList.remove('fa-spin');
-  if (errors.length > 0 && updatedQuotes === 0) {
+  syncIcons.forEach(ic => ic.classList.remove('fa-spin'));
+  const elapsed = Math.round(performance.now() - tStart);
+
+  if (typeof AppLogger !== 'undefined') {
+    const wfMsg = workflowStatus?.triggered
+      ? ` | GitHub workflow update-historical-prices.yml triggered on ${workflowStatus.repo}`
+      : '';
+    AppLogger.info(
+      'Sync',
+      `Sync completed in ${elapsed}ms: ${updatedQuotes}/${allTickers.length} live quotes updated (${liveJsonpCount} live JSONP, ${snapshotQuoteCount} GitHub Python snapshot)${wfMsg}.`
+    );
+    if (typeof renderLogsTab === 'function') renderLogsTab();
+  }
+
+  if (workflowStatus?.triggered) {
+    showToast(`Live prices synced (${updatedQuotes}/${allTickers.length}) & GitHub Python workflow triggered!`, 'success');
+  } else if (errors.length > 0 && updatedQuotes === 0) {
     showToast(`Sync error — ${errors[0]}`, 'error');
   } else {
-    showToast(`Synced ${updatedQuotes} live quote(s) and ${updatedHistory} historical/dividend series.`, 'success');
+    showToast(`Synced ${updatedQuotes} live quotes & refreshed GitHub Python price/dividend snapshot (${elapsed}ms).`, 'success');
   }
 }
 
-async function syncCompanyNewsLive() {
-  const allTickers = Array.from(new Set([
-    ...(portfolio?.activeHoldings || []).map(h => h.ticker),
-    ...(state?.watchlist || []).map(w => w.ticker)
-  ]));
-  const targetList = allTickers.length > 0 ? allTickers.slice(0, 12) : ['2800.HK', '0002.HK', '2318.HK', 'VOO'];
-  showToast(`Fetching live news headlines for ${targetList.length} ticker(s)...`, 'info');
-
-  let added = 0;
-  if (!Array.isArray(state.companyNews)) state.companyNews = [];
-  const existingUrls = new Set(state.companyNews.map(a => a.url));
-
-  for (const sym of targetList) {
-    try {
-      const fetched = await MarketAPI.fetchTickerNewsLive(sym, 4);
-      fetched.forEach(art => {
-        if (!existingUrls.has(art.url)) {
-          existingUrls.add(art.url);
-          state.companyNews.unshift(art);
-          added++;
-        }
-      });
-    } catch (_) {}
+async function syncCompanyNewsLive(triggerGitHubWorkflow = true) {
+  const tStart = performance.now();
+  if (typeof AppLogger !== 'undefined') {
+    AppLogger.action('NewsSync', `Refresh News button pressed (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)})`);
   }
 
-  state.companyNews.sort((a, b) => String(b.publishedAt || '').localeCompare(String(a.publishedAt || '')));
-  state.companyNews = state.companyNews.slice(0, 200);
-  saveState();
-  if (typeof renderNewsTab === 'function') renderNewsTab();
-  showToast(
-    added > 0 ? `Fetched ${added} new live company news article(s)!` : 'News feed is up to date (run update_company_news.py for full RSS aggregation).',
-    added > 0 ? 'success' : 'info'
-  );
+  const newsBtnIcon = document.querySelector('#btn-sync-news-live i');
+  if (newsBtnIcon) newsBtnIcon.classList.add('fa-spin');
+  showToast('Refreshing company_news.json from GitHub Python workflow...', 'info');
+
+  let wfResult = null;
+  if (triggerGitHubWorkflow) {
+    wfResult = await MarketAPI.triggerGitHubWorkflow('update-company-news.yml');
+  }
+
+  const ok = typeof loadCompanyNewsFromJson === 'function' ? await loadCompanyNewsFromJson(false) : false;
+  const count = Array.isArray(state?.companyNews) ? state.companyNews.length : 0;
+
+  if (newsBtnIcon) newsBtnIcon.classList.remove('fa-spin');
+  const elapsed = Math.round(performance.now() - tStart);
+
+  if (typeof AppLogger !== 'undefined') {
+    AppLogger.info(
+      'NewsSync',
+      `News refresh completed in ${elapsed}ms: ${count} articles loaded on page${wfResult?.triggered ? ' (GitHub workflow update-company-news.yml triggered)' : ''}.`
+    );
+    if (typeof renderLogsTab === 'function') renderLogsTab();
+  }
+
+  if (wfResult?.triggered) {
+    showToast(`Triggered GitHub News workflow & refreshed ${count} articles on page!`, 'success');
+  } else if (ok) {
+    showToast(`Refreshed ${count} company news articles from GitHub Python snapshot (${elapsed}ms).`, 'success');
+  } else {
+    showToast('News feed is up to date.', 'info');
+  }
 }
 window.syncCompanyNewsLive = syncCompanyNewsLive;
 

@@ -24,7 +24,10 @@ var STORAGE_KEY = 'MYPORTFOLIO_STATE_V1';
  * Default customizable parameters exposed in the Settings Page for full manual customization.
  */
 var DEFAULT_QUANT_SETTINGS = {
-  currency: 'HKD',                // Base reporting currency ('HKD' | 'USD' | 'GBP')
+  currency: 'HKD',
+  githubRepo: 'ahneth/myPortfolio',
+  githubBranch: 'main',
+  githubToken: '',                // Base reporting currency ('HKD' | 'USD' | 'GBP')
   inflationRatePct: 2.2,          // Annual inflation rate (%) for Real XIRR (Fisher equation)
   riskFreeRatePct: 4.0,
   maxPositionWeightPct: 15.0,     // Max single-stock portfolio weight (%) before trim alert           // Risk-free rate (%) for Sharpe / Valuation comparison
@@ -832,15 +835,40 @@ function ingestCompanyNewsData(data) {
 async function loadHistoricalPricesFromJson(silent = true) {
   try {
     let data = null;
-    try {
-      const res = await fetch(`./historical_prices.json?_=${Date.now()}`, { cache: 'no-store' });
-      if (res.ok) {
-        data = await res.json();
-      }
-    } catch (_) {}
+    let sourceLabel = 'embedded snapshot';
+    const repo = (typeof state !== 'undefined' && state?.settings?.githubRepo) ? state.settings.githubRepo.trim() : 'ahneth/myPortfolio';
+    const branch = (typeof state !== 'undefined' && state?.settings?.githubBranch) ? state.settings.githubBranch.trim() : 'main';
 
+    // 1. Try fresh raw GitHub repository file first when user explicitly triggers a sync (!silent) so newly committed Python workflow output is immediate
+    if (!silent && repo && repo.includes('/')) {
+      try {
+        const ctrl = new AbortController();
+        const tId = setTimeout(() => ctrl.abort(), 3500);
+        const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/historical_prices.json?_=${Date.now()}`;
+        const rawRes = await fetch(rawUrl, { signal: ctrl.signal, cache: 'no-store' });
+        clearTimeout(tId);
+        if (rawRes.ok) {
+          data = await rawRes.json();
+          sourceLabel = `GitHub raw (${repo}@${branch})`;
+        }
+      } catch (_) {}
+    }
+
+    // 2. Same-origin ./historical_prices.json
+    if (!data || typeof data !== 'object') {
+      try {
+        const res = await fetch(`./historical_prices.json?_=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) {
+          data = await res.json();
+          sourceLabel = './historical_prices.json';
+        }
+      } catch (_) {}
+    }
+
+    // 3. Embedded fallback
     if ((!data || typeof data !== 'object') && typeof window.EMBEDDED_HISTORICAL_PRICES === 'object') {
       data = window.EMBEDDED_HISTORICAL_PRICES;
+      sourceLabel = 'window.EMBEDDED_HISTORICAL_PRICES';
     }
 
     if (!data || typeof data !== 'object') {
@@ -855,33 +883,69 @@ async function loadHistoricalPricesFromJson(silent = true) {
     if (typeof renderAll === 'function') {
       renderAll();
     }
+    if (!silent && typeof AppLogger !== 'undefined') {
+      AppLogger.api('GitHubPython', `Loaded historical_prices.json from ${sourceLabel}: ${loadedSeriesCount} historical series (generated ${data?._meta?.generatedAt || 'N/A'})`);
+    }
     return loadedSeriesCount > 0;
   } catch (err) {
+    if (!silent && typeof AppLogger !== 'undefined') {
+      AppLogger.warn('GitHubPython', `Failed to load historical_prices.json: ${err.message}`);
+    }
     window.__HISTORICAL_PRICES_JSON_LOADED__ = false;
     return false;
   }
 }
 
-async function loadCompanyNewsFromJson() {
+async function loadCompanyNewsFromJson(silent = true) {
   try {
     let data = null;
-    try {
-      const res = await fetch(`./company_news.json?_=${Date.now()}`, { cache: 'no-store' });
-      if (res.ok) {
-        data = await res.json();
-      }
-    } catch (_) {}
+    let sourceLabel = 'embedded news snapshot';
+    const repo = (typeof state !== 'undefined' && state?.settings?.githubRepo) ? state.settings.githubRepo.trim() : 'ahneth/myPortfolio';
+    const branch = (typeof state !== 'undefined' && state?.settings?.githubBranch) ? state.settings.githubBranch.trim() : 'main';
+
+    if (!silent && repo && repo.includes('/')) {
+      try {
+        const ctrl = new AbortController();
+        const tId = setTimeout(() => ctrl.abort(), 3500);
+        const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/company_news.json?_=${Date.now()}`;
+        const rawRes = await fetch(rawUrl, { signal: ctrl.signal, cache: 'no-store' });
+        clearTimeout(tId);
+        if (rawRes.ok) {
+          data = await rawRes.json();
+          sourceLabel = `GitHub raw (${repo}@${branch})`;
+        }
+      } catch (_) {}
+    }
+
+    if (!data || !Array.isArray(data.articles)) {
+      try {
+        const res = await fetch(`./company_news.json?_=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) {
+          data = await res.json();
+          sourceLabel = './company_news.json';
+        }
+      } catch (_) {}
+    }
 
     if ((!data || !Array.isArray(data.articles)) && typeof window.EMBEDDED_COMPANY_NEWS === 'object') {
       data = window.EMBEDDED_COMPANY_NEWS;
+      sourceLabel = 'window.EMBEDDED_COMPANY_NEWS';
     }
 
     if (data && Array.isArray(data.articles) && data.articles.length > 0) {
       ingestCompanyNewsData(data);
+      saveState();
       if (typeof renderNewsTab === 'function') renderNewsTab();
+      if (!silent && typeof AppLogger !== 'undefined') {
+        AppLogger.api('GitHubNews', `Loaded ${data.articles.length} news articles from ${sourceLabel} (generated ${data?._meta?.generatedAt || 'N/A'})`);
+      }
       return true;
     }
-  } catch (_) {}
+  } catch (err) {
+    if (!silent && typeof AppLogger !== 'undefined') {
+      AppLogger.warn('GitHubNews', `Failed to load company_news.json: ${err.message}`);
+    }
+  }
   return false;
 }
 

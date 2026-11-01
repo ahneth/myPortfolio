@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.1.5-20261031_2300') {
+      if (k !== 'myportfolio-cache-v3.1.6-20261101_0745') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -18,8 +18,8 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
 /**
  * @file app.js
  * @module AppUIController
- * @version 3.1.5
- * @build 20261031_2300
+ * @version 3.1.6
+ * @build 20261101_0745
  * @description Main UI controller, Holdings & Watchlist tables with 52W/MoM/QoQ/YoY + Dividend Ex-Date/Yield +
  *   Trend Regime + 0-100 Buy/Sell Signal badges, Auto-Detected 2018+ Dividend Backfill, News & Catalysts Tab,
  *   Smart Cash Deployment & Rebalancing Simulator, Nominal/Real XIRR KPIs, and Full Settings Parameter Customizer.
@@ -277,9 +277,22 @@ function renderApiStatusUI() {
 
   const provSelect = document.getElementById('setting-api-provider');
   const devSelect = document.getElementById('setting-device-override');
+  const ghRepoInput = document.getElementById('setting-github-repo');
+  const ghBranchInput = document.getElementById('setting-github-branch');
+  const ghTokenInput = document.getElementById('setting-github-token');
+  const ghStatusBadge = document.getElementById('github-token-status-badge');
+
   if (keyInput && document.activeElement !== keyInput) keyInput.value = state.settings.apiKey || '';
   if (provSelect) provSelect.value = state.settings.apiProvider || 'yahoo';
   if (devSelect) devSelect.value = state.settings.deviceOverride || 'auto';
+  if (ghRepoInput && document.activeElement !== ghRepoInput) ghRepoInput.value = state.settings.githubRepo || 'ahneth/myPortfolio';
+  if (ghBranchInput && document.activeElement !== ghBranchInput) ghBranchInput.value = state.settings.githubBranch || 'main';
+  if (ghTokenInput && document.activeElement !== ghTokenInput) ghTokenInput.value = state.settings.githubToken || '';
+  if (ghStatusBadge) {
+    const hasPat = Boolean((state.settings.githubToken || '').trim());
+    ghStatusBadge.textContent = hasPat ? '(Token Saved • Workflow Dispatch Enabled)' : '(Optional • Add PAT to trigger GitHub Actions runs)';
+    ghStatusBadge.className = hasPat ? 'text-[11px] font-normal text-emerald-500' : 'text-[11px] font-normal text-amber-500';
+  }
 }
 
 function renderKPIs() {
@@ -2222,14 +2235,32 @@ function setupEventListeners() {
   });
   on('btn-run-api-diagnostic', 'click', () => runAndRenderApiDiagnostics());
   on('mobile-sync-api-btn', 'click', () => syncAllMarketData(true));
-  on('btn-refresh-prices-now', 'click', () => syncAllMarketData(true));
-  on('btn-sync-watchlist-api', 'click', () => syncAllMarketData(true));
+  on('btn-refresh-prices-now', 'click', () => syncAllMarketData(false));
+  on('btn-sync-watchlist-api', 'click', () => syncAllMarketData(false));
   on('btn-sync-all-api', 'click', () => syncAllMarketData(true));
   on('btn-fetch-monthly-history', 'click', () => syncAllMarketData(true));
   on('btn-fetch-fundamentals-api', 'click', syncFundamentalsViaAPI);
 
+  // GitHub Actions Workflow Trigger Controls in Settings
+  on('btn-save-github-settings', 'click', () => {
+    const repoEl = document.getElementById('setting-github-repo');
+    const branchEl = document.getElementById('setting-github-branch');
+    const tokEl = document.getElementById('setting-github-token');
+    if (repoEl) state.settings.githubRepo = repoEl.value.trim() || 'ahneth/myPortfolio';
+    if (branchEl) state.settings.githubBranch = branchEl.value.trim() || 'main';
+    if (tokEl) state.settings.githubToken = tokEl.value.trim();
+    saveState();
+    renderApiStatusUI();
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.action('Settings', `Saved GitHub workflow settings for ${state.settings.githubRepo}@${state.settings.githubBranch} (PAT configured: ${Boolean(state.settings.githubToken)})`);
+    }
+    showToast(`Saved GitHub workflow settings (${state.settings.githubRepo})!`, 'success');
+  });
+  on('btn-trigger-gh-prices', 'click', () => syncAllMarketData(true));
+  on('btn-trigger-gh-news', 'click', () => syncCompanyNewsLive(true));
+
   // News Tab Controls
-  on('btn-sync-news-live', 'click', () => syncCompanyNewsLive());
+  on('btn-sync-news-live', 'click', () => syncCompanyNewsLive(true));
   on('news-filter-scope', 'change', renderNewsTab);
   on('news-filter-ticker', 'input', renderNewsTab);
   on('news-filter-catalyst', 'change', renderNewsTab);
@@ -2414,9 +2445,18 @@ function setupEventListeners() {
   on('btn-save-api-key', 'click', () => {
     state.settings.apiProvider = document.getElementById('setting-api-provider').value;
     state.settings.apiKey = document.getElementById('setting-api-key').value.trim();
+    const repoEl = document.getElementById('setting-github-repo');
+    const branchEl = document.getElementById('setting-github-branch');
+    const tokEl = document.getElementById('setting-github-token');
+    if (repoEl && repoEl.value.trim()) state.settings.githubRepo = repoEl.value.trim();
+    if (branchEl && branchEl.value.trim()) state.settings.githubBranch = branchEl.value.trim();
+    if (tokEl) state.settings.githubToken = tokEl.value.trim();
     saveState();
     renderApiStatusUI();
-    showToast(`Active API Provider: ${state.settings.apiProvider.toUpperCase()}`, 'success');
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.action('Settings', `Saved Live Quote API provider (${state.settings.apiProvider.toUpperCase()}) & GitHub settings.`);
+    }
+    showToast(`Active Live Price API: ${state.settings.apiProvider.toUpperCase()}`, 'success');
   });
 
   on('setting-device-override', 'change', (e) => {

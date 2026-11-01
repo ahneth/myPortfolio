@@ -7,8 +7,8 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.1.5',
-  buildId: '20261031_2300',
+  appVersion: '3.1.6',
+  buildId: '20261101_0745',
   releaseDate: '2026-10-31 16:50 HKT',
   driveFolder: '/stock_portfolio/20261031_1650/',
   modules: {
@@ -23,6 +23,17 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with pre-seeded 36M OHLCV, quotes, 2018+ dividends & news' }
   },
   changelog: [
+    {
+      version: '3.1.6',
+      buildId: '20261101_0745',
+      date: '2026-11-01',
+      changes: [
+        'Dedicated browser MarketAPI strictly to fast parallel Live Price quotes only (eliminated all third-party browser API calls for 15y historical data and news)',
+        'Wired Sync buttons (Header, Mobile, Dashboard, Settings) to trigger the GitHub Actions Python workflow (update-historical-prices.yml via workflow_dispatch) and reload historical_prices.json from GitHub',
+        'Wired Refresh News button on the News page to trigger the GitHub Actions Python news workflow (update-company-news.yml) and reload company_news.json on the page',
+        'Added complete real-time AppLogger instrumentation ([ACTION], [API], [INFO]) for every Sync and News Refresh action so the Log page displays immediate timestamped progress'
+      ]
+    },
     {
       version: '3.1.5',
       buildId: '20261031_2300',
