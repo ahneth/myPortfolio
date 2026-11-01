@@ -1580,7 +1580,7 @@ function computeAllEligibleDividendEntitlements() {
   const entitlements = [];
 
   Object.keys(txByTicker).sort().forEach(sym => {
-    const txs = txByTicker[sym].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const txs = txByTicker[sym].sort((a, b) => (new Date(a.date) - new Date(b.date)) || ((a.type === 'BUY' ? 0 : 1) - (b.type === 'BUY' ? 0 : 1)));
     const sched = buildDividendScheduleForTicker(sym);
     if (sched) state.dividendSchedules[sym] = sched;
     if (!sched || !Array.isArray(sched.history)) return;
@@ -1699,7 +1699,13 @@ function recalculatePortfolio() {
   let totalRealizedPnL = 0;
   const holdingsMap = {};
 
-  const sortedTx = [...state.transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const txTypeRank = { DEPOSIT: 0, BUY: 1, DRIP: 2, SELL: 3, WITHDRAW: 4 };
+  const sortedTx = [...state.transactions].sort((a, b) => {
+    const dDiff = new Date(a.date) - new Date(b.date);
+    if (dDiff !== 0) return dDiff;
+    return (txTypeRank[a.type] ?? 5) - (txTypeRank[b.type] ?? 5);
+  });
+  const hasExplicitDeposits = sortedTx.some(t => t.type === 'DEPOSIT');
 
   sortedTx.forEach(tx => {
     const fees = Fin.round(tx.fees || 0, 2);
@@ -1723,10 +1729,13 @@ function recalculatePortfolio() {
           totalCostBasis: 0,
           avgCost: 0,
           realizedGain: 0,
-          totalDividends: 0
+          totalDividends: 0,
+          lots: []
         };
       }
       const h = holdingsMap[tx.ticker];
+      const unitCost = shares > 0 ? totalOutlayNative / shares : price;
+      h.lots.push({ shares, unitCost, date: tx.date });
       h.shares = Fin.round(h.shares + shares, 4);
       h.totalCostBasis = Fin.round(h.totalCostBasis + totalOutlayNative, 2);
       h.avgCost = h.shares > 0 ? Fin.round(h.totalCostBasis / h.shares, 4) : 0;
@@ -1739,11 +1748,13 @@ function recalculatePortfolio() {
           totalCostBasis: 0,
           avgCost: 0,
           realizedGain: 0,
-          totalDividends: 0
+          totalDividends: 0,
+          lots: []
         };
       }
       const h = holdingsMap[tx.ticker];
       const dripValue = Fin.round(shares * price, 2);
+      h.lots.push({ shares, unitCost: price, date: tx.date });
       h.shares = Fin.round(h.shares + shares, 4);
       h.totalCostBasis = Fin.round(h.totalCostBasis + dripValue, 2);
       h.avgCost = h.shares > 0 ? Fin.round(h.totalCostBasis / h.shares, 4) : 0;
@@ -1761,29 +1772,56 @@ function recalculatePortfolio() {
           totalCostBasis: 0,
           avgCost: 0,
           realizedGain: 0,
-          totalDividends: 0
+          totalDividends: 0,
+          lots: []
         };
       }
       const h = holdingsMap[tx.ticker];
-      const soldCostBasis = Fin.round(shares * h.avgCost, 2);
+      let remToSell = shares;
+      let soldCostBasis = 0;
+      while (remToSell > 0.0001 && h.lots && h.lots.length > 0) {
+        const frontLot = h.lots[0];
+        const take = Math.min(remToSell, frontLot.shares);
+        soldCostBasis += take * frontLot.unitCost;
+        frontLot.shares = Fin.round(frontLot.shares - take, 4);
+        remToSell = Fin.round(remToSell - take, 4);
+        if (frontLot.shares <= 0.0001) {
+          h.lots.shift();
+        }
+      }
+      if (remToSell > 0.0001) {
+        soldCostBasis += remToSell * h.avgCost;
+      }
+      soldCostBasis = Fin.round(soldCostBasis, 2);
       const tradeRealizedGainNative = Fin.round(netProceedsNative - soldCostBasis, 2);
 
       tx.realizedGain = tradeRealizedGainNative;
       h.realizedGain = Fin.round(h.realizedGain + tradeRealizedGainNative, 2);
       totalRealizedPnL = Fin.round(totalRealizedPnL + Fin.convertCurrency(tradeRealizedGainNative, tCurr, baseCurr), 2);
 
-      h.shares = Fin.round(h.shares - shares, 4);
-      h.totalCostBasis = Fin.round(h.totalCostBasis - soldCostBasis, 2);
+      if (h.lots && h.lots.length > 0) {
+        h.shares = Fin.round(h.lots.reduce((s, l) => s + l.shares, 0), 4);
+        h.totalCostBasis = Fin.round(h.lots.reduce((s, l) => s + l.shares * l.unitCost, 0), 2);
+      } else {
+        h.shares = Fin.round(h.shares - shares, 4);
+        h.totalCostBasis = Fin.round(h.totalCostBasis - soldCostBasis, 2);
+      }
 
       if (h.shares <= 0.0001) {
         h.shares = 0;
         h.totalCostBasis = 0;
         h.avgCost = 0;
+        h.lots = [];
       } else {
         h.avgCost = Fin.round(h.totalCostBasis / h.shares, 4);
       }
     }
   });
+
+  // If the ledger is a trade-only import (BUY/SELL without explicit DEPOSIT rows), treat BUY lots as externally funded
+  if (!hasExplicitDeposits && (state.initialCash || 0) <= 0 && runningCash < 0) {
+    runningCash = 0;
+  }
 
   // Self-healing Dividend Ledger Reconciliation:
   // Rebuilds auto-verified dividend records from canonical deduplicated HKEX/Yahoo entitlements,
