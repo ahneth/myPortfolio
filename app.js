@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.1.8-20261101_1405') {
+      if (k !== 'myportfolio-cache-v3.1.9-20261101_1945') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -2585,7 +2585,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.8 • Build 20261101_1405)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.9 • Build 20261101_1945)...');
   }
 
   try {
@@ -2622,7 +2622,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.1.8 boot sequence complete.');
+      AppLogger.info('Boot', 'myPortfolio v3.1.9 boot sequence complete.');
     }
   }, 120);
 }

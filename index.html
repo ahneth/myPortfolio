@@ -435,7 +435,7 @@ tr.selected-table-row > td.sticky-col-mobile {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.1.8 (20261101_1405)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.1.9 (20261101_1945)</span>
             </div>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Global HK, US &amp; London Stock Portfolio Tracker</p>
           </div>
@@ -1680,13 +1680,13 @@ tr.selected-table-row > td.sticky-col-mobile {
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.1.8 • Build 20261101_1405</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.1.9 • Build 20261101_1945</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261101_1405</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261101_1945</span>/
           </span>
         </div>
 
@@ -1921,7 +1921,7 @@ tr.selected-table-row > td.sticky-col-mobile {
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.1.8 (Build 20261101_1405)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.1.9 (Build 20261101_1945)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
       <div class="flex items-center gap-4 text-slate-400">
         <span><i class="fa-solid fa-globe text-brand-500"></i> HK, US &amp; London API</span>
@@ -2356,10 +2356,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.1.8',
-  buildId: '20261101_1405',
+  appVersion: '3.1.9',
+  buildId: '20261101_1945',
   releaseDate: '2026-10-31 16:50 HKT',
-  driveFolder: '/myPortfolio/20261101_1405/',
+  driveFolder: '/myPortfolio/20261101_1945/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -2373,8 +2373,18 @@ var APP_VERSION_MANIFEST = {
   },
   changelog: [
     {
+      version: '3.1.9',
+      buildId: '20261101_1945',
+      date: '2026-11-01 19:45 HKT',
+      summary: 'Fixed historical monthly Close vs. Low mismatch on multi-year charts by aligning Monthly Close to unadjusted market close (rawClose) on the same price scale as Monthly High, Monthly Low, and Avg Cost.',
+      changes: [
+        'Fixed root cause where Yahoo Finance dividend-adjusted close (adjClose) was lower than unadjusted Monthly Low (r.low) for months older than 1 year, which caused lowData (l <= c) to clamp Monthly Low equal to Monthly Close',
+        'Updated charts.js, portfolio.js, and update_historical_prices.py to use unadjusted market close (rawClose) for close series while preserving adjClose separately'
+      ]
+    },
+    {
       version: '3.1.8',
-      buildId: '20261101_1405',
+      buildId: '20261101_1945',
       date: '2026-11-01 14:05 HKT',
       summary: 'Moved stock chart legend below the chart canvas, added translucent green Monthly High–Low range band around Monthly Close, increased Reg Trend Upper/Lower visibility and chart height (350px–430px), restricted top KPI summary cards to the Home (Dashboard) page only, and added 20-row pagination (Prev 20 / Next 20) to all Transaction and Dividend tables.',
       changes: [
@@ -2387,7 +2397,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.7',
-      buildId: '20261101_1405',
+      buildId: '20261101_1945',
       date: '2026-11-01',
       changes: [
         'Added automatic startup and ingestion data validation for historical monthly price series, technical indicators, and company news feeds',
@@ -2397,7 +2407,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.6',
-      buildId: '20261101_1405',
+      buildId: '20261101_1945',
       date: '2026-11-01',
       changes: [
         'Dedicated browser MarketAPI strictly to fast parallel Live Price quotes only (eliminated all third-party browser API calls for 15y historical data and news)',
@@ -2408,7 +2418,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.5',
-      buildId: '20261101_1405',
+      buildId: '20261101_1945',
       date: '2026-10-31',
       changes: [
         'Changed clicked/selected row highlight in Holdings and Watchlist (and active nav tabs) to dark slate grey (#1e293b) for high-contrast text readability in dark mode',
@@ -2417,7 +2427,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.4',
-      buildId: '20261101_1405',
+      buildId: '20261101_1945',
       date: '2026-10-31',
       changes: [
         'Fixed Holdings sector group header sticky bar width on mobile (changed sticky cell from colspan=3 to colspan=1 matching stock rows) so sector subtotals/aggregates are never blocked during horizontal scroll',
@@ -2426,7 +2436,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.3',
-      buildId: '20261101_1405',
+      buildId: '20261101_1945',
       date: '2026-10-31',
       changes: [
         'Styled unpaid/pending dividends (where Ex-Date has passed but Pay Date is in the future) in distinct amber/yellow font color with an Unpaid badge in Dividend Payout Logs',
@@ -2436,7 +2446,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.2',
-      buildId: '20261101_1405',
+      buildId: '20261101_1945',
       date: '2026-10-31',
       changes: [
         'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging legacy baseline dates with live Yahoo Finance ex-dates',
@@ -2448,7 +2458,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.1',
-      buildId: '20261101_1405',
+      buildId: '20261101_1945',
       date: '2026-10-31',
       changes: [
         'Fixed Service Worker (sw.js) cache-first trap by bumping cache version and switching to Network-First plus automatic stale CacheStorage purge on startup',
@@ -2458,7 +2468,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.0',
-      buildId: '20261101_1405',
+      buildId: '20261101_1945',
       date: '2026-10-31 16:50 HKT',
       title: '1-Day Quote Previous-Close Fix, 100% Cash Dividends, Dividend Ticker Filter, Complete 3476.HK/3433.HK Dividends & TRIM/OFFLOAD Signal Engine',
       changes: [
@@ -2471,7 +2481,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.1',
-      buildId: '20261101_1405',
+      buildId: '20261101_1945',
       date: '2026-10-31 11:15 HKT',
       title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
       changes: [
@@ -2486,7 +2496,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.0',
-      buildId: '20261101_1405',
+      buildId: '20261101_1945',
       date: '2026-10-30 23:30 HKT',
       title: 'Full Quantitative Suite: 2018+ Auto-Dividends, Buy/Sell Signal Engine, Scheduled News, Trend Regimes, Real XIRR & Settings Customizer',
       changes: [
@@ -5087,6 +5097,23 @@ function cleanseCachedPortfolioData() {
     if (isLegacyInvalidHistory(state.historicalPrices[sym])) {
       delete state.historicalPrices[sym];
       purgedSeries++;
+    } else if (Array.isArray(state.historicalPrices[sym])) {
+      state.historicalPrices[sym] = state.historicalPrices[sym].map(r => {
+        const rawC = Fin.round(Number(r.rawClose ?? r.close), 4);
+        const adjC = Fin.round(Number(r.adjClose ?? r.close), 4);
+        const rawH = Number(r.high);
+        const rawL = Number(r.low);
+        const hi = (Number.isFinite(rawH) && rawH > 0) ? Fin.round(Math.max(rawH, rawC), 4) : rawC;
+        const lo = (Number.isFinite(rawL) && rawL > 0) ? Fin.round(Math.min(rawL, rawC), 4) : rawC;
+        return {
+          ...r,
+          close: rawC,
+          rawClose: rawC,
+          adjClose: adjC,
+          high: hi,
+          low: lo
+        };
+      });
     }
   });
 
@@ -5384,15 +5411,24 @@ function ingestHistoricalPricesData(data) {
 
     const cleaned = rawList
       .filter(r => r && r.month && Number(r.close) > 0)
-      .map(r => ({
-        month: String(r.month).slice(0, 7),
-        date: r.date || `${String(r.month).slice(0, 7)}-01`,
-        close: Fin.round(Number(r.close), 4),
-        rawClose: Fin.round(Number(r.rawClose ?? r.close), 4),
-        high: Fin.round(Number(r.high ?? r.close), 4),
-        low: Fin.round(Number(r.low ?? r.close), 4),
-        volume: parseInt(r.volume || 0, 10)
-      }))
+      .map(r => {
+        const rawC = Fin.round(Number(r.rawClose ?? r.close), 4);
+        const adjC = Fin.round(Number(r.adjClose ?? r.close), 4);
+        const rawH = Number(r.high);
+        const rawL = Number(r.low);
+        const hi = (Number.isFinite(rawH) && rawH > 0) ? Fin.round(Math.max(rawH, rawC), 4) : rawC;
+        const lo = (Number.isFinite(rawL) && rawL > 0) ? Fin.round(Math.min(rawL, rawC), 4) : rawC;
+        return {
+          month: String(r.month).slice(0, 7),
+          date: r.date || `${String(r.month).slice(0, 7)}-01`,
+          close: rawC,
+          rawClose: rawC,
+          adjClose: adjC,
+          high: hi,
+          low: lo,
+          volume: parseInt(r.volume || 0, 10)
+        };
+      })
       .sort((a, b) => a.month.localeCompare(b.month));
 
     if (cleaned.length > 0) {
@@ -7347,10 +7383,11 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
           let closePrice = state.prices[ticker]?.price || p.avgNative;
           const exact = hist.find(item => item.month === monthStr);
           if (exact) {
-            closePrice = exact.close;
+            closePrice = Number(exact.rawClose ?? exact.close);
           } else if (hist.length > 0) {
             const prior = hist.filter(item => item.month <= monthStr);
-            closePrice = prior.length > 0 ? prior[prior.length - 1].close : hist[0].close;
+            const refBar = prior.length > 0 ? prior[prior.length - 1] : hist[0];
+            closePrice = Number(refBar.rawClose ?? refBar.close);
           }
           monthMarketVal += Fin.convertCurrency(p.shares * closePrice, p.currency, baseCurr);
           monthCostBasis += Fin.convertCurrency(p.costNative, p.currency, baseCurr);
@@ -7694,16 +7731,21 @@ function renderInlineStockChart(tabType) {
 
   const sliced = series.slice(-rangeMonths);
   const labels = sliced.map(r => r.month);
-  const closeData = sliced.map(r => Number(r.close));
-  const highData = sliced.map(r => {
+  // Always use unadjusted rawClose so Monthly Close is on the exact same price scale as Monthly High, Monthly Low, and Avg Cost
+  const closeData = sliced.map(r => {
+    const rc = Number(r.rawClose);
     const c = Number(r.close);
-    const h = Number(r.high);
-    return Number.isFinite(h) && h >= c ? h : c;
+    return (Number.isFinite(rc) && rc > 0) ? rc : c;
   });
-  const lowData = sliced.map(r => {
-    const c = Number(r.close);
+  const highData = sliced.map((r, i) => {
+    const c = closeData[i];
+    const h = Number(r.high);
+    return (Number.isFinite(h) && h > 0) ? Math.max(h, c) : c;
+  });
+  const lowData = sliced.map((r, i) => {
+    const c = closeData[i];
     const l = Number(r.low);
-    return Number.isFinite(l) && l > 0 && l <= c ? l : c;
+    return (Number.isFinite(l) && l > 0) ? Math.min(l, c) : c;
   });
 
   const firstClose = closeData[0] || 0;
@@ -8141,7 +8183,7 @@ window.renderPnlBreakdownChart = renderPnlBreakdownChart;
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.1.8-20261101_1405') {
+      if (k !== 'myportfolio-cache-v3.1.9-20261101_1945') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -10723,7 +10765,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.8 • Build 20261101_1405)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.9 • Build 20261101_1945)...');
   }
 
   try {
@@ -10760,7 +10802,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.1.8 boot sequence complete.');
+      AppLogger.info('Boot', 'myPortfolio v3.1.9 boot sequence complete.');
     }
   }, 120);
 }

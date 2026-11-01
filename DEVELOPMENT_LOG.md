@@ -6,7 +6,7 @@
 **Google Drive Reference Subfolder:** `/myPortfolio/Reference/` (ID: `1NThy4bFv3yosHYszz5R9soBaUK0MYH4j`)  
 **Release Subfolders:** `/myPortfolio/<YYYYMMDD_HHMM>/`
 
-This living document records all architectural milestones, feature additions, root-cause investigations, and bug fixes across every release of **myPortfolio** from `v3.0.0` through `v3.1.8`, and serves as the canonical template for logging all future updates.
+This living document records all architectural milestones, feature additions, root-cause investigations, and bug fixes across every release of **myPortfolio** from `v3.0.0` through `v3.1.9`, and serves as the canonical template for logging all future updates.
 
 ---
 
@@ -14,6 +14,7 @@ This living document records all architectural milestones, feature additions, ro
 
 | Version | Build ID | Date (HKT) | Google Drive Folder | Key Highlights & Fixes |
 | :--- | :--- | :--- | :--- | :--- |
+| **`v3.1.9`** | `20261101_1945` | `2026-11-01` | `20261101_1945` | Fixed historical monthly `Close` vs. `Low` scale mismatch (`1000019267.jpg`) where Yahoo Finance dividend-adjusted close (`adjClose`) fell below unadjusted `Low` for months older than 1 year and clamped `Monthly Low` to `Monthly Close`; aligned `close` to unadjusted `rawClose` across `charts.js`, `portfolio.js`, and `update_historical_prices.py`. |
 | **`v3.1.8`** | `20261101_1405` | `2026-11-01` | `20261101_1405` | Moved stock chart legend outside and below the chart canvas; added translucent green Monthly High–Low range band around Monthly Close; made Reg Trend Upper/Lower (`±1σ`) high-contrast (`#c084fc`, `2.2px`) and increased chart height (`350px`/`430px`); restricted top 6-card KPI summary section to the Home (`Dashboard`) page only; added 20-row max pagination (`Prev 20` / `Next 20`) across all Transaction and Dividend tables. |
 | **`v3.1.7`** | `20261101_1240` | `2026-11-01` | `20261101_1240` | Enforced strict **Zero-Synthetic-Data Rule** across the entire codebase, JSON snapshots, and Python scripts; purged all 33 pre-seeded sine-wave/constant-volume price series, unverified technicals, and curated news; added 3-layer contamination sanitizer (`portfolio.js` + `update_historical_prices.py`), Tencent `ifzq.gtimg.cn` official HKEX/US Kline fallback in Python, GitHub Contents API zero-cache JSON reload, and `dispatchTime` workflow run filtering. |
 | **`v3.1.6`** | `20261101_0745` | `2026-11-01` | `20261101_0745` | Dedicated browser `MarketAPI` to live quotes only; wired Sync & Refresh News buttons to trigger GitHub Actions Python workflows (`workflow_dispatch`) and reload JSON snapshots; added full real-time `AppLogger` logging on the `Log` page. |
@@ -29,6 +30,16 @@ This living document records all architectural milestones, feature additions, ro
 ---
 
 ## Detailed Chronological Change & Bug Fix Log
+
+### `v3.1.9` — Build `20261101_1945` (2026-11-01)
+* **User-Reported Symptoms**:
+  - Across all stocks (`1000019267.jpg`, e.g., `2800.HK` on the `ALL` 120-month chart), the monthly close prices before ~1 year ago sat directly on the bottom edge of the green `Monthly High–Low Band` (appearing equal to the monthly low).
+* **Root Causes Identified**:
+  1. **Mixed Adjusted vs. Unadjusted Price Scales in `update_historical_prices.py`**: In `parse_chart_bars()` and `fetch_via_yfinance_fallback()`, `"close"` was assigned `adj_close_f` (Yahoo Finance's backward dividend-adjusted close, which discounts older historical prices by cumulative dividends paid over the years), while `"rawClose"` stored the unadjusted market close (`raw_close_f`), and `"high"` / `"low"` stored unadjusted market highs and lows (`high_val` / `low_val`).
+  2. **Low-Clamping Guard in `charts.js`**: For any month prior to the past year's dividend distributions, the backward-discounted `adj_close_f` (`r.close`) was lower than that month's actual unadjusted market low (`r.low`). When `renderInlineStockChart()` in `charts.js` evaluated `return Number.isFinite(l) && l > 0 && l <= c ? l : c;`, the check `l <= c` evaluated to `false` (since unadjusted `r.low > r.close`), forcing `lowData` to fall back to `c` (`r.close`)—making `Monthly Low` identical to `Monthly Close` for all months older than 1 year!
+* **Changes & Fixes Applied (`charts.js`, `portfolio.js`, `update_historical_prices.py`, `version.js`, `sw.js`, `index.html`)**:
+  - **Aligned `Monthly Close` to Unadjusted `rawClose` in `charts.js` & `portfolio.js`**: Updated `renderInlineStockChart()` and `computeMonthlyPortfolioSeries()` in `charts.js`—as well as `ingestHistoricalPricesData()` and `cleanseCachedPortfolioData()` in `portfolio.js`—to use `r.rawClose ?? r.close` as the canonical monthly close. Since `update_historical_prices.py` already wrote `"rawClose"` into every bar of `historical_prices.json`, existing GitHub snapshots and `localStorage` data are repaired immediately on load without even waiting for a new workflow run.
+  - **Updated `update_historical_prices.py`**: Set `"close": round(raw_close_f, 4)`, `"rawClose": round(raw_close_f, 4)`, and `"adjClose": round(adj_close_f, 4)` so `close`, `high`, `low`, and `Your Avg Cost` are always on the exact same unadjusted market price scale.
 
 ### `v3.1.8` — Build `20261101_1405` (2026-11-01)
 * **User-Reported Symptoms / Feature Requests**:

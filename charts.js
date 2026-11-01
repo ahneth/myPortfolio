@@ -153,10 +153,11 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
           let closePrice = state.prices[ticker]?.price || p.avgNative;
           const exact = hist.find(item => item.month === monthStr);
           if (exact) {
-            closePrice = exact.close;
+            closePrice = Number(exact.rawClose ?? exact.close);
           } else if (hist.length > 0) {
             const prior = hist.filter(item => item.month <= monthStr);
-            closePrice = prior.length > 0 ? prior[prior.length - 1].close : hist[0].close;
+            const refBar = prior.length > 0 ? prior[prior.length - 1] : hist[0];
+            closePrice = Number(refBar.rawClose ?? refBar.close);
           }
           monthMarketVal += Fin.convertCurrency(p.shares * closePrice, p.currency, baseCurr);
           monthCostBasis += Fin.convertCurrency(p.costNative, p.currency, baseCurr);
@@ -500,16 +501,21 @@ function renderInlineStockChart(tabType) {
 
   const sliced = series.slice(-rangeMonths);
   const labels = sliced.map(r => r.month);
-  const closeData = sliced.map(r => Number(r.close));
-  const highData = sliced.map(r => {
+  // Always use unadjusted rawClose so Monthly Close is on the exact same price scale as Monthly High, Monthly Low, and Avg Cost
+  const closeData = sliced.map(r => {
+    const rc = Number(r.rawClose);
     const c = Number(r.close);
-    const h = Number(r.high);
-    return Number.isFinite(h) && h >= c ? h : c;
+    return (Number.isFinite(rc) && rc > 0) ? rc : c;
   });
-  const lowData = sliced.map(r => {
-    const c = Number(r.close);
+  const highData = sliced.map((r, i) => {
+    const c = closeData[i];
+    const h = Number(r.high);
+    return (Number.isFinite(h) && h > 0) ? Math.max(h, c) : c;
+  });
+  const lowData = sliced.map((r, i) => {
+    const c = closeData[i];
     const l = Number(r.low);
-    return Number.isFinite(l) && l > 0 && l <= c ? l : c;
+    return (Number.isFinite(l) && l > 0) ? Math.min(l, c) : c;
   });
 
   const firstClose = closeData[0] || 0;

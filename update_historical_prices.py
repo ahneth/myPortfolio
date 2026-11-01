@@ -55,8 +55,8 @@ except ImportError:
     yf = None
     HAS_YFINANCE = False
 
-VERSION = "3.1.7"
-BUILD_ID = "20261101_1240"
+VERSION = "3.1.9"
+BUILD_ID = "20261101_1945"
 
 DEFAULT_TICKERS: List[str] = [
     "2800.HK",
@@ -1294,13 +1294,16 @@ def parse_chart_bars(result: Dict[str, Any], by_day: bool = False) -> List[Dict[
         month_str = date_str[:7]
         key = date_str if by_day else month_str
 
+        h_f = max(float(high_val), raw_close_f)
+        l_f = min(float(low_val), raw_close_f) if float(low_val) > 0 else raw_close_f
         bucket[key] = {
             "month": month_str,
             "date": date_str,
-            "close": round(adj_close_f, 4),
+            "close": round(raw_close_f, 4),
             "rawClose": round(raw_close_f, 4),
-            "high": round(float(high_val), 4),
-            "low": round(float(low_val), 4),
+            "adjClose": round(adj_close_f, 4),
+            "high": round(h_f, 4),
+            "low": round(l_f, 4),
             "volume": int(vol_val or 0),
         }
 
@@ -1410,13 +1413,17 @@ def fetch_via_yfinance_fallback(
             vol_val = row.get("Volume", 0)
             date_str = idx_ts.strftime("%Y-%m-%d")
             month_str = date_str[:7]
+            h_f = max(float(high_val or raw_close_f), raw_close_f)
+            l_raw = float(low_val or raw_close_f)
+            l_f = min(l_raw, raw_close_f) if l_raw > 0 else raw_close_f
             by_month[month_str] = {
                 "month": month_str,
                 "date": date_str,
-                "close": round(adj_close_f, 4),
+                "close": round(raw_close_f, 4),
                 "rawClose": round(raw_close_f, 4),
-                "high": round(float(high_val or raw_close_f), 4),
-                "low": round(float(low_val or raw_close_f), 4),
+                "adjClose": round(adj_close_f, 4),
+                "high": round(h_f, 4),
+                "low": round(l_f, 4),
                 "volume": int(vol_val or 0),
             }
 
@@ -1742,9 +1749,27 @@ def main() -> int:
             existing_data = {}
 
     raw_prices_map = dict(existing_data.get("prices") or {})
-    prices_map: Dict[str, List[Dict[str, Any]]] = {
-        k: v for k, v in raw_prices_map.items() if not is_contaminated_series(v)
-    }
+    prices_map: Dict[str, List[Dict[str, Any]]] = {}
+    for k, v in raw_prices_map.items():
+        if not is_contaminated_series(v):
+            norm_v = []
+            for b in v:
+                if isinstance(b, dict):
+                    rc = float(b.get("rawClose") or b.get("close") or 0)
+                    ac = float(b.get("adjClose") or b.get("close") or rc)
+                    hi = float(b.get("high") or rc)
+                    lo = float(b.get("low") or rc)
+                    if rc > 0:
+                        b = {
+                            **b,
+                            "close": round(rc, 4),
+                            "rawClose": round(rc, 4),
+                            "adjClose": round(ac, 4),
+                            "high": round(max(hi, rc), 4),
+                            "low": round(min(lo, rc) if lo > 0 else rc, 4),
+                        }
+                    norm_v.append(b)
+            prices_map[k] = norm_v
     quotes_map: Dict[str, Dict[str, Any]] = dict(existing_data.get("quotes") or {})
     fundamentals_map: Dict[str, Dict[str, Any]] = dict(existing_data.get("fundamentals") or {})
     dividends_map: Dict[str, Dict[str, Any]] = dict(existing_data.get("dividends") or {})

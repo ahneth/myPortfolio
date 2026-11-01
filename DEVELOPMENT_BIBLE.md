@@ -1,6 +1,6 @@
 # myPortfolio — Development Bible & Architecture Guide
 
-**Current Production Release:** `v3.1.8` (Build `20261101_1405`)  
+**Current Production Release:** `v3.1.9` (Build `20261101_1945`)  
 **Production URL:** https://ahneth.github.io/myPortfolio/  
 **GitHub Repository:** https://github.com/ahneth/myPortfolio  
 **Google Drive Master Archive:** `/myPortfolio/` (Folder ID: `1NEtuIDV8NsN02upJPDQvJ00WpZxX9oMz`) — `/myPortfolio/Reference/` subfolder (Folder ID: `1NThy4bFv3yosHYszz5R9soBaUK0MYH4j`)
@@ -83,7 +83,7 @@
 * **Stock Monthly Historical Chart Layout & Overlays (`v3.1.8+`)**:
   - **External Interactive HTML Legend Below Chart**: The internal Chart.js `<canvas>` legend is disabled (`plugins.legend.display = false`) so 100% of the canvas height is dedicated to plotting data. A separated, clickable HTML legend (`#holdings-chart-legend` / `#watchlist-chart-legend`) is rendered below the chart canvas with a top border divider.
   - **Increased Chart Height (`.stock-history-chart-box`)**: Chart container height is `350px` on mobile viewports and `430px` on tablet/desktop viewports.
-  - **Monthly High–Low Translucent Green Band**: Plots each month's `High` and `Low` as a translucent emerald band (`rgba(16, 185, 129, 0.22)` fill with `rgba(52, 211, 153, 0.45)` borders) enveloping the solid `#10b981` `Monthly Close` line.
+  - **Monthly High–Low Translucent Green Band & Unadjusted Price Scale Alignment (`v3.1.9+`)**: Plots each month's `High` and `Low` as a translucent emerald band (`rgba(16, 185, 129, 0.22)` fill with `rgba(52, 211, 153, 0.45)` borders) enveloping the solid `#10b981` `Monthly Close` line. Always use unadjusted market closing prices (`rawClose`) for `close` so `Monthly Close`, `Monthly High`, `Monthly Low`, and `Your Avg Cost` share the exact same unadjusted price scale (never mix backward-discounted `adjClose` with unadjusted `high`/`low`).
   - **High-Visibility Regression Trend Channel (`±1σ`)**: `Reg Trend Upper (+1σ)` and `Reg Trend Lower (-1σ)` use high-contrast bright purple-violet `#c084fc` (dark mode) / `#9333ea` (light mode) with `2.2px` dashed strokes (`[6, 4]`).
 * **20-Row Max Table Pagination (`PAGINATION_PAGE_SIZE = 20`, `v3.1.8+`)**:
   - All transaction and dividend tables (`#tx-table-body`, `#dividends-table-body`, `#dividend-calendar-tbody`, and `#detected-dividends-tbody`) display at most **20 rows per page** with a footer bar showing `Showing X–Y of Z records • Page P of N` and **`← Prev 20`** / **`Next 20 →`** navigation buttons.

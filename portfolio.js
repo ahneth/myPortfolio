@@ -446,6 +446,23 @@ function cleanseCachedPortfolioData() {
     if (isLegacyInvalidHistory(state.historicalPrices[sym])) {
       delete state.historicalPrices[sym];
       purgedSeries++;
+    } else if (Array.isArray(state.historicalPrices[sym])) {
+      state.historicalPrices[sym] = state.historicalPrices[sym].map(r => {
+        const rawC = Fin.round(Number(r.rawClose ?? r.close), 4);
+        const adjC = Fin.round(Number(r.adjClose ?? r.close), 4);
+        const rawH = Number(r.high);
+        const rawL = Number(r.low);
+        const hi = (Number.isFinite(rawH) && rawH > 0) ? Fin.round(Math.max(rawH, rawC), 4) : rawC;
+        const lo = (Number.isFinite(rawL) && rawL > 0) ? Fin.round(Math.min(rawL, rawC), 4) : rawC;
+        return {
+          ...r,
+          close: rawC,
+          rawClose: rawC,
+          adjClose: adjC,
+          high: hi,
+          low: lo
+        };
+      });
     }
   });
 
@@ -743,15 +760,24 @@ function ingestHistoricalPricesData(data) {
 
     const cleaned = rawList
       .filter(r => r && r.month && Number(r.close) > 0)
-      .map(r => ({
-        month: String(r.month).slice(0, 7),
-        date: r.date || `${String(r.month).slice(0, 7)}-01`,
-        close: Fin.round(Number(r.close), 4),
-        rawClose: Fin.round(Number(r.rawClose ?? r.close), 4),
-        high: Fin.round(Number(r.high ?? r.close), 4),
-        low: Fin.round(Number(r.low ?? r.close), 4),
-        volume: parseInt(r.volume || 0, 10)
-      }))
+      .map(r => {
+        const rawC = Fin.round(Number(r.rawClose ?? r.close), 4);
+        const adjC = Fin.round(Number(r.adjClose ?? r.close), 4);
+        const rawH = Number(r.high);
+        const rawL = Number(r.low);
+        const hi = (Number.isFinite(rawH) && rawH > 0) ? Fin.round(Math.max(rawH, rawC), 4) : rawC;
+        const lo = (Number.isFinite(rawL) && rawL > 0) ? Fin.round(Math.min(rawL, rawC), 4) : rawC;
+        return {
+          month: String(r.month).slice(0, 7),
+          date: r.date || `${String(r.month).slice(0, 7)}-01`,
+          close: rawC,
+          rawClose: rawC,
+          adjClose: adjC,
+          high: hi,
+          low: lo,
+          volume: parseInt(r.volume || 0, 10)
+        };
+      })
       .sort((a, b) => a.month.localeCompare(b.month));
 
     if (cleaned.length > 0) {
