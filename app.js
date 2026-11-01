@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.1.6-20261101_0745') {
+      if (k !== 'myportfolio-cache-v3.1.7-20261101_1240') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -19,104 +19,13 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
  * @file app.js
  * @module AppUIController
  * @version 3.1.6
- * @build 20261101_0745
+ * @build 20261101_1240
  * @description Main UI controller, Holdings & Watchlist tables with 52W/MoM/QoQ/YoY + Dividend Ex-Date/Yield +
  *   Trend Regime + 0-100 Buy/Sell Signal badges, Auto-Detected 2018+ Dividend Backfill, News & Catalysts Tab,
  *   Smart Cash Deployment & Rebalancing Simulator, Nominal/Real XIRR KPIs, and Full Settings Parameter Customizer.
  */
 
-var CURATED_BASELINE_NEWS = [
-  {
-    id: 'curated_2800_div',
-    ticker: '2800.HK',
-    companyName: 'Tracker Fund of Hong Kong',
-    sector: 'Index ETF',
-    title: 'Tracker Fund of Hong Kong (2800.HK) Confirms Semi-Annual Final Dividend Distribution and Strong ETF Liquidity',
-    publisher: 'HKEXnews / Hang Seng Investment',
-    publishedAt: '2026-10-29T09:30:00Z',
-    url: 'https://www.hsvm.com/en/etf/2800',
-    sourceType: 'HKEXnews',
-    catalyst: 'DIVIDEND',
-    sentimentScore: 0.65,
-    sentimentLabel: 'BULLISH',
-    summary: 'Semi-annual distribution declared for unitholders of record prior to late-October ex-dividend date.'
-  },
-  {
-    id: 'curated_0002_div',
-    ticker: '0002.HK',
-    companyName: 'CLP Holdings Ltd',
-    sector: 'Utilities',
-    title: 'CLP Holdings (0002.HK) Declares Third Interim Dividend and Reports Resilient Hong Kong & Australia Operations',
-    publisher: 'South China Morning Post',
-    publishedAt: '2026-10-28T08:15:00Z',
-    url: 'https://www.clpgroup.com/en/investors.html',
-    sourceType: 'CorporateRelease',
-    catalyst: 'DIVIDEND',
-    sentimentScore: 0.72,
-    sentimentLabel: 'BULLISH',
-    summary: 'Quarterly dividend cadence maintained alongside clean energy grid investments in Hong Kong.'
-  },
-  {
-    id: 'curated_2318_earn',
-    ticker: '2318.HK',
-    companyName: 'Ping An Insurance (Group) Co of China Ltd',
-    sector: 'Financials',
-    title: 'Ping An Insurance (2318.HK) Q3 Operating Profit Beats Consensus on Strong Life & Health New Business Value Growth',
-    publisher: 'Reuters Financial',
-    publishedAt: '2026-10-27T11:20:00Z',
-    url: 'https://group.pingan.com/investor_relations.html',
-    sourceType: 'Reuters',
-    catalyst: 'EARNINGS',
-    sentimentScore: 0.80,
-    sentimentLabel: 'BULLISH',
-    summary: 'Life & Health NBV surged double digits YoY while core solvency ratios remained well above regulatory floors.'
-  },
-  {
-    id: 'curated_0857_buyback',
-    ticker: '0857.HK',
-    companyName: 'PetroChina Co Ltd',
-    sector: 'Energy',
-    title: 'PetroChina (0857.HK) Sustains High Free Cash Flow Generation and Semi-Annual Dividend Payout Ratio',
-    publisher: 'AAStocks Financial News',
-    publishedAt: '2026-10-26T06:45:00Z',
-    url: 'http://www.petrochina.com.cn/ptr/investor/',
-    sourceType: 'AAStocks',
-    catalyst: 'DIVIDEND',
-    sentimentScore: 0.55,
-    sentimentLabel: 'BULLISH',
-    summary: 'Natural gas segment growth offsets crude volatility, supporting attractive H-share dividend yield.'
-  },
-  {
-    id: 'curated_1088_div',
-    ticker: '1088.HK',
-    companyName: 'China Shenhua Energy Co Ltd',
-    sector: 'Energy',
-    title: 'China Shenhua Energy (1088.HK) Reaffirms High-Payout Dividend Policy Backed by Integrated Coal-to-Power Cash Flows',
-    publisher: 'HKEXnews',
-    publishedAt: '2026-10-25T10:00:00Z',
-    url: 'http://www.csec.com/shenhuaChinaEn/',
-    sourceType: 'HKEXnews',
-    catalyst: 'DIVIDEND',
-    sentimentScore: 0.60,
-    sentimentLabel: 'BULLISH',
-    summary: 'Integrated coal, power, railway, and port model provides high earnings visibility for income investors.'
-  },
-  {
-    id: 'curated_voo_macro',
-    ticker: 'VOO',
-    companyName: 'Vanguard S&P 500 ETF',
-    sector: 'Index ETF',
-    title: 'Vanguard S&P 500 ETF (VOO) Sees Continued Institutional Inflows as S&P 500 Earnings Expand',
-    publisher: 'Yahoo Finance',
-    publishedAt: '2026-10-24T16:10:00Z',
-    url: 'https://investor.vanguard.com/investment-products/etfs/profile/voo',
-    sourceType: 'YahooFinance',
-    catalyst: 'MACRO / ETF',
-    sentimentScore: 0.50,
-    sentimentLabel: 'BULLISH',
-    summary: 'Ultra-low 0.03% expense ratio and quarterly distributions keep VOO a core global equity anchor.'
-  }
-];
+var CURATED_BASELINE_NEWS = [];
 
 function renderAll() {
   try {
@@ -2567,7 +2476,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.0 • Build 20261031_1650)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.7 • Build 20261101_1240)...');
   }
 
   try {
@@ -2604,7 +2513,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.1.0 boot sequence complete.');
+      AppLogger.info('Boot', 'myPortfolio v3.1.7 boot sequence complete.');
     }
   }, 120);
 }

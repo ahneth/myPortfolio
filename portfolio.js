@@ -409,20 +409,69 @@ var charts = {
   pnlBreakdown: null
 };
 
-function isLegacySyntheticHistory(series) {
+function isLegacyInvalidHistory(series) {
   if (!Array.isArray(series) || series.length === 0) return true;
   if (series.length >= 6) {
     const vols = series.map(r => Number(r?.volume || 0)).filter(v => v > 0);
     if (vols.length >= 6 && new Set(vols).size === 1) {
       return true;
     }
+    if (vols.length >= 6) {
+      const diffCounts = {};
+      let maxDiffHits = 0;
+      for (let i = 1; i < vols.length; i++) {
+        const d = vols[i] - vols[i - 1];
+        diffCounts[d] = (diffCounts[d] || 0) + 1;
+        if (diffCounts[d] > maxDiffHits) maxDiffHits = diffCounts[d];
+      }
+      if (maxDiffHits >= Math.max(3, Math.floor((vols.length - 1) * 0.4))) {
+        return true;
+      }
+    }
     const day25Count = series.filter(r => String(r?.date || '').endsWith('-25')).length;
-    if (day25Count >= Math.ceil(series.length * 0.85)) {
+    if (day25Count >= Math.ceil(series.length * 0.80)) {
       return true;
     }
   }
   return false;
 }
+
+function cleanseCachedPortfolioData() {
+  if (!state) return { purgedSeries: 0, purgedTech: 0, purgedNews: 0 };
+  let purgedSeries = 0;
+  let purgedTech = 0;
+  let purgedNews = 0;
+
+  Object.keys(state.historicalPrices || {}).forEach(sym => {
+    if (isLegacyInvalidHistory(state.historicalPrices[sym])) {
+      delete state.historicalPrices[sym];
+      purgedSeries++;
+    }
+  });
+
+  Object.keys(state.technicals || {}).forEach(sym => {
+    const tObj = state.technicals[sym];
+    const hasValidHistory = Array.isArray(state.historicalPrices?.[sym]) && state.historicalPrices[sym].length > 0;
+    if (!tObj || !tObj.computedAt || !hasValidHistory) {
+      delete state.technicals[sym];
+      purgedTech++;
+    }
+  });
+
+  if (Array.isArray(state.companyNews)) {
+    const beforeLen = state.companyNews.length;
+    state.companyNews = state.companyNews.filter(a => {
+      if (!a || typeof a !== 'object') return false;
+      if (a.sourceApi === 'Curated Baseline') return false;
+      if (String(a.id || '').startsWith('curated_')) return false;
+      return true;
+    });
+    purgedNews = beforeLen - state.companyNews.length;
+  }
+
+  return { purgedSeries, purgedTech, purgedNews };
+}
+window.cleanseCachedPortfolioData = cleanseCachedPortfolioData;
 
 function compareHoldingsBySectorAndTicker(a, b) {
   const secA = String(a?.sector || 'Equities').trim();
@@ -494,7 +543,7 @@ function buildDividendScheduleForTicker(rawTicker, rawEventsMap = null, fallback
     });
   }
 
-  // Only merge existing schedule history if baseRows is empty (prevents stale/synthetic localStorage dates from re-contaminating verified HKEX schedules)
+  // Only merge existing schedule history if baseRows is empty (prevents stale/legacy localStorage dates from re-contaminating verified HKEX schedules)
   const existingHist = state?.dividendSchedules?.[sym]?.history;
   if (baseRows.length === 0 && Array.isArray(existingHist)) {
     existingHist.forEach(h => {
@@ -690,7 +739,7 @@ function ingestHistoricalPricesData(data) {
   const ingestHistorySeries = (rawSym, rawList) => {
     const sym = MarketAPI.normalizeTicker(rawSym);
     if (!sym || !Array.isArray(rawList) || rawList.length === 0) return;
-    if (isLegacySyntheticHistory(rawList)) return;
+    if (isLegacyInvalidHistory(rawList)) return;
 
     const cleaned = rawList
       .filter(r => r && r.month && Number(r.close) > 0)
@@ -774,12 +823,13 @@ function ingestHistoricalPricesData(data) {
     if (!state.technicals) state.technicals = {};
     Object.entries(data.technicals).forEach(([k, tObj]) => {
       const sym = MarketAPI.normalizeTicker(k);
-      if (sym && tObj && typeof tObj === 'object') {
+      if (sym && tObj && typeof tObj === 'object' && tObj.computedAt) {
         state.technicals[sym] = { ...(state.technicals[sym] || {}), ...tObj };
       }
     });
   }
 
+  cleanseCachedPortfolioData();
   return loadedSeriesCount;
 }
 
@@ -820,6 +870,7 @@ function ingestCompanyNewsData(data) {
   const existingUrls = new Set(state.companyNews.map(a => a?.url).filter(Boolean));
   let added = 0;
   data.articles.forEach(rawArt => {
+    if (!rawArt || rawArt.sourceApi === 'Curated Baseline' || String(rawArt.id || '').startsWith('curated_')) return;
     const art = normalizeNewsArticleSchema(rawArt);
     if (art && art.url && !existingUrls.has(art.url)) {
       existingUrls.add(art.url);
@@ -839,19 +890,37 @@ async function loadHistoricalPricesFromJson(silent = true) {
     const repo = (typeof state !== 'undefined' && state?.settings?.githubRepo) ? state.settings.githubRepo.trim() : 'ahneth/myPortfolio';
     const branch = (typeof state !== 'undefined' && state?.settings?.githubBranch) ? state.settings.githubBranch.trim() : 'main';
 
-    // 1. Try fresh raw GitHub repository file first when user explicitly triggers a sync (!silent) so newly committed Python workflow output is immediate
-    if (!silent && repo && repo.includes('/')) {
+    // 1. Try GitHub API raw blob (0s CDN cache lag) then raw.githubusercontent.com when syncing or when local history is empty
+    const hasAnyLocalHistory = Object.keys(state?.historicalPrices || {}).length > 0;
+    if ((!silent || !hasAnyLocalHistory) && repo && repo.includes('/')) {
       try {
         const ctrl = new AbortController();
-        const tId = setTimeout(() => ctrl.abort(), 3500);
-        const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/historical_prices.json?_=${Date.now()}`;
-        const rawRes = await fetch(rawUrl, { signal: ctrl.signal, cache: 'no-store' });
+        const tId = setTimeout(() => ctrl.abort(), 4000);
+        const ghHeaders = { 'Accept': 'application/vnd.github.raw+json' };
+        if (state?.settings?.githubToken) {
+          ghHeaders['Authorization'] = `Bearer ${state.settings.githubToken.trim()}`;
+        }
+        const apiUrl = `https://api.github.com/repos/${repo}/contents/historical_prices.json?ref=${encodeURIComponent(branch)}&_=${Date.now()}`;
+        const apiRes = await fetch(apiUrl, { headers: ghHeaders, signal: ctrl.signal, cache: 'no-store' });
         clearTimeout(tId);
-        if (rawRes.ok) {
-          data = await rawRes.json();
-          sourceLabel = `GitHub raw (${repo}@${branch})`;
+        if (apiRes.ok) {
+          data = await apiRes.json();
+          sourceLabel = `GitHub API (${repo}@${branch})`;
         }
       } catch (_) {}
+      if (!data || typeof data !== 'object') {
+        try {
+          const ctrl = new AbortController();
+          const tId = setTimeout(() => ctrl.abort(), 3500);
+          const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/historical_prices.json?_=${Date.now()}`;
+          const rawRes = await fetch(rawUrl, { signal: ctrl.signal, cache: 'no-store' });
+          clearTimeout(tId);
+          if (rawRes.ok) {
+            data = await rawRes.json();
+            sourceLabel = `GitHub raw (${repo}@${branch})`;
+          }
+        } catch (_) {}
+      }
     }
 
     // 2. Same-origin ./historical_prices.json
@@ -903,18 +972,36 @@ async function loadCompanyNewsFromJson(silent = true) {
     const repo = (typeof state !== 'undefined' && state?.settings?.githubRepo) ? state.settings.githubRepo.trim() : 'ahneth/myPortfolio';
     const branch = (typeof state !== 'undefined' && state?.settings?.githubBranch) ? state.settings.githubBranch.trim() : 'main';
 
-    if (!silent && repo && repo.includes('/')) {
+    const hasAnyLocalNews = Array.isArray(state?.companyNews) && state.companyNews.length > 0;
+    if ((!silent || !hasAnyLocalNews) && repo && repo.includes('/')) {
       try {
         const ctrl = new AbortController();
-        const tId = setTimeout(() => ctrl.abort(), 3500);
-        const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/company_news.json?_=${Date.now()}`;
-        const rawRes = await fetch(rawUrl, { signal: ctrl.signal, cache: 'no-store' });
+        const tId = setTimeout(() => ctrl.abort(), 4000);
+        const ghHeaders = { 'Accept': 'application/vnd.github.raw+json' };
+        if (state?.settings?.githubToken) {
+          ghHeaders['Authorization'] = `Bearer ${state.settings.githubToken.trim()}`;
+        }
+        const apiUrl = `https://api.github.com/repos/${repo}/contents/company_news.json?ref=${encodeURIComponent(branch)}&_=${Date.now()}`;
+        const apiRes = await fetch(apiUrl, { headers: ghHeaders, signal: ctrl.signal, cache: 'no-store' });
         clearTimeout(tId);
-        if (rawRes.ok) {
-          data = await rawRes.json();
-          sourceLabel = `GitHub raw (${repo}@${branch})`;
+        if (apiRes.ok) {
+          data = await apiRes.json();
+          sourceLabel = `GitHub API (${repo}@${branch})`;
         }
       } catch (_) {}
+      if (!data || typeof data !== 'object') {
+        try {
+          const ctrl = new AbortController();
+          const tId = setTimeout(() => ctrl.abort(), 3500);
+          const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/company_news.json?_=${Date.now()}`;
+          const rawRes = await fetch(rawUrl, { signal: ctrl.signal, cache: 'no-store' });
+          clearTimeout(tId);
+          if (rawRes.ok) {
+            data = await rawRes.json();
+            sourceLabel = `GitHub raw (${repo}@${branch})`;
+          }
+        } catch (_) {}
+      }
     }
 
     if (!data || !Array.isArray(data.articles)) {
@@ -1004,11 +1091,7 @@ function initAppState() {
     state[mapKey] = normalizedMap;
   });
 
-  Object.keys(state.historicalPrices).forEach(sym => {
-    if (isLegacySyntheticHistory(state.historicalPrices[sym])) {
-      delete state.historicalPrices[sym];
-    }
-  });
+  cleanseCachedPortfolioData();
 
   // Ensure baseline 2018-2026 dividend schedules are initialized for all active/watched/known tickers
   const allKnownTickers = Array.from(new Set([
@@ -1063,6 +1146,7 @@ function initAppState() {
   if (typeof window.EMBEDDED_COMPANY_NEWS === 'object') {
     ingestCompanyNewsData(window.EMBEDDED_COMPANY_NEWS);
   }
+  cleanseCachedPortfolioData();
 
   recalculatePortfolio();
   saveState();
@@ -1703,7 +1787,7 @@ function recalculatePortfolio() {
 
   // Self-healing Dividend Ledger Reconciliation:
   // Rebuilds auto-verified dividend records from canonical deduplicated HKEX/Yahoo entitlements,
-  // automatically purging any duplicate or synthetic baseline entries previously saved in localStorage.
+  // automatically purging any duplicate or legacy baseline entries previously saved in localStorage.
   if (state.settings?.autoDetectDividends !== false && state.transactions.length > 0) {
     const canonicalEntitlements = computeAllEligibleDividendEntitlements();
     const canonicalByTicker = {};
@@ -2134,7 +2218,7 @@ function exportPortfolioToExcel() {
     const histRows = [];
     Object.keys(state.historicalPrices).forEach(ticker => {
       const series = state.historicalPrices[ticker] || [];
-      if (isLegacySyntheticHistory(series)) return;
+      if (isLegacyInvalidHistory(series)) return;
       series.forEach(r => {
         histRows.push({
           Ticker: ticker,
@@ -2358,7 +2442,7 @@ function restorePortfolioFromExcel(file) {
           });
         });
         Object.entries(importedHist).forEach(([sym, series]) => {
-          if (!isLegacySyntheticHistory(series) && series.length > 0) {
+          if (!isLegacyInvalidHistory(series) && series.length > 0) {
             state.historicalPrices[sym] = series.sort((a, b) => a.month.localeCompare(b.month));
           }
         });
@@ -2411,7 +2495,7 @@ window.STORAGE_KEY = STORAGE_KEY;
 window.DEFAULT_QUANT_SETTINGS = DEFAULT_QUANT_SETTINGS;
 window.BASELINE_DIVIDEND_HISTORY_2018_2026 = BASELINE_DIVIDEND_HISTORY_2018_2026;
 window.createEmptyState = createEmptyState;
-window.isLegacySyntheticHistory = isLegacySyntheticHistory;
+window.isLegacyInvalidHistory = isLegacyInvalidHistory;
 window.compareHoldingsBySectorAndTicker = compareHoldingsBySectorAndTicker;
 window.loadHistoricalPricesFromJson = loadHistoricalPricesFromJson;
 window.loadCompanyNewsFromJson = loadCompanyNewsFromJson;

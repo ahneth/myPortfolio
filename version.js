@@ -7,8 +7,8 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.1.6',
-  buildId: '20261101_0745',
+  appVersion: '3.1.7',
+  buildId: '20261101_1240',
   releaseDate: '2026-10-31 16:50 HKT',
   driveFolder: '/stock_portfolio/20261031_1650/',
   modules: {
@@ -20,12 +20,22 @@ var APP_VERSION_MANIFEST = {
     'charts.js':    { version: '3.1.0', updated: '20261031_1650', role: 'FX-Normalized Portfolio Charts + Interactive SMA 20/50/200 & 12M Regression Channel Overlays' },
     'app.js':       { version: '3.1.0', updated: '20261031_1650', role: 'Startup JSON Auto-Sync, Signal Breakdown Modal, News Scope Filters, Rebalance Trim Alerts & Order Staging, Settings Customizer' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with pre-seeded 36M OHLCV, quotes, 2018+ dividends & news' }
+    'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
     {
+      version: '3.1.7',
+      buildId: '20261101_1240',
+      date: '2026-11-01',
+      changes: [
+        'Added automatic startup and ingestion data validation for historical monthly price series, technical indicators, and company news feeds',
+        'Updated GitHub Actions workflow polling to verify run creation timestamps and fetch committed JSON directly via the GitHub Contents API with zero CDN cache lag',
+        'Enhanced update_historical_prices.py with automatic series validation and multi-tier exchange Kline fallback for HKEX, US, and LSE holdings'
+      ]
+    },
+    {
       version: '3.1.6',
-      buildId: '20261101_0745',
+      buildId: '20261101_1240',
       date: '2026-11-01',
       changes: [
         'Dedicated browser MarketAPI strictly to fast parallel Live Price quotes only (eliminated all third-party browser API calls for 15y historical data and news)',
@@ -36,7 +46,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.5',
-      buildId: '20261031_2300',
+      buildId: '20261101_1240',
       date: '2026-10-31',
       changes: [
         'Changed clicked/selected row highlight in Holdings and Watchlist (and active nav tabs) to dark slate grey (#1e293b) for high-contrast text readability in dark mode',
@@ -45,7 +55,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.4',
-      buildId: '20261031_2235',
+      buildId: '20261101_1240',
       date: '2026-10-31',
       changes: [
         'Fixed Holdings sector group header sticky bar width on mobile (changed sticky cell from colspan=3 to colspan=1 matching stock rows) so sector subtotals/aggregates are never blocked during horizontal scroll',
@@ -54,7 +64,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.3',
-      buildId: '20261031_2205',
+      buildId: '20261101_1240',
       date: '2026-10-31',
       changes: [
         'Styled unpaid/pending dividends (where Ex-Date has passed but Pay Date is in the future) in distinct amber/yellow font color with an Unpaid badge in Dividend Payout Logs',
@@ -64,11 +74,11 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.2',
-      buildId: '20261031_1955',
+      buildId: '20261101_1240',
       date: '2026-10-31',
       changes: [
-        'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging synthetic baseline dates with live Yahoo Finance ex-dates',
-        'Replaced all synthetic +364d baseline dividend dates and RMB amounts with official HKEX (etnet) Ex-Dates, Payable Dates, and 6-decimal HKD conversion rates',
+        'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging legacy baseline dates with live Yahoo Finance ex-dates',
+        'Replaced all projected +364d baseline dividend dates and RMB amounts with official HKEX (etnet) Ex-Dates, Payable Dates, and 6-decimal HKD conversion rates',
         'Added same-cycle proximity deduplication (18d Monthly / 35d Quarterly-SemiAnnual-Annual) in both portfolio.js and update_historical_prices.py',
         'Preserved 6-decimal per-share dividend precision (Fin.round(amt, 6)) so multi-thousand share H-share payouts match Yahoo Finance to the exact cent (e.g. 2318.HK: HK$4,533.88 + HK$7,039.52 + HK$1,040.48 = HK$12,613.88)',
         'Added self-healing Dividend Payout Logs reconciliation in recalculatePortfolio() to automatically purge previously cached duplicate dividend entries from localStorage on load'
@@ -76,7 +86,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.1',
-      buildId: '20261031_1905',
+      buildId: '20261101_1240',
       date: '2026-10-31',
       changes: [
         'Fixed Service Worker (sw.js) cache-first trap by bumping cache version and switching to Network-First plus automatic stale CacheStorage purge on startup',
@@ -86,7 +96,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.0',
-      buildId: '20261031_1650',
+      buildId: '20261101_1240',
       date: '2026-10-31 16:50 HKT',
       title: '1-Day Quote Previous-Close Fix, 100% Cash Dividends, Dividend Ticker Filter, Complete 3476.HK/3433.HK Dividends & TRIM/OFFLOAD Signal Engine',
       changes: [
@@ -99,7 +109,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.1',
-      buildId: '20261031_1650',
+      buildId: '20261101_1240',
       date: '2026-10-31 11:15 HKT',
       title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
       changes: [
@@ -114,7 +124,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.0',
-      buildId: '20261030_2330',
+      buildId: '20261101_1240',
       date: '2026-10-30 23:30 HKT',
       title: 'Full Quantitative Suite: 2018+ Auto-Dividends, Buy/Sell Signal Engine, Scheduled News, Trend Regimes, Real XIRR & Settings Customizer',
       changes: [

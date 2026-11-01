@@ -679,7 +679,7 @@ var MarketAPI = {
         if (typeof AppLogger !== 'undefined') {
           AppLogger.info('GitHubActions', `Successfully triggered ${workflowFile} on ${repo}@${branch} (HTTP ${res.status}). Polling run status...`);
         }
-        this.pollGitHubWorkflowCompletion(repo, branch, token, workflowFile);
+        this.pollGitHubWorkflowCompletion(repo, branch, token, workflowFile, Date.now());
         return { triggered: true, status: res.status, repo, branch, workflowFile };
       } else {
         const errTxt = await res.text().catch(() => '');
@@ -697,9 +697,9 @@ var MarketAPI = {
     }
   },
 
-  async pollGitHubWorkflowCompletion(repo, branch, token, workflowFile) {
+  async pollGitHubWorkflowCompletion(repo, branch, token, workflowFile, dispatchTime = 0) {
     const isNews = workflowFile.includes('news');
-    const maxPolls = 18; // ~90 seconds max
+    const maxPolls = 24; // ~120 seconds max
     for (let i = 0; i < maxPolls; i++) {
       await new Promise(r => setTimeout(r, 5000));
       try {
@@ -709,12 +709,17 @@ var MarketAPI = {
             'Accept': 'application/vnd.github+json',
             'Authorization': `Bearer ${token}`,
             'X-GitHub-Api-Version': '2022-11-28'
-          }
+          },
+          cache: 'no-store'
         });
         if (!res.ok) continue;
         const data = await res.json();
         const latestRun = data?.workflow_runs?.[0];
         if (!latestRun) continue;
+        const createdMs = Date.parse(latestRun.created_at || '') || 0;
+        if (dispatchTime > 0 && createdMs > 0 && createdMs < dispatchTime - 20000) {
+          continue;
+        }
 
         if (typeof AppLogger !== 'undefined' && (i === 0 || latestRun.status === 'completed')) {
           AppLogger.info('GitHubActions', `Workflow ${workflowFile} run #${latestRun.run_number}: status=${latestRun.status}, conclusion=${latestRun.conclusion || 'running'}`);

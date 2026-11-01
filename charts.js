@@ -226,9 +226,9 @@ function renderMonthlyHistoryChart() {
     if (emptyOverlay) emptyOverlay.classList.remove('hidden');
     if (emptyText) {
       if (portfolio.activeHoldings.length > 0 || state.transactions.length > 0) {
-        emptyText.textContent = 'No real historical monthly price data available yet. Populate historical_prices.json (via update_historical_prices.py or GitHub Actions) or click "Sync Monthly API Data".';
+        emptyText.textContent = 'No historical monthly price data available yet. Click "Sync" to run the GitHub Python workflow and load historical_prices.json.';
       } else {
-        emptyText.textContent = 'Record a stock trade and sync real historical prices (or load historical_prices.json) to view your monthly portfolio balance and return.';
+        emptyText.textContent = 'Record a stock trade and click "Sync" to load historical_prices.json and view your monthly portfolio balance and return.';
       }
     }
     if (metricSummaryBadge) metricSummaryBadge.textContent = 'No Historical Data';
