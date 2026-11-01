@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.1.7',
-  buildId: '20261101_1240',
+  appVersion: '3.1.8',
+  buildId: '20261101_1405',
   releaseDate: '2026-10-31 16:50 HKT',
-  driveFolder: '/stock_portfolio/20261031_1650/',
+  driveFolder: '/myPortfolio/20261101_1405/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -24,8 +24,21 @@ var APP_VERSION_MANIFEST = {
   },
   changelog: [
     {
+      version: '3.1.8',
+      buildId: '20261101_1405',
+      date: '2026-11-01 14:05 HKT',
+      summary: 'Moved stock chart legend below the chart canvas, added translucent green Monthly High–Low range band around Monthly Close, increased Reg Trend Upper/Lower visibility and chart height (350px–430px), restricted top KPI summary cards to the Home (Dashboard) page only, and added 20-row pagination (Prev 20 / Next 20) to all Transaction and Dividend tables.',
+      changes: [
+        'Moved stock historical chart legend outside and below the chart canvas so 100% of the chart area is used for plotting',
+        'Added Monthly High–Low translucent green range band around the Monthly Close line and increased Reg Trend Upper (+1σ) and Lower (-1σ) visibility',
+        'Increased stock historical chart height to 350px on mobile and 430px on desktop',
+        'Restricted the top 6-card KPI summary row (Portfolio Value, Invested Capital, Realized P&L, etc.) to the Home (Dashboard) page only',
+        'Added 20-row max pagination with Prev 20 / Next 20 buttons across all Transaction and Dividend tables'
+      ]
+    },
+    {
       version: '3.1.7',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-11-01',
       changes: [
         'Added automatic startup and ingestion data validation for historical monthly price series, technical indicators, and company news feeds',
@@ -35,7 +48,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.6',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-11-01',
       changes: [
         'Dedicated browser MarketAPI strictly to fast parallel Live Price quotes only (eliminated all third-party browser API calls for 15y historical data and news)',
@@ -46,7 +59,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.5',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31',
       changes: [
         'Changed clicked/selected row highlight in Holdings and Watchlist (and active nav tabs) to dark slate grey (#1e293b) for high-contrast text readability in dark mode',
@@ -55,7 +68,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.4',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31',
       changes: [
         'Fixed Holdings sector group header sticky bar width on mobile (changed sticky cell from colspan=3 to colspan=1 matching stock rows) so sector subtotals/aggregates are never blocked during horizontal scroll',
@@ -64,7 +77,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.3',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31',
       changes: [
         'Styled unpaid/pending dividends (where Ex-Date has passed but Pay Date is in the future) in distinct amber/yellow font color with an Unpaid badge in Dividend Payout Logs',
@@ -74,7 +87,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.2',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31',
       changes: [
         'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging legacy baseline dates with live Yahoo Finance ex-dates',
@@ -86,7 +99,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.1',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31',
       changes: [
         'Fixed Service Worker (sw.js) cache-first trap by bumping cache version and switching to Network-First plus automatic stale CacheStorage purge on startup',
@@ -96,7 +109,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.0',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31 16:50 HKT',
       title: '1-Day Quote Previous-Close Fix, 100% Cash Dividends, Dividend Ticker Filter, Complete 3476.HK/3433.HK Dividends & TRIM/OFFLOAD Signal Engine',
       changes: [
@@ -109,7 +122,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.1',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31 11:15 HKT',
       title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
       changes: [
@@ -124,7 +137,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.0',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-30 23:30 HKT',
       title: 'Full Quantitative Suite: 2018+ Auto-Dividends, Buy/Sell Signal Engine, Scheduled News, Trend Regimes, Real XIRR & Settings Customizer',
       changes: [

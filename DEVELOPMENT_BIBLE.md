@@ -1,9 +1,9 @@
 # myPortfolio — Development Bible & Architecture Guide
 
-**Current Production Release:** `v3.1.7` (Build `20261101_1240`)  
+**Current Production Release:** `v3.1.8` (Build `20261101_1405`)  
 **Production URL:** https://ahneth.github.io/myPortfolio/  
 **GitHub Repository:** https://github.com/ahneth/myPortfolio  
-**Google Drive Master Archive:** `/Stock_Portfolio/` (`Reference` subfolder)
+**Google Drive Master Archive:** `/myPortfolio/` (Folder ID: `1NEtuIDV8NsN02upJPDQvJ00WpZxX9oMz`) — `/myPortfolio/Reference/` subfolder (Folder ID: `1NThy4bFv3yosHYszz5R9soBaUK0MYH4j`)
 
 ---
 
@@ -78,6 +78,16 @@
   - Columns 2 and 3 (`Shares` and `Avg Cost`) in `.sector-group-header` are rendered in a separate, non-sticky `<td colspan="2">` so scrolling horizontally on mobile never covers or blocks the sector subtotals (`Total Cost`, `Market Value`, `Unrealized P&L`, `XIRR`, and `Yield on Cost`).
   - Sector `Unrealized P&L` subtotals stack dollar gain/loss over percentage gain/loss on two lines to match individual stock rows underneath.
 
+* **Dashboard-Only Top KPI Summary Row (`#kpi-summary-section`, `v3.1.8+`)**:
+  - The 6-card KPI Summary Row (`Portfolio Value`, `Available Cash`, `Invested Capital`, `Unrealized P&L`, `Realized P&L`, `Dividends Earned`) is rendered **exclusively at the top of the Home (`Dashboard`) page** (`#tab-content-dashboard`) and is never repeated on `Holdings`, `Transactions`, `Dividends`, `Watchlist`, `News`, `Settings`, or `Log`.
+* **Stock Monthly Historical Chart Layout & Overlays (`v3.1.8+`)**:
+  - **External Interactive HTML Legend Below Chart**: The internal Chart.js `<canvas>` legend is disabled (`plugins.legend.display = false`) so 100% of the canvas height is dedicated to plotting data. A separated, clickable HTML legend (`#holdings-chart-legend` / `#watchlist-chart-legend`) is rendered below the chart canvas with a top border divider.
+  - **Increased Chart Height (`.stock-history-chart-box`)**: Chart container height is `350px` on mobile viewports and `430px` on tablet/desktop viewports.
+  - **Monthly High–Low Translucent Green Band**: Plots each month's `High` and `Low` as a translucent emerald band (`rgba(16, 185, 129, 0.22)` fill with `rgba(52, 211, 153, 0.45)` borders) enveloping the solid `#10b981` `Monthly Close` line.
+  - **High-Visibility Regression Trend Channel (`±1σ`)**: `Reg Trend Upper (+1σ)` and `Reg Trend Lower (-1σ)` use high-contrast bright purple-violet `#c084fc` (dark mode) / `#9333ea` (light mode) with `2.2px` dashed strokes (`[6, 4]`).
+* **20-Row Max Table Pagination (`PAGINATION_PAGE_SIZE = 20`, `v3.1.8+`)**:
+  - All transaction and dividend tables (`#tx-table-body`, `#dividends-table-body`, `#dividend-calendar-tbody`, and `#detected-dividends-tbody`) display at most **20 rows per page** with a footer bar showing `Showing X–Y of Z records • Page P of N` and **`← Prev 20`** / **`Next 20 →`** navigation buttons.
+
 ---
 
 ## 4. Core Quantitative & Financial Requirements
@@ -127,6 +137,7 @@ Whenever any bug fix or feature enhancement is developed:
 3. **Syntax & Headless Chromium Verification**:
    - Run `node --check` on all 7 JS modules (`version.js`, `logger.js`, `utils.js`, `api.js`, `portfolio.js`, `charts.js`, `app.js`).
    - Verify that zero synthetic data exists in `historical_prices.json`, `company_news.json`, `portfolio.js`, `app.js`, or `update_historical_prices.py`.
-4. **Archive to Google Drive**:
-   - Create a timestamped release subfolder `/Stock_Portfolio/YYYYMMDD_HHMM/` containing the updated module files and `myPortfolio_vX.Y.Z_YYYYMMDD_HHMM.zip`.
-   - Update the Development Bible and Development Log in `/Stock_Portfolio/Reference/` to document the root cause and fix.
+4. **Google Drive Subfolder Load & Save Standard (`/myPortfolio/`)**:
+   - **Master Root Folder**: `/myPortfolio/` (Google Drive Folder ID: `1NEtuIDV8NsN02upJPDQvJ00WpZxX9oMz`). Always load and save project artifacts, backups, and reference files from subfolders inside `/myPortfolio/`:
+     - **Reference Subfolder (`/myPortfolio/Reference/`, ID: `1NThy4bFv3yosHYszz5R9soBaUK0MYH4j`)**: Stores the living **Development Bible** (`1eQojBS7aURAUd0jUxK8yW_m3O3BZxgx2PiIy3Oo4WBQ`, `DEVELOPMENT_BIBLE.md`) and **Development Log** (`1dEoCHVxrtStNpcTy_eWPeMsTHstaOaksrFzKnNnHkOA`, `DEVELOPMENT_LOG.md`).
+     - **Release Subfolders (`/myPortfolio/YYYYMMDD_HHMM/`)**: Create a dedicated timestamped subfolder under `/myPortfolio/` for every build containing the standalone `index.html`, modular JS/Python/JSON files, and `myPortfolio_vX.Y.Z_YYYYMMDD_HHMM.zip`.

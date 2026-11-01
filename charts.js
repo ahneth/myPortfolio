@@ -422,6 +422,14 @@ function renderInlineStockChart(tabType) {
   const subEl = document.getElementById(isHoldings ? 'holdings-chart-stock-subtitle' : 'watchlist-chart-stock-subtitle');
   const statsEl = document.getElementById(isHoldings ? 'holdings-chart-period-stats' : 'watchlist-chart-period-stats');
   const emptyEl = document.getElementById(isHoldings ? 'holdings-chart-empty' : 'watchlist-chart-empty');
+  const legendId = isHoldings ? 'holdings-chart-legend' : 'watchlist-chart-legend';
+  let legendEl = document.getElementById(legendId);
+  if (!legendEl && cardEl) {
+    legendEl = document.createElement('div');
+    legendEl.id = legendId;
+    legendEl.className = 'mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs';
+    cardEl.appendChild(legendEl);
+  }
 
   if (!cardEl || !canvasEl) return;
 
@@ -433,6 +441,7 @@ function renderInlineStockChart(tabType) {
 
   if (!ticker) {
     cardEl.classList.add('hidden');
+    if (legendEl) legendEl.innerHTML = '';
     return;
   }
 
@@ -453,7 +462,6 @@ function renderInlineStockChart(tabType) {
         : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
     }`;
   });
-
 
   const series = state.historicalPrices[ticker] || [];
   const fund = state.fundamentals[ticker] || {};
@@ -480,25 +488,36 @@ function renderInlineStockChart(tabType) {
       emptyEl.innerHTML = `
         <i class="fa-solid fa-chart-line text-3xl mb-2 opacity-35"></i>
         <span class="font-medium text-slate-500 dark:text-slate-300">No historical monthly price data available for ${ticker}</span>
-        <span class="text-xs text-slate-400 mt-1">Run <code>update_historical_prices.py</code> / GitHub Action to populate <code>historical_prices.json</code> or click "Sync API Quotes".</span>
+        <span class="text-xs text-slate-400 mt-1">Run <code>update_historical_prices.py</code> / GitHub Action to populate <code>historical_prices.json</code> or click "Sync".</span>
       `;
     }
     if (subEl) subEl.textContent = `Regime: ${pm?.regime || 'Awaiting History'} • RSI(14): ${pm?.rsi14 ?? '-'} • Next Ex-Date: ${pm?.divInfo?.nextExDate || '-'}`;
     if (statsEl) statsEl.innerHTML = '';
+    if (legendEl) legendEl.innerHTML = '';
     return;
   }
   if (emptyEl) emptyEl.classList.add('hidden');
 
   const sliced = series.slice(-rangeMonths);
   const labels = sliced.map(r => r.month);
-  const closeData = sliced.map(r => r.close);
+  const closeData = sliced.map(r => Number(r.close));
+  const highData = sliced.map(r => {
+    const c = Number(r.close);
+    const h = Number(r.high);
+    return Number.isFinite(h) && h >= c ? h : c;
+  });
+  const lowData = sliced.map(r => {
+    const c = Number(r.close);
+    const l = Number(r.low);
+    return Number.isFinite(l) && l > 0 && l <= c ? l : c;
+  });
 
   const firstClose = closeData[0] || 0;
   const lastClose = closeData[closeData.length - 1] || 0;
   const periodChange = Fin.round(lastClose - firstClose, 2);
   const periodChangePct = firstClose > 0 ? Fin.round(((lastClose - firstClose) / firstClose) * 100, 2) : 0;
-  const periodHigh = Math.max(...closeData);
-  const periodLow = Math.min(...closeData);
+  const periodHigh = Math.max(...highData, ...closeData);
+  const periodLow = Math.min(...lowData, ...closeData);
 
   const periodLabelMap = { 12: '1-Y', 24: '2-Y', 36: '3-Y', 60: '5-Y', 120: 'ALL' };
   const periodTag = periodLabelMap[rangeMonths] || `${sliced.length}M`;
@@ -544,23 +563,54 @@ function renderInlineStockChart(tabType) {
 
   const isDark = document.documentElement.classList.contains('dark');
   const isMobile = DeviceDetector.profile.effectiveMode === 'mobile';
-  const mainColor = isHoldings ? '#10b981' : '#8b5cf6';
-  const mainFill = isHoldings ? 'rgba(16, 185, 129, 0.14)' : 'rgba(139, 92, 246, 0.14)';
+  const mainColor = '#10b981';
+  const bandFillColor = isDark ? 'rgba(16, 185, 129, 0.22)' : 'rgba(16, 185, 129, 0.18)';
+  const bandBorderColor = isDark ? 'rgba(52, 211, 153, 0.45)' : 'rgba(16, 185, 129, 0.40)';
 
   const datasets = [
+    {
+      label: 'Monthly High–Low Band',
+      data: highData,
+      borderColor: bandBorderColor,
+      backgroundColor: bandFillColor,
+      borderWidth: 1,
+      pointRadius: 0,
+      pointHoverRadius: 2,
+      tension: 0.3,
+      fill: '+1',
+      order: 4,
+      _legendStyle: 'band',
+      _pairedLowDatasetIndex: 1
+    },
+    {
+      label: 'Monthly Low',
+      data: lowData,
+      borderColor: bandBorderColor,
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      pointRadius: 0,
+      pointHoverRadius: 2,
+      tension: 0.3,
+      fill: false,
+      order: 4,
+      _hideFromExternalLegend: true
+    },
     {
       label: `${ticker} Monthly Close (${currency})`,
       data: closeData,
       borderColor: mainColor,
-      backgroundColor: mainFill,
-      fill: true,
+      backgroundColor: mainColor,
+      borderWidth: 2.6,
+      fill: false,
       tension: 0.3,
-      pointRadius: isMobile ? 2 : 3.5,
-      pointBackgroundColor: mainColor
+      pointRadius: isMobile ? 2.5 : 3.5,
+      pointBackgroundColor: mainColor,
+      order: 1,
+      _legendStyle: 'solid'
     }
   ];
 
-  // Overlay 1: Rolling Moving Average (3M & 10M on monthly chart) when enabled in Settings
+  // Overlay 1: Rolling Moving Average (3M on monthly chart) when enabled in Settings
   if (state?.settings?.chartShowSma !== false && closeData.length >= 4) {
     const smaShortSeries = closeData.map((_, idx) => {
       const sub = closeData.slice(Math.max(0, idx - 2), idx + 1);
@@ -570,15 +620,17 @@ function renderInlineStockChart(tabType) {
       label: '3M Moving Avg (Short Trend)',
       data: smaShortSeries,
       borderColor: '#38bdf8',
-      borderWidth: 1.5,
-      borderDash: [3, 3],
+      borderWidth: 1.9,
+      borderDash: [4, 3],
       pointRadius: 0,
       fill: false,
-      tension: 0.3
+      tension: 0.3,
+      order: 2,
+      _legendStyle: 'dashed'
     });
   }
 
-  // Overlay 2: Log-Linear Regression Trend Channel (+1σ / -1σ) when enabled in Settings
+  // Overlay 2: High-Visibility Log-Linear Regression Trend Channel (+1σ / -1σ)
   if (state?.settings?.chartShowRegChannel !== false && closeData.length >= 6) {
     const nPts = closeData.length;
     const xs = closeData.map((_, i) => i);
@@ -597,24 +649,29 @@ function renderInlineStockChart(tabType) {
 
     const regUpper = xs.map(i => Fin.round(Math.exp(intercept + slope * i + stdRes), 3));
     const regLower = xs.map(i => Fin.round(Math.exp(intercept + slope * i - stdRes), 3));
+    const regColor = isDark ? '#c084fc' : '#9333ea';
 
     datasets.push({
       label: 'Reg Trend Upper (+1σ)',
       data: regUpper,
-      borderColor: 'rgba(99, 102, 241, 0.45)',
-      borderDash: [4, 4],
-      borderWidth: 1.2,
+      borderColor: regColor,
+      borderDash: [6, 4],
+      borderWidth: 2.2,
       pointRadius: 0,
-      fill: false
+      fill: false,
+      order: 3,
+      _legendStyle: 'dashed'
     });
     datasets.push({
       label: 'Reg Trend Lower (-1σ)',
       data: regLower,
-      borderColor: 'rgba(99, 102, 241, 0.45)',
-      borderDash: [4, 4],
-      borderWidth: 1.2,
+      borderColor: regColor,
+      borderDash: [6, 4],
+      borderWidth: 2.2,
       pointRadius: 0,
-      fill: false
+      fill: false,
+      order: 3,
+      _legendStyle: 'dashed'
     });
   }
 
@@ -624,13 +681,15 @@ function renderInlineStockChart(tabType) {
       data: labels.map(() => refValue),
       borderColor: isHoldings ? '#f59e0b' : '#ec4899',
       borderDash: [6, 6],
-      borderWidth: 2,
+      borderWidth: 2.2,
       pointRadius: 0,
-      fill: false
+      fill: false,
+      order: 2,
+      _legendStyle: 'dashed'
     });
   }
 
-  charts[chartKey] = new Chart(canvasEl, {
+  const chartInstance = new Chart(canvasEl, {
     type: 'line',
     data: { labels, datasets },
     options: {
@@ -653,16 +712,65 @@ function renderInlineStockChart(tabType) {
       },
       plugins: {
         legend: {
-          labels: { color: isDark ? '#cbd5e1' : '#334155', font: { size: 11 } }
+          display: false
         },
         tooltip: {
           callbacks: {
-            label: (c) => ` ${c.dataset.label}: ${Fin.currency(c.raw, false, currency)}`
+            label: (c) => {
+              if (c.datasetIndex === 0) {
+                return ` Monthly High: ${Fin.currency(c.raw, false, currency)}`;
+              }
+              if (c.datasetIndex === 1) {
+                return ` Monthly Low: ${Fin.currency(c.raw, false, currency)}`;
+              }
+              return ` ${c.dataset.label}: ${Fin.currency(c.raw, false, currency)}`;
+            }
           }
         }
       }
     }
   });
+  charts[chartKey] = chartInstance;
+
+  // Render external HTML legend below the chart, separated from the canvas
+  if (legendEl) {
+    const buildExternalLegend = () => {
+      legendEl.innerHTML = '';
+      datasets.forEach((ds, idx) => {
+        if (ds._hideFromExternalLegend) return;
+        const isVisible = chartInstance.isDatasetVisible(idx);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition ${
+          isVisible
+            ? 'bg-slate-50/80 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80'
+            : 'bg-slate-100/40 dark:bg-slate-900/40 border-slate-200/50 dark:border-slate-800 text-slate-400 dark:text-slate-500 line-through opacity-60'
+        }`;
+
+        let swatchHtml = '';
+        if (ds._legendStyle === 'band') {
+          swatchHtml = `<span class="inline-block w-5 h-2.5 rounded-sm border" style="background: rgba(16, 185, 129, 0.28); border-color: rgba(52, 211, 153, 0.75);"></span>`;
+        } else if (ds._legendStyle === 'dashed') {
+          swatchHtml = `<span class="inline-block w-5 h-0 border-t-2 border-dashed" style="border-color: ${ds.borderColor};"></span>`;
+        } else {
+          swatchHtml = `<span class="inline-block w-5 h-0.5 rounded-full" style="background-color: ${ds.borderColor}; height: 3px;"></span>`;
+        }
+
+        btn.innerHTML = `${swatchHtml}<span>${ds.label}</span>`;
+        btn.addEventListener('click', () => {
+          const nextVis = !chartInstance.isDatasetVisible(idx);
+          chartInstance.setDatasetVisibility(idx, nextVis);
+          if (typeof ds._pairedLowDatasetIndex === 'number') {
+            chartInstance.setDatasetVisibility(ds._pairedLowDatasetIndex, nextVis);
+          }
+          chartInstance.update();
+          buildExternalLegend();
+        });
+        legendEl.appendChild(btn);
+      });
+    };
+    buildExternalLegend();
+  }
 }
 
 function renderAllocationChart() {

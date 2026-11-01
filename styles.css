@@ -274,3 +274,19 @@ tr.selected-table-row > td.sticky-col-mobile {
 .dark tr.selected-table-row:hover > td.sticky-col-mobile {
   background-color: #334155 !important;
 }
+
+
+/* ==========================================================================
+   v3.1.8 Tall Stock Historical Chart & External Legend Styling
+   ========================================================================== */
+.stock-history-chart-box {
+  height: 350px !important;
+  min-height: 350px !important;
+}
+
+@media (min-width: 641px) {
+  .stock-history-chart-box {
+    height: 430px !important;
+    min-height: 430px !important;
+  }
+}

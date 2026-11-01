@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.1.7-20261101_1240') {
+      if (k !== 'myportfolio-cache-v3.1.8-20261101_1405') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -789,6 +789,100 @@ function renderHoldingsTable() {
   });
 }
 
+var PAGINATION_PAGE_SIZE = 20;
+var tablePageState = {
+  tx: 1,
+  divLog: 1,
+  divCal: 1,
+  divDet: 1
+};
+
+function ensurePaginationBarContainer(barId, tableBodyEl) {
+  let barEl = document.getElementById(barId);
+  if (!barEl && tableBodyEl) {
+    const wrapper = tableBodyEl.closest('.table-responsive-wrapper') || tableBodyEl.parentElement;
+    if (wrapper && wrapper.parentElement) {
+      barEl = document.createElement('div');
+      barEl.id = barId;
+      wrapper.insertAdjacentElement('afterend', barEl);
+    }
+  }
+  return barEl;
+}
+
+function renderTablePaginationControls(barId, pageKey, totalItems, onPageChange, unitLabel = 'records') {
+  const tbodyMap = {
+    tx: 'tx-table-body',
+    divLog: 'dividends-table-body',
+    divCal: 'dividend-calendar-tbody',
+    divDet: 'detected-dividends-tbody'
+  };
+  const tbodyEl = document.getElementById(tbodyMap[pageKey]);
+  const barEl = ensurePaginationBarContainer(barId, tbodyEl);
+  if (!barEl) return { startIdx: 0, endIdx: Math.min(totalItems, PAGINATION_PAGE_SIZE), currentPage: 1, totalPages: 1 };
+
+  if (totalItems === 0) {
+    barEl.className = 'hidden';
+    barEl.innerHTML = '';
+    tablePageState[pageKey] = 1;
+    return { startIdx: 0, endIdx: 0, currentPage: 1, totalPages: 1 };
+  }
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGINATION_PAGE_SIZE));
+  let currentPage = parseInt(tablePageState[pageKey], 10) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+  tablePageState[pageKey] = currentPage;
+
+  const startIdx = (currentPage - 1) * PAGINATION_PAGE_SIZE;
+  const endIdx = Math.min(totalItems, startIdx + PAGINATION_PAGE_SIZE);
+
+  barEl.className = 'px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-wrap items-center justify-between gap-2 text-xs';
+  const prevDisabled = currentPage <= 1;
+  const nextDisabled = currentPage >= totalPages;
+
+  barEl.innerHTML = `
+    <div class="text-slate-500 dark:text-slate-400 font-medium">
+      Showing <span class="font-mono font-bold text-slate-800 dark:text-slate-200">${startIdx + 1}&ndash;${endIdx}</span> of <span class="font-mono font-bold text-slate-800 dark:text-slate-200">${totalItems}</span> ${unitLabel}
+      <span class="mx-1.5 text-slate-300 dark:text-slate-600">&bull;</span>
+      <span>Page <strong class="font-mono text-slate-800 dark:text-slate-200">${currentPage}</strong> of <strong class="font-mono text-slate-800 dark:text-slate-200">${totalPages}</strong></span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button type="button" data-page-action="prev" ${prevDisabled ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg font-semibold border transition flex items-center gap-1.5 ${
+        prevDisabled
+          ? 'bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800 cursor-not-allowed'
+          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm'
+      }">
+        <i class="fa-solid fa-chevron-left text-[10px]"></i> Prev 20
+      </button>
+      <button type="button" data-page-action="next" ${nextDisabled ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg font-semibold border transition flex items-center gap-1.5 ${
+        nextDisabled
+          ? 'bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800 cursor-not-allowed'
+          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm'
+      }">
+        Next 20 <i class="fa-solid fa-chevron-right text-[10px]"></i>
+      </button>
+    </div>
+  `;
+
+  const prevBtn = barEl.querySelector('[data-page-action="prev"]');
+  const nextBtn = barEl.querySelector('[data-page-action="next"]');
+  if (prevBtn && !prevDisabled) {
+    prevBtn.addEventListener('click', () => {
+      tablePageState[pageKey] = Math.max(1, currentPage - 1);
+      onPageChange();
+    });
+  }
+  if (nextBtn && !nextDisabled) {
+    nextBtn.addEventListener('click', () => {
+      tablePageState[pageKey] = Math.min(totalPages, currentPage + 1);
+      onPageChange();
+    });
+  }
+
+  return { startIdx, endIdx, currentPage, totalPages };
+}
+
 function renderTransactionsTable() {
   const tbody = document.getElementById('tx-table-body');
   const emptyState = document.getElementById('tx-empty-state');
@@ -803,11 +897,15 @@ function renderTransactionsTable() {
 
   if (list.length === 0) {
     emptyState.classList.remove('hidden');
+    renderTablePaginationControls('tx-pagination-bar', 'tx', 0, renderTransactionsTable, 'records');
     return;
   }
   emptyState.classList.add('hidden');
 
-  list.forEach(tx => {
+  const { startIdx, endIdx } = renderTablePaginationControls('tx-pagination-bar', 'tx', list.length, renderTransactionsTable, 'records');
+  const pagedList = list.slice(startIdx, endIdx);
+
+  pagedList.forEach(tx => {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition text-xs';
 
@@ -889,7 +987,7 @@ function renderDividendsTable() {
     }
   }
 
-  // Render Auto-Detected 2018-Present Dividend Entitlements Panel (100% Cash)
+  // Render Auto-Detected 2018-Present Dividend Entitlements Panel (100% Cash, Paginated 20 rows max)
   const detCard = document.getElementById('detected-dividends-card');
   const detTbody = document.getElementById('detected-dividends-tbody');
   const detSumBadge = document.getElementById('detected-dividends-summary-badge');
@@ -900,13 +998,16 @@ function renderDividendsTable() {
       detCard.classList.add('hidden');
       detTbody.innerHTML = '';
       if (detSumBadge) detSumBadge.textContent = '0 Detected';
+      renderTablePaginationControls('detected-dividends-pagination-bar', 'divDet', 0, renderDividendsTable, 'records');
     } else {
       detCard.classList.remove('hidden');
       const totalDetBase = detectedList.reduce((s, d) => s + Fin.convertCurrency(d.totalAmount, d.currency, baseCurr), 0);
       if (detSumBadge) {
         detSumBadge.textContent = `${detectedList.length} Payouts Detected (${Fin.currency(totalDetBase, false, baseCurr)})`;
       }
-      detTbody.innerHTML = detectedList.map(d => `
+      const { startIdx: detStart, endIdx: detEnd } = renderTablePaginationControls('detected-dividends-pagination-bar', 'divDet', detectedList.length, renderDividendsTable, 'records');
+      const pagedDetected = detectedList.slice(detStart, detEnd);
+      detTbody.innerHTML = pagedDetected.map(d => `
         <tr class="hover:bg-amber-50/40 dark:hover:bg-amber-950/20 transition text-xs border-b border-slate-100 dark:border-slate-800">
           <td class="py-2.5 px-4 font-mono font-bold text-slate-900 dark:text-white">${d.ticker}</td>
           <td class="py-2.5 px-3 font-mono text-amber-600 dark:text-amber-400 font-semibold">${d.exDate}</td>
@@ -924,14 +1025,16 @@ function renderDividendsTable() {
     }
   }
 
-  // Render Upcoming Ex-Dividend Calendar & Yield Tracker
+  // Render Upcoming Ex-Dividend Calendar & Yield Tracker (Paginated 20 rows max)
   const calTbody = document.getElementById('dividend-calendar-tbody');
   if (calTbody) {
     const allSyms = Array.from(new Set([
       ...portfolio.activeHoldings.map(h => h.ticker),
       ...state.watchlist.map(w => w.ticker)
     ])).sort();
-    calTbody.innerHTML = allSyms.map(sym => {
+    const { startIdx: calStart, endIdx: calEnd } = renderTablePaginationControls('dividend-calendar-pagination-bar', 'divCal', allSyms.length, renderDividendsTable, 'records');
+    const pagedSyms = allSyms.slice(calStart, calEnd);
+    calTbody.innerHTML = pagedSyms.map(sym => {
       const held = portfolio.activeHoldings.find(h => h.ticker === sym);
       const curP = state.prices[sym]?.price || held?.currentPrice || 0;
       const d = buildDividendScheduleForTicker(sym, null, curP) || {};
@@ -955,7 +1058,7 @@ function renderDividendsTable() {
     }).join('');
   }
 
-  // Filter Logged Dividends by Ticker and Search Query
+  // Filter Logged Dividends by Ticker and Search Query (Paginated 20 rows max)
   const qTicker = (tickerFilterEl?.value || 'ALL').trim().toUpperCase();
   const qSearch = (searchFilterEl?.value || '').trim().toUpperCase();
 
@@ -980,13 +1083,17 @@ function renderDividendsTable() {
 
   if (filtered.length === 0) {
     emptyState.classList.remove('hidden');
+    renderTablePaginationControls('dividends-pagination-bar', 'divLog', 0, renderDividendsTable, 'records');
     return;
   }
   emptyState.classList.add('hidden');
 
   const todayIso = new Date().toISOString().slice(0, 10);
   const sorted = [...filtered].sort((a, b) => new Date(b.payDate || b.exDate) - new Date(a.payDate || a.exDate));
-  sorted.forEach(div => {
+  const { startIdx: divStart, endIdx: divEnd } = renderTablePaginationControls('dividends-pagination-bar', 'divLog', sorted.length, renderDividendsTable, 'records');
+  const pagedDividends = sorted.slice(divStart, divEnd);
+
+  pagedDividends.forEach(div => {
     const dCurr = div.currency || state.prices[div.ticker]?.currency || MarketAPI.getStaticProfile(div.ticker).currency || 'HKD';
     const isUnpaid = Boolean((div.payDate && div.payDate > todayIso) || div.isPending);
     const amountColorCls = isUnpaid
@@ -1627,6 +1734,8 @@ function switchTab(target) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
   const pane = document.getElementById(`tab-content-${target}`);
   if (pane) pane.classList.remove('hidden');
+  const kpiSec = document.getElementById('kpi-summary-section');
+  if (kpiSec) kpiSec.classList.toggle('hidden', target !== 'dashboard');
 
   if (target === 'dashboard') {
     setTimeout(renderCharts, 40);
@@ -2182,8 +2291,8 @@ function setupEventListeners() {
 
   // Dividend Auto-Backfill & Ledger Filter Controls
   on('btn-approve-all-div-cash', 'click', () => approveAllDetectedDividends());
-  on('div-log-filter-ticker', 'change', renderDividendsTable);
-  on('div-log-search-text', 'input', renderDividendsTable);
+  on('div-log-filter-ticker', 'change', () => { tablePageState.divLog = 1; renderDividendsTable(); });
+  on('div-log-search-text', 'input', () => { tablePageState.divLog = 1; renderDividendsTable(); });
 
   // Quantitative Settings Customization Controls
   on('btn-save-quant-settings', 'click', () => saveQuantSettingsFromUI());
@@ -2342,8 +2451,8 @@ function setupEventListeners() {
     renderAllocationChart();
   });
 
-  on('tx-search-ticker', 'input', renderTransactionsTable);
-  on('tx-filter-type', 'change', renderTransactionsTable);
+  on('tx-search-ticker', 'input', () => { tablePageState.tx = 1; renderTransactionsTable(); });
+  on('tx-filter-type', 'change', () => { tablePageState.tx = 1; renderTransactionsTable(); });
 
   on('setting-api-provider', 'change', (e) => {
     state.settings.apiProvider = e.target.value;
@@ -2476,7 +2585,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.7 • Build 20261101_1240)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.8 • Build 20261101_1405)...');
   }
 
   try {
@@ -2513,7 +2622,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.1.7 boot sequence complete.');
+      AppLogger.info('Boot', 'myPortfolio v3.1.8 boot sequence complete.');
     }
   }, 120);
 }

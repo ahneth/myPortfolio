@@ -2,9 +2,11 @@
 
 **Repository:** https://github.com/ahneth/myPortfolio  
 **Live App:** https://ahneth.github.io/myPortfolio/  
-**Google Drive Reference Folder:** `/Stock_Portfolio/Reference/`
+**Google Drive Master Folder:** `/myPortfolio/` (ID: `1NEtuIDV8NsN02upJPDQvJ00WpZxX9oMz`)  
+**Google Drive Reference Subfolder:** `/myPortfolio/Reference/` (ID: `1NThy4bFv3yosHYszz5R9soBaUK0MYH4j`)  
+**Release Subfolders:** `/myPortfolio/<YYYYMMDD_HHMM>/`
 
-This living document records all architectural milestones, feature additions, root-cause investigations, and bug fixes across every release of **myPortfolio** from `v3.0.0` through `v3.1.7`, and serves as the canonical template for logging all future updates.
+This living document records all architectural milestones, feature additions, root-cause investigations, and bug fixes across every release of **myPortfolio** from `v3.0.0` through `v3.1.8`, and serves as the canonical template for logging all future updates.
 
 ---
 
@@ -12,6 +14,7 @@ This living document records all architectural milestones, feature additions, ro
 
 | Version | Build ID | Date (HKT) | Google Drive Folder | Key Highlights & Fixes |
 | :--- | :--- | :--- | :--- | :--- |
+| **`v3.1.8`** | `20261101_1405` | `2026-11-01` | `20261101_1405` | Moved stock chart legend outside and below the chart canvas; added translucent green Monthly High–Low range band around Monthly Close; made Reg Trend Upper/Lower (`±1σ`) high-contrast (`#c084fc`, `2.2px`) and increased chart height (`350px`/`430px`); restricted top 6-card KPI summary section to the Home (`Dashboard`) page only; added 20-row max pagination (`Prev 20` / `Next 20`) across all Transaction and Dividend tables. |
 | **`v3.1.7`** | `20261101_1240` | `2026-11-01` | `20261101_1240` | Enforced strict **Zero-Synthetic-Data Rule** across the entire codebase, JSON snapshots, and Python scripts; purged all 33 pre-seeded sine-wave/constant-volume price series, unverified technicals, and curated news; added 3-layer contamination sanitizer (`portfolio.js` + `update_historical_prices.py`), Tencent `ifzq.gtimg.cn` official HKEX/US Kline fallback in Python, GitHub Contents API zero-cache JSON reload, and `dispatchTime` workflow run filtering. |
 | **`v3.1.6`** | `20261101_0745` | `2026-11-01` | `20261101_0745` | Dedicated browser `MarketAPI` to live quotes only; wired Sync & Refresh News buttons to trigger GitHub Actions Python workflows (`workflow_dispatch`) and reload JSON snapshots; added full real-time `AppLogger` logging on the `Log` page. |
 | **`v3.1.5`** | `20261031_2300` | `2026-10-31` | `20261031_2300` | Replaced light-grey clicked row highlight with high-contrast dark slate grey (`#1e293b`); removed global 45s CORS proxy circuit breaker and 10-way proxy storm; added batch JSONP live quote fetching (`qt.gtimg.cn`). |
@@ -26,6 +29,17 @@ This living document records all architectural milestones, feature additions, ro
 ---
 
 ## Detailed Chronological Change & Bug Fix Log
+
+### `v3.1.8` — Build `20261101_1405` (2026-11-01)
+* **User-Reported Symptoms / Feature Requests**:
+  1. On the stock historical monthly chart (`1000019165.jpg`), the legend inside the chart canvas consumed nearly half the vertical chart space, `Reg Trend Upper (+1σ)` and `Reg Trend Lower (-1σ)` were dim, and the user requested moving the legend below the chart (separated from the canvas), adding monthly highs and lows as a translucent green band around the monthly close line, making the regression channel lines more visible, and increasing the height of the chart.
+  2. The 6-card KPI summary row (`Portfolio Value`, `Available Cash`, `Invested Capital`, `Unrealized P&L`, `Realized P&L`, `Dividends Earned` in `1000019167.jpg`) was repeated at the top of every tab; requested showing it only on the Home (`Dashboard`) page.
+  3. Requested limiting all Transaction and Dividend tables to 20 rows max at a time with `Prev 20` and `Next 20` buttons.
+* **Changes & Fixes Applied (`charts.js`, `app.js`, `styles.css`, `version.js`, `sw.js`, `index.html`)**:
+  - **External Interactive Legend & Taller Stock Chart (`350px` Mobile / `430px` Desktop)**: Disabled the internal Chart.js canvas legend (`plugins.legend.display = false`) and rendered a separated interactive HTML legend (`#holdings-chart-legend` and `#watchlist-chart-legend`) below the chart container. Added `.stock-history-chart-box` (`350px` on mobile, `430px` on desktop) so 100% of the expanded canvas height plots price action.
+  - **Translucent Green Monthly High–Low Band & High-Contrast Regression Channel (`±1σ`)**: Added `Monthly High–Low Band` datasets (`r.high` to `r.low` filled with `rgba(16, 185, 129, 0.22)` and `rgba(52, 211, 153, 0.45)` borders) enveloping the solid `#10b981` `Monthly Close` line, and upgraded `Reg Trend Upper (+1σ)` and `Reg Trend Lower (-1σ)` to bright purple-violet `#c084fc` (`2.2px` dashed width).
+  - **Home-Only KPI Summary Row (`#kpi-summary-section`)**: Moved the 6-card KPI summary section inside `#tab-content-dashboard` and added explicit visibility toggling in `switchTab()` so it only appears on the Home (`Dashboard`) page.
+  - **20-Row Max Pagination (`renderTablePaginationControls`)**: Added 20-row pagination with `Showing X–Y of Z records • Page P of N` and `← Prev 20` / `Next 20 →` buttons to `#tx-table-body`, `#dividends-table-body`, `#dividend-calendar-tbody`, and `#detected-dividends-tbody`.
 
 ### `v3.1.7` — Build `20261101_1240` (2026-11-01)
 * **User-Reported Symptoms**:

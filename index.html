@@ -376,7 +376,7 @@ header, main {
 
 
 /* ==========================================================================
-   v3.1.7 Dark Grey Row Selection Highlight (High Contrast for Dark & Light Mode)
+   v3.1.5 Dark Grey Row Selection Highlight (High Contrast for Dark & Light Mode)
    ========================================================================== */
 
 tr.selected-table-row,
@@ -395,6 +395,22 @@ tr.selected-table-row > td.sticky-col-mobile {
 .dark tr.selected-table-row:hover > td,
 .dark tr.selected-table-row:hover > td.sticky-col-mobile {
   background-color: #334155 !important;
+}
+
+
+/* ==========================================================================
+   v3.1.8 Tall Stock Historical Chart & External Legend Styling
+   ========================================================================== */
+.stock-history-chart-box {
+  height: 350px !important;
+  min-height: 350px !important;
+}
+
+@media (min-width: 641px) {
+  .stock-history-chart-box {
+    height: 430px !important;
+    min-height: 430px !important;
+  }
 }
 
   </style>
@@ -419,7 +435,7 @@ tr.selected-table-row > td.sticky-col-mobile {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.1.7 (20261101_1240)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.1.8 (20261101_1405)</span>
             </div>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Global HK, US &amp; London Stock Portfolio Tracker</p>
           </div>
@@ -520,9 +536,12 @@ tr.selected-table-row > td.sticky-col-mobile {
         Configure API &rarr;
       </button>
     </div>
+    <!-- ==================== TAB 1: DASHBOARD ==================== -->
+    <div id="tab-content-dashboard" class="tab-pane space-y-6">
+
 
     <!-- KPI STATS SUMMARY ROW -->
-    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-3.5 sm:mb-6">
+    <section id="kpi-summary-section" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-3.5 sm:mb-6">
       <!-- Total Portfolio Value -->
       <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-2.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
         <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
@@ -596,9 +615,6 @@ tr.selected-table-row > td.sticky-col-mobile {
         </div>
       </div>
     </section>
-
-    <!-- ==================== TAB 1: DASHBOARD ==================== -->
-    <div id="tab-content-dashboard" class="tab-pane space-y-6">
 
       <!-- FEATURED CHART: PORTFOLIO HISTORICAL BALANCE & RETURN -->
       <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm">
@@ -870,13 +886,14 @@ tr.selected-table-row > td.sticky-col-mobile {
             </button>
           </div>
         </div>
-        <div class="pt-4 relative chart-container min-h-[260px] sm:min-h-[300px]">
+        <div class="pt-4 relative chart-container stock-history-chart-box h-[350px] sm:h-[430px] min-h-[350px] sm:min-h-[430px]">
           <canvas id="chart-holdings-stock-history"></canvas>
           <div id="holdings-chart-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 text-slate-400 text-sm bg-white/80 dark:bg-dark-card/80">
             <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-brand-500"></i>
             <span>Loading monthly historical price series...</span>
           </div>
         </div>
+        <div id="holdings-chart-legend" class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs"></div>
       </div>
     </div>
 
@@ -1158,13 +1175,14 @@ tr.selected-table-row > td.sticky-col-mobile {
             </button>
           </div>
         </div>
-        <div class="pt-4 relative chart-container min-h-[260px] sm:min-h-[300px]">
+        <div class="pt-4 relative chart-container stock-history-chart-box h-[350px] sm:h-[430px] min-h-[350px] sm:min-h-[430px]">
           <canvas id="chart-watchlist-stock-history"></canvas>
           <div id="watchlist-chart-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 text-slate-400 text-sm bg-white/80 dark:bg-dark-card/80">
             <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-purple-500"></i>
             <span>Loading monthly historical price series...</span>
           </div>
         </div>
+        <div id="watchlist-chart-legend" class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs"></div>
       </div>
 
       <!-- Fundamental Analysis & Intrinsic Fair-Value Matrix -->
@@ -1662,13 +1680,13 @@ tr.selected-table-row > td.sticky-col-mobile {
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.1.7 • Build 20261101_1240</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.1.8 • Build 20261101_1405</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /stock_portfolio/<span id="settings-drive-folder-label">20261101_1240</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261101_1405</span>/
           </span>
         </div>
 
@@ -1903,7 +1921,7 @@ tr.selected-table-row > td.sticky-col-mobile {
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.1.7 (Build 20261101_1240)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.1.8 (Build 20261101_1405)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
       <div class="flex items-center gap-4 text-slate-400">
         <span><i class="fa-solid fa-globe text-brand-500"></i> HK, US &amp; London API</span>
@@ -2338,10 +2356,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.1.7',
-  buildId: '20261101_1240',
+  appVersion: '3.1.8',
+  buildId: '20261101_1405',
   releaseDate: '2026-10-31 16:50 HKT',
-  driveFolder: '/stock_portfolio/20261031_1650/',
+  driveFolder: '/myPortfolio/20261101_1405/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -2355,8 +2373,21 @@ var APP_VERSION_MANIFEST = {
   },
   changelog: [
     {
+      version: '3.1.8',
+      buildId: '20261101_1405',
+      date: '2026-11-01 14:05 HKT',
+      summary: 'Moved stock chart legend below the chart canvas, added translucent green Monthly High–Low range band around Monthly Close, increased Reg Trend Upper/Lower visibility and chart height (350px–430px), restricted top KPI summary cards to the Home (Dashboard) page only, and added 20-row pagination (Prev 20 / Next 20) to all Transaction and Dividend tables.',
+      changes: [
+        'Moved stock historical chart legend outside and below the chart canvas so 100% of the chart area is used for plotting',
+        'Added Monthly High–Low translucent green range band around the Monthly Close line and increased Reg Trend Upper (+1σ) and Lower (-1σ) visibility',
+        'Increased stock historical chart height to 350px on mobile and 430px on desktop',
+        'Restricted the top 6-card KPI summary row (Portfolio Value, Invested Capital, Realized P&L, etc.) to the Home (Dashboard) page only',
+        'Added 20-row max pagination with Prev 20 / Next 20 buttons across all Transaction and Dividend tables'
+      ]
+    },
+    {
       version: '3.1.7',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-11-01',
       changes: [
         'Added automatic startup and ingestion data validation for historical monthly price series, technical indicators, and company news feeds',
@@ -2366,7 +2397,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.6',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-11-01',
       changes: [
         'Dedicated browser MarketAPI strictly to fast parallel Live Price quotes only (eliminated all third-party browser API calls for 15y historical data and news)',
@@ -2377,7 +2408,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.5',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31',
       changes: [
         'Changed clicked/selected row highlight in Holdings and Watchlist (and active nav tabs) to dark slate grey (#1e293b) for high-contrast text readability in dark mode',
@@ -2386,7 +2417,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.4',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31',
       changes: [
         'Fixed Holdings sector group header sticky bar width on mobile (changed sticky cell from colspan=3 to colspan=1 matching stock rows) so sector subtotals/aggregates are never blocked during horizontal scroll',
@@ -2395,7 +2426,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.3',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31',
       changes: [
         'Styled unpaid/pending dividends (where Ex-Date has passed but Pay Date is in the future) in distinct amber/yellow font color with an Unpaid badge in Dividend Payout Logs',
@@ -2405,7 +2436,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.2',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31',
       changes: [
         'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging legacy baseline dates with live Yahoo Finance ex-dates',
@@ -2417,7 +2448,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.1',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31',
       changes: [
         'Fixed Service Worker (sw.js) cache-first trap by bumping cache version and switching to Network-First plus automatic stale CacheStorage purge on startup',
@@ -2427,7 +2458,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.0',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31 16:50 HKT',
       title: '1-Day Quote Previous-Close Fix, 100% Cash Dividends, Dividend Ticker Filter, Complete 3476.HK/3433.HK Dividends & TRIM/OFFLOAD Signal Engine',
       changes: [
@@ -2440,7 +2471,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.1',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-31 11:15 HKT',
       title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
       changes: [
@@ -2455,7 +2486,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.0',
-      buildId: '20261101_1240',
+      buildId: '20261101_1405',
       date: '2026-10-30 23:30 HKT',
       title: 'Full Quantitative Suite: 2018+ Auto-Dividends, Buy/Sell Signal Engine, Scheduled News, Trend Regimes, Real XIRR & Settings Customizer',
       changes: [
@@ -2470,6 +2501,7 @@ var APP_VERSION_MANIFEST = {
 };
 
 window.APP_VERSION_MANIFEST = APP_VERSION_MANIFEST;
+
   </script>
   <!-- Module: logger.js -->
   <script data-module="logger.js">
@@ -2930,6 +2962,7 @@ var AppLogger = (function() {
 })();
 
 window.AppLogger = AppLogger;
+
   </script>
   <!-- Module: utils.js -->
   <script data-module="utils.js">
@@ -3249,6 +3282,7 @@ var DeviceDetector = {
 
 window.Fin = Fin;
 window.DeviceDetector = DeviceDetector;
+
   </script>
   <!-- Module: api.js -->
   <script data-module="api.js">
@@ -4601,6 +4635,7 @@ window.MarketAPI = MarketAPI;
 window.syncAllMarketData = syncAllMarketData;
 window.syncFundamentalsViaAPI = syncFundamentalsViaAPI;
 window.triggerRowPriceFlash = triggerRowPriceFlash;
+
   </script>
   <!-- Module: portfolio.js -->
   <script data-module="portfolio.js">
@@ -7115,6 +7150,7 @@ window.restorePortfolioFromExcel = restorePortfolioFromExcel;
 window.ingestHistoricalPricesData = ingestHistoricalPricesData;
 window.ingestCompanyNewsData = ingestCompanyNewsData;
 window.normalizeNewsArticleSchema = normalizeNewsArticleSchema;
+
   </script>
   <!-- Module: charts.js -->
   <script data-module="charts.js">
@@ -7542,6 +7578,14 @@ function renderInlineStockChart(tabType) {
   const subEl = document.getElementById(isHoldings ? 'holdings-chart-stock-subtitle' : 'watchlist-chart-stock-subtitle');
   const statsEl = document.getElementById(isHoldings ? 'holdings-chart-period-stats' : 'watchlist-chart-period-stats');
   const emptyEl = document.getElementById(isHoldings ? 'holdings-chart-empty' : 'watchlist-chart-empty');
+  const legendId = isHoldings ? 'holdings-chart-legend' : 'watchlist-chart-legend';
+  let legendEl = document.getElementById(legendId);
+  if (!legendEl && cardEl) {
+    legendEl = document.createElement('div');
+    legendEl.id = legendId;
+    legendEl.className = 'mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs';
+    cardEl.appendChild(legendEl);
+  }
 
   if (!cardEl || !canvasEl) return;
 
@@ -7553,6 +7597,7 @@ function renderInlineStockChart(tabType) {
 
   if (!ticker) {
     cardEl.classList.add('hidden');
+    if (legendEl) legendEl.innerHTML = '';
     return;
   }
 
@@ -7573,7 +7618,6 @@ function renderInlineStockChart(tabType) {
         : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
     }`;
   });
-
 
   const series = state.historicalPrices[ticker] || [];
   const fund = state.fundamentals[ticker] || {};
@@ -7600,25 +7644,36 @@ function renderInlineStockChart(tabType) {
       emptyEl.innerHTML = `
         <i class="fa-solid fa-chart-line text-3xl mb-2 opacity-35"></i>
         <span class="font-medium text-slate-500 dark:text-slate-300">No historical monthly price data available for ${ticker}</span>
-        <span class="text-xs text-slate-400 mt-1">Run <code>update_historical_prices.py</code> / GitHub Action to populate <code>historical_prices.json</code> or click "Sync API Quotes".</span>
+        <span class="text-xs text-slate-400 mt-1">Run <code>update_historical_prices.py</code> / GitHub Action to populate <code>historical_prices.json</code> or click "Sync".</span>
       `;
     }
     if (subEl) subEl.textContent = `Regime: ${pm?.regime || 'Awaiting History'} • RSI(14): ${pm?.rsi14 ?? '-'} • Next Ex-Date: ${pm?.divInfo?.nextExDate || '-'}`;
     if (statsEl) statsEl.innerHTML = '';
+    if (legendEl) legendEl.innerHTML = '';
     return;
   }
   if (emptyEl) emptyEl.classList.add('hidden');
 
   const sliced = series.slice(-rangeMonths);
   const labels = sliced.map(r => r.month);
-  const closeData = sliced.map(r => r.close);
+  const closeData = sliced.map(r => Number(r.close));
+  const highData = sliced.map(r => {
+    const c = Number(r.close);
+    const h = Number(r.high);
+    return Number.isFinite(h) && h >= c ? h : c;
+  });
+  const lowData = sliced.map(r => {
+    const c = Number(r.close);
+    const l = Number(r.low);
+    return Number.isFinite(l) && l > 0 && l <= c ? l : c;
+  });
 
   const firstClose = closeData[0] || 0;
   const lastClose = closeData[closeData.length - 1] || 0;
   const periodChange = Fin.round(lastClose - firstClose, 2);
   const periodChangePct = firstClose > 0 ? Fin.round(((lastClose - firstClose) / firstClose) * 100, 2) : 0;
-  const periodHigh = Math.max(...closeData);
-  const periodLow = Math.min(...closeData);
+  const periodHigh = Math.max(...highData, ...closeData);
+  const periodLow = Math.min(...lowData, ...closeData);
 
   const periodLabelMap = { 12: '1-Y', 24: '2-Y', 36: '3-Y', 60: '5-Y', 120: 'ALL' };
   const periodTag = periodLabelMap[rangeMonths] || `${sliced.length}M`;
@@ -7664,23 +7719,54 @@ function renderInlineStockChart(tabType) {
 
   const isDark = document.documentElement.classList.contains('dark');
   const isMobile = DeviceDetector.profile.effectiveMode === 'mobile';
-  const mainColor = isHoldings ? '#10b981' : '#8b5cf6';
-  const mainFill = isHoldings ? 'rgba(16, 185, 129, 0.14)' : 'rgba(139, 92, 246, 0.14)';
+  const mainColor = '#10b981';
+  const bandFillColor = isDark ? 'rgba(16, 185, 129, 0.22)' : 'rgba(16, 185, 129, 0.18)';
+  const bandBorderColor = isDark ? 'rgba(52, 211, 153, 0.45)' : 'rgba(16, 185, 129, 0.40)';
 
   const datasets = [
+    {
+      label: 'Monthly High–Low Band',
+      data: highData,
+      borderColor: bandBorderColor,
+      backgroundColor: bandFillColor,
+      borderWidth: 1,
+      pointRadius: 0,
+      pointHoverRadius: 2,
+      tension: 0.3,
+      fill: '+1',
+      order: 4,
+      _legendStyle: 'band',
+      _pairedLowDatasetIndex: 1
+    },
+    {
+      label: 'Monthly Low',
+      data: lowData,
+      borderColor: bandBorderColor,
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      pointRadius: 0,
+      pointHoverRadius: 2,
+      tension: 0.3,
+      fill: false,
+      order: 4,
+      _hideFromExternalLegend: true
+    },
     {
       label: `${ticker} Monthly Close (${currency})`,
       data: closeData,
       borderColor: mainColor,
-      backgroundColor: mainFill,
-      fill: true,
+      backgroundColor: mainColor,
+      borderWidth: 2.6,
+      fill: false,
       tension: 0.3,
-      pointRadius: isMobile ? 2 : 3.5,
-      pointBackgroundColor: mainColor
+      pointRadius: isMobile ? 2.5 : 3.5,
+      pointBackgroundColor: mainColor,
+      order: 1,
+      _legendStyle: 'solid'
     }
   ];
 
-  // Overlay 1: Rolling Moving Average (3M & 10M on monthly chart) when enabled in Settings
+  // Overlay 1: Rolling Moving Average (3M on monthly chart) when enabled in Settings
   if (state?.settings?.chartShowSma !== false && closeData.length >= 4) {
     const smaShortSeries = closeData.map((_, idx) => {
       const sub = closeData.slice(Math.max(0, idx - 2), idx + 1);
@@ -7690,15 +7776,17 @@ function renderInlineStockChart(tabType) {
       label: '3M Moving Avg (Short Trend)',
       data: smaShortSeries,
       borderColor: '#38bdf8',
-      borderWidth: 1.5,
-      borderDash: [3, 3],
+      borderWidth: 1.9,
+      borderDash: [4, 3],
       pointRadius: 0,
       fill: false,
-      tension: 0.3
+      tension: 0.3,
+      order: 2,
+      _legendStyle: 'dashed'
     });
   }
 
-  // Overlay 2: Log-Linear Regression Trend Channel (+1σ / -1σ) when enabled in Settings
+  // Overlay 2: High-Visibility Log-Linear Regression Trend Channel (+1σ / -1σ)
   if (state?.settings?.chartShowRegChannel !== false && closeData.length >= 6) {
     const nPts = closeData.length;
     const xs = closeData.map((_, i) => i);
@@ -7717,24 +7805,29 @@ function renderInlineStockChart(tabType) {
 
     const regUpper = xs.map(i => Fin.round(Math.exp(intercept + slope * i + stdRes), 3));
     const regLower = xs.map(i => Fin.round(Math.exp(intercept + slope * i - stdRes), 3));
+    const regColor = isDark ? '#c084fc' : '#9333ea';
 
     datasets.push({
       label: 'Reg Trend Upper (+1σ)',
       data: regUpper,
-      borderColor: 'rgba(99, 102, 241, 0.45)',
-      borderDash: [4, 4],
-      borderWidth: 1.2,
+      borderColor: regColor,
+      borderDash: [6, 4],
+      borderWidth: 2.2,
       pointRadius: 0,
-      fill: false
+      fill: false,
+      order: 3,
+      _legendStyle: 'dashed'
     });
     datasets.push({
       label: 'Reg Trend Lower (-1σ)',
       data: regLower,
-      borderColor: 'rgba(99, 102, 241, 0.45)',
-      borderDash: [4, 4],
-      borderWidth: 1.2,
+      borderColor: regColor,
+      borderDash: [6, 4],
+      borderWidth: 2.2,
       pointRadius: 0,
-      fill: false
+      fill: false,
+      order: 3,
+      _legendStyle: 'dashed'
     });
   }
 
@@ -7744,13 +7837,15 @@ function renderInlineStockChart(tabType) {
       data: labels.map(() => refValue),
       borderColor: isHoldings ? '#f59e0b' : '#ec4899',
       borderDash: [6, 6],
-      borderWidth: 2,
+      borderWidth: 2.2,
       pointRadius: 0,
-      fill: false
+      fill: false,
+      order: 2,
+      _legendStyle: 'dashed'
     });
   }
 
-  charts[chartKey] = new Chart(canvasEl, {
+  const chartInstance = new Chart(canvasEl, {
     type: 'line',
     data: { labels, datasets },
     options: {
@@ -7773,16 +7868,65 @@ function renderInlineStockChart(tabType) {
       },
       plugins: {
         legend: {
-          labels: { color: isDark ? '#cbd5e1' : '#334155', font: { size: 11 } }
+          display: false
         },
         tooltip: {
           callbacks: {
-            label: (c) => ` ${c.dataset.label}: ${Fin.currency(c.raw, false, currency)}`
+            label: (c) => {
+              if (c.datasetIndex === 0) {
+                return ` Monthly High: ${Fin.currency(c.raw, false, currency)}`;
+              }
+              if (c.datasetIndex === 1) {
+                return ` Monthly Low: ${Fin.currency(c.raw, false, currency)}`;
+              }
+              return ` ${c.dataset.label}: ${Fin.currency(c.raw, false, currency)}`;
+            }
           }
         }
       }
     }
   });
+  charts[chartKey] = chartInstance;
+
+  // Render external HTML legend below the chart, separated from the canvas
+  if (legendEl) {
+    const buildExternalLegend = () => {
+      legendEl.innerHTML = '';
+      datasets.forEach((ds, idx) => {
+        if (ds._hideFromExternalLegend) return;
+        const isVisible = chartInstance.isDatasetVisible(idx);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition ${
+          isVisible
+            ? 'bg-slate-50/80 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80'
+            : 'bg-slate-100/40 dark:bg-slate-900/40 border-slate-200/50 dark:border-slate-800 text-slate-400 dark:text-slate-500 line-through opacity-60'
+        }`;
+
+        let swatchHtml = '';
+        if (ds._legendStyle === 'band') {
+          swatchHtml = `<span class="inline-block w-5 h-2.5 rounded-sm border" style="background: rgba(16, 185, 129, 0.28); border-color: rgba(52, 211, 153, 0.75);"></span>`;
+        } else if (ds._legendStyle === 'dashed') {
+          swatchHtml = `<span class="inline-block w-5 h-0 border-t-2 border-dashed" style="border-color: ${ds.borderColor};"></span>`;
+        } else {
+          swatchHtml = `<span class="inline-block w-5 h-0.5 rounded-full" style="background-color: ${ds.borderColor}; height: 3px;"></span>`;
+        }
+
+        btn.innerHTML = `${swatchHtml}<span>${ds.label}</span>`;
+        btn.addEventListener('click', () => {
+          const nextVis = !chartInstance.isDatasetVisible(idx);
+          chartInstance.setDatasetVisibility(idx, nextVis);
+          if (typeof ds._pairedLowDatasetIndex === 'number') {
+            chartInstance.setDatasetVisibility(ds._pairedLowDatasetIndex, nextVis);
+          }
+          chartInstance.update();
+          buildExternalLegend();
+        });
+        legendEl.appendChild(btn);
+      });
+    };
+    buildExternalLegend();
+  }
 }
 
 function renderAllocationChart() {
@@ -7950,14 +8094,16 @@ window.renderInlineStockChart = renderInlineStockChart;
 window.renderAllocationChart = renderAllocationChart;
 window.renderDividendsChart = renderDividendsChart;
 window.renderPnlBreakdownChart = renderPnlBreakdownChart;
+
   </script>
   <!-- Module: app.js -->
   <script data-module="app.js">
+
 // Automatically purge stale Service Worker caches from older builds so updated scripts & dividend schedules load immediately
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.1.7-20261101_1240') {
+      if (k !== 'myportfolio-cache-v3.1.8-20261101_1405') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -8743,6 +8889,100 @@ function renderHoldingsTable() {
   });
 }
 
+var PAGINATION_PAGE_SIZE = 20;
+var tablePageState = {
+  tx: 1,
+  divLog: 1,
+  divCal: 1,
+  divDet: 1
+};
+
+function ensurePaginationBarContainer(barId, tableBodyEl) {
+  let barEl = document.getElementById(barId);
+  if (!barEl && tableBodyEl) {
+    const wrapper = tableBodyEl.closest('.table-responsive-wrapper') || tableBodyEl.parentElement;
+    if (wrapper && wrapper.parentElement) {
+      barEl = document.createElement('div');
+      barEl.id = barId;
+      wrapper.insertAdjacentElement('afterend', barEl);
+    }
+  }
+  return barEl;
+}
+
+function renderTablePaginationControls(barId, pageKey, totalItems, onPageChange, unitLabel = 'records') {
+  const tbodyMap = {
+    tx: 'tx-table-body',
+    divLog: 'dividends-table-body',
+    divCal: 'dividend-calendar-tbody',
+    divDet: 'detected-dividends-tbody'
+  };
+  const tbodyEl = document.getElementById(tbodyMap[pageKey]);
+  const barEl = ensurePaginationBarContainer(barId, tbodyEl);
+  if (!barEl) return { startIdx: 0, endIdx: Math.min(totalItems, PAGINATION_PAGE_SIZE), currentPage: 1, totalPages: 1 };
+
+  if (totalItems === 0) {
+    barEl.className = 'hidden';
+    barEl.innerHTML = '';
+    tablePageState[pageKey] = 1;
+    return { startIdx: 0, endIdx: 0, currentPage: 1, totalPages: 1 };
+  }
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGINATION_PAGE_SIZE));
+  let currentPage = parseInt(tablePageState[pageKey], 10) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+  tablePageState[pageKey] = currentPage;
+
+  const startIdx = (currentPage - 1) * PAGINATION_PAGE_SIZE;
+  const endIdx = Math.min(totalItems, startIdx + PAGINATION_PAGE_SIZE);
+
+  barEl.className = 'px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-wrap items-center justify-between gap-2 text-xs';
+  const prevDisabled = currentPage <= 1;
+  const nextDisabled = currentPage >= totalPages;
+
+  barEl.innerHTML = `
+    <div class="text-slate-500 dark:text-slate-400 font-medium">
+      Showing <span class="font-mono font-bold text-slate-800 dark:text-slate-200">${startIdx + 1}&ndash;${endIdx}</span> of <span class="font-mono font-bold text-slate-800 dark:text-slate-200">${totalItems}</span> ${unitLabel}
+      <span class="mx-1.5 text-slate-300 dark:text-slate-600">&bull;</span>
+      <span>Page <strong class="font-mono text-slate-800 dark:text-slate-200">${currentPage}</strong> of <strong class="font-mono text-slate-800 dark:text-slate-200">${totalPages}</strong></span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button type="button" data-page-action="prev" ${prevDisabled ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg font-semibold border transition flex items-center gap-1.5 ${
+        prevDisabled
+          ? 'bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800 cursor-not-allowed'
+          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm'
+      }">
+        <i class="fa-solid fa-chevron-left text-[10px]"></i> Prev 20
+      </button>
+      <button type="button" data-page-action="next" ${nextDisabled ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg font-semibold border transition flex items-center gap-1.5 ${
+        nextDisabled
+          ? 'bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800 cursor-not-allowed'
+          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm'
+      }">
+        Next 20 <i class="fa-solid fa-chevron-right text-[10px]"></i>
+      </button>
+    </div>
+  `;
+
+  const prevBtn = barEl.querySelector('[data-page-action="prev"]');
+  const nextBtn = barEl.querySelector('[data-page-action="next"]');
+  if (prevBtn && !prevDisabled) {
+    prevBtn.addEventListener('click', () => {
+      tablePageState[pageKey] = Math.max(1, currentPage - 1);
+      onPageChange();
+    });
+  }
+  if (nextBtn && !nextDisabled) {
+    nextBtn.addEventListener('click', () => {
+      tablePageState[pageKey] = Math.min(totalPages, currentPage + 1);
+      onPageChange();
+    });
+  }
+
+  return { startIdx, endIdx, currentPage, totalPages };
+}
+
 function renderTransactionsTable() {
   const tbody = document.getElementById('tx-table-body');
   const emptyState = document.getElementById('tx-empty-state');
@@ -8757,11 +8997,15 @@ function renderTransactionsTable() {
 
   if (list.length === 0) {
     emptyState.classList.remove('hidden');
+    renderTablePaginationControls('tx-pagination-bar', 'tx', 0, renderTransactionsTable, 'records');
     return;
   }
   emptyState.classList.add('hidden');
 
-  list.forEach(tx => {
+  const { startIdx, endIdx } = renderTablePaginationControls('tx-pagination-bar', 'tx', list.length, renderTransactionsTable, 'records');
+  const pagedList = list.slice(startIdx, endIdx);
+
+  pagedList.forEach(tx => {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition text-xs';
 
@@ -8843,7 +9087,7 @@ function renderDividendsTable() {
     }
   }
 
-  // Render Auto-Detected 2018-Present Dividend Entitlements Panel (100% Cash)
+  // Render Auto-Detected 2018-Present Dividend Entitlements Panel (100% Cash, Paginated 20 rows max)
   const detCard = document.getElementById('detected-dividends-card');
   const detTbody = document.getElementById('detected-dividends-tbody');
   const detSumBadge = document.getElementById('detected-dividends-summary-badge');
@@ -8854,13 +9098,16 @@ function renderDividendsTable() {
       detCard.classList.add('hidden');
       detTbody.innerHTML = '';
       if (detSumBadge) detSumBadge.textContent = '0 Detected';
+      renderTablePaginationControls('detected-dividends-pagination-bar', 'divDet', 0, renderDividendsTable, 'records');
     } else {
       detCard.classList.remove('hidden');
       const totalDetBase = detectedList.reduce((s, d) => s + Fin.convertCurrency(d.totalAmount, d.currency, baseCurr), 0);
       if (detSumBadge) {
         detSumBadge.textContent = `${detectedList.length} Payouts Detected (${Fin.currency(totalDetBase, false, baseCurr)})`;
       }
-      detTbody.innerHTML = detectedList.map(d => `
+      const { startIdx: detStart, endIdx: detEnd } = renderTablePaginationControls('detected-dividends-pagination-bar', 'divDet', detectedList.length, renderDividendsTable, 'records');
+      const pagedDetected = detectedList.slice(detStart, detEnd);
+      detTbody.innerHTML = pagedDetected.map(d => `
         <tr class="hover:bg-amber-50/40 dark:hover:bg-amber-950/20 transition text-xs border-b border-slate-100 dark:border-slate-800">
           <td class="py-2.5 px-4 font-mono font-bold text-slate-900 dark:text-white">${d.ticker}</td>
           <td class="py-2.5 px-3 font-mono text-amber-600 dark:text-amber-400 font-semibold">${d.exDate}</td>
@@ -8878,14 +9125,16 @@ function renderDividendsTable() {
     }
   }
 
-  // Render Upcoming Ex-Dividend Calendar & Yield Tracker
+  // Render Upcoming Ex-Dividend Calendar & Yield Tracker (Paginated 20 rows max)
   const calTbody = document.getElementById('dividend-calendar-tbody');
   if (calTbody) {
     const allSyms = Array.from(new Set([
       ...portfolio.activeHoldings.map(h => h.ticker),
       ...state.watchlist.map(w => w.ticker)
     ])).sort();
-    calTbody.innerHTML = allSyms.map(sym => {
+    const { startIdx: calStart, endIdx: calEnd } = renderTablePaginationControls('dividend-calendar-pagination-bar', 'divCal', allSyms.length, renderDividendsTable, 'records');
+    const pagedSyms = allSyms.slice(calStart, calEnd);
+    calTbody.innerHTML = pagedSyms.map(sym => {
       const held = portfolio.activeHoldings.find(h => h.ticker === sym);
       const curP = state.prices[sym]?.price || held?.currentPrice || 0;
       const d = buildDividendScheduleForTicker(sym, null, curP) || {};
@@ -8909,7 +9158,7 @@ function renderDividendsTable() {
     }).join('');
   }
 
-  // Filter Logged Dividends by Ticker and Search Query
+  // Filter Logged Dividends by Ticker and Search Query (Paginated 20 rows max)
   const qTicker = (tickerFilterEl?.value || 'ALL').trim().toUpperCase();
   const qSearch = (searchFilterEl?.value || '').trim().toUpperCase();
 
@@ -8934,13 +9183,17 @@ function renderDividendsTable() {
 
   if (filtered.length === 0) {
     emptyState.classList.remove('hidden');
+    renderTablePaginationControls('dividends-pagination-bar', 'divLog', 0, renderDividendsTable, 'records');
     return;
   }
   emptyState.classList.add('hidden');
 
   const todayIso = new Date().toISOString().slice(0, 10);
   const sorted = [...filtered].sort((a, b) => new Date(b.payDate || b.exDate) - new Date(a.payDate || a.exDate));
-  sorted.forEach(div => {
+  const { startIdx: divStart, endIdx: divEnd } = renderTablePaginationControls('dividends-pagination-bar', 'divLog', sorted.length, renderDividendsTable, 'records');
+  const pagedDividends = sorted.slice(divStart, divEnd);
+
+  pagedDividends.forEach(div => {
     const dCurr = div.currency || state.prices[div.ticker]?.currency || MarketAPI.getStaticProfile(div.ticker).currency || 'HKD';
     const isUnpaid = Boolean((div.payDate && div.payDate > todayIso) || div.isPending);
     const amountColorCls = isUnpaid
@@ -9581,6 +9834,8 @@ function switchTab(target) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
   const pane = document.getElementById(`tab-content-${target}`);
   if (pane) pane.classList.remove('hidden');
+  const kpiSec = document.getElementById('kpi-summary-section');
+  if (kpiSec) kpiSec.classList.toggle('hidden', target !== 'dashboard');
 
   if (target === 'dashboard') {
     setTimeout(renderCharts, 40);
@@ -10136,8 +10391,8 @@ function setupEventListeners() {
 
   // Dividend Auto-Backfill & Ledger Filter Controls
   on('btn-approve-all-div-cash', 'click', () => approveAllDetectedDividends());
-  on('div-log-filter-ticker', 'change', renderDividendsTable);
-  on('div-log-search-text', 'input', renderDividendsTable);
+  on('div-log-filter-ticker', 'change', () => { tablePageState.divLog = 1; renderDividendsTable(); });
+  on('div-log-search-text', 'input', () => { tablePageState.divLog = 1; renderDividendsTable(); });
 
   // Quantitative Settings Customization Controls
   on('btn-save-quant-settings', 'click', () => saveQuantSettingsFromUI());
@@ -10296,8 +10551,8 @@ function setupEventListeners() {
     renderAllocationChart();
   });
 
-  on('tx-search-ticker', 'input', renderTransactionsTable);
-  on('tx-filter-type', 'change', renderTransactionsTable);
+  on('tx-search-ticker', 'input', () => { tablePageState.tx = 1; renderTransactionsTable(); });
+  on('tx-filter-type', 'change', () => { tablePageState.tx = 1; renderTransactionsTable(); });
 
   on('setting-api-provider', 'change', (e) => {
     state.settings.apiProvider = e.target.value;
@@ -10430,7 +10685,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.7 • Build 20261101_1240)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.8 • Build 20261101_1405)...');
   }
 
   try {
@@ -10467,7 +10722,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.1.7 boot sequence complete.');
+      AppLogger.info('Boot', 'myPortfolio v3.1.8 boot sequence complete.');
     }
   }, 120);
 }
@@ -10491,6 +10746,7 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 window.openTradeModal = openTradeModal;
 window.bootstrapPortfolioApp = bootstrapPortfolioApp;
+
   </script>
 </body>
 </html>
