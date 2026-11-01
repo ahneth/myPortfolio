@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.1.9-20261101_1945') {
+      if (k !== 'myportfolio-cache-v3.2.0-20261101_2015') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -393,6 +393,71 @@ function setAllHoldingsSectorsCollapsed(collapsed) {
 }
 window.setAllHoldingsSectorsCollapsed = setAllHoldingsSectorsCollapsed;
 
+function getCanonicalWatchlistSector(w) {
+  const staticMeta = MarketAPI.getStaticProfile(w?.ticker);
+  const rawSector = String(w?.sector || state.fundamentals?.[w?.ticker]?.sector || staticMeta?.sector || 'Equities').trim();
+  const compName = w?.name || state.fundamentals?.[w?.ticker]?.name || staticMeta?.name || '';
+  if (MarketAPI.isEtfSector(rawSector, w?.ticker, compName)) {
+    return 'Index ETF';
+  }
+  return rawSector || 'Equities';
+}
+
+function toggleWatchlistSector(sectorName) {
+  if (!state.settings.collapsedWatchlistSectors) state.settings.collapsedWatchlistSectors = {};
+  state.settings.collapsedWatchlistSectors[sectorName] = !state.settings.collapsedWatchlistSectors[sectorName];
+  saveState();
+  renderWatchlistAndFundamentals();
+}
+window.toggleWatchlistSector = toggleWatchlistSector;
+
+function setAllWatchlistSectorsCollapsed(collapsed) {
+  if (!state.settings.collapsedWatchlistSectors) state.settings.collapsedWatchlistSectors = {};
+  (state?.watchlist || []).forEach(w => {
+    const sec = getCanonicalWatchlistSector(w);
+    state.settings.collapsedWatchlistSectors[sec] = Boolean(collapsed);
+  });
+  saveState();
+  renderWatchlistAndFundamentals();
+}
+window.setAllWatchlistSectorsCollapsed = setAllWatchlistSectorsCollapsed;
+
+var CANONICAL_SIGNAL_LABELS = [
+  'STRONG BUY',
+  'ACCUMULATE',
+  'HOLD',
+  'TRIM / OFFLOAD',
+  'SELL / AVOID'
+];
+
+function populateSignalFilterDropdown(selectEl, signalLabelsList) {
+  if (!selectEl) return 'ALL';
+  const prevVal = selectEl.value || 'ALL';
+  const counts = {};
+  CANONICAL_SIGNAL_LABELS.forEach(lbl => { counts[lbl] = 0; });
+  signalLabelsList.forEach(lbl => {
+    const key = lbl || 'HOLD';
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const total = signalLabelsList.length;
+  const optionsHtml = [
+    `<option value="ALL">All Signals (${total})</option>`,
+    ...CANONICAL_SIGNAL_LABELS.map(lbl => {
+      const cnt = counts[lbl] || 0;
+      return `<option value="${lbl}" ${lbl === prevVal ? 'selected' : ''}>${lbl} (${cnt})</option>`;
+    })
+  ].join('');
+
+  selectEl.innerHTML = optionsHtml;
+  if (prevVal !== 'ALL' && !CANONICAL_SIGNAL_LABELS.includes(prevVal)) {
+    selectEl.value = 'ALL';
+    return 'ALL';
+  }
+  selectEl.value = prevVal;
+  return prevVal;
+}
+
 function format52wPositionCell(low52w, high52w, pos52wPct, currency) {
   if (pos52wPct === null || pos52wPct === undefined || isNaN(pos52wPct)) {
     return '<span class="text-slate-400 text-[11px]" title="Sync market data to calculate 52W range position">-</span>';
@@ -560,7 +625,13 @@ window.openSignalDetailModal = function(rawTicker) {
 function renderHoldingsTable() {
   const tbody = document.getElementById('holdings-table-body');
   const emptyState = document.getElementById('holdings-empty-state');
+  const signalFilterEl = document.getElementById('holdings-filter-signal');
   tbody.innerHTML = '';
+
+  const selectedSignal = populateSignalFilterDropdown(
+    signalFilterEl,
+    (portfolio.activeHoldings || []).map(h => h.signalLabel || 'HOLD')
+  );
 
   if (portfolio.activeHoldings.length === 0) {
     emptyState.classList.remove('hidden');
@@ -570,11 +641,27 @@ function renderHoldingsTable() {
   }
   emptyState.classList.add('hidden');
 
+  const filteredHoldings = selectedSignal === 'ALL'
+    ? portfolio.activeHoldings
+    : portfolio.activeHoldings.filter(h => (h.signalLabel || 'HOLD') === selectedSignal);
+
+  if (filteredHoldings.length === 0) {
+    tbody.innerHTML = `
+      <tr class="text-xs text-slate-400">
+        <td colspan="19" class="py-8 px-4 text-center">
+          No active holdings currently match signal <strong class="text-slate-700 dark:text-slate-200 font-mono">${selectedSignal}</strong>.
+          <button type="button" onclick="const el=document.getElementById('holdings-filter-signal'); if(el){el.value='ALL'; renderHoldingsTable();}" class="ml-2 text-brand-500 hover:underline font-semibold">Show All (${portfolio.activeHoldings.length})</button>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   if (!state.settings.collapsedSectors) state.settings.collapsedSectors = {};
 
   const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
   const groupsMap = {};
-  portfolio.activeHoldings.forEach(h => {
+  filteredHoldings.forEach(h => {
     const secName = getCanonicalHoldingsSector(h);
     const hCurr = h.currency || 'HKD';
     if (!groupsMap[secName]) {
@@ -837,7 +924,7 @@ function renderTablePaginationControls(barId, pageKey, totalItems, onPageChange,
   const startIdx = (currentPage - 1) * PAGINATION_PAGE_SIZE;
   const endIdx = Math.min(totalItems, startIdx + PAGINATION_PAGE_SIZE);
 
-  barEl.className = 'px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-wrap items-center justify-between gap-2 text-xs';
+  barEl.className = 'px-3 py-1.5 sm:px-4 sm:py-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs';
   const prevDisabled = currentPage <= 1;
   const nextDisabled = currentPage >= totalPages;
 
@@ -847,20 +934,20 @@ function renderTablePaginationControls(barId, pageKey, totalItems, onPageChange,
       <span class="mx-1.5 text-slate-300 dark:text-slate-600">&bull;</span>
       <span>Page <strong class="font-mono text-slate-800 dark:text-slate-200">${currentPage}</strong> of <strong class="font-mono text-slate-800 dark:text-slate-200">${totalPages}</strong></span>
     </div>
-    <div class="flex items-center gap-2">
-      <button type="button" data-page-action="prev" ${prevDisabled ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg font-semibold border transition flex items-center gap-1.5 ${
+    <div class="flex items-center gap-1.5">
+      <button type="button" data-page-action="prev" ${prevDisabled ? 'disabled' : ''} class="px-2.5 py-1 rounded-md font-semibold border transition flex items-center gap-1 ${
         prevDisabled
           ? 'bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800 cursor-not-allowed'
           : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm'
       }">
-        <i class="fa-solid fa-chevron-left text-[10px]"></i> Prev 20
+        <i class="fa-solid fa-chevron-left text-[9px]"></i> Prev 20
       </button>
-      <button type="button" data-page-action="next" ${nextDisabled ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg font-semibold border transition flex items-center gap-1.5 ${
+      <button type="button" data-page-action="next" ${nextDisabled ? 'disabled' : ''} class="px-2.5 py-1 rounded-md font-semibold border transition flex items-center gap-1 ${
         nextDisabled
           ? 'bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800 cursor-not-allowed'
           : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm'
       }">
-        Next 20 <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        Next 20 <i class="fa-solid fa-chevron-right text-[9px]"></i>
       </button>
     </div>
   `;
@@ -910,11 +997,11 @@ function renderTransactionsTable() {
     tr.className = 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition text-xs';
 
     const badgeMap = {
-      BUY: '<span class="px-2 py-0.5 rounded font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">BUY</span>',
-      SELL: '<span class="px-2 py-0.5 rounded font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">SELL</span>',
-      DRIP: '<span class="px-2 py-0.5 rounded font-bold bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">DRIP</span>',
-      DEPOSIT: '<span class="px-2 py-0.5 rounded font-bold bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">DEPOSIT</span>',
-      WITHDRAW: '<span class="px-2 py-0.5 rounded font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">WITHDRAW</span>'
+      BUY: '<span class="px-1.5 py-0 rounded font-bold text-[10px] leading-tight bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">BUY</span>',
+      SELL: '<span class="px-1.5 py-0 rounded font-bold text-[10px] leading-tight bg-rose-500/10 text-rose-500 border border-rose-500/20">SELL</span>',
+      DRIP: '<span class="px-1.5 py-0 rounded font-bold text-[10px] leading-tight bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">DRIP</span>',
+      DEPOSIT: '<span class="px-1.5 py-0 rounded font-bold text-[10px] leading-tight bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">DEPOSIT</span>',
+      WITHDRAW: '<span class="px-1.5 py-0 rounded font-bold text-[10px] leading-tight bg-amber-500/10 text-amber-500 border border-amber-500/20">WITHDRAW</span>'
     };
 
     const isCashOnly = tx.type === 'DEPOSIT' || tx.type === 'WITHDRAW';
@@ -930,18 +1017,18 @@ function renderTransactionsTable() {
     }
 
     tr.innerHTML = `
-      <td class="py-3 px-4 font-mono text-slate-500">${tx.date}</td>
-      <td class="py-3 px-4">${badgeMap[tx.type] || tx.type}</td>
-      <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">${isCashOnly ? 'CASH' : tx.ticker}</td>
-      <td class="py-3 px-4 text-right num-font font-medium">${isCashOnly ? '-' : Fin.shares(tx.shares)}</td>
-      <td class="py-3 px-4 text-right num-font">${isCashOnly ? '-' : Fin.currency(tx.price, false, tCurr)}</td>
-      <td class="py-3 px-4 text-right num-font text-slate-400">${isCashOnly ? '-' : Fin.currency(tx.fees || 0, false, tCurr)}</td>
-      <td class="py-3 px-4 text-right font-bold num-font text-slate-900 dark:text-white">${Fin.currency(totalAmt, false, tCurr)}</td>
-      <td class="py-3 px-4 text-right">${gainCell}</td>
-      <td class="py-3 px-4 text-slate-500 max-w-xs truncate">${tx.notes || ''}</td>
-      <td class="py-3 px-4 text-center">
-        <button onclick="deleteTransaction('${tx.id}')" class="text-slate-400 hover:text-rose-500 transition p-1" title="Delete">
-          <i class="fa-solid fa-trash-can text-xs"></i>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 font-mono text-slate-500">${tx.date}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3">${badgeMap[tx.type] || tx.type}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 font-bold text-slate-900 dark:text-white">${isCashOnly ? 'CASH' : tx.ticker}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font font-medium">${isCashOnly ? '-' : Fin.shares(tx.shares)}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font">${isCashOnly ? '-' : Fin.currency(tx.price, false, tCurr)}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font text-slate-400">${isCashOnly ? '-' : Fin.currency(tx.fees || 0, false, tCurr)}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right font-bold num-font text-slate-900 dark:text-white">${Fin.currency(totalAmt, false, tCurr)}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right">${gainCell}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-slate-500 max-w-xs truncate">${tx.notes || ''}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-center">
+        <button onclick="deleteTransaction('${tx.id}')" class="text-slate-400 hover:text-rose-500 transition p-0.5 leading-none" title="Delete">
+          <i class="fa-solid fa-trash-can text-[11px]"></i>
         </button>
       </td>
     `;
@@ -1107,15 +1194,15 @@ function renderDividendsTable() {
       ? 'bg-amber-500/[0.03] hover:bg-amber-500/[0.08] transition text-xs'
       : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition text-xs';
     tr.innerHTML = `
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 font-mono font-medium ${isUnpaid ? 'text-amber-600 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'} whitespace-nowrap">${div.payDate}${payDateBadge}</td>
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 font-mono text-slate-400 whitespace-nowrap">${div.exDate || '-'}</td>
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">${div.ticker}</td>
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 text-right num-font text-slate-500 dark:text-slate-400 whitespace-nowrap">${div.amountPerShare ? Fin.currency(div.amountPerShare, false, dCurr) : '-'}</td>
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 text-right font-bold num-font ${amountColorCls} whitespace-nowrap" title="${isUnpaid ? 'Dividend declared (Ex-Date passed) but not yet paid until ' + div.payDate : 'Paid cash dividend'}">+${Fin.currency(div.totalAmount, false, dCurr)}</td>
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 ${isUnpaid ? 'text-amber-600/80 dark:text-amber-300/80' : 'text-slate-400'} max-w-xs truncate">${div.notes || 'Cash Dividend'}</td>
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 text-center">
-        <button onclick="deleteDividend('${div.id}')" class="text-slate-400 hover:text-rose-500 transition p-1" title="Delete Dividend Record">
-          <i class="fa-solid fa-trash-can text-xs"></i>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 font-mono font-medium ${isUnpaid ? 'text-amber-600 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'} whitespace-nowrap">${div.payDate}${payDateBadge}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 font-mono text-slate-400 whitespace-nowrap">${div.exDate || '-'}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 font-bold text-slate-900 dark:text-white whitespace-nowrap">${div.ticker}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-right num-font text-slate-500 dark:text-slate-400 whitespace-nowrap">${div.amountPerShare ? Fin.currency(div.amountPerShare, false, dCurr) : '-'}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-right font-bold num-font ${amountColorCls} whitespace-nowrap" title="${isUnpaid ? 'Dividend declared (Ex-Date passed) but not yet paid until ' + div.payDate : 'Paid cash dividend'}">+${Fin.currency(div.totalAmount, false, dCurr)}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 ${isUnpaid ? 'text-amber-600/80 dark:text-amber-300/80' : 'text-slate-400'} max-w-xs truncate">${div.notes || 'Cash Dividend'}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-center">
+        <button onclick="deleteDividend('${div.id}')" class="text-slate-400 hover:text-rose-500 transition p-0.5 leading-none" title="Delete Dividend Record">
+          <i class="fa-solid fa-trash-can text-[11px]"></i>
         </button>
       </td>
     `;
@@ -1126,7 +1213,29 @@ function renderDividendsTable() {
 function renderWatchlistAndFundamentals() {
   const wlTbody = document.getElementById('watchlist-table-body');
   const wlEmpty = document.getElementById('watchlist-empty-state');
+  const signalFilterEl = document.getElementById('watchlist-filter-signal');
   wlTbody.innerHTML = '';
+
+  const enrichedWatchlist = (state.watchlist || []).map(w => {
+    const curPrice = state.prices[w.ticker]?.price || 0;
+    const wm = computeStockPriceMetrics(w.ticker, curPrice);
+    const secName = getCanonicalWatchlistSector(w);
+    const compName = w.name || state.fundamentals[w.ticker]?.name || MarketAPI.getStaticProfile(w.ticker)?.name || w.ticker;
+    return {
+      w,
+      curPrice,
+      wm,
+      secName,
+      compName,
+      signalLabel: wm?.signalLabel || 'HOLD',
+      signalScore: Number(wm?.signalScore ?? 50)
+    };
+  });
+
+  const selectedSignal = populateSignalFilterDropdown(
+    signalFilterEl,
+    enrichedWatchlist.map(item => item.signalLabel)
+  );
 
   if (state.watchlist.length === 0) {
     wlEmpty.classList.remove('hidden');
@@ -1134,97 +1243,192 @@ function renderWatchlistAndFundamentals() {
     if (wlChartCard) wlChartCard.classList.add('hidden');
   } else {
     wlEmpty.classList.add('hidden');
-    state.watchlist.forEach(w => {
-      const isSelected = selectedWatchlistTicker === w.ticker;
-      const curPrice = state.prices[w.ticker]?.price || 0;
-      const priceChangePct = state.prices[w.ticker]?.changePct || 0;
-      const priceChangeColor = (state.prices[w.ticker]?.change || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500';
-      const wlCurrency = state.prices[w.ticker]?.currency || state.fundamentals[w.ticker]?.currency || (w.ticker.endsWith('.HK') ? 'HKD' : (w.ticker.endsWith('.L') ? 'GBp' : 'USD'));
-      const targetPrice = w.targetBuyPrice;
-      const distPct = curPrice > 0 ? ((curPrice - targetPrice) / targetPrice) * 100 : 0;
-      const isTriggered = curPrice > 0 && curPrice <= targetPrice;
-      const wm = computeStockPriceMetrics(w.ticker, curPrice);
 
-      const tr = document.createElement('tr');
-      tr.className = `cursor-pointer transition text-xs ${
-        isSelected
-          ? 'selected-table-row bg-slate-300/80 dark:bg-slate-800 border-l-4 border-l-purple-500'
-          : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
-      }`;
-      tr.addEventListener('click', (e) => {
-        if (e.target.closest('button')) return;
-        selectStockForInlineChart('watchlist', w.ticker, true);
+    const filteredWatchlist = selectedSignal === 'ALL'
+      ? enrichedWatchlist
+      : enrichedWatchlist.filter(item => item.signalLabel === selectedSignal);
+
+    if (filteredWatchlist.length === 0) {
+      wlTbody.innerHTML = `
+        <tr class="text-xs text-slate-400">
+          <td colspan="16" class="py-8 px-4 text-center">
+            No watchlist tickers currently match signal <strong class="text-slate-700 dark:text-slate-200 font-mono">${selectedSignal}</strong>.
+            <button type="button" onclick="const el=document.getElementById('watchlist-filter-signal'); if(el){el.value='ALL'; renderWatchlistAndFundamentals();}" class="ml-2 text-purple-500 hover:underline font-semibold">Show All (${state.watchlist.length})</button>
+          </td>
+        </tr>
+      `;
+    } else {
+      if (!state.settings.collapsedWatchlistSectors) state.settings.collapsedWatchlistSectors = {};
+
+      const groupsMap = {};
+      filteredWatchlist.forEach(item => {
+        const sec = item.secName;
+        if (!groupsMap[sec]) {
+          groupsMap[sec] = {
+            sector: sec,
+            isEtf: MarketAPI.isEtfSector(sec, item.w.ticker, item.compName),
+            items: [],
+            triggeredCount: 0,
+            scoreSum: 0
+          };
+        }
+        const g = groupsMap[sec];
+        g.items.push(item);
+        g.scoreSum += item.signalScore;
+        if (item.curPrice > 0 && item.curPrice <= item.w.targetBuyPrice) {
+          g.triggeredCount += 1;
+        }
       });
 
-      tr.innerHTML = `
-        <td class="py-3 px-4 sticky-col-mobile">
-          <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-            <span class="hover:text-purple-500 underline decoration-dotted underline-offset-2">${w.ticker}</span>
-            <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium">${wlCurrency}</span>
-          </div>
-          <div class="text-[11px] text-slate-400">${w.name || state.fundamentals[w.ticker]?.name || ''}</div>
-        </td>
-        <td class="py-3 px-3 text-slate-500 dark:text-slate-400">${w.sector || 'General'}</td>
-        <td class="py-3 px-3 text-right">
-          ${curPrice > 0
-            ? `<div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(curPrice, false, wlCurrency)}</div>
-               <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
-                 <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(priceChangePct) > 40 ? 0 : priceChangePct)}
-               </div>`
-            : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
-        </td>
-        <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">
-          ${wm.low52w !== null && wm.low52w !== undefined ? Fin.currency(wm.low52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
-        </td>
-        <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">
-          ${wm.high52w !== null && wm.high52w !== undefined ? Fin.currency(wm.high52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
-        </td>
-        <td class="py-3 px-3 text-right">
-          ${format52wPositionCell(wm.low52w, wm.high52w, wm.pos52wPct, wlCurrency)}
-        </td>
-        <td class="py-3 px-3 text-right">
-          ${formatPeriodChangeCell(wm.momPct, 'MoM', wm.momRefMonth)}
-        </td>
-        <td class="py-3 px-3 text-right">
-          ${formatPeriodChangeCell(wm.qoqPct, 'QoQ', wm.qoqRefMonth)}
-        </td>
-        <td class="py-3 px-3 text-right">
-          ${formatPeriodChangeCell(wm.yoyPct, 'YoY', wm.yoyRefMonth)}
-        </td>
-        <td class="py-3 px-3 text-right">
-          ${formatDividendExDateCell(wm.divInfo)}
-        </td>
-        <td class="py-3 px-3 text-right">
-          ${formatTrendRegimeCell(wm)}
-        </td>
-        <td class="py-3 px-3 text-center">
-          ${formatSignalBadgeCell(w.ticker, wm)}
-        </td>
-        <td class="py-3 px-3 text-right font-bold num-font text-purple-600 dark:text-purple-400">${Fin.currency(targetPrice, false, wlCurrency)}</td>
-        <td class="py-3 px-3 text-right num-font font-medium ${distPct <= 0 && curPrice > 0 ? 'text-emerald-500' : 'text-slate-400'}">
-          ${curPrice > 0 ? (distPct <= 0 ? 'At / Below Target' : `+${distPct.toFixed(1)}% above`) : '-'}
-        </td>
-        <td class="py-3 px-3 text-center">
-          ${isTriggered
-            ? '<span class="px-2.5 py-1 rounded-full font-bold bg-rose-500 text-white text-[10px] animate-pulse">BUY TARGET HIT</span>'
-            : '<span class="px-2 py-0.5 rounded font-medium bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px]">WATCHING</span>'}
-        </td>
-        <td class="py-3 px-3 text-center">
-          <div class="flex items-center justify-center gap-1.5">
-            <button onclick="event.stopPropagation(); selectStockForInlineChart('watchlist', '${w.ticker}', true)" class="p-1.5 ${isSelected ? 'bg-purple-600 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Monthly Price Chart Below">
-              <i class="fa-solid fa-chart-line"></i>
-            </button>
-            <button onclick="event.stopPropagation(); openTradeModalForTicker('${w.ticker}', 'BUY', ${curPrice || targetPrice})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold text-[11px]">
-              Buy
-            </button>
-            <button onclick="event.stopPropagation(); deleteFromWatchlist('${w.ticker}')" class="p-1.5 text-slate-400 hover:text-rose-500 transition">
-              <i class="fa-solid fa-trash-can text-xs"></i>
-            </button>
-          </div>
-        </td>
-      `;
-      wlTbody.appendChild(tr);
-    });
+      const sortedGroups = Object.values(groupsMap).sort((a, b) => {
+        if (a.isEtf !== b.isEtf) return a.isEtf ? -1 : 1;
+        return a.sector.localeCompare(b.sector, undefined, { sensitivity: 'base' });
+      });
+
+      sortedGroups.forEach(group => {
+        group.items.sort((a, b) => a.w.ticker.localeCompare(b.w.ticker, undefined, { sensitivity: 'base' }));
+
+        const isCollapsed = Boolean(state.settings.collapsedWatchlistSectors[group.sector]);
+        const avgScore = group.items.length > 0 ? Math.round(group.scoreSum / group.items.length) : 50;
+        const iconCls = getSectorIconClass(group.sector, group.isEtf);
+
+        const headerTr = document.createElement('tr');
+        headerTr.className = `sector-group-header cursor-pointer select-none transition border-y border-slate-200 dark:border-slate-700/80 ${
+          group.isEtf
+            ? 'bg-emerald-50/70 dark:bg-emerald-950/25 hover:bg-emerald-100/70 dark:hover:bg-emerald-950/40'
+            : 'bg-slate-100/85 dark:bg-slate-800/75 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+        }`;
+        headerTr.setAttribute('data-wl-sector-group', group.sector);
+        headerTr.setAttribute('aria-expanded', String(!isCollapsed));
+        headerTr.addEventListener('click', () => toggleWatchlistSector(group.sector));
+
+        headerTr.innerHTML = `
+          <td class="py-2 px-2.5 sm:py-2.5 sm:px-4 sticky-col-mobile max-w-[142px] sm:max-w-none ${
+            group.isEtf ? 'bg-emerald-50/95 dark:bg-slate-900' : 'bg-slate-100/95 dark:bg-slate-800'
+          }">
+            <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span class="w-4 h-4 sm:w-5 sm:h-5 rounded bg-white/80 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-[9px] sm:text-[10px] text-slate-600 dark:text-slate-300 shrink-0">
+                <i class="fa-solid ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'}"></i>
+              </span>
+              <i class="fa-solid ${iconCls} text-[11px] sm:text-xs shrink-0"></i>
+              <span class="font-extrabold text-[11px] sm:text-sm tracking-tight text-slate-900 dark:text-white truncate" title="${group.sector}">${group.sector}</span>
+              <span class="text-[9px] sm:text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded-full bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 shrink-0">
+                ${group.items.length}<span class="hidden sm:inline"> ${group.items.length === 1 ? 'ticker' : 'tickers'}</span>
+              </span>
+            </div>
+          </td>
+          <td colspan="2" class="py-2 px-2 text-left text-[10px] font-mono text-slate-500 dark:text-slate-400">
+            ${group.isEtf ? '<span class="px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 font-bold mr-1">TOP ETF</span>' : ''}
+            <span>Avg Signal: <strong class="text-slate-700 dark:text-slate-200">${avgScore}/100</strong></span>
+          </td>
+          <td colspan="9" class="py-2 px-3 text-right text-[11px] text-slate-400 font-medium">
+            Watchlist Sector Group (${group.items.length} ${group.items.length === 1 ? 'ticker' : 'tickers'})
+          </td>
+          <td colspan="3" class="py-2 px-3 text-center">
+            ${group.triggeredCount > 0
+              ? `<span class="px-2 py-0.5 rounded-full font-bold bg-rose-500 text-white text-[10px]">${group.triggeredCount} BUY TARGET HIT</span>`
+              : `<span class="text-[11px] text-slate-400 font-mono">0 target alerts</span>`}
+          </td>
+          <td class="py-2 px-3 text-center text-[11px] font-semibold text-purple-600 dark:text-purple-400">
+            <span>${isCollapsed ? 'Expand' : 'Collapse'}</span>
+          </td>
+        `;
+        wlTbody.appendChild(headerTr);
+
+        if (!isCollapsed) {
+          group.items.forEach(({ w, curPrice, wm, secName, compName }) => {
+            const isSelected = selectedWatchlistTicker === w.ticker;
+            const priceChangePct = state.prices[w.ticker]?.changePct || 0;
+            const priceChangeColor = (state.prices[w.ticker]?.change || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500';
+            const wlCurrency = state.prices[w.ticker]?.currency || state.fundamentals[w.ticker]?.currency || (w.ticker.endsWith('.HK') ? 'HKD' : (w.ticker.endsWith('.L') ? 'GBp' : 'USD'));
+            const targetPrice = w.targetBuyPrice;
+            const distPct = curPrice > 0 ? ((curPrice - targetPrice) / targetPrice) * 100 : 0;
+            const isTriggered = curPrice > 0 && curPrice <= targetPrice;
+
+            const tr = document.createElement('tr');
+            tr.className = `cursor-pointer transition text-xs ${
+              isSelected
+                ? 'selected-table-row bg-slate-300/80 dark:bg-slate-800 border-l-4 border-l-purple-500'
+                : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
+            }`;
+            tr.setAttribute('data-wl-sector-item', group.sector);
+            tr.addEventListener('click', (e) => {
+              if (e.target.closest('button')) return;
+              selectStockForInlineChart('watchlist', w.ticker, true);
+            });
+
+            tr.innerHTML = `
+              <td class="py-2.5 pl-2.5 pr-2 sm:py-3 sm:pl-7 sm:pr-4 sticky-col-mobile max-w-[142px] sm:max-w-none">
+                <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span class="hover:text-purple-500 underline decoration-dotted underline-offset-2 truncate">${w.ticker}</span>
+                  <span class="text-[9px] sm:text-[10px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium shrink-0">${wlCurrency}</span>
+                </div>
+                <div class="text-[10px] sm:text-[11px] text-slate-400 truncate max-w-[105px] sm:max-w-[180px]">${compName}</div>
+              </td>
+              <td class="py-3 px-3 text-slate-500 dark:text-slate-400">${secName}</td>
+              <td class="py-3 px-3 text-right">
+                ${curPrice > 0
+                  ? `<div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(curPrice, false, wlCurrency)}</div>
+                     <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
+                       <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(priceChangePct) > 40 ? 0 : priceChangePct)}
+                     </div>`
+                  : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
+              </td>
+              <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">
+                ${wm.low52w !== null && wm.low52w !== undefined ? Fin.currency(wm.low52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+              </td>
+              <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">
+                ${wm.high52w !== null && wm.high52w !== undefined ? Fin.currency(wm.high52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+              </td>
+              <td class="py-3 px-3 text-right">
+                ${format52wPositionCell(wm.low52w, wm.high52w, wm.pos52wPct, wlCurrency)}
+              </td>
+              <td class="py-3 px-3 text-right">
+                ${formatPeriodChangeCell(wm.momPct, 'MoM', wm.momRefMonth)}
+              </td>
+              <td class="py-3 px-3 text-right">
+                ${formatPeriodChangeCell(wm.qoqPct, 'QoQ', wm.qoqRefMonth)}
+              </td>
+              <td class="py-3 px-3 text-right">
+                ${formatPeriodChangeCell(wm.yoyPct, 'YoY', wm.yoyRefMonth)}
+              </td>
+              <td class="py-3 px-3 text-right">
+                ${formatDividendExDateCell(wm.divInfo)}
+              </td>
+              <td class="py-3 px-3 text-right">
+                ${formatTrendRegimeCell(wm)}
+              </td>
+              <td class="py-3 px-3 text-center">
+                ${formatSignalBadgeCell(w.ticker, wm)}
+              </td>
+              <td class="py-3 px-3 text-right font-bold num-font text-purple-600 dark:text-purple-400">${Fin.currency(targetPrice, false, wlCurrency)}</td>
+              <td class="py-3 px-3 text-right num-font font-medium ${distPct <= 0 && curPrice > 0 ? 'text-emerald-500' : 'text-slate-400'}">
+                ${curPrice > 0 ? (distPct <= 0 ? 'At / Below Target' : `+${distPct.toFixed(1)}% above`) : '-'}
+              </td>
+              <td class="py-3 px-3 text-center">
+                ${isTriggered
+                  ? '<span class="px-2.5 py-1 rounded-full font-bold bg-rose-500 text-white text-[10px] animate-pulse">BUY TARGET HIT</span>'
+                  : '<span class="px-2 py-0.5 rounded font-medium bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px]">WATCHING</span>'}
+              </td>
+              <td class="py-3 px-3 text-center">
+                <div class="flex items-center justify-center gap-1.5">
+                  <button onclick="event.stopPropagation(); selectStockForInlineChart('watchlist', '${w.ticker}', true)" class="p-1.5 ${isSelected ? 'bg-purple-600 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Monthly Price Chart Below">
+                    <i class="fa-solid fa-chart-line"></i>
+                  </button>
+                  <button onclick="event.stopPropagation(); openTradeModalForTicker('${w.ticker}', 'BUY', ${curPrice || targetPrice})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold text-[11px]">
+                    Buy
+                  </button>
+                  <button onclick="event.stopPropagation(); deleteFromWatchlist('${w.ticker}')" class="p-1.5 text-slate-400 hover:text-rose-500 transition">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            `;
+            wlTbody.appendChild(tr);
+          });
+        }
+      });
+    }
   }
 
   // Fundamentals Matrix
@@ -2366,8 +2570,12 @@ function setupEventListeners() {
 
   on('btn-open-trade-modal', 'click', () => openTradeModal());
   on('btn-holdings-new-trade', 'click', () => openTradeModal());
+  on('holdings-filter-signal', 'change', () => renderHoldingsTable());
+  on('watchlist-filter-signal', 'change', () => renderWatchlistAndFundamentals());
   on('btn-expand-all-sectors', 'click', () => setAllHoldingsSectorsCollapsed(false));
   on('btn-collapse-all-sectors', 'click', () => setAllHoldingsSectorsCollapsed(true));
+  on('btn-wl-expand-all-sectors', 'click', () => setAllWatchlistSectorsCollapsed(false));
+  on('btn-wl-collapse-all-sectors', 'click', () => setAllWatchlistSectorsCollapsed(true));
   on('btn-tx-add', 'click', () => openTradeModal());
   on('btn-quick-cash', 'click', () => openTradeModal(null, 'DEPOSIT'));
   on('btn-deposit-quick', 'click', () => openTradeModal(null, 'DEPOSIT'));
@@ -2585,7 +2793,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.9 • Build 20261101_1945)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.0 • Build 20261101_2015)...');
   }
 
   try {
@@ -2622,7 +2830,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.1.9 boot sequence complete.');
+      AppLogger.info('Boot', 'myPortfolio v3.2.0 boot sequence complete.');
     }
   }, 120);
 }

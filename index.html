@@ -413,6 +413,47 @@ tr.selected-table-row > td.sticky-col-mobile {
   }
 }
 
+/* ==========================================================================
+   v3.2.0 Ultra-Compact Trades & Dividend Payout Log Table Rows
+   Ensures all 20 paginated rows fit on a single mobile viewport without scrolling
+   ========================================================================== */
+.compact-log-table thead th {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  line-height: 1.15 !important;
+}
+
+.compact-log-table tbody td {
+  padding-top: 0.24rem !important;
+  padding-bottom: 0.24rem !important;
+  line-height: 1.18 !important;
+}
+
+@media (max-width: 640px) {
+  .compact-log-table thead th {
+    padding-top: 0.2rem !important;
+    padding-bottom: 0.2rem !important;
+    padding-left: 0.35rem !important;
+    padding-right: 0.35rem !important;
+    font-size: 0.64rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .compact-log-table tbody td {
+    padding-top: 0.13rem !important;
+    padding-bottom: 0.13rem !important;
+    padding-left: 0.35rem !important;
+    padding-right: 0.35rem !important;
+    font-size: 0.68rem !important;
+    line-height: 1.12 !important;
+  }
+
+  .compact-log-table tbody td button {
+    padding: 0.05rem 0.2rem !important;
+    line-height: 1 !important;
+  }
+}
+
   </style>
 </head>
 <body data-device="desktop" class="bg-slate-50 dark:bg-dark-bg text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
@@ -435,7 +476,7 @@ tr.selected-table-row > td.sticky-col-mobile {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.1.9 (20261101_1945)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.2.0 (20261101_2015)</span>
             </div>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Global HK, US &amp; London Stock Portfolio Tracker</p>
           </div>
@@ -804,6 +845,17 @@ tr.selected-table-row > td.sticky-col-mobile {
             <p class="text-xs text-slate-500 dark:text-slate-400">Grouped by sector with ETFs at the top and alphabetical sector + ticker sorting — click any sector header to collapse/expand or any stock row to view its monthly price chart</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-1.5">
+              <label for="holdings-filter-signal" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Signal:</label>
+              <select id="holdings-filter-signal" class="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 font-semibold">
+                <option value="ALL">All Signals</option>
+                <option value="STRONG BUY">STRONG BUY</option>
+                <option value="ACCUMULATE">ACCUMULATE</option>
+                <option value="HOLD">HOLD</option>
+                <option value="TRIM / OFFLOAD">TRIM / OFFLOAD</option>
+                <option value="SELL / AVOID">SELL / AVOID</option>
+              </select>
+            </div>
             <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs border border-slate-200 dark:border-slate-700">
               <button type="button" id="btn-expand-all-sectors" class="px-2.5 py-1 rounded-md font-semibold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-dark-card transition" title="Expand all sector groups">
                 <i class="fa-solid fa-angles-down text-[10px] mr-1"></i>Expand All
@@ -924,19 +976,19 @@ tr.selected-table-row > td.sticky-col-mobile {
 
         <!-- Transactions Table -->
         <div class="table-responsive-wrapper">
-          <table class="w-full text-left text-sm whitespace-nowrap">
+          <table id="tx-log-table" class="w-full text-left text-sm whitespace-nowrap compact-log-table">
             <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-dark-border">
               <tr>
-                <th class="py-3 px-4">Date</th>
-                <th class="py-3 px-4">Type</th>
-                <th class="py-3 px-4">Ticker</th>
-                <th class="py-3 px-4 text-right">Shares</th>
-                <th class="py-3 px-4 text-right">Price ($)</th>
-                <th class="py-3 px-4 text-right">Fees ($)</th>
-                <th class="py-3 px-4 text-right">Net Amount</th>
-                <th class="py-3 px-4 text-right">Realized P&amp;L</th>
-                <th class="py-3 px-4">Notes</th>
-                <th class="py-3 px-4 text-center">Action</th>
+                <th class="py-1.5 px-2.5 sm:px-3">Date</th>
+                <th class="py-1.5 px-2.5 sm:px-3">Type</th>
+                <th class="py-1.5 px-2.5 sm:px-3">Ticker</th>
+                <th class="py-1.5 px-2.5 sm:px-3 text-right">Shares</th>
+                <th class="py-1.5 px-2.5 sm:px-3 text-right">Price ($)</th>
+                <th class="py-1.5 px-2.5 sm:px-3 text-right">Fees ($)</th>
+                <th class="py-1.5 px-2.5 sm:px-3 text-right">Net Amount</th>
+                <th class="py-1.5 px-2.5 sm:px-3 text-right">Realized P&amp;L</th>
+                <th class="py-1.5 px-2.5 sm:px-3">Notes</th>
+                <th class="py-1.5 px-2 sm:px-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody id="tx-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -1073,16 +1125,16 @@ tr.selected-table-row > td.sticky-col-mobile {
         </div>
 
         <div class="table-responsive-wrapper">
-          <table class="w-full text-left text-sm whitespace-nowrap">
+          <table id="div-payout-log-table" class="w-full text-left text-sm whitespace-nowrap compact-log-table">
             <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-dark-border">
               <tr>
-                <th class="py-3 px-4">Pay Date</th>
-                <th class="py-3 px-4">Ex-Date</th>
-                <th class="py-3 px-4">Ticker</th>
-                <th class="py-3 px-4 text-right">Payout / Share</th>
-                <th class="py-3 px-4 text-right">Cash Payout</th>
-                <th class="py-3 px-4">Notes</th>
-                <th class="py-3 px-4 text-center">Action</th>
+                <th class="py-1.5 px-2 sm:px-3">Pay Date</th>
+                <th class="py-1.5 px-2 sm:px-3">Ex-Date</th>
+                <th class="py-1.5 px-2 sm:px-3">Ticker</th>
+                <th class="py-1.5 px-2 sm:px-3 text-right">Payout / Share</th>
+                <th class="py-1.5 px-2 sm:px-3 text-right">Cash Payout</th>
+                <th class="py-1.5 px-2 sm:px-3">Notes</th>
+                <th class="py-1.5 px-2 sm:px-3 text-center">Action</th>
               </tr>
             </thead>
             <tbody id="dividends-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -1105,11 +1157,30 @@ tr.selected-table-row > td.sticky-col-mobile {
         <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
-              <i class="fa-solid fa-binoculars text-purple-500"></i> Target Price Watchlist &amp; Alerts
+              <i class="fa-solid fa-binoculars text-purple-500"></i> Target Price Watchlist &amp; Alerts (Grouped by Sector)
             </h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Track HK, US &amp; London stocks via API — click any stock row below to view its historical monthly price chart (1-Y, 2-Y, 3-Y, 5-Y, ALL)</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Grouped by sector with ETFs at the top and alphabetical sector + ticker sorting — click any sector header to collapse/expand or any stock row to view its monthly price chart</p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-1.5">
+              <label for="watchlist-filter-signal" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Signal:</label>
+              <select id="watchlist-filter-signal" class="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 font-semibold">
+                <option value="ALL">All Signals</option>
+                <option value="STRONG BUY">STRONG BUY</option>
+                <option value="ACCUMULATE">ACCUMULATE</option>
+                <option value="HOLD">HOLD</option>
+                <option value="TRIM / OFFLOAD">TRIM / OFFLOAD</option>
+                <option value="SELL / AVOID">SELL / AVOID</option>
+              </select>
+            </div>
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs border border-slate-200 dark:border-slate-700">
+              <button type="button" id="btn-wl-expand-all-sectors" class="px-2.5 py-1 rounded-md font-semibold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-dark-card transition" title="Expand all watchlist sector groups">
+                <i class="fa-solid fa-angles-down text-[10px] mr-1"></i>Expand All
+              </button>
+              <button type="button" id="btn-wl-collapse-all-sectors" class="px-2.5 py-1 rounded-md font-semibold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-dark-card transition" title="Collapse all watchlist sector groups">
+                <i class="fa-solid fa-angles-up text-[10px] mr-1"></i>Collapse All
+              </button>
+            </div>
             <button id="btn-open-watchlist-modal" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition flex items-center gap-1.5 shadow-sm">
               <i class="fa-solid fa-plus text-xs"></i> Add Ticker
             </button>
@@ -1680,13 +1751,13 @@ tr.selected-table-row > td.sticky-col-mobile {
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.1.9 • Build 20261101_1945</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.2.0 • Build 20261101_2015</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261101_1945</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261101_2015</span>/
           </span>
         </div>
 
@@ -1921,7 +1992,7 @@ tr.selected-table-row > td.sticky-col-mobile {
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.1.9 (Build 20261101_1945)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.2.0 (Build 20261101_2015)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
       <div class="flex items-center gap-4 text-slate-400">
         <span><i class="fa-solid fa-globe text-brand-500"></i> HK, US &amp; London API</span>
@@ -2356,10 +2427,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.1.9',
-  buildId: '20261101_1945',
-  releaseDate: '2026-10-31 16:50 HKT',
-  driveFolder: '/myPortfolio/20261101_1945/',
+  appVersion: '3.2.0',
+  buildId: '20261101_2015',
+  releaseDate: '2026-11-01 20:15 HKT',
+  driveFolder: '/myPortfolio/20261101_2015/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -2373,8 +2444,19 @@ var APP_VERSION_MANIFEST = {
   },
   changelog: [
     {
+      version: '3.2.0',
+      buildId: '20261101_2015',
+      date: '2026-11-01 20:15 HKT',
+      summary: 'Added Signal filter dropdowns on Holdings and Watchlist pages, grouped Watchlist stocks by collapsible sectors with ETF top-priority sorting, and reduced vertical row margins on Transaction Audit Log and Dividend Payout Logs so all 20 paginated rows fit on a single mobile screen without scrolling.',
+      changes: [
+        'Added Signal filter dropdown (#holdings-filter-signal & #watchlist-filter-signal) with live signal counts on both Holdings and Watchlist pages',
+        'Grouped Watchlist stocks by collapsible sectors (Index ETF first, then alphabetical by sector and ticker) with Expand All / Collapse All controls and mobile-safe sticky first column (colspan=1)',
+        'Reduced top and bottom row padding (.compact-log-table) on Transaction Audit Log and Dividend Payout Logs tables so 20 rows fit on a single mobile viewport without vertical scrolling'
+      ]
+    },
+    {
       version: '3.1.9',
-      buildId: '20261101_1945',
+      buildId: '20261101_2015',
       date: '2026-11-01 19:45 HKT',
       summary: 'Fixed historical monthly Close vs. Low mismatch on multi-year charts by aligning Monthly Close to unadjusted market close (rawClose) on the same price scale as Monthly High, Monthly Low, and Avg Cost.',
       changes: [
@@ -2384,7 +2466,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.8',
-      buildId: '20261101_1945',
+      buildId: '20261101_2015',
       date: '2026-11-01 14:05 HKT',
       summary: 'Moved stock chart legend below the chart canvas, added translucent green Monthly High–Low range band around Monthly Close, increased Reg Trend Upper/Lower visibility and chart height (350px–430px), restricted top KPI summary cards to the Home (Dashboard) page only, and added 20-row pagination (Prev 20 / Next 20) to all Transaction and Dividend tables.',
       changes: [
@@ -2397,7 +2479,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.7',
-      buildId: '20261101_1945',
+      buildId: '20261101_2015',
       date: '2026-11-01',
       changes: [
         'Added automatic startup and ingestion data validation for historical monthly price series, technical indicators, and company news feeds',
@@ -2407,7 +2489,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.6',
-      buildId: '20261101_1945',
+      buildId: '20261101_2015',
       date: '2026-11-01',
       changes: [
         'Dedicated browser MarketAPI strictly to fast parallel Live Price quotes only (eliminated all third-party browser API calls for 15y historical data and news)',
@@ -2418,7 +2500,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.5',
-      buildId: '20261101_1945',
+      buildId: '20261101_2015',
       date: '2026-10-31',
       changes: [
         'Changed clicked/selected row highlight in Holdings and Watchlist (and active nav tabs) to dark slate grey (#1e293b) for high-contrast text readability in dark mode',
@@ -2427,7 +2509,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.4',
-      buildId: '20261101_1945',
+      buildId: '20261101_2015',
       date: '2026-10-31',
       changes: [
         'Fixed Holdings sector group header sticky bar width on mobile (changed sticky cell from colspan=3 to colspan=1 matching stock rows) so sector subtotals/aggregates are never blocked during horizontal scroll',
@@ -2436,7 +2518,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.3',
-      buildId: '20261101_1945',
+      buildId: '20261101_2015',
       date: '2026-10-31',
       changes: [
         'Styled unpaid/pending dividends (where Ex-Date has passed but Pay Date is in the future) in distinct amber/yellow font color with an Unpaid badge in Dividend Payout Logs',
@@ -2446,7 +2528,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.2',
-      buildId: '20261101_1945',
+      buildId: '20261101_2015',
       date: '2026-10-31',
       changes: [
         'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging legacy baseline dates with live Yahoo Finance ex-dates',
@@ -2458,7 +2540,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.1',
-      buildId: '20261101_1945',
+      buildId: '20261101_2015',
       date: '2026-10-31',
       changes: [
         'Fixed Service Worker (sw.js) cache-first trap by bumping cache version and switching to Network-First plus automatic stale CacheStorage purge on startup',
@@ -2468,7 +2550,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.0',
-      buildId: '20261101_1945',
+      buildId: '20261101_2015',
       date: '2026-10-31 16:50 HKT',
       title: '1-Day Quote Previous-Close Fix, 100% Cash Dividends, Dividend Ticker Filter, Complete 3476.HK/3433.HK Dividends & TRIM/OFFLOAD Signal Engine',
       changes: [
@@ -2481,7 +2563,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.1',
-      buildId: '20261101_1945',
+      buildId: '20261101_2015',
       date: '2026-10-31 11:15 HKT',
       title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
       changes: [
@@ -2496,7 +2578,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.0',
-      buildId: '20261101_1945',
+      buildId: '20261101_2015',
       date: '2026-10-30 23:30 HKT',
       title: 'Full Quantitative Suite: 2018+ Auto-Dividends, Buy/Sell Signal Engine, Scheduled News, Trend Regimes, Real XIRR & Settings Customizer',
       changes: [
@@ -8183,7 +8265,7 @@ window.renderPnlBreakdownChart = renderPnlBreakdownChart;
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.1.9-20261101_1945') {
+      if (k !== 'myportfolio-cache-v3.2.0-20261101_2015') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -8573,6 +8655,71 @@ function setAllHoldingsSectorsCollapsed(collapsed) {
 }
 window.setAllHoldingsSectorsCollapsed = setAllHoldingsSectorsCollapsed;
 
+function getCanonicalWatchlistSector(w) {
+  const staticMeta = MarketAPI.getStaticProfile(w?.ticker);
+  const rawSector = String(w?.sector || state.fundamentals?.[w?.ticker]?.sector || staticMeta?.sector || 'Equities').trim();
+  const compName = w?.name || state.fundamentals?.[w?.ticker]?.name || staticMeta?.name || '';
+  if (MarketAPI.isEtfSector(rawSector, w?.ticker, compName)) {
+    return 'Index ETF';
+  }
+  return rawSector || 'Equities';
+}
+
+function toggleWatchlistSector(sectorName) {
+  if (!state.settings.collapsedWatchlistSectors) state.settings.collapsedWatchlistSectors = {};
+  state.settings.collapsedWatchlistSectors[sectorName] = !state.settings.collapsedWatchlistSectors[sectorName];
+  saveState();
+  renderWatchlistAndFundamentals();
+}
+window.toggleWatchlistSector = toggleWatchlistSector;
+
+function setAllWatchlistSectorsCollapsed(collapsed) {
+  if (!state.settings.collapsedWatchlistSectors) state.settings.collapsedWatchlistSectors = {};
+  (state?.watchlist || []).forEach(w => {
+    const sec = getCanonicalWatchlistSector(w);
+    state.settings.collapsedWatchlistSectors[sec] = Boolean(collapsed);
+  });
+  saveState();
+  renderWatchlistAndFundamentals();
+}
+window.setAllWatchlistSectorsCollapsed = setAllWatchlistSectorsCollapsed;
+
+var CANONICAL_SIGNAL_LABELS = [
+  'STRONG BUY',
+  'ACCUMULATE',
+  'HOLD',
+  'TRIM / OFFLOAD',
+  'SELL / AVOID'
+];
+
+function populateSignalFilterDropdown(selectEl, signalLabelsList) {
+  if (!selectEl) return 'ALL';
+  const prevVal = selectEl.value || 'ALL';
+  const counts = {};
+  CANONICAL_SIGNAL_LABELS.forEach(lbl => { counts[lbl] = 0; });
+  signalLabelsList.forEach(lbl => {
+    const key = lbl || 'HOLD';
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const total = signalLabelsList.length;
+  const optionsHtml = [
+    `<option value="ALL">All Signals (${total})</option>`,
+    ...CANONICAL_SIGNAL_LABELS.map(lbl => {
+      const cnt = counts[lbl] || 0;
+      return `<option value="${lbl}" ${lbl === prevVal ? 'selected' : ''}>${lbl} (${cnt})</option>`;
+    })
+  ].join('');
+
+  selectEl.innerHTML = optionsHtml;
+  if (prevVal !== 'ALL' && !CANONICAL_SIGNAL_LABELS.includes(prevVal)) {
+    selectEl.value = 'ALL';
+    return 'ALL';
+  }
+  selectEl.value = prevVal;
+  return prevVal;
+}
+
 function format52wPositionCell(low52w, high52w, pos52wPct, currency) {
   if (pos52wPct === null || pos52wPct === undefined || isNaN(pos52wPct)) {
     return '<span class="text-slate-400 text-[11px]" title="Sync market data to calculate 52W range position">-</span>';
@@ -8740,7 +8887,13 @@ window.openSignalDetailModal = function(rawTicker) {
 function renderHoldingsTable() {
   const tbody = document.getElementById('holdings-table-body');
   const emptyState = document.getElementById('holdings-empty-state');
+  const signalFilterEl = document.getElementById('holdings-filter-signal');
   tbody.innerHTML = '';
+
+  const selectedSignal = populateSignalFilterDropdown(
+    signalFilterEl,
+    (portfolio.activeHoldings || []).map(h => h.signalLabel || 'HOLD')
+  );
 
   if (portfolio.activeHoldings.length === 0) {
     emptyState.classList.remove('hidden');
@@ -8750,11 +8903,27 @@ function renderHoldingsTable() {
   }
   emptyState.classList.add('hidden');
 
+  const filteredHoldings = selectedSignal === 'ALL'
+    ? portfolio.activeHoldings
+    : portfolio.activeHoldings.filter(h => (h.signalLabel || 'HOLD') === selectedSignal);
+
+  if (filteredHoldings.length === 0) {
+    tbody.innerHTML = `
+      <tr class="text-xs text-slate-400">
+        <td colspan="19" class="py-8 px-4 text-center">
+          No active holdings currently match signal <strong class="text-slate-700 dark:text-slate-200 font-mono">${selectedSignal}</strong>.
+          <button type="button" onclick="const el=document.getElementById('holdings-filter-signal'); if(el){el.value='ALL'; renderHoldingsTable();}" class="ml-2 text-brand-500 hover:underline font-semibold">Show All (${portfolio.activeHoldings.length})</button>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   if (!state.settings.collapsedSectors) state.settings.collapsedSectors = {};
 
   const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
   const groupsMap = {};
-  portfolio.activeHoldings.forEach(h => {
+  filteredHoldings.forEach(h => {
     const secName = getCanonicalHoldingsSector(h);
     const hCurr = h.currency || 'HKD';
     if (!groupsMap[secName]) {
@@ -9017,7 +9186,7 @@ function renderTablePaginationControls(barId, pageKey, totalItems, onPageChange,
   const startIdx = (currentPage - 1) * PAGINATION_PAGE_SIZE;
   const endIdx = Math.min(totalItems, startIdx + PAGINATION_PAGE_SIZE);
 
-  barEl.className = 'px-4 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-wrap items-center justify-between gap-2 text-xs';
+  barEl.className = 'px-3 py-1.5 sm:px-4 sm:py-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs';
   const prevDisabled = currentPage <= 1;
   const nextDisabled = currentPage >= totalPages;
 
@@ -9027,20 +9196,20 @@ function renderTablePaginationControls(barId, pageKey, totalItems, onPageChange,
       <span class="mx-1.5 text-slate-300 dark:text-slate-600">&bull;</span>
       <span>Page <strong class="font-mono text-slate-800 dark:text-slate-200">${currentPage}</strong> of <strong class="font-mono text-slate-800 dark:text-slate-200">${totalPages}</strong></span>
     </div>
-    <div class="flex items-center gap-2">
-      <button type="button" data-page-action="prev" ${prevDisabled ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg font-semibold border transition flex items-center gap-1.5 ${
+    <div class="flex items-center gap-1.5">
+      <button type="button" data-page-action="prev" ${prevDisabled ? 'disabled' : ''} class="px-2.5 py-1 rounded-md font-semibold border transition flex items-center gap-1 ${
         prevDisabled
           ? 'bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800 cursor-not-allowed'
           : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm'
       }">
-        <i class="fa-solid fa-chevron-left text-[10px]"></i> Prev 20
+        <i class="fa-solid fa-chevron-left text-[9px]"></i> Prev 20
       </button>
-      <button type="button" data-page-action="next" ${nextDisabled ? 'disabled' : ''} class="px-3 py-1.5 rounded-lg font-semibold border transition flex items-center gap-1.5 ${
+      <button type="button" data-page-action="next" ${nextDisabled ? 'disabled' : ''} class="px-2.5 py-1 rounded-md font-semibold border transition flex items-center gap-1 ${
         nextDisabled
           ? 'bg-slate-100 dark:bg-slate-800/40 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800 cursor-not-allowed'
           : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm'
       }">
-        Next 20 <i class="fa-solid fa-chevron-right text-[10px]"></i>
+        Next 20 <i class="fa-solid fa-chevron-right text-[9px]"></i>
       </button>
     </div>
   `;
@@ -9090,11 +9259,11 @@ function renderTransactionsTable() {
     tr.className = 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition text-xs';
 
     const badgeMap = {
-      BUY: '<span class="px-2 py-0.5 rounded font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">BUY</span>',
-      SELL: '<span class="px-2 py-0.5 rounded font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">SELL</span>',
-      DRIP: '<span class="px-2 py-0.5 rounded font-bold bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">DRIP</span>',
-      DEPOSIT: '<span class="px-2 py-0.5 rounded font-bold bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">DEPOSIT</span>',
-      WITHDRAW: '<span class="px-2 py-0.5 rounded font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">WITHDRAW</span>'
+      BUY: '<span class="px-1.5 py-0 rounded font-bold text-[10px] leading-tight bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">BUY</span>',
+      SELL: '<span class="px-1.5 py-0 rounded font-bold text-[10px] leading-tight bg-rose-500/10 text-rose-500 border border-rose-500/20">SELL</span>',
+      DRIP: '<span class="px-1.5 py-0 rounded font-bold text-[10px] leading-tight bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">DRIP</span>',
+      DEPOSIT: '<span class="px-1.5 py-0 rounded font-bold text-[10px] leading-tight bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">DEPOSIT</span>',
+      WITHDRAW: '<span class="px-1.5 py-0 rounded font-bold text-[10px] leading-tight bg-amber-500/10 text-amber-500 border border-amber-500/20">WITHDRAW</span>'
     };
 
     const isCashOnly = tx.type === 'DEPOSIT' || tx.type === 'WITHDRAW';
@@ -9110,18 +9279,18 @@ function renderTransactionsTable() {
     }
 
     tr.innerHTML = `
-      <td class="py-3 px-4 font-mono text-slate-500">${tx.date}</td>
-      <td class="py-3 px-4">${badgeMap[tx.type] || tx.type}</td>
-      <td class="py-3 px-4 font-bold text-slate-900 dark:text-white">${isCashOnly ? 'CASH' : tx.ticker}</td>
-      <td class="py-3 px-4 text-right num-font font-medium">${isCashOnly ? '-' : Fin.shares(tx.shares)}</td>
-      <td class="py-3 px-4 text-right num-font">${isCashOnly ? '-' : Fin.currency(tx.price, false, tCurr)}</td>
-      <td class="py-3 px-4 text-right num-font text-slate-400">${isCashOnly ? '-' : Fin.currency(tx.fees || 0, false, tCurr)}</td>
-      <td class="py-3 px-4 text-right font-bold num-font text-slate-900 dark:text-white">${Fin.currency(totalAmt, false, tCurr)}</td>
-      <td class="py-3 px-4 text-right">${gainCell}</td>
-      <td class="py-3 px-4 text-slate-500 max-w-xs truncate">${tx.notes || ''}</td>
-      <td class="py-3 px-4 text-center">
-        <button onclick="deleteTransaction('${tx.id}')" class="text-slate-400 hover:text-rose-500 transition p-1" title="Delete">
-          <i class="fa-solid fa-trash-can text-xs"></i>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 font-mono text-slate-500">${tx.date}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3">${badgeMap[tx.type] || tx.type}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 font-bold text-slate-900 dark:text-white">${isCashOnly ? 'CASH' : tx.ticker}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font font-medium">${isCashOnly ? '-' : Fin.shares(tx.shares)}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font">${isCashOnly ? '-' : Fin.currency(tx.price, false, tCurr)}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font text-slate-400">${isCashOnly ? '-' : Fin.currency(tx.fees || 0, false, tCurr)}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right font-bold num-font text-slate-900 dark:text-white">${Fin.currency(totalAmt, false, tCurr)}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right">${gainCell}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-slate-500 max-w-xs truncate">${tx.notes || ''}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-center">
+        <button onclick="deleteTransaction('${tx.id}')" class="text-slate-400 hover:text-rose-500 transition p-0.5 leading-none" title="Delete">
+          <i class="fa-solid fa-trash-can text-[11px]"></i>
         </button>
       </td>
     `;
@@ -9287,15 +9456,15 @@ function renderDividendsTable() {
       ? 'bg-amber-500/[0.03] hover:bg-amber-500/[0.08] transition text-xs'
       : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition text-xs';
     tr.innerHTML = `
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 font-mono font-medium ${isUnpaid ? 'text-amber-600 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'} whitespace-nowrap">${div.payDate}${payDateBadge}</td>
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 font-mono text-slate-400 whitespace-nowrap">${div.exDate || '-'}</td>
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 font-bold text-slate-900 dark:text-white whitespace-nowrap">${div.ticker}</td>
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 text-right num-font text-slate-500 dark:text-slate-400 whitespace-nowrap">${div.amountPerShare ? Fin.currency(div.amountPerShare, false, dCurr) : '-'}</td>
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 text-right font-bold num-font ${amountColorCls} whitespace-nowrap" title="${isUnpaid ? 'Dividend declared (Ex-Date passed) but not yet paid until ' + div.payDate : 'Paid cash dividend'}">+${Fin.currency(div.totalAmount, false, dCurr)}</td>
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 ${isUnpaid ? 'text-amber-600/80 dark:text-amber-300/80' : 'text-slate-400'} max-w-xs truncate">${div.notes || 'Cash Dividend'}</td>
-      <td class="py-2.5 sm:py-3 px-2.5 sm:px-4 text-center">
-        <button onclick="deleteDividend('${div.id}')" class="text-slate-400 hover:text-rose-500 transition p-1" title="Delete Dividend Record">
-          <i class="fa-solid fa-trash-can text-xs"></i>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 font-mono font-medium ${isUnpaid ? 'text-amber-600 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'} whitespace-nowrap">${div.payDate}${payDateBadge}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 font-mono text-slate-400 whitespace-nowrap">${div.exDate || '-'}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 font-bold text-slate-900 dark:text-white whitespace-nowrap">${div.ticker}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-right num-font text-slate-500 dark:text-slate-400 whitespace-nowrap">${div.amountPerShare ? Fin.currency(div.amountPerShare, false, dCurr) : '-'}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-right font-bold num-font ${amountColorCls} whitespace-nowrap" title="${isUnpaid ? 'Dividend declared (Ex-Date passed) but not yet paid until ' + div.payDate : 'Paid cash dividend'}">+${Fin.currency(div.totalAmount, false, dCurr)}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 ${isUnpaid ? 'text-amber-600/80 dark:text-amber-300/80' : 'text-slate-400'} max-w-xs truncate">${div.notes || 'Cash Dividend'}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-center">
+        <button onclick="deleteDividend('${div.id}')" class="text-slate-400 hover:text-rose-500 transition p-0.5 leading-none" title="Delete Dividend Record">
+          <i class="fa-solid fa-trash-can text-[11px]"></i>
         </button>
       </td>
     `;
@@ -9306,7 +9475,29 @@ function renderDividendsTable() {
 function renderWatchlistAndFundamentals() {
   const wlTbody = document.getElementById('watchlist-table-body');
   const wlEmpty = document.getElementById('watchlist-empty-state');
+  const signalFilterEl = document.getElementById('watchlist-filter-signal');
   wlTbody.innerHTML = '';
+
+  const enrichedWatchlist = (state.watchlist || []).map(w => {
+    const curPrice = state.prices[w.ticker]?.price || 0;
+    const wm = computeStockPriceMetrics(w.ticker, curPrice);
+    const secName = getCanonicalWatchlistSector(w);
+    const compName = w.name || state.fundamentals[w.ticker]?.name || MarketAPI.getStaticProfile(w.ticker)?.name || w.ticker;
+    return {
+      w,
+      curPrice,
+      wm,
+      secName,
+      compName,
+      signalLabel: wm?.signalLabel || 'HOLD',
+      signalScore: Number(wm?.signalScore ?? 50)
+    };
+  });
+
+  const selectedSignal = populateSignalFilterDropdown(
+    signalFilterEl,
+    enrichedWatchlist.map(item => item.signalLabel)
+  );
 
   if (state.watchlist.length === 0) {
     wlEmpty.classList.remove('hidden');
@@ -9314,97 +9505,192 @@ function renderWatchlistAndFundamentals() {
     if (wlChartCard) wlChartCard.classList.add('hidden');
   } else {
     wlEmpty.classList.add('hidden');
-    state.watchlist.forEach(w => {
-      const isSelected = selectedWatchlistTicker === w.ticker;
-      const curPrice = state.prices[w.ticker]?.price || 0;
-      const priceChangePct = state.prices[w.ticker]?.changePct || 0;
-      const priceChangeColor = (state.prices[w.ticker]?.change || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500';
-      const wlCurrency = state.prices[w.ticker]?.currency || state.fundamentals[w.ticker]?.currency || (w.ticker.endsWith('.HK') ? 'HKD' : (w.ticker.endsWith('.L') ? 'GBp' : 'USD'));
-      const targetPrice = w.targetBuyPrice;
-      const distPct = curPrice > 0 ? ((curPrice - targetPrice) / targetPrice) * 100 : 0;
-      const isTriggered = curPrice > 0 && curPrice <= targetPrice;
-      const wm = computeStockPriceMetrics(w.ticker, curPrice);
 
-      const tr = document.createElement('tr');
-      tr.className = `cursor-pointer transition text-xs ${
-        isSelected
-          ? 'selected-table-row bg-slate-300/80 dark:bg-slate-800 border-l-4 border-l-purple-500'
-          : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
-      }`;
-      tr.addEventListener('click', (e) => {
-        if (e.target.closest('button')) return;
-        selectStockForInlineChart('watchlist', w.ticker, true);
+    const filteredWatchlist = selectedSignal === 'ALL'
+      ? enrichedWatchlist
+      : enrichedWatchlist.filter(item => item.signalLabel === selectedSignal);
+
+    if (filteredWatchlist.length === 0) {
+      wlTbody.innerHTML = `
+        <tr class="text-xs text-slate-400">
+          <td colspan="16" class="py-8 px-4 text-center">
+            No watchlist tickers currently match signal <strong class="text-slate-700 dark:text-slate-200 font-mono">${selectedSignal}</strong>.
+            <button type="button" onclick="const el=document.getElementById('watchlist-filter-signal'); if(el){el.value='ALL'; renderWatchlistAndFundamentals();}" class="ml-2 text-purple-500 hover:underline font-semibold">Show All (${state.watchlist.length})</button>
+          </td>
+        </tr>
+      `;
+    } else {
+      if (!state.settings.collapsedWatchlistSectors) state.settings.collapsedWatchlistSectors = {};
+
+      const groupsMap = {};
+      filteredWatchlist.forEach(item => {
+        const sec = item.secName;
+        if (!groupsMap[sec]) {
+          groupsMap[sec] = {
+            sector: sec,
+            isEtf: MarketAPI.isEtfSector(sec, item.w.ticker, item.compName),
+            items: [],
+            triggeredCount: 0,
+            scoreSum: 0
+          };
+        }
+        const g = groupsMap[sec];
+        g.items.push(item);
+        g.scoreSum += item.signalScore;
+        if (item.curPrice > 0 && item.curPrice <= item.w.targetBuyPrice) {
+          g.triggeredCount += 1;
+        }
       });
 
-      tr.innerHTML = `
-        <td class="py-3 px-4 sticky-col-mobile">
-          <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-            <span class="hover:text-purple-500 underline decoration-dotted underline-offset-2">${w.ticker}</span>
-            <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium">${wlCurrency}</span>
-          </div>
-          <div class="text-[11px] text-slate-400">${w.name || state.fundamentals[w.ticker]?.name || ''}</div>
-        </td>
-        <td class="py-3 px-3 text-slate-500 dark:text-slate-400">${w.sector || 'General'}</td>
-        <td class="py-3 px-3 text-right">
-          ${curPrice > 0
-            ? `<div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(curPrice, false, wlCurrency)}</div>
-               <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
-                 <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(priceChangePct) > 40 ? 0 : priceChangePct)}
-               </div>`
-            : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
-        </td>
-        <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">
-          ${wm.low52w !== null && wm.low52w !== undefined ? Fin.currency(wm.low52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
-        </td>
-        <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">
-          ${wm.high52w !== null && wm.high52w !== undefined ? Fin.currency(wm.high52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
-        </td>
-        <td class="py-3 px-3 text-right">
-          ${format52wPositionCell(wm.low52w, wm.high52w, wm.pos52wPct, wlCurrency)}
-        </td>
-        <td class="py-3 px-3 text-right">
-          ${formatPeriodChangeCell(wm.momPct, 'MoM', wm.momRefMonth)}
-        </td>
-        <td class="py-3 px-3 text-right">
-          ${formatPeriodChangeCell(wm.qoqPct, 'QoQ', wm.qoqRefMonth)}
-        </td>
-        <td class="py-3 px-3 text-right">
-          ${formatPeriodChangeCell(wm.yoyPct, 'YoY', wm.yoyRefMonth)}
-        </td>
-        <td class="py-3 px-3 text-right">
-          ${formatDividendExDateCell(wm.divInfo)}
-        </td>
-        <td class="py-3 px-3 text-right">
-          ${formatTrendRegimeCell(wm)}
-        </td>
-        <td class="py-3 px-3 text-center">
-          ${formatSignalBadgeCell(w.ticker, wm)}
-        </td>
-        <td class="py-3 px-3 text-right font-bold num-font text-purple-600 dark:text-purple-400">${Fin.currency(targetPrice, false, wlCurrency)}</td>
-        <td class="py-3 px-3 text-right num-font font-medium ${distPct <= 0 && curPrice > 0 ? 'text-emerald-500' : 'text-slate-400'}">
-          ${curPrice > 0 ? (distPct <= 0 ? 'At / Below Target' : `+${distPct.toFixed(1)}% above`) : '-'}
-        </td>
-        <td class="py-3 px-3 text-center">
-          ${isTriggered
-            ? '<span class="px-2.5 py-1 rounded-full font-bold bg-rose-500 text-white text-[10px] animate-pulse">BUY TARGET HIT</span>'
-            : '<span class="px-2 py-0.5 rounded font-medium bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px]">WATCHING</span>'}
-        </td>
-        <td class="py-3 px-3 text-center">
-          <div class="flex items-center justify-center gap-1.5">
-            <button onclick="event.stopPropagation(); selectStockForInlineChart('watchlist', '${w.ticker}', true)" class="p-1.5 ${isSelected ? 'bg-purple-600 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Monthly Price Chart Below">
-              <i class="fa-solid fa-chart-line"></i>
-            </button>
-            <button onclick="event.stopPropagation(); openTradeModalForTicker('${w.ticker}', 'BUY', ${curPrice || targetPrice})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold text-[11px]">
-              Buy
-            </button>
-            <button onclick="event.stopPropagation(); deleteFromWatchlist('${w.ticker}')" class="p-1.5 text-slate-400 hover:text-rose-500 transition">
-              <i class="fa-solid fa-trash-can text-xs"></i>
-            </button>
-          </div>
-        </td>
-      `;
-      wlTbody.appendChild(tr);
-    });
+      const sortedGroups = Object.values(groupsMap).sort((a, b) => {
+        if (a.isEtf !== b.isEtf) return a.isEtf ? -1 : 1;
+        return a.sector.localeCompare(b.sector, undefined, { sensitivity: 'base' });
+      });
+
+      sortedGroups.forEach(group => {
+        group.items.sort((a, b) => a.w.ticker.localeCompare(b.w.ticker, undefined, { sensitivity: 'base' }));
+
+        const isCollapsed = Boolean(state.settings.collapsedWatchlistSectors[group.sector]);
+        const avgScore = group.items.length > 0 ? Math.round(group.scoreSum / group.items.length) : 50;
+        const iconCls = getSectorIconClass(group.sector, group.isEtf);
+
+        const headerTr = document.createElement('tr');
+        headerTr.className = `sector-group-header cursor-pointer select-none transition border-y border-slate-200 dark:border-slate-700/80 ${
+          group.isEtf
+            ? 'bg-emerald-50/70 dark:bg-emerald-950/25 hover:bg-emerald-100/70 dark:hover:bg-emerald-950/40'
+            : 'bg-slate-100/85 dark:bg-slate-800/75 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+        }`;
+        headerTr.setAttribute('data-wl-sector-group', group.sector);
+        headerTr.setAttribute('aria-expanded', String(!isCollapsed));
+        headerTr.addEventListener('click', () => toggleWatchlistSector(group.sector));
+
+        headerTr.innerHTML = `
+          <td class="py-2 px-2.5 sm:py-2.5 sm:px-4 sticky-col-mobile max-w-[142px] sm:max-w-none ${
+            group.isEtf ? 'bg-emerald-50/95 dark:bg-slate-900' : 'bg-slate-100/95 dark:bg-slate-800'
+          }">
+            <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <span class="w-4 h-4 sm:w-5 sm:h-5 rounded bg-white/80 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-[9px] sm:text-[10px] text-slate-600 dark:text-slate-300 shrink-0">
+                <i class="fa-solid ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'}"></i>
+              </span>
+              <i class="fa-solid ${iconCls} text-[11px] sm:text-xs shrink-0"></i>
+              <span class="font-extrabold text-[11px] sm:text-sm tracking-tight text-slate-900 dark:text-white truncate" title="${group.sector}">${group.sector}</span>
+              <span class="text-[9px] sm:text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded-full bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 shrink-0">
+                ${group.items.length}<span class="hidden sm:inline"> ${group.items.length === 1 ? 'ticker' : 'tickers'}</span>
+              </span>
+            </div>
+          </td>
+          <td colspan="2" class="py-2 px-2 text-left text-[10px] font-mono text-slate-500 dark:text-slate-400">
+            ${group.isEtf ? '<span class="px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 font-bold mr-1">TOP ETF</span>' : ''}
+            <span>Avg Signal: <strong class="text-slate-700 dark:text-slate-200">${avgScore}/100</strong></span>
+          </td>
+          <td colspan="9" class="py-2 px-3 text-right text-[11px] text-slate-400 font-medium">
+            Watchlist Sector Group (${group.items.length} ${group.items.length === 1 ? 'ticker' : 'tickers'})
+          </td>
+          <td colspan="3" class="py-2 px-3 text-center">
+            ${group.triggeredCount > 0
+              ? `<span class="px-2 py-0.5 rounded-full font-bold bg-rose-500 text-white text-[10px]">${group.triggeredCount} BUY TARGET HIT</span>`
+              : `<span class="text-[11px] text-slate-400 font-mono">0 target alerts</span>`}
+          </td>
+          <td class="py-2 px-3 text-center text-[11px] font-semibold text-purple-600 dark:text-purple-400">
+            <span>${isCollapsed ? 'Expand' : 'Collapse'}</span>
+          </td>
+        `;
+        wlTbody.appendChild(headerTr);
+
+        if (!isCollapsed) {
+          group.items.forEach(({ w, curPrice, wm, secName, compName }) => {
+            const isSelected = selectedWatchlistTicker === w.ticker;
+            const priceChangePct = state.prices[w.ticker]?.changePct || 0;
+            const priceChangeColor = (state.prices[w.ticker]?.change || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500';
+            const wlCurrency = state.prices[w.ticker]?.currency || state.fundamentals[w.ticker]?.currency || (w.ticker.endsWith('.HK') ? 'HKD' : (w.ticker.endsWith('.L') ? 'GBp' : 'USD'));
+            const targetPrice = w.targetBuyPrice;
+            const distPct = curPrice > 0 ? ((curPrice - targetPrice) / targetPrice) * 100 : 0;
+            const isTriggered = curPrice > 0 && curPrice <= targetPrice;
+
+            const tr = document.createElement('tr');
+            tr.className = `cursor-pointer transition text-xs ${
+              isSelected
+                ? 'selected-table-row bg-slate-300/80 dark:bg-slate-800 border-l-4 border-l-purple-500'
+                : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
+            }`;
+            tr.setAttribute('data-wl-sector-item', group.sector);
+            tr.addEventListener('click', (e) => {
+              if (e.target.closest('button')) return;
+              selectStockForInlineChart('watchlist', w.ticker, true);
+            });
+
+            tr.innerHTML = `
+              <td class="py-2.5 pl-2.5 pr-2 sm:py-3 sm:pl-7 sm:pr-4 sticky-col-mobile max-w-[142px] sm:max-w-none">
+                <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span class="hover:text-purple-500 underline decoration-dotted underline-offset-2 truncate">${w.ticker}</span>
+                  <span class="text-[9px] sm:text-[10px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium shrink-0">${wlCurrency}</span>
+                </div>
+                <div class="text-[10px] sm:text-[11px] text-slate-400 truncate max-w-[105px] sm:max-w-[180px]">${compName}</div>
+              </td>
+              <td class="py-3 px-3 text-slate-500 dark:text-slate-400">${secName}</td>
+              <td class="py-3 px-3 text-right">
+                ${curPrice > 0
+                  ? `<div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(curPrice, false, wlCurrency)}</div>
+                     <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
+                       <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(priceChangePct) > 40 ? 0 : priceChangePct)}
+                     </div>`
+                  : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
+              </td>
+              <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">
+                ${wm.low52w !== null && wm.low52w !== undefined ? Fin.currency(wm.low52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+              </td>
+              <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">
+                ${wm.high52w !== null && wm.high52w !== undefined ? Fin.currency(wm.high52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+              </td>
+              <td class="py-3 px-3 text-right">
+                ${format52wPositionCell(wm.low52w, wm.high52w, wm.pos52wPct, wlCurrency)}
+              </td>
+              <td class="py-3 px-3 text-right">
+                ${formatPeriodChangeCell(wm.momPct, 'MoM', wm.momRefMonth)}
+              </td>
+              <td class="py-3 px-3 text-right">
+                ${formatPeriodChangeCell(wm.qoqPct, 'QoQ', wm.qoqRefMonth)}
+              </td>
+              <td class="py-3 px-3 text-right">
+                ${formatPeriodChangeCell(wm.yoyPct, 'YoY', wm.yoyRefMonth)}
+              </td>
+              <td class="py-3 px-3 text-right">
+                ${formatDividendExDateCell(wm.divInfo)}
+              </td>
+              <td class="py-3 px-3 text-right">
+                ${formatTrendRegimeCell(wm)}
+              </td>
+              <td class="py-3 px-3 text-center">
+                ${formatSignalBadgeCell(w.ticker, wm)}
+              </td>
+              <td class="py-3 px-3 text-right font-bold num-font text-purple-600 dark:text-purple-400">${Fin.currency(targetPrice, false, wlCurrency)}</td>
+              <td class="py-3 px-3 text-right num-font font-medium ${distPct <= 0 && curPrice > 0 ? 'text-emerald-500' : 'text-slate-400'}">
+                ${curPrice > 0 ? (distPct <= 0 ? 'At / Below Target' : `+${distPct.toFixed(1)}% above`) : '-'}
+              </td>
+              <td class="py-3 px-3 text-center">
+                ${isTriggered
+                  ? '<span class="px-2.5 py-1 rounded-full font-bold bg-rose-500 text-white text-[10px] animate-pulse">BUY TARGET HIT</span>'
+                  : '<span class="px-2 py-0.5 rounded font-medium bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px]">WATCHING</span>'}
+              </td>
+              <td class="py-3 px-3 text-center">
+                <div class="flex items-center justify-center gap-1.5">
+                  <button onclick="event.stopPropagation(); selectStockForInlineChart('watchlist', '${w.ticker}', true)" class="p-1.5 ${isSelected ? 'bg-purple-600 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Monthly Price Chart Below">
+                    <i class="fa-solid fa-chart-line"></i>
+                  </button>
+                  <button onclick="event.stopPropagation(); openTradeModalForTicker('${w.ticker}', 'BUY', ${curPrice || targetPrice})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold text-[11px]">
+                    Buy
+                  </button>
+                  <button onclick="event.stopPropagation(); deleteFromWatchlist('${w.ticker}')" class="p-1.5 text-slate-400 hover:text-rose-500 transition">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            `;
+            wlTbody.appendChild(tr);
+          });
+        }
+      });
+    }
   }
 
   // Fundamentals Matrix
@@ -10546,8 +10832,12 @@ function setupEventListeners() {
 
   on('btn-open-trade-modal', 'click', () => openTradeModal());
   on('btn-holdings-new-trade', 'click', () => openTradeModal());
+  on('holdings-filter-signal', 'change', () => renderHoldingsTable());
+  on('watchlist-filter-signal', 'change', () => renderWatchlistAndFundamentals());
   on('btn-expand-all-sectors', 'click', () => setAllHoldingsSectorsCollapsed(false));
   on('btn-collapse-all-sectors', 'click', () => setAllHoldingsSectorsCollapsed(true));
+  on('btn-wl-expand-all-sectors', 'click', () => setAllWatchlistSectorsCollapsed(false));
+  on('btn-wl-collapse-all-sectors', 'click', () => setAllWatchlistSectorsCollapsed(true));
   on('btn-tx-add', 'click', () => openTradeModal());
   on('btn-quick-cash', 'click', () => openTradeModal(null, 'DEPOSIT'));
   on('btn-deposit-quick', 'click', () => openTradeModal(null, 'DEPOSIT'));
@@ -10765,7 +11055,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.1.9 • Build 20261101_1945)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.0 • Build 20261101_2015)...');
   }
 
   try {
@@ -10802,7 +11092,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.1.9 boot sequence complete.');
+      AppLogger.info('Boot', 'myPortfolio v3.2.0 boot sequence complete.');
     }
   }, 120);
 }

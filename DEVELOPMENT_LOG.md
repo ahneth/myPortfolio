@@ -161,3 +161,18 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
 * **Headless Chromium Verification & Drive Archive**:
   - [Summarize headless browser assertions and Google Drive release folder]
 ```
+
+## Release `v3.2.0` — Build `20261101_2015` (2026-11-01 20:15 HKT)
+- **Drive Archive**: `/myPortfolio/20261101_2015/`
+- **Summary**: Added Signal filter dropdowns on the Holdings and Watchlist pages, grouped Watchlist stocks by collapsible sectors (`Index ETF` first, then alphabetical), and decreased top/bottom row margins on the Transaction Audit Log and Dividend Payout Logs tables so all 20 paginated rows fit on a single mobile phone viewport without scrolling.
+- **Key Changes & Fixes**:
+  1. **Holdings & Watchlist Signal Filter Dropdown (`#holdings-filter-signal`, `#watchlist-filter-signal`)**:
+     - Added `<select id="holdings-filter-signal">` to the Holdings toolbar and `<select id="watchlist-filter-signal">` to the Watchlist toolbar (`index.html`).
+     - Added `populateSignalFilterDropdown(selectEl, signalLabelsList)` in `app.js` to dynamically display live counts across all 5 canonical signals (`STRONG BUY`, `ACCUMULATE`, `HOLD`, `TRIM / OFFLOAD`, `SELL / AVOID`) and filter table rows in real time.
+  2. **Watchlist Sector Grouping (`renderWatchlistAndFundamentals`, `toggleWatchlistSector`, `setAllWatchlistSectorsCollapsed`)**:
+     - Grouped Watchlist stocks by canonical sector (`Index ETF` pinned first, then alphabetical by sector name and ticker symbol).
+     - Added collapsible `.sector-group-header` rows showing sector ticker counts, average 4-Pillar Signal Score (`Avg Signal: XX/100`), and triggered target-price alert counts (`BUY TARGET HIT`), plus `Expand All` (`#btn-wl-expand-all-sectors`) and `Collapse All` (`#btn-wl-collapse-all-sectors`) buttons.
+     - Enforced `colspan="1"` on `.sticky-col-mobile` in Watchlist sector headers so mobile horizontal scrolling never blocks adjacent columns.
+  3. **Ultra-Compact Row Margins for Trades & Dividend Payout Log Tables (`.compact-log-table`)**:
+     - Reduced vertical cell padding in `renderTransactionsTable()` and `renderDividendsTable()` (`py-1 sm:py-1.5`), compacted the pagination footer (`renderTablePaginationControls`), and added `.compact-log-table` rules in `styles.css` (`padding-top/bottom: 0.13rem !important; line-height: 1.12 !important; font-size: 0.68rem !important;` on mobile `<= 640px`) so all 20 rows (`~296px` body height) fit on a single mobile screen without scrolling.
+

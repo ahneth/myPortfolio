@@ -290,3 +290,44 @@ tr.selected-table-row > td.sticky-col-mobile {
     min-height: 430px !important;
   }
 }
+
+/* ==========================================================================
+   v3.2.0 Ultra-Compact Trades & Dividend Payout Log Table Rows
+   Ensures all 20 paginated rows fit on a single mobile viewport without scrolling
+   ========================================================================== */
+.compact-log-table thead th {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  line-height: 1.15 !important;
+}
+
+.compact-log-table tbody td {
+  padding-top: 0.24rem !important;
+  padding-bottom: 0.24rem !important;
+  line-height: 1.18 !important;
+}
+
+@media (max-width: 640px) {
+  .compact-log-table thead th {
+    padding-top: 0.2rem !important;
+    padding-bottom: 0.2rem !important;
+    padding-left: 0.35rem !important;
+    padding-right: 0.35rem !important;
+    font-size: 0.64rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .compact-log-table tbody td {
+    padding-top: 0.13rem !important;
+    padding-bottom: 0.13rem !important;
+    padding-left: 0.35rem !important;
+    padding-right: 0.35rem !important;
+    font-size: 0.68rem !important;
+    line-height: 1.12 !important;
+  }
+
+  .compact-log-table tbody td button {
+    padding: 0.05rem 0.2rem !important;
+    line-height: 1 !important;
+  }
+}
