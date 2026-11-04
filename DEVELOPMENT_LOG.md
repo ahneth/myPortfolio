@@ -162,6 +162,17 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
   - [Summarize headless browser assertions and Google Drive release folder]
 ```
 
+## Release `v3.2.1` — Build `20261104_1310` (2026-11-04 13:10 HKT)
+- **Drive Archive**: `/myPortfolio/20261104_1310/`
+- **Summary**: Moved `Live Price` to the first column after `Asset / Sector` in Holdings and Watchlist tables, constrained Holdings and Watchlist tables to a single-screen scrollable viewport with vertical and horizontal scrollbars and top/bottom page margins, removed the `TOP ETF` label, enabled left freeze-pane (`Asset / Sector`) in PC desktop mode as well as mobile, expanded PC desktop layout to 100% full browser width with an always-visible top title bar and tab bar, and applied compact top/bottom row margins to all tables in the app.
+- **Key Changes & Fixes**:
+  1. **Live Price Column Moved After Asset / Sector**: Updated `index.html` and `app.js` (`renderHoldingsTable`, `renderWatchlistAndFundamentals`) so `Live Price` is Column 2 right after `Asset / Sector`, and aligned Holdings sector subtotal `Total Cost` to Column 5.
+  2. **Fixed-Height Scrollable Holdings & Watchlist Tables (`.scrollable-portfolio-table-box`)**: Added `height: calc(100vh - 255px)` (`calc(100vh - 245px)` on mobile) with vertical and horizontal scrollbars, sticky `<thead>`, and outer card margins (`my-3 sm:my-5`) so the entire table fits in one screen page while leaving room before and after the table to scroll the page.
+  3. **Removed `TOP ETF` Label**: Removed the `TOP ETF` badge from ETF sector group headers in both Holdings and Watchlist.
+  4. **PC Desktop + Mobile Freeze-Pane on `Asset / Sector` (`.sticky-col-mobile`)**: Enabled `position: sticky; left: 0;` across all viewport widths with solid opaque row/header backgrounds and corner pinning (`top: 0; left: 0; z-index: 32;`).
+  5. **100% Full Browser Width & Always-Visible Title/Tab Bar**: Replaced `max-w-7xl` with `max-w-none w-full` across `<header>`, `<main>`, and `<footer>`, and fixed `<header id="app-top-header">` at `top: 0` so both the app title bar and tab bar remain visible at the top during vertical scrolling.
+  6. **Global Compact Row Margins Across All Tables**: Applied compact vertical cell padding (`0.24rem` desktop / `0.13rem` mobile) globally to all `table thead th` and `table tbody td` elements across the app.
+
 ## Release `v3.2.0` — Build `20261101_2015` (2026-11-01 20:15 HKT)
 - **Drive Archive**: `/myPortfolio/20261101_2015/`
 - **Summary**: Added Signal filter dropdowns on the Holdings and Watchlist pages, grouped Watchlist stocks by collapsible sectors (`Index ETF` first, then alphabetical), and decreased top/bottom row margins on the Transaction Audit Log and Dividend Payout Logs tables so all 20 paginated rows fit on a single mobile phone viewport without scrolling.

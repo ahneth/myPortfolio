@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.2.0-20261101_2015') {
+      if (k !== 'myportfolio-cache-v3.2.1-20261104_1310') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -716,7 +716,7 @@ function renderHoldingsTable() {
     const iconCls = getSectorIconClass(group.sector, group.isEtf);
 
     const headerTr = document.createElement('tr');
-    headerTr.className = `sector-group-header cursor-pointer select-none transition border-y border-slate-200 dark:border-slate-700/80 ${
+    headerTr.className = `sector-group-header ${group.isEtf ? 'etf-sector-row' : ''} cursor-pointer select-none transition border-y border-slate-200 dark:border-slate-700/80 ${
       group.isEtf
         ? 'bg-emerald-50/70 dark:bg-emerald-950/25 hover:bg-emerald-100/70 dark:hover:bg-emerald-950/40'
         : 'bg-slate-100/85 dark:bg-slate-800/75 hover:bg-slate-200/70 dark:hover:bg-slate-800'
@@ -726,8 +726,8 @@ function renderHoldingsTable() {
     headerTr.addEventListener('click', () => toggleHoldingsSector(group.sector));
 
     headerTr.innerHTML = `
-      <td class="py-2 px-2.5 sm:py-2.5 sm:px-4 sticky-col-mobile max-w-[142px] sm:max-w-none ${
-        group.isEtf ? 'bg-emerald-50/95 dark:bg-slate-900' : 'bg-slate-100/95 dark:bg-slate-800'
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 sticky-col-mobile max-w-[142px] sm:max-w-none ${
+        group.isEtf ? 'bg-emerald-50 dark:bg-slate-900' : 'bg-slate-100 dark:bg-slate-800'
       }">
         <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
           <span class="w-4 h-4 sm:w-5 sm:h-5 rounded bg-white/80 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-[9px] sm:text-[10px] text-slate-600 dark:text-slate-300 shrink-0">
@@ -740,14 +740,13 @@ function renderHoldingsTable() {
           </span>
         </div>
       </td>
-      <td colspan="2" class="py-2 px-2 text-left text-[10px] font-mono text-slate-500 dark:text-slate-400">
-        ${group.isEtf ? '<span class="px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 font-bold mr-1">TOP ETF</span>' : ''}
+      <td colspan="3" class="py-1 sm:py-1.5 px-2 text-left text-[10px] font-mono text-slate-500 dark:text-slate-400">
         <span>${weightPct}% wt</span>
       </td>
-      <td class="py-2 px-3 text-right num-font text-xs font-bold text-slate-700 dark:text-slate-300">
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-slate-700 dark:text-slate-300">
         ${Fin.currency(group.totalCostBasis, false, group.currency)}
       </td>
-      <td colspan="10" class="py-2 px-3 text-right text-[11px] text-slate-400 font-medium">
+      <td colspan="9" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
         Sector Subtotal (${group.items.length} ${group.items.length === 1 ? 'holding' : 'holdings'})
       </td>
       <td class="py-2 px-3 text-right num-font text-xs font-extrabold text-slate-900 dark:text-white">
@@ -790,9 +789,9 @@ function renderHoldingsTable() {
         const priceChangeColor = h.priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
 
         tr.innerHTML = `
-          <td class="py-2.5 pl-2.5 pr-2 sm:py-3 sm:pl-7 sm:pr-4 sticky-col-mobile max-w-[142px] sm:max-w-none">
+          <td class="py-1 pl-2.5 pr-2 sm:py-1.5 sm:pl-6 sm:pr-3 sticky-col-mobile max-w-[142px] sm:max-w-none">
             <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg ${isSelected ? 'bg-brand-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'} flex items-center justify-center font-bold text-[10px] sm:text-xs shrink-0">
+              <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-md ${isSelected ? 'bg-brand-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'} flex items-center justify-center font-bold text-[9px] sm:text-[10px] shrink-0">
                 ${h.ticker.replace(/\..*$/, '').slice(0, 4)}
               </div>
               <div class="min-w-0">
@@ -804,15 +803,15 @@ function renderHoldingsTable() {
               </div>
             </div>
           </td>
-          <td class="py-3 px-3 text-right num-font font-medium text-slate-800 dark:text-slate-200">${Fin.shares(h.shares)}</td>
-          <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">${Fin.currency(h.avgCost, false, h.currency)}</td>
-          <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">${Fin.currency(h.totalCostBasis, false, h.currency)}</td>
-          <td class="py-3 px-3 text-right">
+          <td class="py-1 sm:py-1.5 px-3 text-right">
             <div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(h.currentPrice, false, h.currency)}</div>
-            <div class="text-[11px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
-              <span class="text-[10px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct)}
+            <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
+              <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct)}
             </div>
           </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium text-slate-800 dark:text-slate-200">${Fin.shares(h.shares)}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${Fin.currency(h.avgCost, false, h.currency)}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${Fin.currency(h.totalCostBasis, false, h.currency)}</td>
           <td class="py-3 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300">
             ${h.low52w !== null && h.low52w !== undefined ? Fin.currency(h.low52w, false, h.currency) : '<span class="text-slate-400 text-[11px]">-</span>'}
           </td>
@@ -1293,7 +1292,7 @@ function renderWatchlistAndFundamentals() {
         const iconCls = getSectorIconClass(group.sector, group.isEtf);
 
         const headerTr = document.createElement('tr');
-        headerTr.className = `sector-group-header cursor-pointer select-none transition border-y border-slate-200 dark:border-slate-700/80 ${
+        headerTr.className = `sector-group-header ${group.isEtf ? 'etf-sector-row' : ''} cursor-pointer select-none transition border-y border-slate-200 dark:border-slate-700/80 ${
           group.isEtf
             ? 'bg-emerald-50/70 dark:bg-emerald-950/25 hover:bg-emerald-100/70 dark:hover:bg-emerald-950/40'
             : 'bg-slate-100/85 dark:bg-slate-800/75 hover:bg-slate-200/70 dark:hover:bg-slate-800'
@@ -1303,8 +1302,8 @@ function renderWatchlistAndFundamentals() {
         headerTr.addEventListener('click', () => toggleWatchlistSector(group.sector));
 
         headerTr.innerHTML = `
-          <td class="py-2 px-2.5 sm:py-2.5 sm:px-4 sticky-col-mobile max-w-[142px] sm:max-w-none ${
-            group.isEtf ? 'bg-emerald-50/95 dark:bg-slate-900' : 'bg-slate-100/95 dark:bg-slate-800'
+          <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 sticky-col-mobile max-w-[142px] sm:max-w-none ${
+            group.isEtf ? 'bg-emerald-50 dark:bg-slate-900' : 'bg-slate-100 dark:bg-slate-800'
           }">
             <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
               <span class="w-4 h-4 sm:w-5 sm:h-5 rounded bg-white/80 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-[9px] sm:text-[10px] text-slate-600 dark:text-slate-300 shrink-0">
@@ -1317,19 +1316,18 @@ function renderWatchlistAndFundamentals() {
               </span>
             </div>
           </td>
-          <td colspan="2" class="py-2 px-2 text-left text-[10px] font-mono text-slate-500 dark:text-slate-400">
-            ${group.isEtf ? '<span class="px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 font-bold mr-1">TOP ETF</span>' : ''}
+          <td colspan="2" class="py-1 sm:py-1.5 px-2 text-left text-[10px] font-mono text-slate-500 dark:text-slate-400">
             <span>Avg Signal: <strong class="text-slate-700 dark:text-slate-200">${avgScore}/100</strong></span>
           </td>
-          <td colspan="9" class="py-2 px-3 text-right text-[11px] text-slate-400 font-medium">
+          <td colspan="9" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
             Watchlist Sector Group (${group.items.length} ${group.items.length === 1 ? 'ticker' : 'tickers'})
           </td>
-          <td colspan="3" class="py-2 px-3 text-center">
+          <td colspan="3" class="py-1 sm:py-1.5 px-3 text-center">
             ${group.triggeredCount > 0
               ? `<span class="px-2 py-0.5 rounded-full font-bold bg-rose-500 text-white text-[10px]">${group.triggeredCount} BUY TARGET HIT</span>`
               : `<span class="text-[11px] text-slate-400 font-mono">0 target alerts</span>`}
           </td>
-          <td class="py-2 px-3 text-center text-[11px] font-semibold text-purple-600 dark:text-purple-400">
+          <td class="py-1 sm:py-1.5 px-3 text-center text-[11px] font-semibold text-purple-600 dark:text-purple-400">
             <span>${isCollapsed ? 'Expand' : 'Collapse'}</span>
           </td>
         `;
@@ -1358,15 +1356,14 @@ function renderWatchlistAndFundamentals() {
             });
 
             tr.innerHTML = `
-              <td class="py-2.5 pl-2.5 pr-2 sm:py-3 sm:pl-7 sm:pr-4 sticky-col-mobile max-w-[142px] sm:max-w-none">
+              <td class="py-1 pl-2.5 pr-2 sm:py-1.5 sm:pl-6 sm:pr-3 sticky-col-mobile max-w-[142px] sm:max-w-none">
                 <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                   <span class="hover:text-purple-500 underline decoration-dotted underline-offset-2 truncate">${w.ticker}</span>
                   <span class="text-[9px] sm:text-[10px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium shrink-0">${wlCurrency}</span>
                 </div>
                 <div class="text-[10px] sm:text-[11px] text-slate-400 truncate max-w-[105px] sm:max-w-[180px]">${compName}</div>
               </td>
-              <td class="py-3 px-3 text-slate-500 dark:text-slate-400">${secName}</td>
-              <td class="py-3 px-3 text-right">
+              <td class="py-1 sm:py-1.5 px-3 text-right">
                 ${curPrice > 0
                   ? `<div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(curPrice, false, wlCurrency)}</div>
                      <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
@@ -1374,6 +1371,7 @@ function renderWatchlistAndFundamentals() {
                      </div>`
                   : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
               </td>
+              <td class="py-1 sm:py-1.5 px-3 text-slate-500 dark:text-slate-400">${secName}</td>
               <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">
                 ${wm.low52w !== null && wm.low52w !== undefined ? Fin.currency(wm.low52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
               </td>
@@ -2793,7 +2791,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.0 • Build 20261101_2015)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.1 • Build 20261104_1310)...');
   }
 
   try {
@@ -2830,7 +2828,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.2.0 boot sequence complete.');
+      AppLogger.info('Boot', 'myPortfolio v3.2.1 boot sequence complete.');
     }
   }, 120);
 }
