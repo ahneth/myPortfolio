@@ -1,6 +1,6 @@
 # myPortfolio — Development Bible & Architecture Guide
 
-**Current Production Release:** `v3.2.1` (Build `20261104_1310`)  
+**Current Production Release:** `v3.2.2` (Build `20261104_1350`)  
 **Production URL:** https://ahneth.github.io/myPortfolio/  
 **GitHub Repository:** https://github.com/ahneth/myPortfolio  
 **Google Drive Master Archive:** `/myPortfolio/` (Folder ID: `1NEtuIDV8NsN02upJPDQvJ00WpZxX9oMz`) — `/myPortfolio/Reference/` subfolder (Folder ID: `1NThy4bFv3yosHYszz5R9soBaUK0MYH4j`)
@@ -83,7 +83,7 @@
 * **Stock Monthly Historical Chart Layout & Overlays (`v3.1.8+`)**:
   - **External Interactive HTML Legend Below Chart**: The internal Chart.js `<canvas>` legend is disabled (`plugins.legend.display = false`) so 100% of the canvas height is dedicated to plotting data. A separated, clickable HTML legend (`#holdings-chart-legend` / `#watchlist-chart-legend`) is rendered below the chart canvas with a top border divider.
   - **Increased Chart Height (`.stock-history-chart-box`)**: Chart container height is `350px` on mobile viewports and `430px` on tablet/desktop viewports.
-  - **Monthly High–Low Translucent Green Band & Unadjusted Price Scale Alignment (`v3.2.1+`)**: Plots each month's `High` and `Low` as a translucent emerald band (`rgba(16, 185, 129, 0.22)` fill with `rgba(52, 211, 153, 0.45)` borders) enveloping the solid `#10b981` `Monthly Close` line. Always use unadjusted market closing prices (`rawClose`) for `close` so `Monthly Close`, `Monthly High`, `Monthly Low`, and `Your Avg Cost` share the exact same unadjusted price scale (never mix backward-discounted `adjClose` with unadjusted `high`/`low`).
+  - **Monthly High–Low Translucent Green Band & Unadjusted Price Scale Alignment (`v3.2.2+`)**: Plots each month's `High` and `Low` as a translucent emerald band (`rgba(16, 185, 129, 0.22)` fill with `rgba(52, 211, 153, 0.45)` borders) enveloping the solid `#10b981` `Monthly Close` line. Always use unadjusted market closing prices (`rawClose`) for `close` so `Monthly Close`, `Monthly High`, `Monthly Low`, and `Your Avg Cost` share the exact same unadjusted price scale (never mix backward-discounted `adjClose` with unadjusted `high`/`low`).
   - **High-Visibility Regression Trend Channel (`±1σ`)**: `Reg Trend Upper (+1σ)` and `Reg Trend Lower (-1σ)` use high-contrast bright purple-violet `#c084fc` (dark mode) / `#9333ea` (light mode) with `2.2px` dashed strokes (`[6, 4]`).
 * **20-Row Max Table Pagination (`PAGINATION_PAGE_SIZE = 20`, `v3.1.8+`)**:
   - All transaction and dividend tables (`#tx-table-body`, `#dividends-table-body`, `#dividend-calendar-tbody`, and `#detected-dividends-tbody`) display at most **20 rows per page** with a footer bar showing `Showing X–Y of Z records • Page P of N` and **`← Prev 20`** / **`Next 20 →`** navigation buttons.
@@ -142,7 +142,7 @@ Whenever any bug fix or feature enhancement is developed:
      - **Reference Subfolder (`/myPortfolio/Reference/`, ID: `1NThy4bFv3yosHYszz5R9soBaUK0MYH4j`)**: Stores the living **Development Bible** (`1eQojBS7aURAUd0jUxK8yW_m3O3BZxgx2PiIy3Oo4WBQ`, `DEVELOPMENT_BIBLE.md`) and **Development Log** (`1dEoCHVxrtStNpcTy_eWPeMsTHstaOaksrFzKnNnHkOA`, `DEVELOPMENT_LOG.md`).
      - **Release Subfolders (`/myPortfolio/YYYYMMDD_HHMM/`)**: Create a dedicated timestamped subfolder under `/myPortfolio/` for every build containing the standalone `index.html`, modular JS/Python/JSON files, and `myPortfolio_vX.Y.Z_YYYYMMDD_HHMM.zip`.
 
-### 3.12 Signal Filter Dropdowns, Watchlist Sector Grouping & Ultra-Compact Mobile Log Tables (`v3.2.1` • Build `20261104_1310`)
+### 3.12 Signal Filter Dropdowns, Watchlist Sector Grouping & Ultra-Compact Mobile Log Tables (`v3.2.2` • Build `20261104_1350`)
 - **Signal Filter Dropdowns on Holdings & Watchlist (`#holdings-filter-signal` & `#watchlist-filter-signal`)**:
   - Both the **Holdings** and **Watchlist** header toolbars include a `Signal:` dropdown filter (`All Signals`, `STRONG BUY`, `ACCUMULATE`, `HOLD`, `TRIM / OFFLOAD`, `SELL / AVOID`) dynamically populated via `populateSignalFilterDropdown()` with live counts per signal category in parentheses.
   - Selecting a signal filters the table in place while preserving sector group headers; if `0` tickers match the selected signal, an inline empty-filter row with a 1-click `Show All` reset button is displayed inside `tbody`.
@@ -153,7 +153,7 @@ Whenever any bug fix or feature enhancement is developed:
 - **Ultra-Compact Trades & Dividend Payout Log Table Rows (`.compact-log-table`)**:
   - Applied `.compact-log-table` to the **Transaction Audit Log** (`#tx-log-table`) and **Dividend Payout Logs** (`#div-payout-log-table`) tables, reducing vertical cell padding (`padding-top/bottom: 0.24rem` on desktop; `0.13rem` with `line-height: 1.12` and `font-size: 0.68rem` on mobile `<= 640px`) and compacting the pagination bar so all 20 paginated rows fit on a single mobile phone screen without vertical scrolling.
 
-### 3.13 Full-Width Desktop, Fixed Top Header/Tabs, Freeze-Pane First Column, Fixed-Height Scrollable Tables & Global Compact Table Rows (`v3.2.1` • Build `20261104_1310`)
+### 3.13 Full-Width Desktop, Fixed Top Header/Tabs, Freeze-Pane First Column, Fixed-Height Scrollable Tables & Global Compact Table Rows (`v3.2.2` • Build `20261104_1350`)
 - **Live Price Column Positioned Immediately After Asset / Sector**:
   - In both **Holdings** (`#holdings-main-table`) and **Watchlist** (`#watchlist-main-table`), `Live Price` is Column 2 (directly adjacent to the frozen `Asset / Sector` column) so users can compare each ticker and its live market price side-by-side before scrolling across secondary metrics.
 - **Single-Screen Fixed-Height Scrollable Table Viewport (`.scrollable-portfolio-table-box`)**:
@@ -166,3 +166,8 @@ Whenever any bug fix or feature enhancement is developed:
   - Removed `max-w-7xl` width caps on `<header>`, `<main>`, and `<footer>` (`max-w-none w-full`) so PC desktop mode utilizes 100% of the browser width, and pinned `<header id="app-top-header">` (`position: fixed; top: 0; left: 0; right: 0; z-index: 50;`) so the app title bar and navigation tab bar remain visible at the top during vertical scrolling.
 - **Global Compact Table Row Margins**:
   - Unified all tables across the entire application to use the same compact top and bottom cell margins (`padding-top/bottom: 0.24rem` on desktop; `0.13rem` with `line-height: 1.12` and `font-size: 0.68rem` on mobile `<= 640px`) used in the Transaction Audit Log and Dividend Payout Logs tables.
+
+### 3.14 Halved Table Viewport Heights for Holdings & Watchlist (`v3.2.2` • Build `20261104_1350`)
+- **Halved Table Height (`.scrollable-portfolio-table-box`)**:
+  - Reduced the fixed container height for both Holdings and Watchlist tables by 50% from `calc(100vh - 255px)` to `calc((100vh - 255px) * 0.5)` on desktop (~300–400px depending on screen resolution) and `calc((100vh - 245px) * 0.5)` on mobile (~250–280px).
+  - Maintains full vertical and horizontal scrollbars with sticky column headers and frozen first column, but leaves ample vertical space on screen for the stock price chart card and surrounding page content.

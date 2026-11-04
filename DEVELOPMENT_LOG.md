@@ -162,6 +162,14 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
   - [Summarize headless browser assertions and Google Drive release folder]
 ```
 
+## Release `v3.2.2` — Build `20261104_1350` (2026-11-04 13:50 HKT)
+- **Drive Archive**: `/myPortfolio/20261104_1350/`
+- **Summary**: Halved the fixed height of the Holdings and Watchlist scrollable table viewports so they occupy half the vertical screen space, leaving plenty of room on screen for the stock charts and page scrolling.
+- **Key Changes & Fixes**:
+  1. **Halved Fixed Table Height (`.scrollable-portfolio-table-box`)**:
+     - Reduced desktop table height from `calc(100vh - 255px)` to `calc((100vh - 255px) * 0.5)` (~300–400px), and mobile height from `calc(100vh - 245px)` to `calc((100vh - 245px) * 0.5)` (~250–280px).
+     - Adjusted container min-height to 200px (desktop) and 170px (mobile) while preserving sticky headers and the frozen left `Asset / Sector` column.
+
 ## Release `v3.2.1` — Build `20261104_1310` (2026-11-04 13:10 HKT)
 - **Drive Archive**: `/myPortfolio/20261104_1310/`
 - **Summary**: Moved `Live Price` to the first column after `Asset / Sector` in Holdings and Watchlist tables, constrained Holdings and Watchlist tables to a single-screen scrollable viewport with vertical and horizontal scrollbars and top/bottom page margins, removed the `TOP ETF` label, enabled left freeze-pane (`Asset / Sector`) in PC desktop mode as well as mobile, expanded PC desktop layout to 100% full browser width with an always-visible top title bar and tab bar, and applied compact top/bottom row margins to all tables in the app.
