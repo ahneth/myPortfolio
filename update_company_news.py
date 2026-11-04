@@ -115,6 +115,25 @@ def make_article_id(ticker: str, title: str, url: str) -> str:
 
 SEED_CATALYST_FEED: List[Dict[str, Any]] = []
 
+# Maximum age of news articles to fetch and retain (3 months = 90 days)
+MAX_NEWS_AGE_DAYS: int = 90
+
+
+def is_published_within_max_age(pub_iso: str, max_days: int = MAX_NEWS_AGE_DAYS) -> bool:
+    if not pub_iso:
+        return False
+    try:
+        clean = str(pub_iso).strip()
+        if clean.endswith("Z"):
+            clean = clean[:-1] + "+00:00"
+        pub_dt = dt.datetime.fromisoformat(clean)
+        if pub_dt.tzinfo is None:
+            pub_dt = pub_dt.replace(tzinfo=dt.timezone.utc)
+        cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=max_days)
+        return pub_dt >= cutoff
+    except Exception:
+        return False
+
 
 def fetch_yahoo_search_news(ticker: str, timeout: int = 10) -> List[Dict[str, Any]]:
     url = f"https://query1.finance.yahoo.com/v1/finance/search?q={urllib.parse.quote(ticker)}&quotesCount=0&newsCount=6"
@@ -134,8 +153,12 @@ def fetch_yahoo_search_news(ticker: str, timeout: int = 10) -> List[Dict[str, An
             link = str(n.get("link") or "").strip()
             if not title or not link:
                 continue
-            pub_ts = int(n.get("providerPublishTime") or int(time.time()))
+            pub_ts = int(n.get("providerPublishTime") or 0)
+            if pub_ts <= 0:
+                continue
             pub_iso = dt.datetime.fromtimestamp(pub_ts, tz=dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            if not is_published_within_max_age(pub_iso):
+                continue
             cat, sent_lbl, score = classify_headline(title, "")
             out.append({
                 "id": make_article_id(ticker, title, link),
@@ -160,7 +183,7 @@ def fetch_yahoo_search_news(ticker: str, timeout: int = 10) -> List[Dict[str, An
 
 def fetch_google_news_rss(ticker: str, timeout: int = 10) -> List[Dict[str, Any]]:
     entity = TICKER_ENTITY_NAMES.get(ticker, ticker)
-    q = f"{ticker} {entity} stock"
+    q = f"{ticker} {entity} stock when:90d"
     if ticker.endswith(".HK"):
         hl, gl, ceid = "en-HK", "HK", "HK:en"
     elif ticker.endswith(".L"):
@@ -187,7 +210,9 @@ def fetch_google_news_rss(ticker: str, timeout: int = 10) -> List[Dict[str, Any]
                 parsed_dt = email.utils.parsedate_to_datetime(pub_raw)
                 pub_iso = parsed_dt.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             except Exception:
-                pub_iso = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                continue
+            if not is_published_within_max_age(pub_iso):
+                continue
             cat, sent_lbl, score = classify_headline(title, "")
             out.append({
                 "id": make_article_id(ticker, title, link),
@@ -262,13 +287,22 @@ def main() -> int:
                 "sourceApi": "Curated Baseline",
             })
 
+    # Strictly filter out any article older than 3 months (90 days)
+    merged = [a for a in merged if is_published_within_max_age(str(a.get("publishedAt") or ""))]
     merged.sort(key=lambda x: str(x.get("publishedAt") or ""), reverse=True)
     by_ticker: Dict[str, List[Dict[str, Any]]] = {}
     for a in merged:
         by_ticker.setdefault(a["ticker"], []).append(a)
+    now_iso = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     payload = {
-        "schemaVersion": "3.1.0",
-        "generatedAt": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "_meta": {
+            "version": "3.2.3",
+            "generatedAt": now_iso,
+            "maxAgeDays": MAX_NEWS_AGE_DAYS,
+        },
+        "schemaVersion": "3.2.3",
+        "generatedAt": now_iso,
+        "maxAgeDays": MAX_NEWS_AGE_DAYS,
         "articleCount": len(merged),
         "tickerCount": len(by_ticker),
         "articles": merged,

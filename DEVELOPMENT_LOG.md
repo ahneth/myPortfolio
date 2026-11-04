@@ -162,12 +162,21 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
   - [Summarize headless browser assertions and Google Drive release folder]
 ```
 
+## Release `v3.2.3` — Build `20261104_1435` (2026-11-04 14:35 HKT)
+- **Drive Archive**: `/myPortfolio/20261104_1435/`
+- **Summary**: Streamlined the top header bar by removing the subtitle and test button, added automatic one-time Live Price API fetching on initial page load, enforced a 3-month (90-day) cutoff for company news extraction and retention, and added live update date/time badges for Historical Monthly Prices and News Analysis in the bottom footer.
+- **Key Changes & Fixes**:
+  1. **Top Header Cleanup (`index.html`)**: Removed `"Global HK, US & London Stock Portfolio Tracker"` and the `"Test 2800.HK & VOO"` button from the top bar.
+  2. **Automatic Live Price Fetch on First Load (`app.js`, `api.js`)**: Configured `bootstrapPortfolioApp()` to automatically execute `syncAllMarketData(false, { isAutoStartup: true })` once on initial page load, prioritizing live quote fetching across HKEX, US, and LSE tickers.
+  3. **3-Month News Cutoff (`update_company_news.py`, `portfolio.js`, `app.js`)**: Added `is_published_within_max_age(pub_iso, 90)` and `when:90d` RSS filtering in `update_company_news.py`, plus `isNewsWithinThreeMonths()` pruning in `ingestCompanyNewsData()` and `renderNewsTab()`.
+  4. **Footer Update Timestamps (`index.html`, `portfolio.js`, `app.js`)**: Added `#footer-hist-prices-updated` and `#footer-news-analysis-updated` in the bottom footer populated by `renderFooterUpdateTimestamps()`.
+
 ## Release `v3.2.2` — Build `20261104_1350` (2026-11-04 13:50 HKT)
 - **Drive Archive**: `/myPortfolio/20261104_1350/`
 - **Summary**: Halved the fixed height of the Holdings and Watchlist scrollable table viewports so they occupy half the vertical screen space, leaving plenty of room on screen for the stock charts and page scrolling.
 - **Key Changes & Fixes**:
   1. **Halved Fixed Table Height (`.scrollable-portfolio-table-box`)**:
-     - Reduced desktop table height from `calc(100vh - 255px)` to `calc((100vh - 255px) * 0.5)` (~300–400px), and mobile height from `calc(100vh - 245px)` to `calc((100vh - 245px) * 0.5)` (~250–280px).
+     - Reduced desktop table height from `calc(100vh - 255px)` to `calc((100vh - 255px) * 0.25)` (~150–210px), and mobile height from `calc(100vh - 245px)` to `calc((100vh - 245px) * 0.25)` (~120–140px).
      - Adjusted container min-height to 200px (desktop) and 170px (mobile) while preserving sticky headers and the frozen left `Asset / Sector` column.
 
 ## Release `v3.2.1` — Build `20261104_1310` (2026-11-04 13:10 HKT)

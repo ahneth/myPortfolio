@@ -1022,18 +1022,21 @@ var MarketAPI = {
   }
 };
 
-async function syncAllMarketData(triggerGitHubWorkflow = true) {
+async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
+  const isAutoStartup = Boolean(options && options.isAutoStartup);
   const tStart = performance.now();
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.action('Sync', `Sync button pressed (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
+    AppLogger.action('Sync', `${isAutoStartup ? 'Initial page-load auto live price sync' : 'Sync button pressed'} (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
   }
 
   if (!MarketAPI.hasKey()) {
-    if (typeof AppLogger !== 'undefined') {
-      AppLogger.warn('Sync', 'API Key missing for selected keyed provider — redirecting to Settings.');
+    if (!isAutoStartup) {
+      if (typeof AppLogger !== 'undefined') {
+        AppLogger.warn('Sync', 'API Key missing for selected keyed provider — redirecting to Settings.');
+      }
+      showToast('Please select Yahoo Finance (Keyless) or configure your API Key in Settings.', 'error');
+      switchTab('settings');
     }
-    showToast('Please select Yahoo Finance (Keyless) or configure your API Key in Settings.', 'error');
-    switchTab('settings');
     return;
   }
 
@@ -1046,7 +1049,9 @@ async function syncAllMarketData(triggerGitHubWorkflow = true) {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.info('Sync', 'No holdings or watchlist tickers to sync.');
     }
-    showToast('Add a stock transaction or watchlist ticker first.', 'info');
+    if (!isAutoStartup) {
+      showToast('Add a stock transaction or watchlist ticker first.', 'info');
+    }
     return;
   }
 
@@ -1097,11 +1102,10 @@ async function syncAllMarketData(triggerGitHubWorkflow = true) {
     try {
       let q = batchQuotes[ticker];
       if (!q) {
-        if (MarketAPI.getProvider() === 'yahoo') {
-          // Use fast cached/snapshot quote if batch JSONP didn't return it to avoid CORS proxy stalls
-          q = MarketAPI.getEmbeddedOrCachedQuote(ticker) || await MarketAPI.fetchQuote(ticker);
-        } else {
+        try {
           q = await MarketAPI.fetchQuote(ticker);
+        } catch (_) {
+          q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
         }
       }
       if (q && q.price > 0) {

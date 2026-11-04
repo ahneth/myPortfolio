@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.2.2-20261104_1350') {
+      if (k !== 'myportfolio-cache-v3.2.3-20261104_1435') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -53,6 +53,40 @@ function renderAll() {
   } catch (_) {}
 }
 
+function formatUpdateTimestamp(rawTs) {
+  if (!rawTs) return 'Not synced yet';
+  const d = new Date(rawTs);
+  if (isNaN(d.getTime())) return String(rawTs);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function renderFooterUpdateTimestamps() {
+  const histEl = document.getElementById('footer-hist-prices-updated');
+  const newsEl = document.getElementById('footer-news-analysis-updated');
+
+  const histTs = state?.settings?.lastHistoricalPricesUpdate
+    || window.EXTERNAL_HISTORICAL_PRICES?._meta?.generatedAt
+    || window.EXTERNAL_HISTORICAL_PRICES?.generatedAt
+    || null;
+
+  let newsTs = state?.settings?.lastNewsAnalysisUpdate
+    || window.EMBEDDED_COMPANY_NEWS?._meta?.generatedAt
+    || window.EMBEDDED_COMPANY_NEWS?.generatedAt
+    || null;
+  if (!newsTs && Array.isArray(state?.companyNews) && state.companyNews.length > 0) {
+    newsTs = state.companyNews[0]?.publishedAt || null;
+  }
+
+  if (histEl) {
+    histEl.textContent = formatUpdateTimestamp(histTs);
+  }
+  if (newsEl) {
+    newsEl.textContent = formatUpdateTimestamp(newsTs);
+  }
+}
+window.renderFooterUpdateTimestamps = renderFooterUpdateTimestamps;
+
 function renderVersionRegistryUI() {
   if (typeof APP_VERSION_MANIFEST === 'undefined') return;
   const vBadge = document.getElementById('app-version-badge');
@@ -71,6 +105,7 @@ function renderVersionRegistryUI() {
   if (footerVer) {
     footerVer.textContent = `v${APP_VERSION_MANIFEST.appVersion} (Build ${APP_VERSION_MANIFEST.buildId})`;
   }
+  renderFooterUpdateTimestamps();
   const modBody = document.getElementById('version-registry-tbody');
   if (modBody) {
     modBody.innerHTML = Object.entries(APP_VERSION_MANIFEST.modules).map(([file, meta]) => `
@@ -1523,7 +1558,8 @@ function renderNewsTab() {
   const deduped = [];
   rawList.forEach(rawArt => {
     const a = (typeof normalizeNewsArticleSchema === 'function') ? normalizeNewsArticleSchema(rawArt) : rawArt;
-    if (a && a.url && !seenUrls.has(a.url)) {
+    const within3M = (typeof isNewsWithinThreeMonths === 'function') ? isNewsWithinThreeMonths(a?.publishedAt) : true;
+    if (a && a.url && within3M && !seenUrls.has(a.url)) {
       seenUrls.add(a.url);
       deduped.push(a);
     }
@@ -2791,7 +2827,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.2 • Build 20261104_1350)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.3 • Build 20261104_1435)...');
   }
 
   try {
@@ -2828,9 +2864,17 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.2.2 boot sequence complete.');
+      AppLogger.info('Boot', 'myPortfolio v3.2.3 boot sequence complete — triggering initial one-time live price API fetch.');
     }
-  }, 120);
+    if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
+      window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;
+      syncAllMarketData(false, { isAutoStartup: true }).catch(err => {
+        if (typeof AppLogger !== 'undefined') {
+          AppLogger.warn('Boot', `Initial live price API fetch notice: ${err.message}`);
+        }
+      });
+    }
+  }, 150);
 }
 
 if (document.readyState === 'loading') {

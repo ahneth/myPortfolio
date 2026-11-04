@@ -739,6 +739,10 @@ window.buildDividendScheduleForTicker = buildDividendScheduleForTicker;
 function ingestHistoricalPricesData(data) {
   if (!data || typeof data !== 'object') return 0;
   window.EXTERNAL_HISTORICAL_PRICES = data;
+  const histGeneratedAt = data?._meta?.generatedAt || data?.generatedAt || null;
+  if (histGeneratedAt && state && state.settings) {
+    state.settings.lastHistoricalPricesUpdate = histGeneratedAt;
+  }
   let loadedSeriesCount = 0;
 
   if (data.fxRates && typeof data.fxRates === 'object') {
@@ -890,21 +894,43 @@ function normalizeNewsArticleSchema(art) {
   };
 }
 
+var MAX_NEWS_RETENTION_DAYS = 92; // 3 months (~92 days)
+
+function isNewsWithinThreeMonths(publishedAt) {
+  if (!publishedAt) return false;
+  const pubMs = new Date(publishedAt).getTime();
+  if (!Number.isFinite(pubMs) || pubMs <= 0) return false;
+  const cutoffMs = Date.now() - (MAX_NEWS_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  return pubMs >= cutoffMs;
+}
+window.isNewsWithinThreeMonths = isNewsWithinThreeMonths;
+
 function ingestCompanyNewsData(data) {
-  if (!data || !Array.isArray(data.articles)) return 0;
+  if (!data || typeof data !== 'object') return 0;
+  const newsGeneratedAt = data?._meta?.generatedAt || data?.generatedAt || null;
+  if (newsGeneratedAt && state && state.settings) {
+    state.settings.lastNewsAnalysisUpdate = newsGeneratedAt;
+  }
   if (!Array.isArray(state.companyNews)) state.companyNews = [];
+  // Prune any existing cached articles older than 3 months
+  state.companyNews = state.companyNews.filter(a => a && isNewsWithinThreeMonths(a.publishedAt));
+  if (!Array.isArray(data.articles)) return 0;
+
   const existingUrls = new Set(state.companyNews.map(a => a?.url).filter(Boolean));
   let added = 0;
   data.articles.forEach(rawArt => {
     if (!rawArt || rawArt.sourceApi === 'Curated Baseline' || String(rawArt.id || '').startsWith('curated_')) return;
+    if (!isNewsWithinThreeMonths(rawArt.publishedAt)) return;
     const art = normalizeNewsArticleSchema(rawArt);
-    if (art && art.url && !existingUrls.has(art.url)) {
+    if (art && art.url && isNewsWithinThreeMonths(art.publishedAt) && !existingUrls.has(art.url)) {
       existingUrls.add(art.url);
       state.companyNews.push(art);
       added++;
     }
   });
-  state.companyNews = state.companyNews.map(a => normalizeNewsArticleSchema(a)).filter(Boolean);
+  state.companyNews = state.companyNews
+    .map(a => normalizeNewsArticleSchema(a))
+    .filter(a => a && isNewsWithinThreeMonths(a.publishedAt));
   state.companyNews.sort((a, b) => String(b.publishedAt || '').localeCompare(String(a.publishedAt || '')));
   return added;
 }
@@ -1045,14 +1071,16 @@ async function loadCompanyNewsFromJson(silent = true) {
       sourceLabel = 'window.EMBEDDED_COMPANY_NEWS';
     }
 
-    if (data && Array.isArray(data.articles) && data.articles.length > 0) {
+    if (data && typeof data === 'object') {
       ingestCompanyNewsData(data);
       saveState();
       if (typeof renderNewsTab === 'function') renderNewsTab();
+      if (typeof renderFooterUpdateTimestamps === 'function') renderFooterUpdateTimestamps();
       if (!silent && typeof AppLogger !== 'undefined') {
-        AppLogger.api('GitHubNews', `Loaded ${data.articles.length} news articles from ${sourceLabel} (generated ${data?._meta?.generatedAt || 'N/A'})`);
+        const artLen = Array.isArray(data.articles) ? data.articles.length : 0;
+        AppLogger.api('GitHubNews', `Loaded ${artLen} news articles (<=3M) from ${sourceLabel} (generated ${data?._meta?.generatedAt || data?.generatedAt || 'N/A'})`);
       }
-      return true;
+      return Array.isArray(data.articles) && data.articles.length > 0;
     }
   } catch (err) {
     if (!silent && typeof AppLogger !== 'undefined') {

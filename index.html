@@ -561,12 +561,12 @@ tr.sector-group-header.etf-sector-row > td.sticky-col-mobile {
   background-color: #1e293b !important;
 }
 
-/* 3. Halved fixed-height scrollable viewport for Holdings & Watchlist tables (v3.2.2) */
+/* 3. Ultra-compact fixed-height scrollable viewport for Holdings & Watchlist tables (v3.2.2 - reduced by further 50%) */
 .scrollable-portfolio-table-box {
   width: 100%;
-  max-height: calc((100vh - 255px) * 0.5) !important;
-  height: calc((100vh - 255px) * 0.5) !important;
-  min-height: 200px !important;
+  max-height: calc((100vh - 255px) * 0.25) !important;
+  height: calc((100vh - 255px) * 0.25) !important;
+  min-height: 140px !important;
   overflow-y: auto !important;
   overflow-x: auto !important;
   -webkit-overflow-scrolling: touch;
@@ -581,9 +581,9 @@ tr.sector-group-header.etf-sector-row > td.sticky-col-mobile {
 
 @media (max-width: 640px) {
   .scrollable-portfolio-table-box {
-    max-height: calc((100vh - 245px) * 0.5) !important;
-    height: calc((100vh - 245px) * 0.5) !important;
-    min-height: 170px !important;
+    max-height: calc((100vh - 245px) * 0.25) !important;
+    height: calc((100vh - 245px) * 0.25) !important;
+    min-height: 120px !important;
   }
 }
 
@@ -671,9 +671,8 @@ table tbody td,
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.2.2 (20261104_1350)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.2.3 (20261104_1435)</span>
             </div>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Global HK, US &amp; London Stock Portfolio Tracker</p>
           </div>
         </div>
 
@@ -687,11 +686,6 @@ table tbody td,
           <button id="header-sync-api-btn" class="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold flex items-center gap-1.5" title="Fetch current & monthly historical prices via API">
             <i id="header-sync-icon" class="fa-solid fa-cloud-arrow-down text-[11px]"></i>
             <span>Sync Market Data</span>
-          </button>
-          <div class="h-3 w-px bg-slate-300 dark:bg-slate-600"></div>
-          <button id="header-test-api-btn" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold flex items-center gap-1" title="Run thorough API diagnostic test on 2800.HK & VOO">
-            <i class="fa-solid fa-vial-circle-check text-[11px]"></i>
-            <span>Test 2800.HK &amp; VOO</span>
           </button>
         </div>
 
@@ -1946,13 +1940,13 @@ table tbody td,
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.2.2 • Build 20261104_1350</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.2.3 • Build 20261104_1435</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261104_1350</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261104_1435</span>/
           </span>
         </div>
 
@@ -2185,14 +2179,21 @@ table tbody td,
 
   <!-- ==================== FOOTER ==================== -->
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
-    <div class="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+    <div class="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 flex flex-col lg:flex-row items-center justify-between gap-2.5">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.2.2 (Build 20261104_1350)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.2.3 (Build 20261104_1435)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
-      <div class="flex items-center gap-4 text-slate-400">
-        <span><i class="fa-solid fa-globe text-brand-500"></i> HK, US &amp; London API</span>
-        <span><i class="fa-solid fa-database text-indigo-500"></i> LocalStorage Sync</span>
-        <span><i class="fa-solid fa-mobile-screen text-emerald-500"></i> Adaptive UI</span>
+      <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
+          <i class="fa-solid fa-chart-line text-brand-500"></i>
+          <span>Historical Monthly Prices Updated:</span>
+          <strong id="footer-hist-prices-updated" class="font-mono text-slate-800 dark:text-slate-200">Not synced yet</strong>
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
+          <i class="fa-solid fa-newspaper text-purple-500"></i>
+          <span>News Analysis Updated:</span>
+          <strong id="footer-news-analysis-updated" class="font-mono text-slate-800 dark:text-slate-200">Not synced yet</strong>
+        </span>
       </div>
     </div>
   </footer>
@@ -2622,10 +2623,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.2.2',
-  buildId: '20261104_1350',
-  releaseDate: '2026-11-04 13:50 HKT',
-  driveFolder: '/myPortfolio/20261104_1350/',
+  appVersion: '3.2.3',
+  buildId: '20261104_1435',
+  releaseDate: '2026-11-04 14:35 HKT',
+  driveFolder: '/myPortfolio/20261104_1435/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -2639,8 +2640,20 @@ var APP_VERSION_MANIFEST = {
   },
   changelog: [
     {
+      version: '3.2.3',
+      buildId: '20261104_1435',
+      date: '2026-11-04 14:35 HKT',
+      summary: 'Removed header subtitle ("Global HK, US & London Stock Portfolio Tracker") and "Test 2800.HK & VOO" button, added automatic one-time Live Price API fetch on initial page load, enforced a 3-month (90-day) cutoff for fetching and retaining company news, and displayed the latest update dates and times for Historical Monthly Prices and News Analysis in the page footer.',
+      changes: [
+        'Removed "Global HK, US & London Stock Portfolio Tracker" subtitle and "Test 2800.HK & VOO" button from the top navigation header',
+        'Configured bootstrapPortfolioApp() to automatically run syncAllMarketData(false, { isAutoStartup: true }) once when the page first loads to fetch live prices',
+        'Enforced a strict 3-month (90-day) news cutoff in update_company_news.py, ingestCompanyNewsData(), and renderNewsTab() so articles older than 3 months are neither fetched nor kept',
+        'Added live-updating timestamps at the bottom of the page (#footer-hist-prices-updated and #footer-news-analysis-updated) showing the latest update dates and times of historical monthly prices and news analysis'
+      ]
+    },
+    {
       version: '3.2.2',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-11-04 13:50 HKT',
       summary: 'Halved the fixed height of the Holdings and Watchlist scrollable table viewports so they take significantly less vertical screen space and leave ample room for the stock charts and page scrolling.',
       changes: [
@@ -2650,7 +2663,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.1',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-11-04 13:10 HKT',
       summary: 'Moved Live Price column immediately after Asset / Sector in Holdings and Watchlist tables, added fixed-height single-screen scrollable table viewports with vertical/horizontal scrollbars and top/bottom page margins, removed TOP ETF badge, enabled freeze-pane first column on PC desktop and mobile, expanded PC desktop layout to 100% full browser width with permanently pinned top title/tab bar, and unified compact row top/bottom margins across all tables in the app.',
       changes: [
@@ -2664,7 +2677,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.0',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-11-01 20:15 HKT',
       summary: 'Added Signal filter dropdowns on Holdings and Watchlist pages, grouped Watchlist stocks by collapsible sectors with ETF top-priority sorting, and reduced vertical row margins on Transaction Audit Log and Dividend Payout Logs so all 20 paginated rows fit on a single mobile screen without scrolling.',
       changes: [
@@ -2675,7 +2688,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.9',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-11-01 19:45 HKT',
       summary: 'Fixed historical monthly Close vs. Low mismatch on multi-year charts by aligning Monthly Close to unadjusted market close (rawClose) on the same price scale as Monthly High, Monthly Low, and Avg Cost.',
       changes: [
@@ -2685,7 +2698,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.8',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-11-01 14:05 HKT',
       summary: 'Moved stock chart legend below the chart canvas, added translucent green Monthly High–Low range band around Monthly Close, increased Reg Trend Upper/Lower visibility and chart height (350px–430px), restricted top KPI summary cards to the Home (Dashboard) page only, and added 20-row pagination (Prev 20 / Next 20) to all Transaction and Dividend tables.',
       changes: [
@@ -2698,7 +2711,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.7',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-11-01',
       changes: [
         'Added automatic startup and ingestion data validation for historical monthly price series, technical indicators, and company news feeds',
@@ -2708,7 +2721,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.6',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-11-01',
       changes: [
         'Dedicated browser MarketAPI strictly to fast parallel Live Price quotes only (eliminated all third-party browser API calls for 15y historical data and news)',
@@ -2719,7 +2732,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.5',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-10-31',
       changes: [
         'Changed clicked/selected row highlight in Holdings and Watchlist (and active nav tabs) to dark slate grey (#1e293b) for high-contrast text readability in dark mode',
@@ -2728,7 +2741,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.4',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-10-31',
       changes: [
         'Fixed Holdings sector group header sticky bar width on mobile (changed sticky cell from colspan=3 to colspan=1 matching stock rows) so sector subtotals/aggregates are never blocked during horizontal scroll',
@@ -2737,7 +2750,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.3',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-10-31',
       changes: [
         'Styled unpaid/pending dividends (where Ex-Date has passed but Pay Date is in the future) in distinct amber/yellow font color with an Unpaid badge in Dividend Payout Logs',
@@ -2747,7 +2760,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.2',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-10-31',
       changes: [
         'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging legacy baseline dates with live Yahoo Finance ex-dates',
@@ -2759,7 +2772,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.1',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-10-31',
       changes: [
         'Fixed Service Worker (sw.js) cache-first trap by bumping cache version and switching to Network-First plus automatic stale CacheStorage purge on startup',
@@ -2769,7 +2782,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.0',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-10-31 16:50 HKT',
       title: '1-Day Quote Previous-Close Fix, 100% Cash Dividends, Dividend Ticker Filter, Complete 3476.HK/3433.HK Dividends & TRIM/OFFLOAD Signal Engine',
       changes: [
@@ -2782,7 +2795,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.1',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-10-31 11:15 HKT',
       title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
       changes: [
@@ -2797,7 +2810,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.0',
-      buildId: '20261104_1350',
+      buildId: '20261104_1435',
       date: '2026-10-30 23:30 HKT',
       title: 'Full Quantitative Suite: 2018+ Auto-Dividends, Buy/Sell Signal Engine, Scheduled News, Trend Regimes, Real XIRR & Settings Customizer',
       changes: [
@@ -4621,18 +4634,21 @@ var MarketAPI = {
   }
 };
 
-async function syncAllMarketData(triggerGitHubWorkflow = true) {
+async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
+  const isAutoStartup = Boolean(options && options.isAutoStartup);
   const tStart = performance.now();
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.action('Sync', `Sync button pressed (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
+    AppLogger.action('Sync', `${isAutoStartup ? 'Initial page-load auto live price sync' : 'Sync button pressed'} (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
   }
 
   if (!MarketAPI.hasKey()) {
-    if (typeof AppLogger !== 'undefined') {
-      AppLogger.warn('Sync', 'API Key missing for selected keyed provider — redirecting to Settings.');
+    if (!isAutoStartup) {
+      if (typeof AppLogger !== 'undefined') {
+        AppLogger.warn('Sync', 'API Key missing for selected keyed provider — redirecting to Settings.');
+      }
+      showToast('Please select Yahoo Finance (Keyless) or configure your API Key in Settings.', 'error');
+      switchTab('settings');
     }
-    showToast('Please select Yahoo Finance (Keyless) or configure your API Key in Settings.', 'error');
-    switchTab('settings');
     return;
   }
 
@@ -4645,7 +4661,9 @@ async function syncAllMarketData(triggerGitHubWorkflow = true) {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.info('Sync', 'No holdings or watchlist tickers to sync.');
     }
-    showToast('Add a stock transaction or watchlist ticker first.', 'info');
+    if (!isAutoStartup) {
+      showToast('Add a stock transaction or watchlist ticker first.', 'info');
+    }
     return;
   }
 
@@ -4696,11 +4714,10 @@ async function syncAllMarketData(triggerGitHubWorkflow = true) {
     try {
       let q = batchQuotes[ticker];
       if (!q) {
-        if (MarketAPI.getProvider() === 'yahoo') {
-          // Use fast cached/snapshot quote if batch JSONP didn't return it to avoid CORS proxy stalls
-          q = MarketAPI.getEmbeddedOrCachedQuote(ticker) || await MarketAPI.fetchQuote(ticker);
-        } else {
+        try {
           q = await MarketAPI.fetchQuote(ticker);
+        } catch (_) {
+          q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
         }
       }
       if (q && q.price > 0) {
@@ -5691,6 +5708,10 @@ window.buildDividendScheduleForTicker = buildDividendScheduleForTicker;
 function ingestHistoricalPricesData(data) {
   if (!data || typeof data !== 'object') return 0;
   window.EXTERNAL_HISTORICAL_PRICES = data;
+  const histGeneratedAt = data?._meta?.generatedAt || data?.generatedAt || null;
+  if (histGeneratedAt && state && state.settings) {
+    state.settings.lastHistoricalPricesUpdate = histGeneratedAt;
+  }
   let loadedSeriesCount = 0;
 
   if (data.fxRates && typeof data.fxRates === 'object') {
@@ -5842,21 +5863,43 @@ function normalizeNewsArticleSchema(art) {
   };
 }
 
+var MAX_NEWS_RETENTION_DAYS = 92; // 3 months (~92 days)
+
+function isNewsWithinThreeMonths(publishedAt) {
+  if (!publishedAt) return false;
+  const pubMs = new Date(publishedAt).getTime();
+  if (!Number.isFinite(pubMs) || pubMs <= 0) return false;
+  const cutoffMs = Date.now() - (MAX_NEWS_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  return pubMs >= cutoffMs;
+}
+window.isNewsWithinThreeMonths = isNewsWithinThreeMonths;
+
 function ingestCompanyNewsData(data) {
-  if (!data || !Array.isArray(data.articles)) return 0;
+  if (!data || typeof data !== 'object') return 0;
+  const newsGeneratedAt = data?._meta?.generatedAt || data?.generatedAt || null;
+  if (newsGeneratedAt && state && state.settings) {
+    state.settings.lastNewsAnalysisUpdate = newsGeneratedAt;
+  }
   if (!Array.isArray(state.companyNews)) state.companyNews = [];
+  // Prune any existing cached articles older than 3 months
+  state.companyNews = state.companyNews.filter(a => a && isNewsWithinThreeMonths(a.publishedAt));
+  if (!Array.isArray(data.articles)) return 0;
+
   const existingUrls = new Set(state.companyNews.map(a => a?.url).filter(Boolean));
   let added = 0;
   data.articles.forEach(rawArt => {
     if (!rawArt || rawArt.sourceApi === 'Curated Baseline' || String(rawArt.id || '').startsWith('curated_')) return;
+    if (!isNewsWithinThreeMonths(rawArt.publishedAt)) return;
     const art = normalizeNewsArticleSchema(rawArt);
-    if (art && art.url && !existingUrls.has(art.url)) {
+    if (art && art.url && isNewsWithinThreeMonths(art.publishedAt) && !existingUrls.has(art.url)) {
       existingUrls.add(art.url);
       state.companyNews.push(art);
       added++;
     }
   });
-  state.companyNews = state.companyNews.map(a => normalizeNewsArticleSchema(a)).filter(Boolean);
+  state.companyNews = state.companyNews
+    .map(a => normalizeNewsArticleSchema(a))
+    .filter(a => a && isNewsWithinThreeMonths(a.publishedAt));
   state.companyNews.sort((a, b) => String(b.publishedAt || '').localeCompare(String(a.publishedAt || '')));
   return added;
 }
@@ -5997,14 +6040,16 @@ async function loadCompanyNewsFromJson(silent = true) {
       sourceLabel = 'window.EMBEDDED_COMPANY_NEWS';
     }
 
-    if (data && Array.isArray(data.articles) && data.articles.length > 0) {
+    if (data && typeof data === 'object') {
       ingestCompanyNewsData(data);
       saveState();
       if (typeof renderNewsTab === 'function') renderNewsTab();
+      if (typeof renderFooterUpdateTimestamps === 'function') renderFooterUpdateTimestamps();
       if (!silent && typeof AppLogger !== 'undefined') {
-        AppLogger.api('GitHubNews', `Loaded ${data.articles.length} news articles from ${sourceLabel} (generated ${data?._meta?.generatedAt || 'N/A'})`);
+        const artLen = Array.isArray(data.articles) ? data.articles.length : 0;
+        AppLogger.api('GitHubNews', `Loaded ${artLen} news articles (<=3M) from ${sourceLabel} (generated ${data?._meta?.generatedAt || data?.generatedAt || 'N/A'})`);
       }
-      return true;
+      return Array.isArray(data.articles) && data.articles.length > 0;
     }
   } catch (err) {
     if (!silent && typeof AppLogger !== 'undefined') {
@@ -8484,7 +8529,7 @@ window.renderPnlBreakdownChart = renderPnlBreakdownChart;
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.2.2-20261104_1350') {
+      if (k !== 'myportfolio-cache-v3.2.3-20261104_1435') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -8534,6 +8579,40 @@ function renderAll() {
   } catch (_) {}
 }
 
+function formatUpdateTimestamp(rawTs) {
+  if (!rawTs) return 'Not synced yet';
+  const d = new Date(rawTs);
+  if (isNaN(d.getTime())) return String(rawTs);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function renderFooterUpdateTimestamps() {
+  const histEl = document.getElementById('footer-hist-prices-updated');
+  const newsEl = document.getElementById('footer-news-analysis-updated');
+
+  const histTs = state?.settings?.lastHistoricalPricesUpdate
+    || window.EXTERNAL_HISTORICAL_PRICES?._meta?.generatedAt
+    || window.EXTERNAL_HISTORICAL_PRICES?.generatedAt
+    || null;
+
+  let newsTs = state?.settings?.lastNewsAnalysisUpdate
+    || window.EMBEDDED_COMPANY_NEWS?._meta?.generatedAt
+    || window.EMBEDDED_COMPANY_NEWS?.generatedAt
+    || null;
+  if (!newsTs && Array.isArray(state?.companyNews) && state.companyNews.length > 0) {
+    newsTs = state.companyNews[0]?.publishedAt || null;
+  }
+
+  if (histEl) {
+    histEl.textContent = formatUpdateTimestamp(histTs);
+  }
+  if (newsEl) {
+    newsEl.textContent = formatUpdateTimestamp(newsTs);
+  }
+}
+window.renderFooterUpdateTimestamps = renderFooterUpdateTimestamps;
+
 function renderVersionRegistryUI() {
   if (typeof APP_VERSION_MANIFEST === 'undefined') return;
   const vBadge = document.getElementById('app-version-badge');
@@ -8552,6 +8631,7 @@ function renderVersionRegistryUI() {
   if (footerVer) {
     footerVer.textContent = `v${APP_VERSION_MANIFEST.appVersion} (Build ${APP_VERSION_MANIFEST.buildId})`;
   }
+  renderFooterUpdateTimestamps();
   const modBody = document.getElementById('version-registry-tbody');
   if (modBody) {
     modBody.innerHTML = Object.entries(APP_VERSION_MANIFEST.modules).map(([file, meta]) => `
@@ -10004,7 +10084,8 @@ function renderNewsTab() {
   const deduped = [];
   rawList.forEach(rawArt => {
     const a = (typeof normalizeNewsArticleSchema === 'function') ? normalizeNewsArticleSchema(rawArt) : rawArt;
-    if (a && a.url && !seenUrls.has(a.url)) {
+    const within3M = (typeof isNewsWithinThreeMonths === 'function') ? isNewsWithinThreeMonths(a?.publishedAt) : true;
+    if (a && a.url && within3M && !seenUrls.has(a.url)) {
       seenUrls.add(a.url);
       deduped.push(a);
     }
@@ -11272,7 +11353,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.2 • Build 20261104_1350)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.3 • Build 20261104_1435)...');
   }
 
   try {
@@ -11309,9 +11390,17 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.2.2 boot sequence complete.');
+      AppLogger.info('Boot', 'myPortfolio v3.2.3 boot sequence complete — triggering initial one-time live price API fetch.');
     }
-  }, 120);
+    if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
+      window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;
+      syncAllMarketData(false, { isAutoStartup: true }).catch(err => {
+        if (typeof AppLogger !== 'undefined') {
+          AppLogger.warn('Boot', `Initial live price API fetch notice: ${err.message}`);
+        }
+      });
+    }
+  }, 150);
 }
 
 if (document.readyState === 'loading') {
