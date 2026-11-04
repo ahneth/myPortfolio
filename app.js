@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.2.4-20261104_1515') {
+      if (k !== 'myportfolio-cache-v3.2.5-20261104_2135') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -3019,7 +3019,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.4 • Build 20261104_1515)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.5 • Build 20261104_2135)...');
   }
 
   try {
@@ -3056,7 +3056,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.2.4 boot sequence complete — triggering initial one-time live price API fetch.');
+      AppLogger.info('Boot', 'myPortfolio v3.2.5 boot sequence complete — triggering initial one-time live price API fetch.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

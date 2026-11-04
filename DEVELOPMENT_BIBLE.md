@@ -1,6 +1,6 @@
 # myPortfolio — Development Bible & Architecture Guide
 
-**Current Production Release:** `v3.2.4` (Build `20261104_1515`)  
+**Current Production Release:** `v3.2.5` (Build `20261104_2135`)  
 **Production URL:** https://ahneth.github.io/myPortfolio/  
 **GitHub Repository:** https://github.com/ahneth/myPortfolio  
 **Google Drive Master Archive:** `/myPortfolio/` (Folder ID: `1NEtuIDV8NsN02upJPDQvJ00WpZxX9oMz`) — `/myPortfolio/Reference/` subfolder (Folder ID: `1NThy4bFv3yosHYszz5R9soBaUK0MYH4j`)
@@ -83,7 +83,7 @@
 * **Stock Monthly Historical Chart Layout & Overlays (`v3.1.8+`)**:
   - **External Interactive HTML Legend Below Chart**: The internal Chart.js `<canvas>` legend is disabled (`plugins.legend.display = false`) so 100% of the canvas height is dedicated to plotting data. A separated, clickable HTML legend (`#holdings-chart-legend` / `#watchlist-chart-legend`) is rendered below the chart canvas with a top border divider.
   - **Increased Chart Height (`.stock-history-chart-box`)**: Chart container height is `350px` on mobile viewports and `430px` on tablet/desktop viewports.
-  - **Monthly High–Low Translucent Green Band & Unadjusted Price Scale Alignment (`v3.2.4+`)**: Plots each month's `High` and `Low` as a translucent emerald band (`rgba(16, 185, 129, 0.22)` fill with `rgba(52, 211, 153, 0.45)` borders) enveloping the solid `#10b981` `Monthly Close` line. Always use unadjusted market closing prices (`rawClose`) for `close` so `Monthly Close`, `Monthly High`, `Monthly Low`, and `Your Avg Cost` share the exact same unadjusted price scale (never mix backward-discounted `adjClose` with unadjusted `high`/`low`).
+  - **Monthly High–Low Translucent Green Band & Unadjusted Price Scale Alignment (`v3.2.5+`)**: Plots each month's `High` and `Low` as a translucent emerald band (`rgba(16, 185, 129, 0.22)` fill with `rgba(52, 211, 153, 0.45)` borders) enveloping the solid `#10b981` `Monthly Close` line. Always use unadjusted market closing prices (`rawClose`) for `close` so `Monthly Close`, `Monthly High`, `Monthly Low`, and `Your Avg Cost` share the exact same unadjusted price scale (never mix backward-discounted `adjClose` with unadjusted `high`/`low`).
   - **High-Visibility Regression Trend Channel (`±1σ`)**: `Reg Trend Upper (+1σ)` and `Reg Trend Lower (-1σ)` use high-contrast bright purple-violet `#c084fc` (dark mode) / `#9333ea` (light mode) with `2.2px` dashed strokes (`[6, 4]`).
 * **20-Row Max Table Pagination (`PAGINATION_PAGE_SIZE = 20`, `v3.1.8+`)**:
   - All transaction and dividend tables (`#tx-table-body`, `#dividends-table-body`, `#dividend-calendar-tbody`, and `#detected-dividends-tbody`) display at most **20 rows per page** with a footer bar showing `Showing X–Y of Z records • Page P of N` and **`← Prev 20`** / **`Next 20 →`** navigation buttons.
@@ -142,7 +142,7 @@ Whenever any bug fix or feature enhancement is developed:
      - **Reference Subfolder (`/myPortfolio/Reference/`, ID: `1NThy4bFv3yosHYszz5R9soBaUK0MYH4j`)**: Stores the living **Development Bible** (`1eQojBS7aURAUd0jUxK8yW_m3O3BZxgx2PiIy3Oo4WBQ`, `DEVELOPMENT_BIBLE.md`) and **Development Log** (`1dEoCHVxrtStNpcTy_eWPeMsTHstaOaksrFzKnNnHkOA`, `DEVELOPMENT_LOG.md`).
      - **Release Subfolders (`/myPortfolio/YYYYMMDD_HHMM/`)**: Create a dedicated timestamped subfolder under `/myPortfolio/` for every build containing the standalone `index.html`, modular JS/Python/JSON files, and `myPortfolio_vX.Y.Z_YYYYMMDD_HHMM.zip`.
 
-### 3.12 Signal Filter Dropdowns, Watchlist Sector Grouping & Ultra-Compact Mobile Log Tables (`v3.2.4` • Build `20261104_1515`)
+### 3.12 Signal Filter Dropdowns, Watchlist Sector Grouping & Ultra-Compact Mobile Log Tables (`v3.2.5` • Build `20261104_2135`)
 - **Signal Filter Dropdowns on Holdings & Watchlist (`#holdings-filter-signal` & `#watchlist-filter-signal`)**:
   - Both the **Holdings** and **Watchlist** header toolbars include a `Signal:` dropdown filter (`All Signals`, `STRONG BUY`, `ACCUMULATE`, `HOLD`, `TRIM / OFFLOAD`, `SELL / AVOID`) dynamically populated via `populateSignalFilterDropdown()` with live counts per signal category in parentheses.
   - Selecting a signal filters the table in place while preserving sector group headers; if `0` tickers match the selected signal, an inline empty-filter row with a 1-click `Show All` reset button is displayed inside `tbody`.
@@ -153,7 +153,7 @@ Whenever any bug fix or feature enhancement is developed:
 - **Ultra-Compact Trades & Dividend Payout Log Table Rows (`.compact-log-table`)**:
   - Applied `.compact-log-table` to the **Transaction Audit Log** (`#tx-log-table`) and **Dividend Payout Logs** (`#div-payout-log-table`) tables, reducing vertical cell padding (`padding-top/bottom: 0.24rem` on desktop; `0.13rem` with `line-height: 1.12` and `font-size: 0.68rem` on mobile `<= 640px`) and compacting the pagination bar so all 20 paginated rows fit on a single mobile phone screen without vertical scrolling.
 
-### 3.13 Full-Width Desktop, Fixed Top Header/Tabs, Freeze-Pane First Column, Fixed-Height Scrollable Tables & Global Compact Table Rows (`v3.2.4` • Build `20261104_1515`)
+### 3.13 Full-Width Desktop, Fixed Top Header/Tabs, Freeze-Pane First Column, Fixed-Height Scrollable Tables & Global Compact Table Rows (`v3.2.5` • Build `20261104_2135`)
 - **Live Price Column Positioned Immediately After Asset / Sector**:
   - In both **Holdings** (`#holdings-main-table`) and **Watchlist** (`#watchlist-main-table`), `Live Price` is Column 2 (directly adjacent to the frozen `Asset / Sector` column) so users can compare each ticker and its live market price side-by-side before scrolling across secondary metrics.
 - **Single-Screen Fixed-Height Scrollable Table Viewport (`.scrollable-portfolio-table-box`)**:
@@ -167,12 +167,12 @@ Whenever any bug fix or feature enhancement is developed:
 - **Global Compact Table Row Margins**:
   - Unified all tables across the entire application to use the same compact top and bottom cell margins (`padding-top/bottom: 0.24rem` on desktop; `0.13rem` with `line-height: 1.12` and `font-size: 0.68rem` on mobile `<= 640px`) used in the Transaction Audit Log and Dividend Payout Logs tables.
 
-### 3.14 Halved Table Viewport Heights for Holdings & Watchlist (`v3.2.4` • Build `20261104_1515`)
+### 3.14 Halved Table Viewport Heights for Holdings & Watchlist (`v3.2.5` • Build `20261104_2135`)
 - **Halved Table Height (`.scrollable-portfolio-table-box`)**:
   - Reduced the fixed container height for both Holdings and Watchlist tables by 50% from `calc(100vh - 255px)` to `calc((100vh - 255px) * 0.5)` on desktop (~300–400px depending on screen resolution) and `calc((100vh - 245px) * 0.5)` on mobile (~250–280px).
   - Maintains full vertical and horizontal scrollbars with sticky column headers and frozen first column, but leaves ample vertical space on screen for the stock price chart card and surrounding page content.
 
-### 3.15 Header Streamlining, Startup Live Price Auto-Fetch, 3-Month News Retention & Footer Data Update Timestamps (`v3.2.4` • Build `20261104_1515`)
+### 3.15 Header Streamlining, Startup Live Price Auto-Fetch, 3-Month News Retention & Footer Data Update Timestamps (`v3.2.5` • Build `20261104_2135`)
 - **Top Header Streamlining**:
   - Removed the `"Global HK, US & London Stock Portfolio Tracker"` subtitle under the brand title and removed the `"Test 2800.HK & VOO"` button from the center API pill in the top header bar.
 - **Automatic One-Time Live Price API Fetch on Page Load**:
@@ -182,9 +182,30 @@ Whenever any bug fix or feature enhancement is developed:
 - **Footer Data Update Timestamps (`#footer-hist-prices-updated` & `#footer-news-analysis-updated`)**:
   - The page footer displays the latest update dates and times (`YYYY-MM-DD HH:MM:SS`) for both **Historical Monthly Prices** (`state.settings.lastHistoricalPricesUpdate` / `historical_prices.json` `_meta.generatedAt`) and **News Analysis** (`state.settings.lastNewsAnalysisUpdate` / `company_news.json` `generatedAt`).
 
-### 3.16 Holdings Table 22-Column Layout, Portfolio Total Row, All-Time Historical Holdings & Monthly Chart Buy/Sell Markers (`v3.2.4` • Build `20261104_1515`)
+### 3.16 Holdings Table 22-Column Layout, Portfolio Total Row, All-Time Historical Holdings & Monthly Chart Buy/Sell Markers (`v3.2.5` • Build `20261104_2135`)
 - **22-Column Holdings Table Order**:
-  - `Asset / Sector` (frozen left column) $ightarrow$ `Live Price` $ightarrow$ `Day P&L` (1-day market value gain/loss vs. previous business day) $ightarrow$ `Market Value` $ightarrow$ `Unrealized P&L` $ightarrow$ `Div / Ex-Date` $ightarrow$ `Accumulated Div` $ightarrow$ `Realized P&L` $ightarrow$ `Shares` $ightarrow$ `Avg Cost` $ightarrow$ `Total Cost` $ightarrow$ `XIRR (p.a.)` $ightarrow$ `Yield on Cost` $ightarrow$ `52W Low` $ightarrow$ `52W High` $ightarrow$ `52W Pos (%)` $ightarrow$ `MoM` $ightarrow$ `QoQ` $ightarrow$ `YoY` $ightarrow$ `Trend & RSI` $ightarrow$ `Signal` $ightarrow$ `Actions`.
+  - `Asset / Sector` (frozen left column) $
+ightarrow$ `Live Price` $
+ightarrow$ `Day P&L` (1-day market value gain/loss vs. previous business day) $
+ightarrow$ `Market Value` $
+ightarrow$ `Unrealized P&L` $
+ightarrow$ `Div / Ex-Date` $
+ightarrow$ `Accumulated Div` $
+ightarrow$ `Realized P&L` $
+ightarrow$ `Shares` $
+ightarrow$ `Avg Cost` $
+ightarrow$ `Total Cost` $
+ightarrow$ `XIRR (p.a.)` $
+ightarrow$ `Yield on Cost` $
+ightarrow$ `52W Low` $
+ightarrow$ `52W High` $
+ightarrow$ `52W Pos (%)` $
+ightarrow$ `MoM` $
+ightarrow$ `QoQ` $
+ightarrow$ `YoY` $
+ightarrow$ `Trend & RSI` $
+ightarrow$ `Signal` $
+ightarrow$ `Actions`.
 - **Top `PORTFOLIO TOTAL` Aggregation Row (`tr.portfolio-total-row`)**:
   - Pinned as the first row of `#holdings-table-body`, displaying Base-Currency portfolio totals and weighted aggregates for `Day P&L`, `Market Value`, `Unrealized P&L`, `Div / Ex-Date` (Weighted Net Yield & Forward Annual Dividend), `Accumulated Div`, `Realized P&L`, `Total Cost`, `XIRR (p.a.)` (Nominal & Real), `Yield on Cost`, and Average Signal Score.
 - **All Historical Holdings Included by Default + `Active only` Checkbox (`#holdings-filter-active-only`)**:
@@ -192,3 +213,11 @@ Whenever any bug fix or feature enhancement is developed:
 - **Monthly Buy (`Blue X`) & Sell (`Red X`) Markers on Holdings Stock Chart (`charts.js`)**:
   - Aggregates monthly `BUY` and `SELL` orders per ticker from `state.transactions` and overlays `pointStyle: 'crossRot'` markers in Blue (`#2563eb`) for monthly average Buy prices and Red (`#ef4444`) for monthly average Sell prices.
   - Clicking any Blue `X` or Red `X` marker opens `#holdings-chart-trade-marker-box` (and hover tooltip) showing the **Average Price**, **Buy/Sell Action**, **Number of Shares**, and **Buy/Sell Amount** for that month.
+
+### 3.17 London Stock Exchange (`.L`) BST/UTC Month-Boundary Fix for `SPYL.L` & `VWRA.L` (`v3.2.5` • Build `20261104_2135`)
+- **Exchange Native Timezone Bar Parsing (`resolve_exchange_timezone` & `parse_chart_bars`)**:
+  - `update_historical_prices.py` and `stock_hist_prices.py` convert Yahoo Finance Unix timestamps in the exchange's local timezone (`ZoneInfo(meta["exchangeTimezoneName"])`, e.g., `Europe/London` for `.L` and `Asia/Hong_Kong` for `.HK`) rather than `UTC`, preventing British Summer Time (`BST = UTC+1`, April–October) `00:00:00` 1st-of-month bars from shifting back 1 hour to `23:00:00 UTC` on the last day of the prior month and leaving `2026-10` missing.
+- **Daily-to-Monthly Bar Reconciliation (`reconcile_monthly_bars_with_daily`)**:
+  - Cross-checks the monthly bar series against the 2-year daily bar series (`daily_bars`) on every run of `update_historical_prices.py` so any month present in `daily_bars` is guaranteed to exist in `prices[sym]`.
+- **Client-Side Shifted Month-End Auto-Normalization (`ingestHistoricalPricesData` in `portfolio.js`)**:
+  - Automatically detects UTC-shifted 1st-of-month bars dated on the last day of the prior month (e.g., `2026-09-30` for `2026-10-01 BST`) in existing `historical_prices.json` payloads and normalizes them to their true calendar month (`2026-10`) immediately on load.

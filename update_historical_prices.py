@@ -38,6 +38,7 @@ import urllib.request
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from zoneinfo import ZoneInfo
 
 try:
     from curl_cffi import requests as curl_requests  # type: ignore
@@ -55,8 +56,8 @@ except ImportError:
     yf = None
     HAS_YFINANCE = False
 
-VERSION = "3.1.9"
-BUILD_ID = "20261101_1945"
+VERSION = "3.2.5"
+BUILD_ID = "20261104_2135"
 
 DEFAULT_TICKERS: List[str] = [
     "2800.HK",
@@ -1258,7 +1259,31 @@ def compute_stock_price_metrics(
     }
 
 
-def parse_chart_bars(result: Dict[str, Any], by_day: bool = False) -> List[Dict[str, Any]]:
+def resolve_exchange_timezone(meta: Dict[str, Any], symbol: str = "") -> dt.tzinfo:
+    tz_name = str((meta or {}).get("exchangeTimezoneName") or "").strip()
+    if not tz_name:
+        sym_u = str(symbol or "").upper()
+        if sym_u.endswith(".L"):
+            tz_name = "Europe/London"
+        elif sym_u.endswith(".HK"):
+            tz_name = "Asia/Hong_Kong"
+        else:
+            tz_name = "America/New_York"
+    try:
+        return ZoneInfo(tz_name)
+    except Exception:
+        gmt_off = (meta or {}).get("gmtoffset")
+        if gmt_off is not None:
+            try:
+                return dt.timezone(dt.timedelta(seconds=int(gmt_off)))
+            except Exception:
+                pass
+        return dt.timezone.utc
+
+
+def parse_chart_bars(result: Dict[str, Any], by_day: bool = False, symbol: str = "") -> List[Dict[str, Any]]:
+    meta = result.get("meta") or {}
+    ex_tz = resolve_exchange_timezone(meta, symbol)
     timestamps = result.get("timestamp") or []
     quote_ind = ((result.get("indicators") or {}).get("quote") or [{}])[0] or {}
     adj_list = (((result.get("indicators") or {}).get("adjclose") or [{}])[0] or {}).get("adjclose") or []
@@ -1290,8 +1315,17 @@ def parse_chart_bars(result: Dict[str, Any], by_day: bool = False) -> List[Dict[
         low_val = lows[idx] if idx < len(lows) and lows[idx] is not None else raw_close_f
         vol_val = volumes[idx] if idx < len(volumes) and volumes[idx] is not None else 0
 
-        date_str = dt.datetime.fromtimestamp(int(ts), tz=dt.timezone.utc).strftime("%Y-%m-%d")
+        # Convert timestamp in the exchange's local timezone (e.g. Europe/London BST/GMT for .L,
+        # Asia/Hong_Kong for .HK) so 1st-of-month 00:00 local bars never shift into the prior month in UTC
+        local_dt = dt.datetime.fromtimestamp(int(ts), tz=ex_tz)
+        if not by_day and local_dt.day >= 28 and local_dt.hour >= 20:
+            # Guard if a timestamp was slightly before local midnight on the 1st of the month
+            local_dt = local_dt + dt.timedelta(hours=6)
+
+        date_str = local_dt.strftime("%Y-%m-%d")
         month_str = date_str[:7]
+        if not by_day:
+            date_str = f"{month_str}-01"
         key = date_str if by_day else month_str
 
         h_f = max(float(high_val), raw_close_f)
@@ -1310,13 +1344,63 @@ def parse_chart_bars(result: Dict[str, Any], by_day: bool = False) -> List[Dict[
     return [bucket[k] for k in sorted(bucket.keys())]
 
 
+def reconcile_monthly_bars_with_daily(
+    monthly_bars: List[Dict[str, Any]],
+    daily_bars: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """
+    Cross-checks the monthly bar series against the 2-year daily bar series.
+    Ensures any month present in daily_bars (such as 2026-10 for SPYL.L / VWRA.L)
+    is guaranteed to be present and accurate in monthly_bars.
+    """
+    if not daily_bars:
+        return monthly_bars
+
+    by_month: Dict[str, Dict[str, Any]] = {b["month"]: dict(b) for b in monthly_bars if isinstance(b, dict) and b.get("month")}
+    daily_grouped: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for db in daily_bars:
+        if isinstance(db, dict) and db.get("month") and float(db.get("rawClose") or db.get("close") or 0) > 0:
+            daily_grouped[db["month"]].append(db)
+
+    for ym, d_list in sorted(daily_grouped.items()):
+        d_list.sort(key=lambda x: str(x.get("date") or ""))
+        last_d = d_list[-1]
+        rc = round(float(last_d.get("rawClose") or last_d.get("close") or 0), 4)
+        ac = round(float(last_d.get("adjClose") or rc), 4)
+        hi = round(max( max(float(x.get("high") or rc) for x in d_list), rc ), 4)
+        valid_lows = [float(x.get("low") or rc) for x in d_list if float(x.get("low") or 0) > 0]
+        lo = round(min(min(valid_lows) if valid_lows else rc, rc), 4)
+        vol = sum(int(x.get("volume") or 0) for x in d_list)
+
+        if ym not in by_month:
+            by_month[ym] = {
+                "month": ym,
+                "date": f"{ym}-01",
+                "close": rc,
+                "rawClose": rc,
+                "adjClose": ac,
+                "high": hi,
+                "low": lo,
+                "volume": vol,
+            }
+        else:
+            # Ensure High/Low/Close of existing recent month are consistent with daily bars
+            existing = by_month[ym]
+            existing["date"] = f"{ym}-01"
+            existing["high"] = round(max(float(existing.get("high") or rc), hi, rc), 4)
+            ex_lo = float(existing.get("low") or lo)
+            existing["low"] = round(min(ex_lo if ex_lo > 0 else lo, lo, rc), 4)
+
+    return [by_month[k] for k in sorted(by_month.keys())]
+
+
 def parse_monthly_result(
     symbol: str,
     result: Dict[str, Any],
     v10_summary: Optional[Dict[str, Any]] = None,
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any], Dict[str, Any], Dict[str, Any]]:
     meta = result.get("meta") or {}
-    history = parse_chart_bars(result, by_day=False)
+    history = parse_chart_bars(result, by_day=False, symbol=symbol)
 
     currency = meta.get("currency") or (
         "HKD" if symbol.endswith(".HK") else ("GBp" if symbol.endswith(".L") else "USD")
@@ -1493,6 +1577,8 @@ def fetch_via_yfinance_fallback(
         change_pct = round((change / prev_f) * 100.0, 2) if prev_f > 0 else 0.0
         now_iso = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+        if daily_bars:
+            history = reconcile_monthly_bars_with_daily(history, daily_bars)
         metrics = compute_stock_price_metrics(history, price_f, meta_high_52w=high_52w, meta_low_52w=low_52w)
         quote_obj = {
             "price": price_f,
@@ -1842,7 +1928,17 @@ def main() -> int:
             history, quote_obj, fund_obj, div_info = parse_monthly_result(sym, result, v10_summary=v10_sum)
             try:
                 daily_res = client.fetch_chart_v8(sym, range_str="2y", interval="1d", events="")
-                daily_bars = parse_chart_bars(daily_res, by_day=True)
+                daily_bars = parse_chart_bars(daily_res, by_day=True, symbol=sym)
+                if daily_bars:
+                    history = reconcile_monthly_bars_with_daily(history, daily_bars)
+                    refreshed_metrics = compute_stock_price_metrics(
+                        history,
+                        float(quote_obj.get("price") or 0.0),
+                        meta_high_52w=quote_obj.get("high52w"),
+                        meta_low_52w=quote_obj.get("low52w"),
+                    )
+                    quote_obj.update(refreshed_metrics)
+                    fund_obj.update(refreshed_metrics)
                 if len(daily_bars) >= 2 and quote_obj.get("price"):
                     p_cur = float(quote_obj["price"])
                     p_prev = round(float(daily_bars[-2]["rawClose"]), 4)

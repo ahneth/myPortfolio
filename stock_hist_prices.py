@@ -30,7 +30,8 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -463,7 +464,13 @@ class ResilientYahooDailyFetcher:
         if n == 0:
             return pd.DataFrame()
 
-        dates = [datetime.fromtimestamp(timestamps[i]) for i in range(n)]
+        meta = result.get("meta") or {}
+        tz_name = str(meta.get("exchangeTimezoneName") or "").strip()
+        try:
+            ex_tz = ZoneInfo(tz_name) if tz_name else timezone.utc
+        except Exception:
+            ex_tz = timezone.utc
+        dates = [datetime.fromtimestamp(timestamps[i], tz=ex_tz).replace(tzinfo=None) for i in range(n)]
         df = pd.DataFrame(
             {
                 "High": [highs[i] if i < len(highs) else None for i in range(n)],

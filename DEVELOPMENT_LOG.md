@@ -162,6 +162,14 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
   - [Summarize headless browser assertions and Google Drive release folder]
 ```
 
+## Release `v3.2.5` — Build `20261104_2135` (2026-11-04 21:35 HKT)
+- **Drive Archive**: `/myPortfolio/20261104_2135/`
+- **Summary**: Fixed missing October 2026 (`2026-10`) monthly data for `SPYL.L` and `VWRA.L` (and all `.L` LSE tickers) caused by British Summer Time (`BST = UTC+1`) 1st-of-month midnight timestamps shifting back 1 hour into the previous month when parsed in UTC.
+- **Key Changes & Fixes**:
+  1. **Exchange Local Timezone Parsing (`update_historical_prices.py`, `stock_hist_prices.py`)**: Added `resolve_exchange_timezone()` using `zoneinfo.ZoneInfo` (`Europe/London` for `.L`, `Asia/Hong_Kong` for `.HK`, `America/New_York` for US) in `parse_chart_bars()` so `2026-10-01 00:00:00 BST` formats as `2026-10-01` (`month = "2026-10"`).
+  2. **2-Year Daily-to-Monthly Reconciliation (`update_historical_prices.py`)**: Added `reconcile_monthly_bars_with_daily()` to cross-check and backfill monthly bars from the 2-year daily bar series (`daily_bars`).
+  3. **Client-Side Auto-Normalization (`portfolio.js`)**: Updated `ingestHistoricalPricesData()` to normalize UTC-shifted month-end dates (`YYYY-MM-30/31` in 1st-of-month series) to their true `YYYY-(MM+1)-01` calendar month immediately on load.
+
 ## Release `v3.2.4` — Build `20261104_1515` (2026-11-04 15:15 HKT)
 - **Drive Archive**: `/myPortfolio/20261104_1515/`
 - **Summary**: Added `Day P&L`, `Accumulated Div`, and `Realized P&L` columns to the Holdings table, moved `Market Value`, `Unrealized P&L`, and `Div / Ex-Date` next to `Day P&L`, added a top `PORTFOLIO TOTAL` aggregation row, included all historically held (including 0-share) tickers with an `Active only` checkbox filter, and added clickable Monthly Buy (`Blue X`) and Sell (`Red X`) markers on the Holdings stock chart.
