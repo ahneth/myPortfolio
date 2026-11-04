@@ -439,12 +439,12 @@ tr.sector-group-header.etf-sector-row > td.sticky-col-mobile {
   background-color: #1e293b !important;
 }
 
-/* 3. Fixed-height scrollable viewport for Holdings & Watchlist tables (fits in 1 screen page with vertical & horizontal scrollbars) */
+/* 3. Halved fixed-height scrollable viewport for Holdings & Watchlist tables (v3.2.2) */
 .scrollable-portfolio-table-box {
   width: 100%;
-  max-height: calc(100vh - 255px) !important;
-  height: calc(100vh - 255px) !important;
-  min-height: 280px !important;
+  max-height: calc((100vh - 255px) * 0.5) !important;
+  height: calc((100vh - 255px) * 0.5) !important;
+  min-height: 200px !important;
   overflow-y: auto !important;
   overflow-x: auto !important;
   -webkit-overflow-scrolling: touch;
@@ -459,9 +459,9 @@ tr.sector-group-header.etf-sector-row > td.sticky-col-mobile {
 
 @media (max-width: 640px) {
   .scrollable-portfolio-table-box {
-    max-height: calc(100vh - 245px) !important;
-    height: calc(100vh - 245px) !important;
-    min-height: 230px !important;
+    max-height: calc((100vh - 245px) * 0.5) !important;
+    height: calc((100vh - 245px) * 0.5) !important;
+    min-height: 170px !important;
   }
 }
 
