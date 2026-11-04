@@ -558,14 +558,87 @@ function renderInlineStockChart(tabType) {
     `;
   }
 
-  const holding = portfolio.activeHoldings.find(h => h.ticker === ticker);
+  const holding = (portfolio.allHoldings || portfolio.activeHoldings || []).find(h => h.ticker === ticker);
   const watched = state.watchlist.find(w => w.ticker === ticker);
   const refValue = isHoldings
-    ? (holding ? holding.avgCost : null)
-    : (watched ? watched.targetBuyPrice : (holding ? holding.avgCost : null));
+    ? (holding && holding.avgCost > 0 ? holding.avgCost : null)
+    : (watched ? watched.targetBuyPrice : (holding && holding.avgCost > 0 ? holding.avgCost : null));
   const refLabel = isHoldings
-    ? (holding ? `Your Avg Cost (${Fin.currency(refValue, false, currency)})` : null)
+    ? (holding && holding.avgCost > 0 ? `Your Avg Cost (${Fin.currency(refValue, false, currency)})` : null)
     : (watched ? `Target Buy Price (${Fin.currency(refValue, false, currency)})` : null);
+
+  // Clear any previously clicked trade marker detail banner when re-rendering chart
+  const tradeMarkerBoxEl = document.getElementById(isHoldings ? 'holdings-chart-trade-marker-box' : 'watchlist-chart-trade-marker-box');
+  if (tradeMarkerBoxEl) {
+    tradeMarkerBoxEl.classList.add('hidden');
+    tradeMarkerBoxEl.innerHTML = '';
+  }
+
+  // Compute Monthly BUY (Blue X) and SELL (Red X) average price markers for this ticker
+  const buyByMonth = {};
+  const sellByMonth = {};
+  (state.transactions || []).forEach(tx => {
+    if (MarketAPI.normalizeTicker(tx.ticker) !== ticker || !tx.date) return;
+    const ym = String(tx.date).slice(0, 7);
+    const sh = Number(tx.shares || 0);
+    const pr = Number(tx.price || 0);
+    const fe = Number(tx.fees || 0);
+    if (sh <= 0 || pr <= 0) return;
+
+    if (tx.type === 'BUY') {
+      if (!buyByMonth[ym]) buyByMonth[ym] = { shares: 0, gross: 0, amount: 0, fees: 0, trades: [] };
+      buyByMonth[ym].shares = Fin.round(buyByMonth[ym].shares + sh, 4);
+      buyByMonth[ym].gross = Fin.round(buyByMonth[ym].gross + sh * pr, 2);
+      buyByMonth[ym].amount = Fin.round(buyByMonth[ym].amount + (sh * pr + fe), 2);
+      buyByMonth[ym].fees = Fin.round(buyByMonth[ym].fees + fe, 2);
+      buyByMonth[ym].trades.push(tx);
+    } else if (tx.type === 'SELL') {
+      if (!sellByMonth[ym]) sellByMonth[ym] = { shares: 0, gross: 0, amount: 0, fees: 0, trades: [] };
+      sellByMonth[ym].shares = Fin.round(sellByMonth[ym].shares + sh, 4);
+      sellByMonth[ym].gross = Fin.round(sellByMonth[ym].gross + sh * pr, 2);
+      sellByMonth[ym].amount = Fin.round(sellByMonth[ym].amount + Math.max(0, sh * pr - fe), 2);
+      sellByMonth[ym].fees = Fin.round(sellByMonth[ym].fees + fe, 2);
+      sellByMonth[ym].trades.push(tx);
+    }
+  });
+
+  const buyMarkerData = labels.map(ym => {
+    const b = buyByMonth[ym];
+    return (b && b.shares > 0) ? Fin.round(b.gross / b.shares, 4) : null;
+  });
+  const buyMetaByIndex = labels.map(ym => {
+    const b = buyByMonth[ym];
+    if (!b || b.shares <= 0) return null;
+    return {
+      month: ym,
+      type: 'BUY',
+      avgPrice: Fin.round(b.gross / b.shares, 4),
+      shares: b.shares,
+      amount: b.amount,
+      gross: b.gross,
+      fees: b.fees,
+      trades: b.trades
+    };
+  });
+
+  const sellMarkerData = labels.map(ym => {
+    const s = sellByMonth[ym];
+    return (s && s.shares > 0) ? Fin.round(s.gross / s.shares, 4) : null;
+  });
+  const sellMetaByIndex = labels.map(ym => {
+    const s = sellByMonth[ym];
+    if (!s || s.shares <= 0) return null;
+    return {
+      month: ym,
+      type: 'SELL',
+      avgPrice: Fin.round(s.gross / s.shares, 4),
+      shares: s.shares,
+      amount: s.amount,
+      gross: s.gross,
+      fees: s.fees,
+      trades: s.trades
+    };
+  });
 
   const isDark = document.documentElement.classList.contains('dark');
   const isMobile = DeviceDetector.profile.effectiveMode === 'mobile';
@@ -695,6 +768,80 @@ function renderInlineStockChart(tabType) {
     });
   }
 
+  // Add Monthly Buy Avg Price (Blue X) and Monthly Sell Avg Price (Red X) markers on the Holdings chart
+  if (isHoldings) {
+    if (buyMarkerData.some(v => v !== null)) {
+      datasets.push({
+        label: 'Buy Avg Price (Blue X)',
+        data: buyMarkerData,
+        borderColor: '#2563eb',
+        backgroundColor: '#3b82f6',
+        pointBorderColor: '#2563eb',
+        pointBackgroundColor: '#3b82f6',
+        pointStyle: 'crossRot',
+        pointBorderWidth: 3.2,
+        pointRadius: isMobile ? 7.5 : 9,
+        pointHoverRadius: isMobile ? 9.5 : 11.5,
+        pointHitRadius: 16,
+        showLine: false,
+        fill: false,
+        order: 0,
+        _legendStyle: 'cross-blue',
+        _tradeMeta: buyMetaByIndex
+      });
+    }
+    if (sellMarkerData.some(v => v !== null)) {
+      datasets.push({
+        label: 'Sell Avg Price (Red X)',
+        data: sellMarkerData,
+        borderColor: '#ef4444',
+        backgroundColor: '#ef4444',
+        pointBorderColor: '#ef4444',
+        pointBackgroundColor: '#ef4444',
+        pointStyle: 'crossRot',
+        pointBorderWidth: 3.2,
+        pointRadius: isMobile ? 7.5 : 9,
+        pointHoverRadius: isMobile ? 9.5 : 11.5,
+        pointHitRadius: 16,
+        showLine: false,
+        fill: false,
+        order: 0,
+        _legendStyle: 'cross-red',
+        _tradeMeta: sellMetaByIndex
+      });
+    }
+  }
+
+  const renderClickedTradeMarkerDetail = (metaList) => {
+    if (!tradeMarkerBoxEl || !Array.isArray(metaList) || metaList.length === 0) return;
+    tradeMarkerBoxEl.classList.remove('hidden');
+    tradeMarkerBoxEl.innerHTML = metaList.map(meta => {
+      const isBuy = meta.type === 'BUY';
+      const toneCls = isBuy
+        ? 'bg-blue-500/10 border-blue-500/40 text-blue-600 dark:text-blue-400'
+        : 'bg-rose-500/10 border-rose-500/40 text-rose-600 dark:text-rose-400';
+      const badgeCls = isBuy
+        ? 'bg-blue-600 text-white'
+        : 'bg-rose-600 text-white';
+      return `
+        <div class="p-2.5 sm:p-3 rounded-xl border ${toneCls} flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex flex-wrap items-center gap-2 sm:gap-4">
+            <span class="px-2 py-0.5 rounded font-mono font-bold text-[11px] ${badgeCls}">
+              ${isBuy ? '✕ BUY' : '✕ SELL'} (${meta.month})
+            </span>
+            <span>Average Price: <strong class="num-font text-slate-900 dark:text-white">${Fin.currency(meta.avgPrice, false, currency)}</strong></span>
+            <span>Shares: <strong class="num-font text-slate-900 dark:text-white">${Fin.shares(meta.shares)}</strong></span>
+            <span>${isBuy ? 'Buy' : 'Sell'} Amount: <strong class="num-font text-slate-900 dark:text-white">${Fin.currency(meta.amount, false, currency)}</strong></span>
+            ${meta.trades.length > 1 ? `<span class="text-[10px] text-slate-500">(${meta.trades.length} orders in ${meta.month})</span>` : ''}
+          </div>
+          <button type="button" onclick="this.closest('#holdings-chart-trade-marker-box, #watchlist-chart-trade-marker-box').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-1.5" title="Dismiss">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      `;
+    }).join('');
+  };
+
   const chartInstance = new Chart(canvasEl, {
     type: 'line',
     data: { labels, datasets },
@@ -702,6 +849,25 @@ function renderInlineStockChart(tabType) {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
+      onClick: (evt, activeElements, chart) => {
+        if (!isHoldings) return;
+        const pts = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
+        const matchedMetas = [];
+        pts.forEach(pt => {
+          const ds = chart.data.datasets[pt.datasetIndex];
+          const meta = ds && ds._tradeMeta ? ds._tradeMeta[pt.index] : null;
+          if (meta) matchedMetas.push(meta);
+        });
+        // If user clicked anywhere along a month column that has a Buy or Sell marker, also surface it
+        if (matchedMetas.length === 0 && activeElements && activeElements.length > 0) {
+          const idx = activeElements[0].index;
+          if (buyMetaByIndex[idx]) matchedMetas.push(buyMetaByIndex[idx]);
+          if (sellMetaByIndex[idx]) matchedMetas.push(sellMetaByIndex[idx]);
+        }
+        if (matchedMetas.length > 0) {
+          renderClickedTradeMarkerDetail(matchedMetas);
+        }
+      },
       scales: {
         x: {
           grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
@@ -723,6 +889,14 @@ function renderInlineStockChart(tabType) {
         tooltip: {
           callbacks: {
             label: (c) => {
+              const ds = c.dataset;
+              if (ds && ds._tradeMeta && ds._tradeMeta[c.dataIndex]) {
+                const tm = ds._tradeMeta[c.dataIndex];
+                return [
+                  ` ${tm.type} Marker (${tm.month}): Avg Price ${Fin.currency(tm.avgPrice, false, currency)}`,
+                  `   • Action: ${tm.type} | Shares: ${Fin.shares(tm.shares)} | ${tm.type === 'BUY' ? 'Buy' : 'Sell'} Amount: ${Fin.currency(tm.amount, false, currency)}`
+                ];
+              }
               if (c.datasetIndex === 0) {
                 return ` Monthly High: ${Fin.currency(c.raw, false, currency)}`;
               }
@@ -756,6 +930,10 @@ function renderInlineStockChart(tabType) {
         let swatchHtml = '';
         if (ds._legendStyle === 'band') {
           swatchHtml = `<span class="inline-block w-5 h-2.5 rounded-sm border" style="background: rgba(16, 185, 129, 0.28); border-color: rgba(52, 211, 153, 0.75);"></span>`;
+        } else if (ds._legendStyle === 'cross-blue') {
+          swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-sm leading-none" style="color: #2563eb;">✕</span>`;
+        } else if (ds._legendStyle === 'cross-red') {
+          swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-sm leading-none" style="color: #ef4444;">✕</span>`;
         } else if (ds._legendStyle === 'dashed') {
           swatchHtml = `<span class="inline-block w-5 h-0 border-t-2 border-dashed" style="border-color: ${ds.borderColor};"></span>`;
         } else {

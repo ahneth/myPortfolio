@@ -162,6 +162,15 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
   - [Summarize headless browser assertions and Google Drive release folder]
 ```
 
+## Release `v3.2.4` — Build `20261104_1515` (2026-11-04 15:15 HKT)
+- **Drive Archive**: `/myPortfolio/20261104_1515/`
+- **Summary**: Added `Day P&L`, `Accumulated Div`, and `Realized P&L` columns to the Holdings table, moved `Market Value`, `Unrealized P&L`, and `Div / Ex-Date` next to `Day P&L`, added a top `PORTFOLIO TOTAL` aggregation row, included all historically held (including 0-share) tickers with an `Active only` checkbox filter, and added clickable Monthly Buy (`Blue X`) and Sell (`Red X`) markers on the Holdings stock chart.
+- **Key Changes & Fixes**:
+  1. **New Columns & Column Reordering (`index.html`, `app.js`, `portfolio.js`)**: Added `Day P&L` (`shares * priceChange`), moved `Market Value`, `Unrealized P&L`, and `Div / Ex-Date` immediately after `Day P&L`, and added `Accumulated Div` (`totalDividends`) and `Realized P&L` (`realizedGain`) right after `Div / Ex-Date`.
+  2. **Top `PORTFOLIO TOTAL` Row (`app.js`, `styles.css`)**: Added `tr.portfolio-total-row` at the top of `#holdings-table-body` showing portfolio-wide totals and weighted aggregates across all aggregatable columns.
+  3. **Historical 0-Share Tickers & `Active only` Checkbox (`portfolio.js`, `app.js`, `index.html`)**: Included all historically held tickers in `portfolio.allHoldings` with their historical `Realized P&L`, `Accumulated Div`, `XIRR (p.a.)`, and `Yield on Cost`, and added `#holdings-filter-active-only` checkbox in the Holdings toolbar.
+  4. **Holdings Chart Monthly Buy (`Blue X`) & Sell (`Red X`) Markers (`charts.js`, `index.html`)**: Plotted monthly volume-weighted average Buy (`Blue X`) and Sell (`Red X`) prices on the Holdings chart with click and hover handlers displaying Average Price, Buy/Sell action, Number of Shares, and Buy/Sell Amount.
+
 ## Release `v3.2.3` — Build `20261104_1435` (2026-11-04 14:35 HKT)
 - **Drive Archive**: `/myPortfolio/20261104_1435/`
 - **Summary**: Streamlined the top header bar by removing the subtitle and test button, added automatic one-time Live Price API fetching on initial page load, enforced a 3-month (90-day) cutoff for company news extraction and retention, and added live update date/time badges for Historical Monthly Prices and News Analysis in the bottom footer.
@@ -176,7 +185,7 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
 - **Summary**: Halved the fixed height of the Holdings and Watchlist scrollable table viewports so they occupy half the vertical screen space, leaving plenty of room on screen for the stock charts and page scrolling.
 - **Key Changes & Fixes**:
   1. **Halved Fixed Table Height (`.scrollable-portfolio-table-box`)**:
-     - Reduced desktop table height from `calc(100vh - 255px)` to `calc((100vh - 255px) * 0.25)` (~150–210px), and mobile height from `calc(100vh - 245px)` to `calc((100vh - 245px) * 0.25)` (~120–140px).
+     - Reduced desktop table height from `calc(100vh - 255px)` to `calc((100vh - 255px) * 0.5)` (~300–400px), and mobile height from `calc(100vh - 245px)` to `calc((100vh - 245px) * 0.5)` (~250–280px).
      - Adjusted container min-height to 200px (desktop) and 170px (mobile) while preserving sticky headers and the frozen left `Asset / Sector` column.
 
 ## Release `v3.2.1` — Build `20261104_1310` (2026-11-04 13:10 HKT)

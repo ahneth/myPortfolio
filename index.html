@@ -649,6 +649,16 @@ table tbody td,
   }
 }
 
+/* Keep Top Portfolio Total Row opaque in frozen first column (v3.2.4) */
+tr.portfolio-total-row > td.sticky-col-mobile {
+  z-index: 20 !important;
+  background-color: #eef2ff !important;
+}
+
+.dark tr.portfolio-total-row > td.sticky-col-mobile {
+  background-color: #0f172a !important;
+}
+
   </style>
 </head>
 <body data-device="desktop" class="bg-slate-50 dark:bg-dark-bg text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
@@ -671,7 +681,7 @@ table tbody td,
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.2.3 (20261104_1435)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.2.4 (20261104_1515)</span>
             </div>
           </div>
         </div>
@@ -1034,6 +1044,10 @@ table tbody td,
             <p class="text-xs text-slate-500 dark:text-slate-400">Grouped by sector with ETFs at the top and alphabetical sector + ticker sorting — click any sector header to collapse/expand or any stock row to view its monthly price chart</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
+            <label for="holdings-filter-active-only" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-semibold cursor-pointer select-none" title="Show only active holdings with shares > 0 (uncheck to include all historical 0-share holdings)">
+              <input type="checkbox" id="holdings-filter-active-only" class="rounded border-slate-300 dark:border-slate-600 text-brand-600 focus:ring-brand-500">
+              <span>Active only</span>
+            </label>
             <div class="flex items-center gap-1.5">
               <label for="holdings-filter-signal" class="text-xs font-semibold text-slate-500 dark:text-slate-400">Signal:</label>
               <select id="holdings-filter-signal" class="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 font-semibold">
@@ -1068,24 +1082,27 @@ table tbody td,
             <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-dark-border">
               <tr>
                 <th class="py-1.5 px-3 sticky-col-mobile">Asset / Sector</th>
-                <th class="py-1.5 px-3 text-right">Live Price</th>
+                <th class="py-1.5 px-3 text-right" title="Current Live Price & 1-Day % Change">Live Price</th>
+                <th class="py-1.5 px-3 text-right" title="Market value gained or lost compared to previous business day">Day P&amp;L</th>
+                <th class="py-1.5 px-3 text-right">Market Value</th>
+                <th class="py-1.5 px-3 text-right">Unrealized P&amp;L</th>
+                <th class="py-1.5 px-3 text-right" title="Net Dividend Yield & Upcoming Ex-Dividend Date">Div / Ex-Date</th>
+                <th class="py-1.5 px-3 text-right" title="Cumulative Historical Cash Dividends Earned">Accumulated Div</th>
+                <th class="py-1.5 px-3 text-right" title="Cumulative Realized P&L from Closed/Partial Sales">Realized P&amp;L</th>
                 <th class="py-1.5 px-3 text-right">Shares</th>
                 <th class="py-1.5 px-3 text-right">Avg Cost</th>
                 <th class="py-1.5 px-3 text-right">Total Cost</th>
-                <th class="py-3 px-4 text-right" title="52-Week Low Price">52W Low</th>
-                <th class="py-3 px-4 text-right" title="52-Week High Price">52W High</th>
-                <th class="py-3 px-4 text-right" title="Current price position between 52W Low (0%) and 52W High (100%)">52W Pos (%)</th>
-                <th class="py-3 px-4 text-right" title="Month-over-Month (1M) stock price change">MoM</th>
-                <th class="py-3 px-4 text-right" title="Quarter-over-Quarter (3M) stock price change">QoQ</th>
-                <th class="py-3 px-4 text-right" title="Year-over-Year (12M) stock price change">YoY</th>
-                <th class="py-3 px-4 text-right" title="Net Dividend Yield & Upcoming Ex-Dividend Date">Div / Ex-Date</th>
-                <th class="py-3 px-4 text-right" title="6-State Trend Regime, RSI(14) & 12M Benchmark Alpha">Trend &amp; RSI</th>
-                <th class="py-3 px-4 text-center" title="4-Pillar Composite Buy/Sell Signal (0-100) — Click for Breakdown">Signal</th>
-                <th class="py-3 px-4 text-right">Market Value</th>
-                <th class="py-3 px-4 text-right">Unrealized P&amp;L</th>
-                <th class="py-3 px-4 text-right" title="Money-Weighted Annualized Internal Rate of Return (Nominal & Inflation-Adjusted Real XIRR p.a.) per holding and sector">XIRR (p.a.)</th>
-                <th class="py-3 px-4 text-right">Yield on Cost</th>
-                <th class="py-3 px-4 text-center">Actions</th>
+                <th class="py-1.5 px-3 text-right" title="Money-Weighted Annualized Internal Rate of Return (Nominal & Inflation-Adjusted Real XIRR p.a.)">XIRR (p.a.)</th>
+                <th class="py-1.5 px-3 text-right" title="Cumulative Dividends / Cost Basis">Yield on Cost</th>
+                <th class="py-1.5 px-3 text-right" title="52-Week Low Price">52W Low</th>
+                <th class="py-1.5 px-3 text-right" title="52-Week High Price">52W High</th>
+                <th class="py-1.5 px-3 text-right" title="Current price position between 52W Low (0%) and 52W High (100%)">52W Pos (%)</th>
+                <th class="py-1.5 px-3 text-right" title="Month-over-Month (1M) stock price change">MoM</th>
+                <th class="py-1.5 px-3 text-right" title="Quarter-over-Quarter (3M) stock price change">QoQ</th>
+                <th class="py-1.5 px-3 text-right" title="Year-over-Year (12M) stock price change">YoY</th>
+                <th class="py-1.5 px-3 text-right" title="6-State Trend Regime, RSI(14) & 12M Benchmark Alpha">Trend &amp; RSI</th>
+                <th class="py-1.5 px-3 text-center" title="4-Pillar Composite Buy/Sell Signal (0-100) — Click for Breakdown">Signal</th>
+                <th class="py-1.5 px-3 text-center">Actions</th>
               </tr>
             </thead>
             <tbody id="holdings-table-body" class="divide-y divide-slate-100 dark:divide-slate-800/80">
@@ -1127,6 +1144,7 @@ table tbody td,
             </button>
           </div>
         </div>
+        <div id="holdings-chart-trade-marker-box" class="hidden mt-3 space-y-1.5"></div>
         <div class="pt-4 relative chart-container stock-history-chart-box h-[350px] sm:h-[430px] min-h-[350px] sm:min-h-[430px]">
           <canvas id="chart-holdings-stock-history"></canvas>
           <div id="holdings-chart-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 text-slate-400 text-sm bg-white/80 dark:bg-dark-card/80">
@@ -1940,13 +1958,13 @@ table tbody td,
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.2.3 • Build 20261104_1435</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.2.4 • Build 20261104_1515</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261104_1435</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261104_1515</span>/
           </span>
         </div>
 
@@ -2181,7 +2199,7 @@ table tbody td,
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 flex flex-col lg:flex-row items-center justify-between gap-2.5">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.2.3 (Build 20261104_1435)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.2.4 (Build 20261104_1515)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
       <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
@@ -2623,10 +2641,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.2.3',
-  buildId: '20261104_1435',
-  releaseDate: '2026-11-04 14:35 HKT',
-  driveFolder: '/myPortfolio/20261104_1435/',
+  appVersion: '3.2.4',
+  buildId: '20261104_1515',
+  releaseDate: '2026-11-04 15:15 HKT',
+  driveFolder: '/myPortfolio/20261104_1515/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -2640,8 +2658,21 @@ var APP_VERSION_MANIFEST = {
   },
   changelog: [
     {
+      version: '3.2.4',
+      buildId: '20261104_1515',
+      date: '2026-11-04 15:15 HKT',
+      summary: 'Enhanced the Holdings table with Day P&L, reordered Market Value / Unrealized P&L / Div / Ex-Date next to Day P&L, added Accumulated Div and Realized P&L columns, added a top PORTFOLIO TOTAL aggregation row, included all historical (0-share closed) holdings with an "Active only" checkbox, and added clickable Monthly Buy (Blue X) and Sell (Red X) markers on the Holdings stock chart.',
+      changes: [
+        'Added Day P&L column showing 1-day market value gained/lost vs. previous business day',
+        'Moved Market Value, Unrealized P&L, and Div / Ex-Date immediately next to Day P&L, followed by new Accumulated Div and Realized P&L columns',
+        'Added a top PORTFOLIO TOTAL row aggregating Day P&L, Market Value, Unrealized P&L, Div/Ex-Date Net Yield, Accumulated Div, Realized P&L, Total Cost, XIRR, and Yield on Cost across the portfolio',
+        'Included all historically held tickers (even when current shares = 0) with full historical Realized P&L, Accumulated Dividends, XIRR, and Yield on Cost, plus an "Active only" checkbox filter',
+        'Added Monthly Buy (Blue X) and Sell (Red X) average price markers on the Holdings stock chart that display Average Price, Buy/Sell action, Number of Shares, and Buy/Sell Amount when clicked'
+      ]
+    },
+    {
       version: '3.2.3',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-11-04 14:35 HKT',
       summary: 'Removed header subtitle ("Global HK, US & London Stock Portfolio Tracker") and "Test 2800.HK & VOO" button, added automatic one-time Live Price API fetch on initial page load, enforced a 3-month (90-day) cutoff for fetching and retaining company news, and displayed the latest update dates and times for Historical Monthly Prices and News Analysis in the page footer.',
       changes: [
@@ -2653,7 +2684,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.2',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-11-04 13:50 HKT',
       summary: 'Halved the fixed height of the Holdings and Watchlist scrollable table viewports so they take significantly less vertical screen space and leave ample room for the stock charts and page scrolling.',
       changes: [
@@ -2663,7 +2694,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.1',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-11-04 13:10 HKT',
       summary: 'Moved Live Price column immediately after Asset / Sector in Holdings and Watchlist tables, added fixed-height single-screen scrollable table viewports with vertical/horizontal scrollbars and top/bottom page margins, removed TOP ETF badge, enabled freeze-pane first column on PC desktop and mobile, expanded PC desktop layout to 100% full browser width with permanently pinned top title/tab bar, and unified compact row top/bottom margins across all tables in the app.',
       changes: [
@@ -2677,7 +2708,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.0',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-11-01 20:15 HKT',
       summary: 'Added Signal filter dropdowns on Holdings and Watchlist pages, grouped Watchlist stocks by collapsible sectors with ETF top-priority sorting, and reduced vertical row margins on Transaction Audit Log and Dividend Payout Logs so all 20 paginated rows fit on a single mobile screen without scrolling.',
       changes: [
@@ -2688,7 +2719,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.9',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-11-01 19:45 HKT',
       summary: 'Fixed historical monthly Close vs. Low mismatch on multi-year charts by aligning Monthly Close to unadjusted market close (rawClose) on the same price scale as Monthly High, Monthly Low, and Avg Cost.',
       changes: [
@@ -2698,7 +2729,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.8',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-11-01 14:05 HKT',
       summary: 'Moved stock chart legend below the chart canvas, added translucent green Monthly High–Low range band around Monthly Close, increased Reg Trend Upper/Lower visibility and chart height (350px–430px), restricted top KPI summary cards to the Home (Dashboard) page only, and added 20-row pagination (Prev 20 / Next 20) to all Transaction and Dividend tables.',
       changes: [
@@ -2711,7 +2742,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.7',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-11-01',
       changes: [
         'Added automatic startup and ingestion data validation for historical monthly price series, technical indicators, and company news feeds',
@@ -2721,7 +2752,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.6',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-11-01',
       changes: [
         'Dedicated browser MarketAPI strictly to fast parallel Live Price quotes only (eliminated all third-party browser API calls for 15y historical data and news)',
@@ -2732,7 +2763,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.5',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-10-31',
       changes: [
         'Changed clicked/selected row highlight in Holdings and Watchlist (and active nav tabs) to dark slate grey (#1e293b) for high-contrast text readability in dark mode',
@@ -2741,7 +2772,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.4',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-10-31',
       changes: [
         'Fixed Holdings sector group header sticky bar width on mobile (changed sticky cell from colspan=3 to colspan=1 matching stock rows) so sector subtotals/aggregates are never blocked during horizontal scroll',
@@ -2750,7 +2781,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.3',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-10-31',
       changes: [
         'Styled unpaid/pending dividends (where Ex-Date has passed but Pay Date is in the future) in distinct amber/yellow font color with an Unpaid badge in Dividend Payout Logs',
@@ -2760,7 +2791,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.2',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-10-31',
       changes: [
         'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging legacy baseline dates with live Yahoo Finance ex-dates',
@@ -2772,7 +2803,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.1',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-10-31',
       changes: [
         'Fixed Service Worker (sw.js) cache-first trap by bumping cache version and switching to Network-First plus automatic stale CacheStorage purge on startup',
@@ -2782,7 +2813,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.0',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-10-31 16:50 HKT',
       title: '1-Day Quote Previous-Close Fix, 100% Cash Dividends, Dividend Ticker Filter, Complete 3476.HK/3433.HK Dividends & TRIM/OFFLOAD Signal Engine',
       changes: [
@@ -2795,7 +2826,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.1',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-10-31 11:15 HKT',
       title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
       changes: [
@@ -2810,7 +2841,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.0',
-      buildId: '20261104_1435',
+      buildId: '20261104_1515',
       date: '2026-10-30 23:30 HKT',
       title: 'Full Quantitative Suite: 2018+ Auto-Dividends, Buy/Sell Signal Engine, Scheduled News, Trend Regimes, Real XIRR & Settings Customizer',
       changes: [
@@ -6750,6 +6781,9 @@ function recalculatePortfolio() {
           ticker: tx.ticker,
           shares: 0,
           totalCostBasis: 0,
+          cumulativeBuyCostBasis: 0,
+          historicalBuyShares: 0,
+          lastTradePrice: price,
           avgCost: 0,
           realizedGain: 0,
           totalDividends: 0,
@@ -6761,6 +6795,9 @@ function recalculatePortfolio() {
       h.lots.push({ shares, unitCost, date: tx.date });
       h.shares = Fin.round(h.shares + shares, 4);
       h.totalCostBasis = Fin.round(h.totalCostBasis + totalOutlayNative, 2);
+      h.cumulativeBuyCostBasis = Fin.round((h.cumulativeBuyCostBasis || 0) + totalOutlayNative, 2);
+      h.historicalBuyShares = Fin.round((h.historicalBuyShares || 0) + shares, 4);
+      h.lastTradePrice = price;
       h.avgCost = h.shares > 0 ? Fin.round(h.totalCostBasis / h.shares, 4) : 0;
 
     } else if (tx.type === 'DRIP') {
@@ -6769,6 +6806,9 @@ function recalculatePortfolio() {
           ticker: tx.ticker,
           shares: 0,
           totalCostBasis: 0,
+          cumulativeBuyCostBasis: 0,
+          historicalBuyShares: 0,
+          lastTradePrice: price,
           avgCost: 0,
           realizedGain: 0,
           totalDividends: 0,
@@ -6780,6 +6820,9 @@ function recalculatePortfolio() {
       h.lots.push({ shares, unitCost: price, date: tx.date });
       h.shares = Fin.round(h.shares + shares, 4);
       h.totalCostBasis = Fin.round(h.totalCostBasis + dripValue, 2);
+      h.cumulativeBuyCostBasis = Fin.round((h.cumulativeBuyCostBasis || 0) + dripValue, 2);
+      h.historicalBuyShares = Fin.round((h.historicalBuyShares || 0) + shares, 4);
+      h.lastTradePrice = price;
       h.avgCost = h.shares > 0 ? Fin.round(h.totalCostBasis / h.shares, 4) : 0;
 
     } else if (tx.type === 'SELL') {
@@ -6793,12 +6836,16 @@ function recalculatePortfolio() {
           ticker: tx.ticker,
           shares: 0,
           totalCostBasis: 0,
+          cumulativeBuyCostBasis: 0,
+          historicalBuyShares: 0,
+          lastTradePrice: price,
           avgCost: 0,
           realizedGain: 0,
           totalDividends: 0,
           lots: []
         };
       }
+      holdingsMap[tx.ticker].lastTradePrice = price;
       const h = holdingsMap[tx.ticker];
       let remToSell = shares;
       let soldCostBasis = 0;
@@ -6938,8 +6985,10 @@ function recalculatePortfolio() {
   state.cashBalance = runningCash;
 
   const activeHoldings = [];
+  const allHoldings = [];
   let totalStockMarketValue = 0;
   let totalStockCostBasis = 0;
+  let totalDayPnLBase = 0;
   let estimatedAnnualForwardDivBase = 0;
 
   // Pre-compute total stock market value in base currency for accurate concentration weight checks
@@ -6957,137 +7006,162 @@ function recalculatePortfolio() {
 
   Object.keys(holdingsMap).forEach(ticker => {
     const h = holdingsMap[ticker];
-    if (h.shares > 0.0001) {
-      const staticProfile = MarketAPI.getStaticProfile(ticker);
-      const priceObj = state.prices[ticker] || { price: h.avgCost, change: 0, changePct: 0 };
-      const currentPrice = Fin.round(priceObj.price || h.avgCost, 4);
-      const marketValue = Fin.round(h.shares * currentPrice, 2);
-      const unrealizedGain = Fin.round(marketValue - h.totalCostBasis, 2);
-      const unrealizedGainPct = h.totalCostBasis > 0 ? Fin.round((unrealizedGain / h.totalCostBasis) * 100, 2) : 0;
-      const fund = state.fundamentals[ticker] || {};
-      const currency = priceObj.currency || fund.currency || staticProfile.currency;
-      const companyName = (OFFICIAL_NAMES_MAP[ticker]) || ((fund.name && fund.name !== ticker) ? fund.name : staticProfile.name);
-      const rawSector = (fund.sector && fund.sector !== 'Equities') ? fund.sector : staticProfile.sector;
-      const sector = MarketAPI.isEtfSector(rawSector, ticker, companyName) ? 'Index ETF' : (rawSector || 'Equities');
-      const mvBaseCandidate = Fin.convertCurrency(marketValue, currency, baseCurr);
-      const posWeightPct = preTotalStockMvBase > 0 ? (mvBaseCandidate / preTotalStockMvBase) * 100 : 0;
-      const priceMetrics = computeStockPriceMetrics(ticker, currentPrice, posWeightPct);
-      const divInfo = priceMetrics.divInfo || {};
+    const isActive = h.shares > 0.0001;
+    const staticProfile = MarketAPI.getStaticProfile(ticker);
+    const fallbackRefPrice = h.avgCost || h.lastTradePrice || 0;
+    const priceObj = state.prices[ticker] || { price: fallbackRefPrice, change: 0, changePct: 0 };
+    const currentPrice = Fin.round(priceObj.price || fallbackRefPrice, 4);
+    const rawChangePct = Number(priceObj.changePct || 0);
+    const validChange = Math.abs(rawChangePct) <= 40 ? Number(priceObj.change || 0) : 0;
+    const validChangePct = Math.abs(rawChangePct) <= 40 ? rawChangePct : 0;
 
-      // Annualized Forward Yield on Cost (or cumulative YoC if higher)
-      const annualDivNative = Number(divInfo.forwardDivPerShare || divInfo.ttmDivPerShare || 0) * h.shares;
-      const forwardYoC = h.totalCostBasis > 0 && annualDivNative > 0
-        ? Fin.round((annualDivNative / h.totalCostBasis) * 100, 2)
-        : 0;
-      const cumYoC = h.totalCostBasis > 0 ? Fin.round((h.totalDividends / h.totalCostBasis) * 100, 2) : 0;
-      const yieldOnCost = cumYoC > 0 ? cumYoC : forwardYoC;
+    const dayPnL = isActive ? Fin.round(h.shares * validChange, 2) : 0;
+    const marketValue = isActive ? Fin.round(h.shares * currentPrice, 2) : 0;
+    const unrealizedGain = isActive ? Fin.round(marketValue - h.totalCostBasis, 2) : 0;
+    const unrealizedGainPct = (isActive && h.totalCostBasis > 0) ? Fin.round((unrealizedGain / h.totalCostBasis) * 100, 2) : 0;
+    const fund = state.fundamentals[ticker] || {};
+    const currency = priceObj.currency || fund.currency || staticProfile.currency;
+    const companyName = (OFFICIAL_NAMES_MAP[ticker]) || ((fund.name && fund.name !== ticker) ? fund.name : staticProfile.name);
+    const rawSector = (fund.sector && fund.sector !== 'Equities') ? fund.sector : staticProfile.sector;
+    const sector = MarketAPI.isEtfSector(rawSector, ticker, companyName) ? 'Index ETF' : (rawSector || 'Equities');
+    const mvBaseCandidate = Fin.convertCurrency(marketValue, currency, baseCurr);
+    const posWeightPct = (isActive && preTotalStockMvBase > 0) ? (mvBaseCandidate / preTotalStockMvBase) * 100 : 0;
+    const priceMetrics = computeStockPriceMetrics(ticker, currentPrice, posWeightPct);
+    const divInfo = priceMetrics.divInfo || {};
 
-      const marketValueBase = Fin.convertCurrency(marketValue, currency, baseCurr);
-      const costBasisBase = Fin.convertCurrency(h.totalCostBasis, currency, baseCurr);
-      const annualDivBase = Fin.convertCurrency(annualDivNative, currency, baseCurr);
+    // Annualized Forward Yield on Cost (or cumulative YoC; for 0-share closed holdings, use cumulativeBuyCostBasis)
+    const annualDivNative = isActive ? (Number(divInfo.forwardDivPerShare || divInfo.ttmDivPerShare || 0) * h.shares) : 0;
+    const forwardYoC = (isActive && h.totalCostBasis > 0 && annualDivNative > 0)
+      ? Fin.round((annualDivNative / h.totalCostBasis) * 100, 2)
+      : 0;
+    const refCostForYoC = isActive ? h.totalCostBasis : (h.cumulativeBuyCostBasis || 0);
+    const cumYoC = refCostForYoC > 0 ? Fin.round((h.totalDividends / refCostForYoC) * 100, 2) : 0;
+    const yieldOnCost = isActive ? (cumYoC > 0 ? cumYoC : forwardYoC) : cumYoC;
 
-      // Compute Per-Stock Annualized XIRR (Nominal & Inflation-Adjusted Real) from dated BUY/SELL/Dividend cash flows + terminal Market Value
-      const stockXirrFlowsNative = [];
-      const stockXirrFlowsBase = [];
-      const evalDateIso = new Date().toISOString().split('T')[0];
+    const dayPnLBase = Fin.convertCurrency(dayPnL, currency, baseCurr);
+    const marketValueBase = Fin.convertCurrency(marketValue, currency, baseCurr);
+    const costBasisBase = Fin.convertCurrency(h.totalCostBasis, currency, baseCurr);
+    const historicalCostBasis = refCostForYoC;
+    const historicalCostBasisBase = Fin.convertCurrency(historicalCostBasis, currency, baseCurr);
+    const annualDivBase = Fin.convertCurrency(annualDivNative, currency, baseCurr);
+    const realizedGainBase = Fin.convertCurrency(h.realizedGain || 0, currency, baseCurr);
+    const totalDividendsBase = Fin.convertCurrency(h.totalDividends || 0, currency, baseCurr);
 
-      sortedTx.forEach(tx => {
-        if (tx.ticker !== ticker || !tx.date) return;
-        if (tx.type === 'BUY') {
-          const outlay = (Number(tx.shares) || 0) * (Number(tx.price) || 0) + (Number(tx.fees) || 0);
-          if (outlay > 0) {
-            stockXirrFlowsNative.push({ date: tx.date, amount: -outlay });
-            stockXirrFlowsBase.push({ date: tx.date, amount: -Fin.convertCurrency(outlay, currency, baseCurr) });
-          }
-        } else if (tx.type === 'SELL') {
-          const proceeds = (Number(tx.shares) || 0) * (Number(tx.price) || 0) - (Number(tx.fees) || 0);
-          if (proceeds > 0) {
-            stockXirrFlowsNative.push({ date: tx.date, amount: proceeds });
-            stockXirrFlowsBase.push({ date: tx.date, amount: Fin.convertCurrency(proceeds, currency, baseCurr) });
-          }
+    // Compute Per-Stock Annualized XIRR (Nominal & Inflation-Adjusted Real) from dated BUY/SELL/Dividend cash flows + terminal Market Value
+    const stockXirrFlowsNative = [];
+    const stockXirrFlowsBase = [];
+    const evalDateIso = new Date().toISOString().split('T')[0];
+
+    sortedTx.forEach(tx => {
+      if (tx.ticker !== ticker || !tx.date) return;
+      if (tx.type === 'BUY') {
+        const outlay = (Number(tx.shares) || 0) * (Number(tx.price) || 0) + (Number(tx.fees) || 0);
+        if (outlay > 0) {
+          stockXirrFlowsNative.push({ date: tx.date, amount: -outlay });
+          stockXirrFlowsBase.push({ date: tx.date, amount: -Fin.convertCurrency(outlay, currency, baseCurr) });
         }
-      });
-
-      state.dividends.forEach(div => {
-        if (div.ticker !== ticker) return;
-        const dDate = div.payDate || div.exDate;
-        if (!dDate) return;
-        const dAmt = Number(div.totalAmount) || 0;
-        if (dAmt > 0) {
-          const dCurr = div.currency || currency;
-          stockXirrFlowsNative.push({ date: dDate, amount: Fin.convertCurrency(dAmt, dCurr, currency) });
-          stockXirrFlowsBase.push({ date: dDate, amount: Fin.convertCurrency(dAmt, dCurr, baseCurr) });
+      } else if (tx.type === 'SELL') {
+        const proceeds = (Number(tx.shares) || 0) * (Number(tx.price) || 0) - (Number(tx.fees) || 0);
+        if (proceeds > 0) {
+          stockXirrFlowsNative.push({ date: tx.date, amount: proceeds });
+          stockXirrFlowsBase.push({ date: tx.date, amount: Fin.convertCurrency(proceeds, currency, baseCurr) });
         }
-      });
-
-      if (marketValue > 0) {
-        stockXirrFlowsNative.push({ date: evalDateIso, amount: marketValue });
-        stockXirrFlowsBase.push({ date: evalDateIso, amount: marketValueBase });
       }
+    });
 
-      const stockXirrPct = Fin.xirr(stockXirrFlowsNative);
-      const infRateSetting = Number(state.settings?.inflationRatePct ?? 2.2);
-      const stockRealXirrPct = stockXirrPct !== null ? Fin.realReturn(stockXirrPct, infRateSetting) : null;
+    state.dividends.forEach(div => {
+      if (div.ticker !== ticker) return;
+      const dDate = div.payDate || div.exDate;
+      if (!dDate) return;
+      const dAmt = Number(div.totalAmount) || 0;
+      if (dAmt > 0) {
+        const dCurr = div.currency || currency;
+        stockXirrFlowsNative.push({ date: dDate, amount: Fin.convertCurrency(dAmt, dCurr, currency) });
+        stockXirrFlowsBase.push({ date: dDate, amount: Fin.convertCurrency(dAmt, dCurr, baseCurr) });
+      }
+    });
 
-      activeHoldings.push({
-        ticker,
-        companyName,
-        sector,
-        currency,
-        shares: h.shares,
-        avgCost: h.avgCost,
-        totalCostBasis: h.totalCostBasis,
-        costBasisBase,
-        currentPrice,
-        priceChange: priceObj.change || 0,
-        priceChangePct: priceObj.changePct || 0,
-        low52w: priceMetrics.low52w,
-        high52w: priceMetrics.high52w,
-        pos52wPct: priceMetrics.pos52wPct,
-        momPct: priceMetrics.momPct,
-        qoqPct: priceMetrics.qoqPct,
-        yoyPct: priceMetrics.yoyPct,
-        momRefMonth: priceMetrics.momRefMonth,
-        qoqRefMonth: priceMetrics.qoqRefMonth,
-        yoyRefMonth: priceMetrics.yoyRefMonth,
-        divInfo,
-        sma20: priceMetrics.sma20,
-        sma50: priceMetrics.sma50,
-        sma200: priceMetrics.sma200,
-        rsi14: priceMetrics.rsi14,
-        atr14: priceMetrics.atr14,
-        suggestedStopLoss: priceMetrics.suggestedStopLoss,
-        regime: priceMetrics.regime,
-        regTrendAnnualPct: priceMetrics.regTrendAnnualPct,
-        regR2: priceMetrics.regR2,
-        alpha12mPct: priceMetrics.alpha12mPct,
-        benchSym: priceMetrics.benchSym,
-        signalScore: priceMetrics.signalScore,
-        signalLabel: priceMetrics.signalLabel,
-        pillarBreakdown: priceMetrics.pillarBreakdown,
-        signalReasons: priceMetrics.signalReasons,
-        marketValue,
-        marketValueBase,
-        unrealizedGain,
-        unrealizedGainPct,
-        totalDividends: h.totalDividends,
-        yieldOnCost,
-        xirrPct: stockXirrPct,
-        realXirrPct: stockRealXirrPct,
-        xirrFlowsBase: stockXirrFlowsBase,
-        forwardYoC,
-        annualForwardDivNative: Fin.round(annualDivNative, 2),
-        annualForwardDivBase: Fin.round(annualDivBase, 2),
-        realizedGain: h.realizedGain
-      });
+    if (marketValue > 0) {
+      stockXirrFlowsNative.push({ date: evalDateIso, amount: marketValue });
+      stockXirrFlowsBase.push({ date: evalDateIso, amount: marketValueBase });
+    }
 
+    const stockXirrPct = Fin.xirr(stockXirrFlowsNative);
+    const infRateSetting = Number(state.settings?.inflationRatePct ?? 2.2);
+    const stockRealXirrPct = stockXirrPct !== null ? Fin.realReturn(stockXirrPct, infRateSetting) : null;
+
+    const holdingRecord = {
+      ticker,
+      companyName,
+      sector,
+      currency,
+      isActive,
+      shares: h.shares,
+      avgCost: h.avgCost,
+      totalCostBasis: h.totalCostBasis,
+      costBasisBase,
+      cumulativeBuyCostBasis: h.cumulativeBuyCostBasis || 0,
+      historicalCostBasis,
+      historicalCostBasisBase,
+      currentPrice,
+      priceChange: validChange,
+      priceChangePct: validChangePct,
+      dayPnL,
+      dayPnLBase,
+      low52w: priceMetrics.low52w,
+      high52w: priceMetrics.high52w,
+      pos52wPct: priceMetrics.pos52wPct,
+      momPct: priceMetrics.momPct,
+      qoqPct: priceMetrics.qoqPct,
+      yoyPct: priceMetrics.yoyPct,
+      momRefMonth: priceMetrics.momRefMonth,
+      qoqRefMonth: priceMetrics.qoqRefMonth,
+      yoyRefMonth: priceMetrics.yoyRefMonth,
+      divInfo,
+      sma20: priceMetrics.sma20,
+      sma50: priceMetrics.sma50,
+      sma200: priceMetrics.sma200,
+      rsi14: priceMetrics.rsi14,
+      atr14: priceMetrics.atr14,
+      suggestedStopLoss: priceMetrics.suggestedStopLoss,
+      regime: priceMetrics.regime,
+      regTrendAnnualPct: priceMetrics.regTrendAnnualPct,
+      regR2: priceMetrics.regR2,
+      alpha12mPct: priceMetrics.alpha12mPct,
+      benchSym: priceMetrics.benchSym,
+      signalScore: priceMetrics.signalScore,
+      signalLabel: priceMetrics.signalLabel,
+      pillarBreakdown: priceMetrics.pillarBreakdown,
+      signalReasons: priceMetrics.signalReasons,
+      marketValue,
+      marketValueBase,
+      unrealizedGain,
+      unrealizedGainPct,
+      totalDividends: h.totalDividends,
+      totalDividendsBase,
+      yieldOnCost,
+      xirrPct: stockXirrPct,
+      realXirrPct: stockRealXirrPct,
+      xirrFlowsBase: stockXirrFlowsBase,
+      forwardYoC,
+      annualForwardDivNative: Fin.round(annualDivNative, 2),
+      annualForwardDivBase: Fin.round(annualDivBase, 2),
+      realizedGain: h.realizedGain,
+      realizedGainBase
+    };
+
+    allHoldings.push(holdingRecord);
+    if (isActive) {
+      activeHoldings.push(holdingRecord);
       totalStockMarketValue = Fin.round(totalStockMarketValue + marketValueBase, 2);
       totalStockCostBasis = Fin.round(totalStockCostBasis + costBasisBase, 2);
+      totalDayPnLBase = Fin.round(totalDayPnLBase + dayPnLBase, 2);
       estimatedAnnualForwardDivBase = Fin.round(estimatedAnnualForwardDivBase + annualDivBase, 2);
     }
   });
 
   activeHoldings.sort(compareHoldingsBySectorAndTicker);
+  allHoldings.sort(compareHoldingsBySectorAndTicker);
 
   const totalPortfolioValue = Fin.round(Math.max(0, state.cashBalance) + totalStockMarketValue, 2);
   const totalUnrealizedGain = Fin.round(totalStockMarketValue - totalStockCostBasis, 2);
@@ -7124,12 +7198,17 @@ function recalculatePortfolio() {
 
   const detectedDividends = detectUnloggedDividendEntitlements();
 
+  const prevTotalMvBase = totalStockMarketValue - totalDayPnLBase;
+  const totalDayPnLPct = prevTotalMvBase > 0 ? Fin.round((totalDayPnLBase / prevTotalMvBase) * 100, 2) : 0;
+
   portfolio = {
     baseCurrency: baseCurr,
     totalPortfolioValue,
     cashBalance: state.cashBalance,
     totalStockMarketValue,
     totalStockCostBasis,
+    totalDayPnL: totalDayPnLBase,
+    totalDayPnLPct,
     totalUnrealizedGain,
     totalUnrealizedGainPct,
     totalRealizedPnL,
@@ -7146,6 +7225,7 @@ function recalculatePortfolio() {
     inflationRatePct,
     detectedDividends,
     activeHoldings,
+    allHoldings,
     allHoldingsMap: holdingsMap
   };
 }
@@ -8134,14 +8214,87 @@ function renderInlineStockChart(tabType) {
     `;
   }
 
-  const holding = portfolio.activeHoldings.find(h => h.ticker === ticker);
+  const holding = (portfolio.allHoldings || portfolio.activeHoldings || []).find(h => h.ticker === ticker);
   const watched = state.watchlist.find(w => w.ticker === ticker);
   const refValue = isHoldings
-    ? (holding ? holding.avgCost : null)
-    : (watched ? watched.targetBuyPrice : (holding ? holding.avgCost : null));
+    ? (holding && holding.avgCost > 0 ? holding.avgCost : null)
+    : (watched ? watched.targetBuyPrice : (holding && holding.avgCost > 0 ? holding.avgCost : null));
   const refLabel = isHoldings
-    ? (holding ? `Your Avg Cost (${Fin.currency(refValue, false, currency)})` : null)
+    ? (holding && holding.avgCost > 0 ? `Your Avg Cost (${Fin.currency(refValue, false, currency)})` : null)
     : (watched ? `Target Buy Price (${Fin.currency(refValue, false, currency)})` : null);
+
+  // Clear any previously clicked trade marker detail banner when re-rendering chart
+  const tradeMarkerBoxEl = document.getElementById(isHoldings ? 'holdings-chart-trade-marker-box' : 'watchlist-chart-trade-marker-box');
+  if (tradeMarkerBoxEl) {
+    tradeMarkerBoxEl.classList.add('hidden');
+    tradeMarkerBoxEl.innerHTML = '';
+  }
+
+  // Compute Monthly BUY (Blue X) and SELL (Red X) average price markers for this ticker
+  const buyByMonth = {};
+  const sellByMonth = {};
+  (state.transactions || []).forEach(tx => {
+    if (MarketAPI.normalizeTicker(tx.ticker) !== ticker || !tx.date) return;
+    const ym = String(tx.date).slice(0, 7);
+    const sh = Number(tx.shares || 0);
+    const pr = Number(tx.price || 0);
+    const fe = Number(tx.fees || 0);
+    if (sh <= 0 || pr <= 0) return;
+
+    if (tx.type === 'BUY') {
+      if (!buyByMonth[ym]) buyByMonth[ym] = { shares: 0, gross: 0, amount: 0, fees: 0, trades: [] };
+      buyByMonth[ym].shares = Fin.round(buyByMonth[ym].shares + sh, 4);
+      buyByMonth[ym].gross = Fin.round(buyByMonth[ym].gross + sh * pr, 2);
+      buyByMonth[ym].amount = Fin.round(buyByMonth[ym].amount + (sh * pr + fe), 2);
+      buyByMonth[ym].fees = Fin.round(buyByMonth[ym].fees + fe, 2);
+      buyByMonth[ym].trades.push(tx);
+    } else if (tx.type === 'SELL') {
+      if (!sellByMonth[ym]) sellByMonth[ym] = { shares: 0, gross: 0, amount: 0, fees: 0, trades: [] };
+      sellByMonth[ym].shares = Fin.round(sellByMonth[ym].shares + sh, 4);
+      sellByMonth[ym].gross = Fin.round(sellByMonth[ym].gross + sh * pr, 2);
+      sellByMonth[ym].amount = Fin.round(sellByMonth[ym].amount + Math.max(0, sh * pr - fe), 2);
+      sellByMonth[ym].fees = Fin.round(sellByMonth[ym].fees + fe, 2);
+      sellByMonth[ym].trades.push(tx);
+    }
+  });
+
+  const buyMarkerData = labels.map(ym => {
+    const b = buyByMonth[ym];
+    return (b && b.shares > 0) ? Fin.round(b.gross / b.shares, 4) : null;
+  });
+  const buyMetaByIndex = labels.map(ym => {
+    const b = buyByMonth[ym];
+    if (!b || b.shares <= 0) return null;
+    return {
+      month: ym,
+      type: 'BUY',
+      avgPrice: Fin.round(b.gross / b.shares, 4),
+      shares: b.shares,
+      amount: b.amount,
+      gross: b.gross,
+      fees: b.fees,
+      trades: b.trades
+    };
+  });
+
+  const sellMarkerData = labels.map(ym => {
+    const s = sellByMonth[ym];
+    return (s && s.shares > 0) ? Fin.round(s.gross / s.shares, 4) : null;
+  });
+  const sellMetaByIndex = labels.map(ym => {
+    const s = sellByMonth[ym];
+    if (!s || s.shares <= 0) return null;
+    return {
+      month: ym,
+      type: 'SELL',
+      avgPrice: Fin.round(s.gross / s.shares, 4),
+      shares: s.shares,
+      amount: s.amount,
+      gross: s.gross,
+      fees: s.fees,
+      trades: s.trades
+    };
+  });
 
   const isDark = document.documentElement.classList.contains('dark');
   const isMobile = DeviceDetector.profile.effectiveMode === 'mobile';
@@ -8271,6 +8424,80 @@ function renderInlineStockChart(tabType) {
     });
   }
 
+  // Add Monthly Buy Avg Price (Blue X) and Monthly Sell Avg Price (Red X) markers on the Holdings chart
+  if (isHoldings) {
+    if (buyMarkerData.some(v => v !== null)) {
+      datasets.push({
+        label: 'Buy Avg Price (Blue X)',
+        data: buyMarkerData,
+        borderColor: '#2563eb',
+        backgroundColor: '#3b82f6',
+        pointBorderColor: '#2563eb',
+        pointBackgroundColor: '#3b82f6',
+        pointStyle: 'crossRot',
+        pointBorderWidth: 3.2,
+        pointRadius: isMobile ? 7.5 : 9,
+        pointHoverRadius: isMobile ? 9.5 : 11.5,
+        pointHitRadius: 16,
+        showLine: false,
+        fill: false,
+        order: 0,
+        _legendStyle: 'cross-blue',
+        _tradeMeta: buyMetaByIndex
+      });
+    }
+    if (sellMarkerData.some(v => v !== null)) {
+      datasets.push({
+        label: 'Sell Avg Price (Red X)',
+        data: sellMarkerData,
+        borderColor: '#ef4444',
+        backgroundColor: '#ef4444',
+        pointBorderColor: '#ef4444',
+        pointBackgroundColor: '#ef4444',
+        pointStyle: 'crossRot',
+        pointBorderWidth: 3.2,
+        pointRadius: isMobile ? 7.5 : 9,
+        pointHoverRadius: isMobile ? 9.5 : 11.5,
+        pointHitRadius: 16,
+        showLine: false,
+        fill: false,
+        order: 0,
+        _legendStyle: 'cross-red',
+        _tradeMeta: sellMetaByIndex
+      });
+    }
+  }
+
+  const renderClickedTradeMarkerDetail = (metaList) => {
+    if (!tradeMarkerBoxEl || !Array.isArray(metaList) || metaList.length === 0) return;
+    tradeMarkerBoxEl.classList.remove('hidden');
+    tradeMarkerBoxEl.innerHTML = metaList.map(meta => {
+      const isBuy = meta.type === 'BUY';
+      const toneCls = isBuy
+        ? 'bg-blue-500/10 border-blue-500/40 text-blue-600 dark:text-blue-400'
+        : 'bg-rose-500/10 border-rose-500/40 text-rose-600 dark:text-rose-400';
+      const badgeCls = isBuy
+        ? 'bg-blue-600 text-white'
+        : 'bg-rose-600 text-white';
+      return `
+        <div class="p-2.5 sm:p-3 rounded-xl border ${toneCls} flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex flex-wrap items-center gap-2 sm:gap-4">
+            <span class="px-2 py-0.5 rounded font-mono font-bold text-[11px] ${badgeCls}">
+              ${isBuy ? '✕ BUY' : '✕ SELL'} (${meta.month})
+            </span>
+            <span>Average Price: <strong class="num-font text-slate-900 dark:text-white">${Fin.currency(meta.avgPrice, false, currency)}</strong></span>
+            <span>Shares: <strong class="num-font text-slate-900 dark:text-white">${Fin.shares(meta.shares)}</strong></span>
+            <span>${isBuy ? 'Buy' : 'Sell'} Amount: <strong class="num-font text-slate-900 dark:text-white">${Fin.currency(meta.amount, false, currency)}</strong></span>
+            ${meta.trades.length > 1 ? `<span class="text-[10px] text-slate-500">(${meta.trades.length} orders in ${meta.month})</span>` : ''}
+          </div>
+          <button type="button" onclick="this.closest('#holdings-chart-trade-marker-box, #watchlist-chart-trade-marker-box').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-1.5" title="Dismiss">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      `;
+    }).join('');
+  };
+
   const chartInstance = new Chart(canvasEl, {
     type: 'line',
     data: { labels, datasets },
@@ -8278,6 +8505,25 @@ function renderInlineStockChart(tabType) {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
+      onClick: (evt, activeElements, chart) => {
+        if (!isHoldings) return;
+        const pts = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
+        const matchedMetas = [];
+        pts.forEach(pt => {
+          const ds = chart.data.datasets[pt.datasetIndex];
+          const meta = ds && ds._tradeMeta ? ds._tradeMeta[pt.index] : null;
+          if (meta) matchedMetas.push(meta);
+        });
+        // If user clicked anywhere along a month column that has a Buy or Sell marker, also surface it
+        if (matchedMetas.length === 0 && activeElements && activeElements.length > 0) {
+          const idx = activeElements[0].index;
+          if (buyMetaByIndex[idx]) matchedMetas.push(buyMetaByIndex[idx]);
+          if (sellMetaByIndex[idx]) matchedMetas.push(sellMetaByIndex[idx]);
+        }
+        if (matchedMetas.length > 0) {
+          renderClickedTradeMarkerDetail(matchedMetas);
+        }
+      },
       scales: {
         x: {
           grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
@@ -8299,6 +8545,14 @@ function renderInlineStockChart(tabType) {
         tooltip: {
           callbacks: {
             label: (c) => {
+              const ds = c.dataset;
+              if (ds && ds._tradeMeta && ds._tradeMeta[c.dataIndex]) {
+                const tm = ds._tradeMeta[c.dataIndex];
+                return [
+                  ` ${tm.type} Marker (${tm.month}): Avg Price ${Fin.currency(tm.avgPrice, false, currency)}`,
+                  `   • Action: ${tm.type} | Shares: ${Fin.shares(tm.shares)} | ${tm.type === 'BUY' ? 'Buy' : 'Sell'} Amount: ${Fin.currency(tm.amount, false, currency)}`
+                ];
+              }
               if (c.datasetIndex === 0) {
                 return ` Monthly High: ${Fin.currency(c.raw, false, currency)}`;
               }
@@ -8332,6 +8586,10 @@ function renderInlineStockChart(tabType) {
         let swatchHtml = '';
         if (ds._legendStyle === 'band') {
           swatchHtml = `<span class="inline-block w-5 h-2.5 rounded-sm border" style="background: rgba(16, 185, 129, 0.28); border-color: rgba(52, 211, 153, 0.75);"></span>`;
+        } else if (ds._legendStyle === 'cross-blue') {
+          swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-sm leading-none" style="color: #2563eb;">✕</span>`;
+        } else if (ds._legendStyle === 'cross-red') {
+          swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-sm leading-none" style="color: #ef4444;">✕</span>`;
         } else if (ds._legendStyle === 'dashed') {
           swatchHtml = `<span class="inline-block w-5 h-0 border-t-2 border-dashed" style="border-color: ${ds.borderColor};"></span>`;
         } else {
@@ -8529,7 +8787,7 @@ window.renderPnlBreakdownChart = renderPnlBreakdownChart;
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.2.3-20261104_1435') {
+      if (k !== 'myportfolio-cache-v3.2.4-20261104_1515') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -8664,7 +8922,7 @@ async function selectStockForInlineChart(tabType, rawTicker, scrollIntoView = fa
   if (tabType === 'holdings') {
     window.__holdingsChartManuallyClosed = false;
     selectedHoldingsTicker = ticker;
-    const heldItem = portfolio?.activeHoldings?.find(h => h.ticker === ticker);
+    const heldItem = (portfolio?.allHoldings || portfolio?.activeHoldings || []).find(h => h.ticker === ticker);
     if (heldItem && state?.settings?.collapsedSectors) {
       const secKey = getCanonicalHoldingsSector(heldItem);
       state.settings.collapsedSectors[secKey] = false;
@@ -8893,10 +9151,13 @@ function updateTabCounters() {
 }
 
 function populateHistorySelector() {
-  if (portfolio.activeHoldings.length > 0) {
-    const stillHeld = portfolio.activeHoldings.some(h => h.ticker === selectedHoldingsTicker);
-    if (!stillHeld && !window.__holdingsChartManuallyClosed) {
-      selectedHoldingsTicker = portfolio.activeHoldings[0].ticker;
+  const holdingsPool = (portfolio.allHoldings && portfolio.allHoldings.length > 0)
+    ? portfolio.allHoldings
+    : (portfolio.activeHoldings || []);
+  if (holdingsPool.length > 0) {
+    const stillInPool = holdingsPool.some(h => h.ticker === selectedHoldingsTicker);
+    if (!stillInPool && !window.__holdingsChartManuallyClosed) {
+      selectedHoldingsTicker = (portfolio.activeHoldings?.[0] || holdingsPool[0]).ticker;
     }
   } else {
     selectedHoldingsTicker = null;
@@ -8945,7 +9206,7 @@ window.toggleHoldingsSector = toggleHoldingsSector;
 
 function setAllHoldingsSectorsCollapsed(collapsed) {
   if (!state.settings.collapsedSectors) state.settings.collapsedSectors = {};
-  (portfolio?.activeHoldings || []).forEach(h => {
+  (portfolio?.allHoldings || portfolio?.activeHoldings || []).forEach(h => {
     const sec = getCanonicalHoldingsSector(h);
     state.settings.collapsedSectors[sec] = Boolean(collapsed);
   });
@@ -9187,14 +9448,28 @@ function renderHoldingsTable() {
   const tbody = document.getElementById('holdings-table-body');
   const emptyState = document.getElementById('holdings-empty-state');
   const signalFilterEl = document.getElementById('holdings-filter-signal');
+  const activeOnlyCheckbox = document.getElementById('holdings-filter-active-only');
   tbody.innerHTML = '';
+
+  const activeOnly = Boolean(state?.settings?.holdingsActiveOnly);
+  if (activeOnlyCheckbox) {
+    activeOnlyCheckbox.checked = activeOnly;
+  }
+
+  const allHoldingsList = (portfolio?.allHoldings && portfolio.allHoldings.length > 0)
+    ? portfolio.allHoldings
+    : (portfolio?.activeHoldings || []);
+
+  const poolForMode = activeOnly
+    ? allHoldingsList.filter(h => h.isActive !== false && h.shares > 0.0001)
+    : allHoldingsList;
 
   const selectedSignal = populateSignalFilterDropdown(
     signalFilterEl,
-    (portfolio.activeHoldings || []).map(h => h.signalLabel || 'HOLD')
+    poolForMode.map(h => h.signalLabel || 'HOLD')
   );
 
-  if (portfolio.activeHoldings.length === 0) {
+  if (allHoldingsList.length === 0) {
     emptyState.classList.remove('hidden');
     const chartCard = document.getElementById('holdings-stock-chart-card');
     if (chartCard) chartCard.classList.add('hidden');
@@ -9203,15 +9478,15 @@ function renderHoldingsTable() {
   emptyState.classList.add('hidden');
 
   const filteredHoldings = selectedSignal === 'ALL'
-    ? portfolio.activeHoldings
-    : portfolio.activeHoldings.filter(h => (h.signalLabel || 'HOLD') === selectedSignal);
+    ? poolForMode
+    : poolForMode.filter(h => (h.signalLabel || 'HOLD') === selectedSignal);
 
   if (filteredHoldings.length === 0) {
     tbody.innerHTML = `
       <tr class="text-xs text-slate-400">
-        <td colspan="19" class="py-8 px-4 text-center">
-          No active holdings currently match signal <strong class="text-slate-700 dark:text-slate-200 font-mono">${selectedSignal}</strong>.
-          <button type="button" onclick="const el=document.getElementById('holdings-filter-signal'); if(el){el.value='ALL'; renderHoldingsTable();}" class="ml-2 text-brand-500 hover:underline font-semibold">Show All (${portfolio.activeHoldings.length})</button>
+        <td colspan="22" class="py-8 px-4 text-center">
+          No ${activeOnly ? 'active ' : ''}holdings match your current filter.
+          <button type="button" onclick="if(state.settings) state.settings.holdingsActiveOnly=false; const sEl=document.getElementById('holdings-filter-signal'); if(sEl) sEl.value='ALL'; renderHoldingsTable();" class="ml-2 text-brand-500 hover:underline font-semibold">Reset Filters (${allHoldingsList.length})</button>
         </td>
       </tr>
     `;
@@ -9221,6 +9496,125 @@ function renderHoldingsTable() {
   if (!state.settings.collapsedSectors) state.settings.collapsedSectors = {};
 
   const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
+  const infRate = Number(state.settings?.inflationRatePct ?? 2.2);
+
+  // =========================================================================
+  // TOP ROW: PORTFOLIO TOTAL / AGGREGATED VALUES ACROSS DISPLAYED HOLDINGS
+  // =========================================================================
+  let totDayPnLBase = 0;
+  let totMarketValueBase = 0;
+  let totUnrealizedBase = 0;
+  let totCostBasisBase = 0;
+  let totHistoricalCostBase = 0;
+  let totAccumDivBase = 0;
+  let totRealizedBase = 0;
+  let totAnnualFwdDivBase = 0;
+  let weightedSignalSum = 0;
+  let signalCount = 0;
+  let activeCount = 0;
+  let closedCount = 0;
+  const allXirrFlowsBase = [];
+
+  filteredHoldings.forEach(h => {
+    const hCurr = h.currency || 'HKD';
+    const isAct = h.isActive !== false && h.shares > 0.0001;
+    if (isAct) activeCount++;
+    else closedCount++;
+
+    totDayPnLBase = Fin.round(totDayPnLBase + (h.dayPnLBase ?? Fin.convertCurrency(h.dayPnL || 0, hCurr, baseCurr)), 2);
+    totMarketValueBase = Fin.round(totMarketValueBase + (h.marketValueBase ?? Fin.convertCurrency(h.marketValue || 0, hCurr, baseCurr)), 2);
+    totUnrealizedBase = Fin.round(totUnrealizedBase + Fin.convertCurrency(h.unrealizedGain || 0, hCurr, baseCurr), 2);
+    totCostBasisBase = Fin.round(totCostBasisBase + (h.costBasisBase ?? Fin.convertCurrency(h.totalCostBasis || 0, hCurr, baseCurr)), 2);
+    totHistoricalCostBase = Fin.round(totHistoricalCostBase + (h.historicalCostBasisBase ?? Fin.convertCurrency(h.historicalCostBasis || h.totalCostBasis || 0, hCurr, baseCurr)), 2);
+    totAccumDivBase = Fin.round(totAccumDivBase + (h.totalDividendsBase ?? Fin.convertCurrency(h.totalDividends || 0, hCurr, baseCurr)), 2);
+    totRealizedBase = Fin.round(totRealizedBase + (h.realizedGainBase ?? Fin.convertCurrency(h.realizedGain || 0, hCurr, baseCurr)), 2);
+    totAnnualFwdDivBase = Fin.round(totAnnualFwdDivBase + (h.annualForwardDivBase ?? 0), 2);
+
+    if (Array.isArray(h.xirrFlowsBase)) {
+      allXirrFlowsBase.push(...h.xirrFlowsBase);
+    }
+    if (Number.isFinite(Number(h.signalScore))) {
+      weightedSignalSum += Number(h.signalScore);
+      signalCount++;
+    }
+  });
+
+  const prevTotMvBase = totMarketValueBase - totDayPnLBase;
+  const totDayPnLPct = prevTotMvBase > 0 ? Fin.round((totDayPnLBase / prevTotMvBase) * 100, 2) : 0;
+  const totUnrealizedPct = totCostBasisBase > 0 ? Fin.round((totUnrealizedBase / totCostBasisBase) * 100, 2) : 0;
+  const totNetYieldPct = totMarketValueBase > 0 ? Fin.round((totAnnualFwdDivBase / totMarketValueBase) * 100, 2) : 0;
+  const refTotCostForYoC = totCostBasisBase > 0 ? totCostBasisBase : totHistoricalCostBase;
+  const totYoCPct = refTotCostForYoC > 0 ? Fin.round((totAccumDivBase / refTotCostForYoC) * 100, 2) : 0;
+  const totXirrPct = (selectedSignal === 'ALL' && !activeOnly && portfolio.nominalXirrPct !== null)
+    ? portfolio.nominalXirrPct
+    : Fin.xirr(allXirrFlowsBase);
+  const totRealXirrPct = totXirrPct !== null ? Fin.realReturn(totXirrPct, infRate) : null;
+  const avgSignalScore = signalCount > 0 ? Math.round(weightedSignalSum / signalCount) : 50;
+
+  const totDayColor = totDayPnLBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+  const totUnrColor = totUnrealizedBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+  const totRealColor = totRealizedBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+  const totXirrColor = totXirrPct === null ? 'text-slate-400' : (totXirrPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400');
+
+  const totalTr = document.createElement('tr');
+  totalTr.className = 'portfolio-total-row bg-indigo-50/95 dark:bg-slate-900 border-b-2 border-indigo-500/40 font-bold text-xs';
+  totalTr.innerHTML = `
+    <td class="py-1.5 px-2.5 sm:px-3 sticky-col-mobile max-w-[142px] sm:max-w-none bg-indigo-50 dark:bg-slate-900">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <i class="fa-solid fa-layer-group text-indigo-500 text-xs shrink-0"></i>
+        <div class="min-w-0">
+          <div class="font-extrabold text-[11px] sm:text-xs tracking-tight text-slate-900 dark:text-white truncate">PORTFOLIO TOTAL</div>
+          <div class="text-[9.5px] font-mono text-slate-500 dark:text-slate-400 truncate">${activeCount} active${closedCount > 0 ? ` · ${closedCount} closed` : ''} (${baseCurr})</div>
+        </div>
+      </div>
+    </td>
+    <td class="py-1.5 px-3 text-right font-mono text-[10px] text-slate-500 dark:text-slate-400">100.0% wt</td>
+    <td class="py-1.5 px-3 text-right num-font ${totDayColor}">
+      <div class="font-extrabold">${Fin.currency(totDayPnLBase, true, baseCurr)}</div>
+      <div class="text-[10px] font-semibold">1D ${Fin.percent(totDayPnLPct, true)}</div>
+    </td>
+    <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-900 dark:text-white">
+      ${Fin.currency(totMarketValueBase, false, baseCurr)}
+    </td>
+    <td class="py-1.5 px-3 text-right num-font ${totUnrColor}">
+      <div class="font-extrabold">${Fin.currency(totUnrealizedBase, true, baseCurr)}</div>
+      <div class="text-[10px] font-semibold">${Fin.percent(totUnrealizedPct, true)}</div>
+    </td>
+    <td class="py-1.5 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">
+      <div class="font-bold">${totNetYieldPct > 0 ? totNetYieldPct.toFixed(2) + '% Net' : '-'}</div>
+      <div class="text-[9.5px] font-mono text-slate-400">${totAnnualFwdDivBase > 0 ? Fin.currency(totAnnualFwdDivBase, false, baseCurr) + '/yr' : ''}</div>
+    </td>
+    <td class="py-1.5 px-3 text-right num-font font-extrabold text-cyan-600 dark:text-cyan-400">
+      +${Fin.currency(totAccumDivBase, false, baseCurr)}
+    </td>
+    <td class="py-1.5 px-3 text-right num-font font-extrabold ${totRealColor}">
+      ${Fin.currency(totRealizedBase, true, baseCurr)}
+    </td>
+    <td class="py-1.5 px-3 text-right text-slate-400 font-mono">-</td>
+    <td class="py-1.5 px-3 text-right text-slate-400 font-mono">-</td>
+    <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-800 dark:text-slate-200">
+      ${Fin.currency(totCostBasisBase, false, baseCurr)}
+    </td>
+    <td class="py-1.5 px-3 text-right num-font ${totXirrColor}">
+      <div class="font-extrabold">${totXirrPct !== null ? Fin.percent(totXirrPct, true) : '-'}</div>
+      ${totRealXirrPct !== null ? `<div class="text-[9.5px] font-normal text-slate-400">Real ${Fin.percent(totRealXirrPct, true)}</div>` : ''}
+    </td>
+    <td class="py-1.5 px-3 text-right num-font font-extrabold text-cyan-600 dark:text-cyan-400">
+      ${totYoCPct.toFixed(2)}%
+    </td>
+    <td colspan="7" class="py-1.5 px-3 text-right text-[10px] text-slate-400 font-medium">
+      All-Time Portfolio Aggregates (${baseCurr})
+    </td>
+    <td class="py-1.5 px-3 text-center">
+      <span class="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 font-mono font-bold text-[10px]">Avg ${avgSignalScore}/100</span>
+    </td>
+    <td class="py-1.5 px-3 text-center text-slate-400">-</td>
+  `;
+  tbody.appendChild(totalTr);
+
+  // =========================================================================
+  // SECTOR GROUPS & INDIVIDUAL TICKER ROWS (ACTIVE + HISTORICAL CLOSED)
+  // =========================================================================
   const groupsMap = {};
   filteredHoldings.forEach(h => {
     const secName = getCanonicalHoldingsSector(h);
@@ -9230,11 +9624,15 @@ function renderHoldingsTable() {
         sector: secName,
         isEtf: MarketAPI.isEtfSector(secName, h.ticker, h.companyName),
         items: [],
+        totalDayPnL: 0,
         totalCostBasis: 0,
+        totalHistoricalCostBasis: 0,
         totalMarketValue: 0,
         totalMarketValueBase: 0,
         totalUnrealizedGain: 0,
         totalDividends: 0,
+        totalRealizedGain: 0,
+        totalAnnualFwdDiv: 0,
         xirrFlowsBase: [],
         currency: baseCurr
       };
@@ -9244,11 +9642,15 @@ function renderHoldingsTable() {
     if (Array.isArray(h.xirrFlowsBase)) {
       g.xirrFlowsBase.push(...h.xirrFlowsBase);
     }
-    g.totalCostBasis = Fin.round(g.totalCostBasis + Fin.convertCurrency(h.totalCostBasis, hCurr, baseCurr), 2);
-    g.totalMarketValue = Fin.round(g.totalMarketValue + Fin.convertCurrency(h.marketValue, hCurr, baseCurr), 2);
-    g.totalMarketValueBase = Fin.round(g.totalMarketValueBase + (h.marketValueBase || Fin.convertCurrency(h.marketValue, hCurr, baseCurr)), 2);
-    g.totalUnrealizedGain = Fin.round(g.totalUnrealizedGain + Fin.convertCurrency(h.unrealizedGain, hCurr, baseCurr), 2);
+    g.totalDayPnL = Fin.round(g.totalDayPnL + (h.dayPnLBase ?? Fin.convertCurrency(h.dayPnL || 0, hCurr, baseCurr)), 2);
+    g.totalCostBasis = Fin.round(g.totalCostBasis + Fin.convertCurrency(h.totalCostBasis || 0, hCurr, baseCurr), 2);
+    g.totalHistoricalCostBasis = Fin.round(g.totalHistoricalCostBasis + Fin.convertCurrency(h.historicalCostBasis || h.totalCostBasis || 0, hCurr, baseCurr), 2);
+    g.totalMarketValue = Fin.round(g.totalMarketValue + Fin.convertCurrency(h.marketValue || 0, hCurr, baseCurr), 2);
+    g.totalMarketValueBase = Fin.round(g.totalMarketValueBase + (h.marketValueBase || Fin.convertCurrency(h.marketValue || 0, hCurr, baseCurr)), 2);
+    g.totalUnrealizedGain = Fin.round(g.totalUnrealizedGain + Fin.convertCurrency(h.unrealizedGain || 0, hCurr, baseCurr), 2);
     g.totalDividends = Fin.round(g.totalDividends + Fin.convertCurrency(h.totalDividends || 0, hCurr, baseCurr), 2);
+    g.totalRealizedGain = Fin.round(g.totalRealizedGain + Fin.convertCurrency(h.realizedGain || 0, hCurr, baseCurr), 2);
+    g.totalAnnualFwdDiv = Fin.round(g.totalAnnualFwdDiv + (h.annualForwardDivBase || 0), 2);
   });
 
   const sortedGroups = Object.values(groupsMap).sort((a, b) => {
@@ -9260,18 +9662,25 @@ function renderHoldingsTable() {
     group.items.sort((a, b) => a.ticker.localeCompare(b.ticker, undefined, { sensitivity: 'base' }));
 
     const isCollapsed = Boolean(state.settings.collapsedSectors[group.sector]);
+    const prevGroupMv = group.totalMarketValue - group.totalDayPnL;
+    const groupDayPnlPct = prevGroupMv > 0 ? Fin.round((group.totalDayPnL / prevGroupMv) * 100, 2) : 0;
     const groupUnrealizedPct = group.totalCostBasis > 0
       ? Fin.round((group.totalUnrealizedGain / group.totalCostBasis) * 100, 2)
       : 0;
-    const groupYoC = group.totalCostBasis > 0
-      ? Fin.round((group.totalDividends / group.totalCostBasis) * 100, 2)
+    const refGroupCostYoC = group.totalCostBasis > 0 ? group.totalCostBasis : group.totalHistoricalCostBasis;
+    const groupYoC = refGroupCostYoC > 0
+      ? Fin.round((group.totalDividends / refGroupCostYoC) * 100, 2)
+      : 0;
+    const groupNetYieldPct = group.totalMarketValue > 0
+      ? Fin.round((group.totalAnnualFwdDiv / group.totalMarketValue) * 100, 2)
       : 0;
     const weightPct = portfolio.totalStockMarketValue > 0
       ? Fin.round((group.totalMarketValueBase / portfolio.totalStockMarketValue) * 100, 1)
       : 0;
+    const groupDayColor = group.totalDayPnL >= 0 ? 'text-emerald-500' : 'text-rose-500';
     const groupPnlColor = group.totalUnrealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+    const groupRealColor = group.totalRealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
     const groupXirrPct = Fin.xirr(group.xirrFlowsBase || []);
-    const infRate = Number(state.settings?.inflationRatePct ?? 2.2);
     const groupRealXirrPct = groupXirrPct !== null ? Fin.realReturn(groupXirrPct, infRate) : null;
     const groupXirrColor = groupXirrPct === null ? 'text-slate-400' : (groupXirrPct >= 0 ? 'text-emerald-500' : 'text-rose-500');
     const iconCls = getSectorIconClass(group.sector, group.isEtf);
@@ -9301,30 +9710,44 @@ function renderHoldingsTable() {
           </span>
         </div>
       </td>
-      <td colspan="3" class="py-1 sm:py-1.5 px-2 text-left text-[10px] font-mono text-slate-500 dark:text-slate-400">
+      <td class="py-1 sm:py-1.5 px-2 text-right text-[10px] font-mono text-slate-500 dark:text-slate-400">
         <span>${weightPct}% wt</span>
       </td>
-      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-slate-700 dark:text-slate-300">
-        ${Fin.currency(group.totalCostBasis, false, group.currency)}
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupDayColor}">
+        <div>${Fin.currency(group.totalDayPnL, true, group.currency)}</div>
+        <div class="text-[10px] font-semibold">1D ${Fin.percent(groupDayPnlPct, true)}</div>
       </td>
-      <td colspan="9" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
-        Sector Subtotal (${group.items.length} ${group.items.length === 1 ? 'holding' : 'holdings'})
-      </td>
-      <td class="py-2 px-3 text-right num-font text-xs font-extrabold text-slate-900 dark:text-white">
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-extrabold text-slate-900 dark:text-white">
         ${Fin.currency(group.totalMarketValue, false, group.currency)}
       </td>
-      <td class="py-2 px-3 text-right num-font text-xs font-bold ${groupPnlColor}">
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupPnlColor}">
         <div>${Fin.currency(group.totalUnrealizedGain, true, group.currency)}</div>
         <div class="text-[10px] font-semibold">${Fin.percent(groupUnrealizedPct)}</div>
       </td>
-      <td class="py-2 px-3 text-right num-font text-xs font-bold ${groupXirrColor}" title="${groupXirrPct !== null ? `Sector Money-Weighted Annualized XIRR: ${Fin.percent(groupXirrPct, true)} p.a. (Real Inflation-Adjusted: ${Fin.percent(groupRealXirrPct, true)} p.a.)` : 'Insufficient cash flow span'}">
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
+        ${groupNetYieldPct > 0 ? groupNetYieldPct.toFixed(2) + '% Net' : '-'}
+      </td>
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-cyan-600 dark:text-cyan-400">
+        ${group.totalDividends > 0 ? '+' + Fin.currency(group.totalDividends, false, group.currency) : Fin.currency(0, false, group.currency)}
+      </td>
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${group.totalRealizedGain !== 0 ? groupRealColor : 'text-slate-400'}">
+        ${group.totalRealizedGain !== 0 ? Fin.currency(group.totalRealizedGain, true, group.currency) : Fin.currency(0, false, group.currency)}
+      </td>
+      <td colspan="2" class="py-1 sm:py-1.5 px-3 text-right text-[10px] text-slate-400 font-mono">-</td>
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-slate-700 dark:text-slate-300">
+        ${Fin.currency(group.totalCostBasis, false, group.currency)}
+      </td>
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupXirrColor}" title="${groupXirrPct !== null ? `Sector Money-Weighted Annualized XIRR: ${Fin.percent(groupXirrPct, true)} p.a. (Real Inflation-Adjusted: ${Fin.percent(groupRealXirrPct, true)} p.a.)` : 'Insufficient cash flow span'}">
         <div>${groupXirrPct !== null ? Fin.percent(groupXirrPct, true) : '-'}</div>
         ${groupRealXirrPct !== null ? `<div class="text-[9.5px] font-normal text-slate-400">Real ${Fin.percent(groupRealXirrPct, true)}</div>` : ''}
       </td>
-      <td class="py-2 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
         ${groupYoC.toFixed(2)}%
       </td>
-      <td class="py-2 px-3 text-center text-[11px] font-semibold text-brand-600 dark:text-brand-400">
+      <td colspan="8" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
+        Sector Subtotal (${group.items.length} ${group.items.length === 1 ? 'holding' : 'holdings'})
+      </td>
+      <td class="py-1 sm:py-1.5 px-3 text-center text-[11px] font-semibold text-brand-600 dark:text-brand-400">
         <span>${isCollapsed ? 'Expand' : 'Collapse'}</span>
       </td>
     `;
@@ -9333,11 +9756,12 @@ function renderHoldingsTable() {
     if (!isCollapsed) {
       group.items.forEach(h => {
         const isSelected = selectedHoldingsTicker === h.ticker;
+        const isAct = h.isActive !== false && h.shares > 0.0001;
         const tr = document.createElement('tr');
         tr.className = `cursor-pointer transition ${
           isSelected
             ? 'selected-table-row bg-slate-300/80 dark:bg-slate-800 border-l-4 border-l-brand-500'
-            : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
+            : (isAct ? 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40' : 'opacity-80 bg-slate-50/40 dark:bg-slate-900/30 hover:bg-slate-100/60 dark:hover:bg-slate-800/40')
         }`;
         tr.id = `holding-row-${h.ticker}`;
         tr.setAttribute('data-sector-item', group.sector);
@@ -9346,7 +9770,11 @@ function renderHoldingsTable() {
           selectStockForInlineChart('holdings', h.ticker, true);
         });
 
+        const dayPnlVal = Number(h.dayPnL || 0);
+        const dayPnlColor = dayPnlVal >= 0 ? 'text-emerald-500' : 'text-rose-500';
         const pnlColor = h.unrealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        const realPnlVal = Number(h.realizedGain || 0);
+        const realPnlColor = realPnlVal >= 0 ? 'text-emerald-500' : 'text-rose-500';
         const priceChangeColor = h.priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
 
         tr.innerHTML = `
@@ -9359,74 +9787,91 @@ function renderHoldingsTable() {
                 <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1">
                   <span class="hover:text-brand-500 underline decoration-dotted underline-offset-2 truncate">${h.ticker}</span>
                   <span class="text-[9px] sm:text-[10px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium shrink-0">${h.currency}</span>
+                  ${!isAct ? '<span class="text-[8.5px] px-1 py-0 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold shrink-0">0 SH</span>' : ''}
                 </div>
                 <div class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[96px] sm:max-w-[180px]">${h.companyName}</div>
               </div>
             </div>
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
-            <div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(h.currentPrice, false, h.currency)}</div>
+            <div class="font-bold num-font text-slate-900 dark:text-white">${h.currentPrice > 0 ? Fin.currency(h.currentPrice, false, h.currency) : '-'}</div>
             <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
               <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct)}
             </div>
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium text-slate-800 dark:text-slate-200">${Fin.shares(h.shares)}</td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${Fin.currency(h.avgCost, false, h.currency)}</td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${Fin.currency(h.totalCostBasis, false, h.currency)}</td>
-          <td class="py-3 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300">
-            ${h.low52w !== null && h.low52w !== undefined ? Fin.currency(h.low52w, false, h.currency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+          <td class="py-1 sm:py-1.5 px-3 text-right">
+            ${isAct
+              ? `<div class="font-bold num-font ${dayPnlColor}">${Fin.currency(dayPnlVal, true, h.currency)}</div>
+                 <div class="text-[10px] num-font ${dayPnlColor} font-semibold">${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct, true)}</div>`
+              : '<span class="text-slate-400 text-xs font-mono">-</span>'}
           </td>
-          <td class="py-3 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300">
-            ${h.high52w !== null && h.high52w !== undefined ? Fin.currency(h.high52w, false, h.currency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+          <td class="py-1 sm:py-1.5 px-3 text-right font-bold num-font text-slate-900 dark:text-white">
+            ${isAct ? Fin.currency(h.marketValue, false, h.currency) : '<span class="text-slate-400 font-normal">-</span>'}
           </td>
-          <td class="py-3 px-3 text-right">
-            ${format52wPositionCell(h.low52w, h.high52w, h.pos52wPct, h.currency)}
+          <td class="py-1 sm:py-1.5 px-3 text-right">
+            ${isAct
+              ? `<div class="font-bold num-font ${pnlColor}">${Fin.currency(h.unrealizedGain, true, h.currency)}</div>
+                 <div class="text-[10px] num-font ${pnlColor} font-semibold">${Fin.percent(h.unrealizedGainPct)}</div>`
+              : '<span class="text-slate-400 text-xs font-mono">-</span>'}
           </td>
-          <td class="py-3 px-3 text-right">
-            ${formatPeriodChangeCell(h.momPct, 'MoM', h.momRefMonth)}
-          </td>
-          <td class="py-3 px-3 text-right">
-            ${formatPeriodChangeCell(h.qoqPct, 'QoQ', h.qoqRefMonth)}
-          </td>
-          <td class="py-3 px-3 text-right">
-            ${formatPeriodChangeCell(h.yoyPct, 'YoY', h.yoyRefMonth)}
-          </td>
-          <td class="py-3 px-3 text-right">
+          <td class="py-1 sm:py-1.5 px-3 text-right">
             ${formatDividendExDateCell(h.divInfo)}
           </td>
-          <td class="py-3 px-3 text-right">
-            ${formatTrendRegimeCell(h)}
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${h.totalDividends > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
+            ${h.totalDividends > 0 ? '+' + Fin.currency(h.totalDividends, false, h.currency) : Fin.currency(0, false, h.currency)}
           </td>
-          <td class="py-3 px-3 text-center">
-            ${formatSignalBadgeCell(h.ticker, h)}
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${realPnlVal !== 0 ? realPnlColor : 'text-slate-400'}">
+            ${realPnlVal !== 0 ? Fin.currency(realPnlVal, true, h.currency) : Fin.currency(0, false, h.currency)}
           </td>
-          <td class="py-3 px-3 text-right font-bold num-font text-slate-900 dark:text-white">${Fin.currency(h.marketValue, false, h.currency)}</td>
-          <td class="py-3 px-3 text-right">
-            <div class="font-bold num-font ${pnlColor}">${Fin.currency(h.unrealizedGain, true, h.currency)}</div>
-            <div class="text-[11px] num-font ${pnlColor} font-semibold">${Fin.percent(h.unrealizedGainPct)}</div>
-          </td>
-          <td class="py-3 px-3 text-right num-font" title="${h.xirrPct !== null && h.xirrPct !== undefined ? `Annualized Money-Weighted Return (XIRR): ${Fin.percent(h.xirrPct, true)} p.a. | Real Inflation-Adjusted: ${Fin.percent(h.realXirrPct, true)} p.a. (includes all BUY/SELL cash flows & dividends)` : 'Insufficient cash flow span'}">
-            <div class="font-bold text-xs ${h.xirrPct === null || h.xirrPct === undefined ? 'text-slate-400' : (h.xirrPct >= 0 ? 'text-emerald-500' : 'text-rose-500')}">
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium ${isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}">${Fin.shares(h.shares)}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? Fin.currency(h.avgCost, false, h.currency) : '<span class="text-slate-400">-</span>'}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? Fin.currency(h.totalCostBasis, false, h.currency) : `<span class="text-slate-400 text-[10px]" title="Historical total buy cost: ${Fin.currency(h.historicalCostBasis || 0, false, h.currency)}">-</span>`}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font" title="${h.xirrPct !== null && h.xirrPct !== undefined ? `Annualized Money-Weighted Return (XIRR): ${Fin.percent(h.xirrPct, true)} p.a. | Real Inflation-Adjusted: ${Fin.percent(h.realXirrPct, true)} p.a. (includes all BUY/SELL cash flows & dividends)` : 'Insufficient cash flow span'}">
+            <div class="font-bold text-xs ${h.xirrPct === null || h.xirrPct !== undefined && h.xirrPct === null ? 'text-slate-400' : (h.xirrPct >= 0 ? 'text-emerald-500' : 'text-rose-500')}">
               ${h.xirrPct !== null && h.xirrPct !== undefined ? Fin.percent(h.xirrPct, true) : '-'}
             </div>
             ${h.realXirrPct !== null && h.realXirrPct !== undefined ? `<div class="text-[9.5px] text-slate-400">Real ${Fin.percent(h.realXirrPct, true)}</div>` : ''}
           </td>
-          <td class="py-3 px-3 text-right">
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold num-font ${h.yieldOnCost > 0 ? 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
+          <td class="py-1 sm:py-1.5 px-3 text-right">
+            <span class="px-2 py-0.5 rounded-full text-xs font-bold num-font ${h.yieldOnCost > 0 ? 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}" title="${isAct ? 'Cumulative Dividends / Active Cost Basis' : 'Historical Cumulative Dividends / Historical Purchase Cost Basis'}">
               ${h.yieldOnCost.toFixed(2)}%
             </span>
           </td>
-          <td class="py-3 px-3 text-center">
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300">
+            ${h.low52w !== null && h.low52w !== undefined ? Fin.currency(h.low52w, false, h.currency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300">
+            ${h.high52w !== null && h.high52w !== undefined ? Fin.currency(h.high52w, false, h.currency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right">
+            ${format52wPositionCell(h.low52w, h.high52w, h.pos52wPct, h.currency)}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right">
+            ${formatPeriodChangeCell(h.momPct, 'MoM', h.momRefMonth)}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right">
+            ${formatPeriodChangeCell(h.qoqPct, 'QoQ', h.qoqRefMonth)}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right">
+            ${formatPeriodChangeCell(h.yoyPct, 'YoY', h.yoyRefMonth)}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right">
+            ${formatTrendRegimeCell(h)}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-center">
+            ${formatSignalBadgeCell(h.ticker, h)}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-center">
             <div class="flex items-center justify-center gap-1">
               <button onclick="event.stopPropagation(); selectStockForInlineChart('holdings', '${h.ticker}', true)" class="p-1.5 text-xs ${isSelected ? 'bg-brand-500 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Price & Trend Chart Below">
                 <i class="fa-solid fa-chart-line"></i>
               </button>
-              <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'BUY')" class="p-1.5 text-xs text-brand-600 dark:text-brand-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded" title="Buy More">
+              <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'BUY')" class="p-1.5 text-xs text-brand-600 dark:text-brand-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded" title="Buy Shares">
                 <i class="fa-solid fa-cart-plus"></i>
               </button>
-              <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'SELL')" class="p-1.5 text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded" title="Sell Shares">
+              ${isAct ? `<button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'SELL')" class="p-1.5 text-xs text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded" title="Sell Shares">
                 <i class="fa-solid fa-arrow-trend-down"></i>
-              </button>
+              </button>` : ''}
             </div>
           </td>
         `;
@@ -11131,6 +11576,11 @@ function setupEventListeners() {
   on('btn-open-trade-modal', 'click', () => openTradeModal());
   on('btn-holdings-new-trade', 'click', () => openTradeModal());
   on('holdings-filter-signal', 'change', () => renderHoldingsTable());
+  on('holdings-filter-active-only', 'change', (e) => {
+    state.settings.holdingsActiveOnly = Boolean(e.target.checked);
+    saveState();
+    renderHoldingsTable();
+  });
   on('watchlist-filter-signal', 'change', () => renderWatchlistAndFundamentals());
   on('btn-expand-all-sectors', 'click', () => setAllHoldingsSectorsCollapsed(false));
   on('btn-collapse-all-sectors', 'click', () => setAllHoldingsSectorsCollapsed(true));
@@ -11353,7 +11803,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.3 • Build 20261104_1435)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.4 • Build 20261104_1515)...');
   }
 
   try {
@@ -11390,7 +11840,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.2.3 boot sequence complete — triggering initial one-time live price API fetch.');
+      AppLogger.info('Boot', 'myPortfolio v3.2.4 boot sequence complete — triggering initial one-time live price API fetch.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

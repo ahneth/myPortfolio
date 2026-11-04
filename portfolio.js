@@ -1781,6 +1781,9 @@ function recalculatePortfolio() {
           ticker: tx.ticker,
           shares: 0,
           totalCostBasis: 0,
+          cumulativeBuyCostBasis: 0,
+          historicalBuyShares: 0,
+          lastTradePrice: price,
           avgCost: 0,
           realizedGain: 0,
           totalDividends: 0,
@@ -1792,6 +1795,9 @@ function recalculatePortfolio() {
       h.lots.push({ shares, unitCost, date: tx.date });
       h.shares = Fin.round(h.shares + shares, 4);
       h.totalCostBasis = Fin.round(h.totalCostBasis + totalOutlayNative, 2);
+      h.cumulativeBuyCostBasis = Fin.round((h.cumulativeBuyCostBasis || 0) + totalOutlayNative, 2);
+      h.historicalBuyShares = Fin.round((h.historicalBuyShares || 0) + shares, 4);
+      h.lastTradePrice = price;
       h.avgCost = h.shares > 0 ? Fin.round(h.totalCostBasis / h.shares, 4) : 0;
 
     } else if (tx.type === 'DRIP') {
@@ -1800,6 +1806,9 @@ function recalculatePortfolio() {
           ticker: tx.ticker,
           shares: 0,
           totalCostBasis: 0,
+          cumulativeBuyCostBasis: 0,
+          historicalBuyShares: 0,
+          lastTradePrice: price,
           avgCost: 0,
           realizedGain: 0,
           totalDividends: 0,
@@ -1811,6 +1820,9 @@ function recalculatePortfolio() {
       h.lots.push({ shares, unitCost: price, date: tx.date });
       h.shares = Fin.round(h.shares + shares, 4);
       h.totalCostBasis = Fin.round(h.totalCostBasis + dripValue, 2);
+      h.cumulativeBuyCostBasis = Fin.round((h.cumulativeBuyCostBasis || 0) + dripValue, 2);
+      h.historicalBuyShares = Fin.round((h.historicalBuyShares || 0) + shares, 4);
+      h.lastTradePrice = price;
       h.avgCost = h.shares > 0 ? Fin.round(h.totalCostBasis / h.shares, 4) : 0;
 
     } else if (tx.type === 'SELL') {
@@ -1824,12 +1836,16 @@ function recalculatePortfolio() {
           ticker: tx.ticker,
           shares: 0,
           totalCostBasis: 0,
+          cumulativeBuyCostBasis: 0,
+          historicalBuyShares: 0,
+          lastTradePrice: price,
           avgCost: 0,
           realizedGain: 0,
           totalDividends: 0,
           lots: []
         };
       }
+      holdingsMap[tx.ticker].lastTradePrice = price;
       const h = holdingsMap[tx.ticker];
       let remToSell = shares;
       let soldCostBasis = 0;
@@ -1969,8 +1985,10 @@ function recalculatePortfolio() {
   state.cashBalance = runningCash;
 
   const activeHoldings = [];
+  const allHoldings = [];
   let totalStockMarketValue = 0;
   let totalStockCostBasis = 0;
+  let totalDayPnLBase = 0;
   let estimatedAnnualForwardDivBase = 0;
 
   // Pre-compute total stock market value in base currency for accurate concentration weight checks
@@ -1988,137 +2006,162 @@ function recalculatePortfolio() {
 
   Object.keys(holdingsMap).forEach(ticker => {
     const h = holdingsMap[ticker];
-    if (h.shares > 0.0001) {
-      const staticProfile = MarketAPI.getStaticProfile(ticker);
-      const priceObj = state.prices[ticker] || { price: h.avgCost, change: 0, changePct: 0 };
-      const currentPrice = Fin.round(priceObj.price || h.avgCost, 4);
-      const marketValue = Fin.round(h.shares * currentPrice, 2);
-      const unrealizedGain = Fin.round(marketValue - h.totalCostBasis, 2);
-      const unrealizedGainPct = h.totalCostBasis > 0 ? Fin.round((unrealizedGain / h.totalCostBasis) * 100, 2) : 0;
-      const fund = state.fundamentals[ticker] || {};
-      const currency = priceObj.currency || fund.currency || staticProfile.currency;
-      const companyName = (OFFICIAL_NAMES_MAP[ticker]) || ((fund.name && fund.name !== ticker) ? fund.name : staticProfile.name);
-      const rawSector = (fund.sector && fund.sector !== 'Equities') ? fund.sector : staticProfile.sector;
-      const sector = MarketAPI.isEtfSector(rawSector, ticker, companyName) ? 'Index ETF' : (rawSector || 'Equities');
-      const mvBaseCandidate = Fin.convertCurrency(marketValue, currency, baseCurr);
-      const posWeightPct = preTotalStockMvBase > 0 ? (mvBaseCandidate / preTotalStockMvBase) * 100 : 0;
-      const priceMetrics = computeStockPriceMetrics(ticker, currentPrice, posWeightPct);
-      const divInfo = priceMetrics.divInfo || {};
+    const isActive = h.shares > 0.0001;
+    const staticProfile = MarketAPI.getStaticProfile(ticker);
+    const fallbackRefPrice = h.avgCost || h.lastTradePrice || 0;
+    const priceObj = state.prices[ticker] || { price: fallbackRefPrice, change: 0, changePct: 0 };
+    const currentPrice = Fin.round(priceObj.price || fallbackRefPrice, 4);
+    const rawChangePct = Number(priceObj.changePct || 0);
+    const validChange = Math.abs(rawChangePct) <= 40 ? Number(priceObj.change || 0) : 0;
+    const validChangePct = Math.abs(rawChangePct) <= 40 ? rawChangePct : 0;
 
-      // Annualized Forward Yield on Cost (or cumulative YoC if higher)
-      const annualDivNative = Number(divInfo.forwardDivPerShare || divInfo.ttmDivPerShare || 0) * h.shares;
-      const forwardYoC = h.totalCostBasis > 0 && annualDivNative > 0
-        ? Fin.round((annualDivNative / h.totalCostBasis) * 100, 2)
-        : 0;
-      const cumYoC = h.totalCostBasis > 0 ? Fin.round((h.totalDividends / h.totalCostBasis) * 100, 2) : 0;
-      const yieldOnCost = cumYoC > 0 ? cumYoC : forwardYoC;
+    const dayPnL = isActive ? Fin.round(h.shares * validChange, 2) : 0;
+    const marketValue = isActive ? Fin.round(h.shares * currentPrice, 2) : 0;
+    const unrealizedGain = isActive ? Fin.round(marketValue - h.totalCostBasis, 2) : 0;
+    const unrealizedGainPct = (isActive && h.totalCostBasis > 0) ? Fin.round((unrealizedGain / h.totalCostBasis) * 100, 2) : 0;
+    const fund = state.fundamentals[ticker] || {};
+    const currency = priceObj.currency || fund.currency || staticProfile.currency;
+    const companyName = (OFFICIAL_NAMES_MAP[ticker]) || ((fund.name && fund.name !== ticker) ? fund.name : staticProfile.name);
+    const rawSector = (fund.sector && fund.sector !== 'Equities') ? fund.sector : staticProfile.sector;
+    const sector = MarketAPI.isEtfSector(rawSector, ticker, companyName) ? 'Index ETF' : (rawSector || 'Equities');
+    const mvBaseCandidate = Fin.convertCurrency(marketValue, currency, baseCurr);
+    const posWeightPct = (isActive && preTotalStockMvBase > 0) ? (mvBaseCandidate / preTotalStockMvBase) * 100 : 0;
+    const priceMetrics = computeStockPriceMetrics(ticker, currentPrice, posWeightPct);
+    const divInfo = priceMetrics.divInfo || {};
 
-      const marketValueBase = Fin.convertCurrency(marketValue, currency, baseCurr);
-      const costBasisBase = Fin.convertCurrency(h.totalCostBasis, currency, baseCurr);
-      const annualDivBase = Fin.convertCurrency(annualDivNative, currency, baseCurr);
+    // Annualized Forward Yield on Cost (or cumulative YoC; for 0-share closed holdings, use cumulativeBuyCostBasis)
+    const annualDivNative = isActive ? (Number(divInfo.forwardDivPerShare || divInfo.ttmDivPerShare || 0) * h.shares) : 0;
+    const forwardYoC = (isActive && h.totalCostBasis > 0 && annualDivNative > 0)
+      ? Fin.round((annualDivNative / h.totalCostBasis) * 100, 2)
+      : 0;
+    const refCostForYoC = isActive ? h.totalCostBasis : (h.cumulativeBuyCostBasis || 0);
+    const cumYoC = refCostForYoC > 0 ? Fin.round((h.totalDividends / refCostForYoC) * 100, 2) : 0;
+    const yieldOnCost = isActive ? (cumYoC > 0 ? cumYoC : forwardYoC) : cumYoC;
 
-      // Compute Per-Stock Annualized XIRR (Nominal & Inflation-Adjusted Real) from dated BUY/SELL/Dividend cash flows + terminal Market Value
-      const stockXirrFlowsNative = [];
-      const stockXirrFlowsBase = [];
-      const evalDateIso = new Date().toISOString().split('T')[0];
+    const dayPnLBase = Fin.convertCurrency(dayPnL, currency, baseCurr);
+    const marketValueBase = Fin.convertCurrency(marketValue, currency, baseCurr);
+    const costBasisBase = Fin.convertCurrency(h.totalCostBasis, currency, baseCurr);
+    const historicalCostBasis = refCostForYoC;
+    const historicalCostBasisBase = Fin.convertCurrency(historicalCostBasis, currency, baseCurr);
+    const annualDivBase = Fin.convertCurrency(annualDivNative, currency, baseCurr);
+    const realizedGainBase = Fin.convertCurrency(h.realizedGain || 0, currency, baseCurr);
+    const totalDividendsBase = Fin.convertCurrency(h.totalDividends || 0, currency, baseCurr);
 
-      sortedTx.forEach(tx => {
-        if (tx.ticker !== ticker || !tx.date) return;
-        if (tx.type === 'BUY') {
-          const outlay = (Number(tx.shares) || 0) * (Number(tx.price) || 0) + (Number(tx.fees) || 0);
-          if (outlay > 0) {
-            stockXirrFlowsNative.push({ date: tx.date, amount: -outlay });
-            stockXirrFlowsBase.push({ date: tx.date, amount: -Fin.convertCurrency(outlay, currency, baseCurr) });
-          }
-        } else if (tx.type === 'SELL') {
-          const proceeds = (Number(tx.shares) || 0) * (Number(tx.price) || 0) - (Number(tx.fees) || 0);
-          if (proceeds > 0) {
-            stockXirrFlowsNative.push({ date: tx.date, amount: proceeds });
-            stockXirrFlowsBase.push({ date: tx.date, amount: Fin.convertCurrency(proceeds, currency, baseCurr) });
-          }
+    // Compute Per-Stock Annualized XIRR (Nominal & Inflation-Adjusted Real) from dated BUY/SELL/Dividend cash flows + terminal Market Value
+    const stockXirrFlowsNative = [];
+    const stockXirrFlowsBase = [];
+    const evalDateIso = new Date().toISOString().split('T')[0];
+
+    sortedTx.forEach(tx => {
+      if (tx.ticker !== ticker || !tx.date) return;
+      if (tx.type === 'BUY') {
+        const outlay = (Number(tx.shares) || 0) * (Number(tx.price) || 0) + (Number(tx.fees) || 0);
+        if (outlay > 0) {
+          stockXirrFlowsNative.push({ date: tx.date, amount: -outlay });
+          stockXirrFlowsBase.push({ date: tx.date, amount: -Fin.convertCurrency(outlay, currency, baseCurr) });
         }
-      });
-
-      state.dividends.forEach(div => {
-        if (div.ticker !== ticker) return;
-        const dDate = div.payDate || div.exDate;
-        if (!dDate) return;
-        const dAmt = Number(div.totalAmount) || 0;
-        if (dAmt > 0) {
-          const dCurr = div.currency || currency;
-          stockXirrFlowsNative.push({ date: dDate, amount: Fin.convertCurrency(dAmt, dCurr, currency) });
-          stockXirrFlowsBase.push({ date: dDate, amount: Fin.convertCurrency(dAmt, dCurr, baseCurr) });
+      } else if (tx.type === 'SELL') {
+        const proceeds = (Number(tx.shares) || 0) * (Number(tx.price) || 0) - (Number(tx.fees) || 0);
+        if (proceeds > 0) {
+          stockXirrFlowsNative.push({ date: tx.date, amount: proceeds });
+          stockXirrFlowsBase.push({ date: tx.date, amount: Fin.convertCurrency(proceeds, currency, baseCurr) });
         }
-      });
-
-      if (marketValue > 0) {
-        stockXirrFlowsNative.push({ date: evalDateIso, amount: marketValue });
-        stockXirrFlowsBase.push({ date: evalDateIso, amount: marketValueBase });
       }
+    });
 
-      const stockXirrPct = Fin.xirr(stockXirrFlowsNative);
-      const infRateSetting = Number(state.settings?.inflationRatePct ?? 2.2);
-      const stockRealXirrPct = stockXirrPct !== null ? Fin.realReturn(stockXirrPct, infRateSetting) : null;
+    state.dividends.forEach(div => {
+      if (div.ticker !== ticker) return;
+      const dDate = div.payDate || div.exDate;
+      if (!dDate) return;
+      const dAmt = Number(div.totalAmount) || 0;
+      if (dAmt > 0) {
+        const dCurr = div.currency || currency;
+        stockXirrFlowsNative.push({ date: dDate, amount: Fin.convertCurrency(dAmt, dCurr, currency) });
+        stockXirrFlowsBase.push({ date: dDate, amount: Fin.convertCurrency(dAmt, dCurr, baseCurr) });
+      }
+    });
 
-      activeHoldings.push({
-        ticker,
-        companyName,
-        sector,
-        currency,
-        shares: h.shares,
-        avgCost: h.avgCost,
-        totalCostBasis: h.totalCostBasis,
-        costBasisBase,
-        currentPrice,
-        priceChange: priceObj.change || 0,
-        priceChangePct: priceObj.changePct || 0,
-        low52w: priceMetrics.low52w,
-        high52w: priceMetrics.high52w,
-        pos52wPct: priceMetrics.pos52wPct,
-        momPct: priceMetrics.momPct,
-        qoqPct: priceMetrics.qoqPct,
-        yoyPct: priceMetrics.yoyPct,
-        momRefMonth: priceMetrics.momRefMonth,
-        qoqRefMonth: priceMetrics.qoqRefMonth,
-        yoyRefMonth: priceMetrics.yoyRefMonth,
-        divInfo,
-        sma20: priceMetrics.sma20,
-        sma50: priceMetrics.sma50,
-        sma200: priceMetrics.sma200,
-        rsi14: priceMetrics.rsi14,
-        atr14: priceMetrics.atr14,
-        suggestedStopLoss: priceMetrics.suggestedStopLoss,
-        regime: priceMetrics.regime,
-        regTrendAnnualPct: priceMetrics.regTrendAnnualPct,
-        regR2: priceMetrics.regR2,
-        alpha12mPct: priceMetrics.alpha12mPct,
-        benchSym: priceMetrics.benchSym,
-        signalScore: priceMetrics.signalScore,
-        signalLabel: priceMetrics.signalLabel,
-        pillarBreakdown: priceMetrics.pillarBreakdown,
-        signalReasons: priceMetrics.signalReasons,
-        marketValue,
-        marketValueBase,
-        unrealizedGain,
-        unrealizedGainPct,
-        totalDividends: h.totalDividends,
-        yieldOnCost,
-        xirrPct: stockXirrPct,
-        realXirrPct: stockRealXirrPct,
-        xirrFlowsBase: stockXirrFlowsBase,
-        forwardYoC,
-        annualForwardDivNative: Fin.round(annualDivNative, 2),
-        annualForwardDivBase: Fin.round(annualDivBase, 2),
-        realizedGain: h.realizedGain
-      });
+    if (marketValue > 0) {
+      stockXirrFlowsNative.push({ date: evalDateIso, amount: marketValue });
+      stockXirrFlowsBase.push({ date: evalDateIso, amount: marketValueBase });
+    }
 
+    const stockXirrPct = Fin.xirr(stockXirrFlowsNative);
+    const infRateSetting = Number(state.settings?.inflationRatePct ?? 2.2);
+    const stockRealXirrPct = stockXirrPct !== null ? Fin.realReturn(stockXirrPct, infRateSetting) : null;
+
+    const holdingRecord = {
+      ticker,
+      companyName,
+      sector,
+      currency,
+      isActive,
+      shares: h.shares,
+      avgCost: h.avgCost,
+      totalCostBasis: h.totalCostBasis,
+      costBasisBase,
+      cumulativeBuyCostBasis: h.cumulativeBuyCostBasis || 0,
+      historicalCostBasis,
+      historicalCostBasisBase,
+      currentPrice,
+      priceChange: validChange,
+      priceChangePct: validChangePct,
+      dayPnL,
+      dayPnLBase,
+      low52w: priceMetrics.low52w,
+      high52w: priceMetrics.high52w,
+      pos52wPct: priceMetrics.pos52wPct,
+      momPct: priceMetrics.momPct,
+      qoqPct: priceMetrics.qoqPct,
+      yoyPct: priceMetrics.yoyPct,
+      momRefMonth: priceMetrics.momRefMonth,
+      qoqRefMonth: priceMetrics.qoqRefMonth,
+      yoyRefMonth: priceMetrics.yoyRefMonth,
+      divInfo,
+      sma20: priceMetrics.sma20,
+      sma50: priceMetrics.sma50,
+      sma200: priceMetrics.sma200,
+      rsi14: priceMetrics.rsi14,
+      atr14: priceMetrics.atr14,
+      suggestedStopLoss: priceMetrics.suggestedStopLoss,
+      regime: priceMetrics.regime,
+      regTrendAnnualPct: priceMetrics.regTrendAnnualPct,
+      regR2: priceMetrics.regR2,
+      alpha12mPct: priceMetrics.alpha12mPct,
+      benchSym: priceMetrics.benchSym,
+      signalScore: priceMetrics.signalScore,
+      signalLabel: priceMetrics.signalLabel,
+      pillarBreakdown: priceMetrics.pillarBreakdown,
+      signalReasons: priceMetrics.signalReasons,
+      marketValue,
+      marketValueBase,
+      unrealizedGain,
+      unrealizedGainPct,
+      totalDividends: h.totalDividends,
+      totalDividendsBase,
+      yieldOnCost,
+      xirrPct: stockXirrPct,
+      realXirrPct: stockRealXirrPct,
+      xirrFlowsBase: stockXirrFlowsBase,
+      forwardYoC,
+      annualForwardDivNative: Fin.round(annualDivNative, 2),
+      annualForwardDivBase: Fin.round(annualDivBase, 2),
+      realizedGain: h.realizedGain,
+      realizedGainBase
+    };
+
+    allHoldings.push(holdingRecord);
+    if (isActive) {
+      activeHoldings.push(holdingRecord);
       totalStockMarketValue = Fin.round(totalStockMarketValue + marketValueBase, 2);
       totalStockCostBasis = Fin.round(totalStockCostBasis + costBasisBase, 2);
+      totalDayPnLBase = Fin.round(totalDayPnLBase + dayPnLBase, 2);
       estimatedAnnualForwardDivBase = Fin.round(estimatedAnnualForwardDivBase + annualDivBase, 2);
     }
   });
 
   activeHoldings.sort(compareHoldingsBySectorAndTicker);
+  allHoldings.sort(compareHoldingsBySectorAndTicker);
 
   const totalPortfolioValue = Fin.round(Math.max(0, state.cashBalance) + totalStockMarketValue, 2);
   const totalUnrealizedGain = Fin.round(totalStockMarketValue - totalStockCostBasis, 2);
@@ -2155,12 +2198,17 @@ function recalculatePortfolio() {
 
   const detectedDividends = detectUnloggedDividendEntitlements();
 
+  const prevTotalMvBase = totalStockMarketValue - totalDayPnLBase;
+  const totalDayPnLPct = prevTotalMvBase > 0 ? Fin.round((totalDayPnLBase / prevTotalMvBase) * 100, 2) : 0;
+
   portfolio = {
     baseCurrency: baseCurr,
     totalPortfolioValue,
     cashBalance: state.cashBalance,
     totalStockMarketValue,
     totalStockCostBasis,
+    totalDayPnL: totalDayPnLBase,
+    totalDayPnLPct,
     totalUnrealizedGain,
     totalUnrealizedGainPct,
     totalRealizedPnL,
@@ -2177,6 +2225,7 @@ function recalculatePortfolio() {
     inflationRatePct,
     detectedDividends,
     activeHoldings,
+    allHoldings,
     allHoldingsMap: holdingsMap
   };
 }

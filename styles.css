@@ -526,3 +526,13 @@ table tbody td,
     line-height: 1 !important;
   }
 }
+
+/* Keep Top Portfolio Total Row opaque in frozen first column (v3.2.4) */
+tr.portfolio-total-row > td.sticky-col-mobile {
+  z-index: 20 !important;
+  background-color: #eef2ff !important;
+}
+
+.dark tr.portfolio-total-row > td.sticky-col-mobile {
+  background-color: #0f172a !important;
+}
