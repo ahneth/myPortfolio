@@ -1041,7 +1041,7 @@ async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
   }
 
   const allTickers = Array.from(new Set([
-    ...(portfolio?.activeHoldings || []).map(h => h.ticker),
+    ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
     ...(state?.watchlist || []).map(w => w.ticker)
   ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
 
@@ -1065,10 +1065,14 @@ async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
 
   showToast(`Syncing live prices for ${allTickers.length} tickers & refreshing GitHub Python data...`, 'info');
 
-  // Step 1: If triggerGitHubWorkflow is true, dispatch update-historical-prices.yml on GitHub Actions (non-blocking)
+  // Step 1: If triggerGitHubWorkflow is true, dispatch update-historical-prices.yml on GitHub Actions with all holdings + watchlist tickers
   let workflowStatus = null;
   if (triggerGitHubWorkflow) {
-    workflowStatus = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml');
+    const missingHistTickers = allTickers.filter(t => !Array.isArray(state?.historicalPrices?.[t]) || state.historicalPrices[t].length === 0);
+    const dispatchTickers = missingHistTickers.length > 0 ? allTickers.join(',') : allTickers.join(',');
+    workflowStatus = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
+      tickers: dispatchTickers
+    });
   }
 
   // Step 2: Pull latest committed historical_prices.json from GitHub repository / same-origin (for 15y monthly history, dividends & technicals)

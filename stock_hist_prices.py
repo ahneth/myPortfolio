@@ -201,7 +201,6 @@ def discover_myportfolio_stocks(
     if cli_tickers:
         for part in re.split(r"[\s,]+", cli_tickers.strip()):
             add(part)
-        return tickers
 
     # 1. Check portfolio_tickers.json
     pt_path = repo_dir / "portfolio_tickers.json"

@@ -215,8 +215,21 @@ function renderApiStatusUI() {
     }
   }
 
-  if (syncLabel && state.settings.lastApiSync) {
-    syncLabel.textContent = `Last synced: ${new Date(state.settings.lastApiSync).toLocaleTimeString()}`;
+  const effectiveSyncTs = state?.settings?.lastApiSync
+    || state?.settings?.lastHistoricalPricesUpdate
+    || window.EXTERNAL_HISTORICAL_PRICES?._meta?.generatedAt
+    || null;
+  const formattedSyncDt = formatUpdateTimestamp(effectiveSyncTs);
+  if (syncLabel) {
+    syncLabel.textContent = effectiveSyncTs ? `Last synced: ${formattedSyncDt}` : 'Never synced';
+  }
+  const headerSyncLabel = document.getElementById('header-last-sync-label');
+  if (headerSyncLabel) {
+    headerSyncLabel.textContent = effectiveSyncTs ? `Last Sync: ${formattedSyncDt}` : 'Last Sync: Not synced yet';
+  }
+  const mobileSyncLabel = document.getElementById('mobile-last-sync-label');
+  if (mobileSyncLabel) {
+    mobileSyncLabel.textContent = effectiveSyncTs ? formattedSyncDt.slice(0, 16) : 'Not synced';
   }
 
   const provSelect = document.getElementById('setting-api-provider');
@@ -575,14 +588,20 @@ function formatTrendRegimeCell(m) {
   `;
 }
 
+function getSignalBadgeColorClasses(signalLabel) {
+  const label = String(signalLabel || 'HOLD').toUpperCase();
+  if (label === 'STRONG BUY') return 'bg-emerald-500 text-white border-emerald-400 shadow-sm shadow-emerald-500/30';
+  if (label === 'ACCUMULATE') return 'bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30';
+  if (label.includes('TRIM')) return 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30';
+  if (label.includes('SELL')) return 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30';
+  return 'bg-slate-500/15 text-slate-600 dark:text-slate-300 border-slate-500/30';
+}
+window.getSignalBadgeColorClasses = getSignalBadgeColorClasses;
+
 function formatSignalBadgeCell(ticker, m) {
   const score = Number(m?.signalScore ?? 50);
   const label = m?.signalLabel || 'HOLD';
-  let cls = 'bg-slate-500/15 text-slate-600 dark:text-slate-300 border-slate-500/30';
-  if (label === 'STRONG BUY') cls = 'bg-emerald-500 text-white border-emerald-400 shadow-sm shadow-emerald-500/30';
-  else if (label === 'ACCUMULATE') cls = 'bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30';
-  else if (label.includes('TRIM')) cls = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30';
-  else if (label.includes('SELL')) cls = 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30';
+  const cls = getSignalBadgeColorClasses(label);
 
   const reasonsTip = (m?.signalReasons || []).join(' • ');
   return `
@@ -2454,7 +2473,20 @@ async function handleWatchlistSubmit(e) {
       const fund = await MarketAPI.fetchFundamentals(ticker);
       if (fund) state.fundamentals[ticker] = fund;
       const hist = await MarketAPI.fetchMonthlyHistory(ticker);
-      if (hist?.length) state.historicalPrices[ticker] = hist;
+      if (hist?.length) {
+        state.historicalPrices[ticker] = hist;
+      } else if (typeof MarketAPI.triggerGitHubWorkflow === 'function') {
+        const allTickers = Array.from(new Set([
+          ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
+          ...(state?.watchlist || []).map(w => w.ticker)
+        ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
+        const wfRes = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
+          tickers: allTickers.join(',')
+        });
+        if (wfRes?.triggered) {
+          showToast(`Triggered GitHub Python workflow to fetch 15Y monthly history for ${ticker}!`, 'info');
+        }
+      }
       recalculatePortfolio();
       saveState();
       renderAll();
@@ -3019,7 +3051,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.5 • Build 20261104_2135)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.6 • Build 20261106_1855)...');
   }
 
   try {
@@ -3056,7 +3088,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.2.5 boot sequence complete — triggering initial one-time live price API fetch.');
+      AppLogger.info('Boot', 'myPortfolio v3.2.6 boot sequence complete — triggering initial one-time live price API fetch.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

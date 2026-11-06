@@ -221,3 +221,12 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
   3. **Ultra-Compact Row Margins for Trades & Dividend Payout Log Tables (`.compact-log-table`)**:
      - Reduced vertical cell padding in `renderTransactionsTable()` and `renderDividendsTable()` (`py-1 sm:py-1.5`), compacted the pagination footer (`renderTablePaginationControls`), and added `.compact-log-table` rules in `styles.css` (`padding-top/bottom: 0.13rem !important; line-height: 1.12 !important; font-size: 0.68rem !important;` on mobile `<= 640px`) so all 20 rows (`~296px` body height) fit on a single mobile screen without scrolling.
 
+
+## Version 3.2.6 (Build 20261106_1855) — 2026-11-06
+- **Watchlist Historical Price Sync Automation**:
+  - `api.js` (`syncAllMarketData`) & `app.js` (`handleWatchlistSubmit`): Automatically pass all current Holdings and Watchlist tickers in `inputs.tickers` when dispatching `update-historical-prices.yml` via GitHub Actions.
+  - `update_historical_prices.py` & `stock_hist_prices.py`: Made `--tickers` additive in `discover_tickers()` and ensured `_meta.tickers` always stores the full union of discovered and cached tickers.
+- **UI & Chart Layout Enhancements**:
+  - Removed `New Trade` and `Rebalance` buttons from the top header bar; placed `Rebalance` right next to `Record Trade` in the Holdings tab header.
+  - Added `Last Sync: YYYY-MM-DD HH:MM:SS` next to `Sync Market Data` in the top navigation bar.
+  - Moved ticker signal, period change, high, low, 52W high/low, MoM, QoQ, and YoY badges below the charts on the Holdings and Watchlist pages, positioned the charts closer to the tables, and unified the chart signal badge color scheme with the Holdings/Watchlist tables.

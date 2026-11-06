@@ -681,7 +681,7 @@ tr.portfolio-total-row > td.sticky-col-mobile {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.2.5 (20261104_2135)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.2.6 (20261106_1855)</span>
             </div>
           </div>
         </div>
@@ -697,24 +697,21 @@ tr.portfolio-total-row > td.sticky-col-mobile {
             <i id="header-sync-icon" class="fa-solid fa-cloud-arrow-down text-[11px]"></i>
             <span>Sync Market Data</span>
           </button>
+          <div class="h-3 w-px bg-slate-300 dark:bg-slate-600"></div>
+          <span id="header-last-sync-label" class="text-[11px] font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap" title="Latest live market data sync date &amp; time">Last Sync: Not synced yet</span>
         </div>
 
         <!-- Right Action Items -->
-        <div class="flex items-center gap-1 sm:gap-2.5 shrink-0">
-          <!-- Mobile API Sync Button -->
-          <button id="mobile-sync-api-btn" class="md:hidden w-7 h-7 sm:w-9 sm:h-9 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-brand-600 dark:text-brand-400 flex items-center justify-center transition" title="Sync Live Quotes & Trigger GitHub Python Workflow">
-            <i id="mobile-sync-icon" class="fa-solid fa-cloud-arrow-down text-xs sm:text-sm"></i>
-          </button>
-
-          <!-- Quick Trade Action -->
-          <button id="btn-open-rebalance-modal" class="hidden sm:flex px-3 py-1.5 sm:py-2 text-xs font-semibold rounded-lg bg-purple-600/15 hover:bg-purple-600/25 text-purple-600 dark:text-purple-400 border border-purple-500/30 transition items-center gap-1.5 whitespace-nowrap" title="Smart Cash Deployment & Rebalancing Simulator">
-            <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
-            <span>Rebalance</span>
-          </button>
-          <button id="btn-open-trade-modal" class="px-2 sm:px-3.5 py-1 sm:py-2 text-[11px] sm:text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center gap-1 sm:gap-1.5 shadow-md shadow-brand-600/20 whitespace-nowrap">
-            <i class="fa-solid fa-plus text-[10px] sm:text-xs"></i>
-            <span>New Trade</span>
-          </button>
+        <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <!-- Mobile API Sync Button + Last Sync Timestamp -->
+          <div class="md:hidden flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-2 py-1 rounded-lg border border-slate-200 dark:border-dark-border">
+            <button id="mobile-sync-api-btn" class="text-brand-600 dark:text-brand-400 flex items-center gap-1 text-[11px] font-semibold transition" title="Sync Live Quotes &amp; Trigger GitHub Python Workflow">
+              <i id="mobile-sync-icon" class="fa-solid fa-cloud-arrow-down text-xs"></i>
+              <span>Sync</span>
+            </button>
+            <span class="text-slate-300 dark:text-slate-600">|</span>
+            <span id="mobile-last-sync-label" class="text-[10px] font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap" title="Latest live market data sync date &amp; time">Not synced</span>
+          </div>
 
           <!-- Dark / Light Mode Toggle -->
           <button id="theme-toggle" class="w-7 h-7 sm:w-9 sm:h-9 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition" aria-label="Toggle Theme">
@@ -1034,8 +1031,8 @@ tr.portfolio-total-row > td.sticky-col-mobile {
     </div>
 
     <!-- ==================== TAB 2: HOLDINGS & INVENTORY ==================== -->
-    <div id="tab-content-holdings" class="tab-pane hidden space-y-6 py-2 sm:py-3">
-      <div class="my-3 sm:my-5 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
+    <div id="tab-content-holdings" class="tab-pane hidden space-y-2.5 py-2 sm:py-3">
+      <div class="mt-2 mb-1 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
         <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
@@ -1069,6 +1066,10 @@ tr.portfolio-total-row > td.sticky-col-mobile {
             </div>
             <button id="btn-holdings-new-trade" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center gap-1.5 shadow-sm">
               <i class="fa-solid fa-plus text-xs"></i> Record Trade
+            </button>
+            <button id="btn-open-rebalance-modal" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-purple-600/15 hover:bg-purple-600/25 text-purple-600 dark:text-purple-400 border border-purple-500/30 transition flex items-center gap-1.5 whitespace-nowrap" title="Smart Cash Deployment &amp; Rebalancing Simulator">
+              <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+              <span>Rebalance</span>
             </button>
             <button id="btn-refresh-prices-now" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-1.5" title="Fetch Live Quotes Only">
               <i id="btn-refresh-prices-icon" class="fa-solid fa-rotate text-xs"></i> Sync Live Quotes
@@ -1119,8 +1120,8 @@ tr.portfolio-total-row > td.sticky-col-mobile {
       </div>
 
       <!-- Inline Stock Monthly Historical Price Chart (Shown below Holdings table when clicking a stock) -->
-      <div id="holdings-stock-chart-card" class="hidden bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+      <div id="holdings-stock-chart-card" class="hidden bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-3 sm:p-4 rounded-2xl shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
           <div>
             <div class="flex items-center gap-2">
               <i class="fa-solid fa-chart-line text-brand-500"></i>
@@ -1129,7 +1130,6 @@ tr.portfolio-total-row > td.sticky-col-mobile {
             <p id="holdings-chart-stock-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Click any stock row in Holdings above to inspect its monthly closing price trend</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <div id="holdings-chart-period-stats" class="flex flex-wrap items-center gap-1.5"></div>
             <button type="button" onclick="toggleChartOverlay('sma', 'holdings')" class="btn-toggle-chart-sma px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40 transition" title="Toggle SMA 20/50/200 Moving Average Overlays">SMA Overlays</button>
             <button type="button" onclick="toggleChartOverlay('reg', 'holdings')" class="btn-toggle-chart-reg px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/40 transition" title="Toggle 12M Log-Linear Regression Trend Channel">12M Reg Channel</button>
             <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
@@ -1144,15 +1144,16 @@ tr.portfolio-total-row > td.sticky-col-mobile {
             </button>
           </div>
         </div>
-        <div id="holdings-chart-trade-marker-box" class="hidden mt-3 space-y-1.5"></div>
-        <div class="pt-4 relative chart-container stock-history-chart-box h-[350px] sm:h-[430px] min-h-[350px] sm:min-h-[430px]">
+        <div id="holdings-chart-trade-marker-box" class="hidden mt-2 space-y-1.5"></div>
+        <div class="pt-2 relative chart-container stock-history-chart-box h-[350px] sm:h-[430px] min-h-[350px] sm:min-h-[430px]">
           <canvas id="chart-holdings-stock-history"></canvas>
           <div id="holdings-chart-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 text-slate-400 text-sm bg-white/80 dark:bg-dark-card/80">
             <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-brand-500"></i>
             <span>Loading monthly historical price series...</span>
           </div>
         </div>
-        <div id="holdings-chart-legend" class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs"></div>
+        <div id="holdings-chart-period-stats" class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-1.5"></div>
+        <div id="holdings-chart-legend" class="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs"></div>
       </div>
     </div>
 
@@ -1358,9 +1359,9 @@ tr.portfolio-total-row > td.sticky-col-mobile {
     </div>
 
     <!-- ==================== TAB 5: WATCHLIST & VALUATION ==================== -->
-    <div id="tab-content-watchlist" class="tab-pane hidden space-y-6 py-2 sm:py-3">
+    <div id="tab-content-watchlist" class="tab-pane hidden space-y-2.5 py-2 sm:py-3">
       <!-- Watchlist Section -->
-      <div class="my-3 sm:my-5 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
+      <div class="mt-2 mb-1 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
         <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
@@ -1428,8 +1429,8 @@ tr.portfolio-total-row > td.sticky-col-mobile {
       </div>
 
       <!-- Inline Stock Monthly Historical Price Chart (Shown below Watchlist table when clicking a stock) -->
-      <div id="watchlist-stock-chart-card" class="hidden bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+      <div id="watchlist-stock-chart-card" class="hidden bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-3 sm:p-4 rounded-2xl shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
           <div>
             <div class="flex items-center gap-2">
               <i class="fa-solid fa-chart-line text-purple-500"></i>
@@ -1438,7 +1439,6 @@ tr.portfolio-total-row > td.sticky-col-mobile {
             <p id="watchlist-chart-stock-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Click any stock row in Watchlist above to inspect its monthly closing price trend</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
-            <div id="watchlist-chart-period-stats" class="flex flex-wrap items-center gap-1.5"></div>
             <button type="button" onclick="toggleChartOverlay('sma', 'watchlist')" class="btn-toggle-chart-sma px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40 transition" title="Toggle SMA 20/50/200 Moving Average Overlays">SMA Overlays</button>
             <button type="button" onclick="toggleChartOverlay('reg', 'watchlist')" class="btn-toggle-chart-reg px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/40 transition" title="Toggle 12M Log-Linear Regression Trend Channel">12M Reg Channel</button>
             <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
@@ -1453,14 +1453,15 @@ tr.portfolio-total-row > td.sticky-col-mobile {
             </button>
           </div>
         </div>
-        <div class="pt-4 relative chart-container stock-history-chart-box h-[350px] sm:h-[430px] min-h-[350px] sm:min-h-[430px]">
+        <div class="pt-2 relative chart-container stock-history-chart-box h-[350px] sm:h-[430px] min-h-[350px] sm:min-h-[430px]">
           <canvas id="chart-watchlist-stock-history"></canvas>
           <div id="watchlist-chart-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 text-slate-400 text-sm bg-white/80 dark:bg-dark-card/80">
             <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-purple-500"></i>
             <span>Loading monthly historical price series...</span>
           </div>
         </div>
-        <div id="watchlist-chart-legend" class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs"></div>
+        <div id="watchlist-chart-period-stats" class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-1.5"></div>
+        <div id="watchlist-chart-legend" class="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs"></div>
       </div>
 
       <!-- Fundamental Analysis & Intrinsic Fair-Value Matrix -->
@@ -1958,13 +1959,13 @@ tr.portfolio-total-row > td.sticky-col-mobile {
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.2.5 • Build 20261104_2135</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.2.6 • Build 20261106_1855</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261104_2135</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261106_1855</span>/
           </span>
         </div>
 
@@ -2199,7 +2200,7 @@ tr.portfolio-total-row > td.sticky-col-mobile {
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 flex flex-col lg:flex-row items-center justify-between gap-2.5">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.2.5 (Build 20261104_2135)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.2.6 (Build 20261106_1855)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
       <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
@@ -2641,10 +2642,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.2.5',
-  buildId: '20261104_2135',
-  releaseDate: '2026-11-04 21:35 HKT',
-  driveFolder: '/myPortfolio/20261104_2135/',
+  appVersion: '3.2.6',
+  buildId: '20261106_1855',
+  releaseDate: '2026-11-06 18:55 HKT',
+  driveFolder: '/myPortfolio/20261106_1855/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -2658,8 +2659,20 @@ var APP_VERSION_MANIFEST = {
   },
   changelog: [
     {
+      version: '3.2.6',
+      buildId: '20261106_1855',
+      date: '2026-11-06 18:55 HKT',
+      summary: 'Automated Watchlist/Holdings ticker sync to GitHub Actions, moved Rebalance button to Holdings header, added Last Sync timestamp next to Sync Market Data in top bar, and moved chart ticker signal & period metrics below Holdings/Watchlist charts with unified table signal color scheme.',
+      changes: [
+        'Updated syncAllMarketData() in api.js and handleWatchlistSubmit() in app.js to pass all current Holdings and Watchlist tickers in inputs.tickers when triggering update-historical-prices.yml on GitHub Actions.',
+        'Updated discover_tickers() in update_historical_prices.py (and stock_hist_prices.py) so --tickers merges new tickers into the full _meta.tickers portfolio/watchlist universe.',
+        'Removed New Trade and Rebalance buttons from the top navigation header, added Rebalance next to Record Trade in the Holdings header, and added the Last Sync date and time display next to Sync Market Data in the top header.',
+        'Moved ticker signal, period change, period high/low, 52W low/high, MoM, QoQ, and YoY badges below the Holdings and Watchlist charts, reduced spacing between the tables and charts, and unified the chart signal badge color scheme with the Holdings/Watchlist tables.'
+      ]
+    },
+    {
       version: '3.2.5',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-11-04 21:35 HKT',
       summary: 'Fixed missing October 2026 (2026-10) monthly data for London Stock Exchange ETFs (SPYL.L, VWRA.L) caused by British Summer Time (BST = UTC+1) midnight timestamps shifting back 1 hour into the previous month when parsed in UTC.',
       changes: [
@@ -2670,7 +2683,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.4',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-11-04 15:15 HKT',
       summary: 'Enhanced the Holdings table with Day P&L, reordered Market Value / Unrealized P&L / Div / Ex-Date next to Day P&L, added Accumulated Div and Realized P&L columns, added a top PORTFOLIO TOTAL aggregation row, included all historical (0-share closed) holdings with an "Active only" checkbox, and added clickable Monthly Buy (Blue X) and Sell (Red X) markers on the Holdings stock chart.',
       changes: [
@@ -2683,7 +2696,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.3',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-11-04 14:35 HKT',
       summary: 'Removed header subtitle ("Global HK, US & London Stock Portfolio Tracker") and "Test 2800.HK & VOO" button, added automatic one-time Live Price API fetch on initial page load, enforced a 3-month (90-day) cutoff for fetching and retaining company news, and displayed the latest update dates and times for Historical Monthly Prices and News Analysis in the page footer.',
       changes: [
@@ -2695,7 +2708,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.2',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-11-04 13:50 HKT',
       summary: 'Halved the fixed height of the Holdings and Watchlist scrollable table viewports so they take significantly less vertical screen space and leave ample room for the stock charts and page scrolling.',
       changes: [
@@ -2705,7 +2718,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.1',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-11-04 13:10 HKT',
       summary: 'Moved Live Price column immediately after Asset / Sector in Holdings and Watchlist tables, added fixed-height single-screen scrollable table viewports with vertical/horizontal scrollbars and top/bottom page margins, removed TOP ETF badge, enabled freeze-pane first column on PC desktop and mobile, expanded PC desktop layout to 100% full browser width with permanently pinned top title/tab bar, and unified compact row top/bottom margins across all tables in the app.',
       changes: [
@@ -2719,7 +2732,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.0',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-11-01 20:15 HKT',
       summary: 'Added Signal filter dropdowns on Holdings and Watchlist pages, grouped Watchlist stocks by collapsible sectors with ETF top-priority sorting, and reduced vertical row margins on Transaction Audit Log and Dividend Payout Logs so all 20 paginated rows fit on a single mobile screen without scrolling.',
       changes: [
@@ -2730,7 +2743,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.9',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-11-01 19:45 HKT',
       summary: 'Fixed historical monthly Close vs. Low mismatch on multi-year charts by aligning Monthly Close to unadjusted market close (rawClose) on the same price scale as Monthly High, Monthly Low, and Avg Cost.',
       changes: [
@@ -2740,7 +2753,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.8',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-11-01 14:05 HKT',
       summary: 'Moved stock chart legend below the chart canvas, added translucent green Monthly High–Low range band around Monthly Close, increased Reg Trend Upper/Lower visibility and chart height (350px–430px), restricted top KPI summary cards to the Home (Dashboard) page only, and added 20-row pagination (Prev 20 / Next 20) to all Transaction and Dividend tables.',
       changes: [
@@ -2753,7 +2766,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.7',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-11-01',
       changes: [
         'Added automatic startup and ingestion data validation for historical monthly price series, technical indicators, and company news feeds',
@@ -2763,7 +2776,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.6',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-11-01',
       changes: [
         'Dedicated browser MarketAPI strictly to fast parallel Live Price quotes only (eliminated all third-party browser API calls for 15y historical data and news)',
@@ -2774,7 +2787,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.5',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-10-31',
       changes: [
         'Changed clicked/selected row highlight in Holdings and Watchlist (and active nav tabs) to dark slate grey (#1e293b) for high-contrast text readability in dark mode',
@@ -2783,7 +2796,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.4',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-10-31',
       changes: [
         'Fixed Holdings sector group header sticky bar width on mobile (changed sticky cell from colspan=3 to colspan=1 matching stock rows) so sector subtotals/aggregates are never blocked during horizontal scroll',
@@ -2792,7 +2805,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.3',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-10-31',
       changes: [
         'Styled unpaid/pending dividends (where Ex-Date has passed but Pay Date is in the future) in distinct amber/yellow font color with an Unpaid badge in Dividend Payout Logs',
@@ -2802,7 +2815,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.2',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-10-31',
       changes: [
         'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging legacy baseline dates with live Yahoo Finance ex-dates',
@@ -2814,7 +2827,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.1',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-10-31',
       changes: [
         'Fixed Service Worker (sw.js) cache-first trap by bumping cache version and switching to Network-First plus automatic stale CacheStorage purge on startup',
@@ -2824,7 +2837,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.0',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-10-31 16:50 HKT',
       title: '1-Day Quote Previous-Close Fix, 100% Cash Dividends, Dividend Ticker Filter, Complete 3476.HK/3433.HK Dividends & TRIM/OFFLOAD Signal Engine',
       changes: [
@@ -2837,7 +2850,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.1',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-10-31 11:15 HKT',
       title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
       changes: [
@@ -2852,7 +2865,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.0',
-      buildId: '20261104_2135',
+      buildId: '20261106_1855',
       date: '2026-10-30 23:30 HKT',
       title: 'Full Quantitative Suite: 2018+ Auto-Dividends, Buy/Sell Signal Engine, Scheduled News, Trend Regimes, Real XIRR & Settings Customizer',
       changes: [
@@ -2867,7 +2880,6 @@ var APP_VERSION_MANIFEST = {
 };
 
 window.APP_VERSION_MANIFEST = APP_VERSION_MANIFEST;
-
   </script>
   <!-- Module: logger.js -->
   <script data-module="logger.js">
@@ -3328,7 +3340,6 @@ var AppLogger = (function() {
 })();
 
 window.AppLogger = AppLogger;
-
   </script>
   <!-- Module: utils.js -->
   <script data-module="utils.js">
@@ -3648,7 +3659,6 @@ var DeviceDetector = {
 
 window.Fin = Fin;
 window.DeviceDetector = DeviceDetector;
-
   </script>
   <!-- Module: api.js -->
   <script data-module="api.js">
@@ -4695,7 +4705,7 @@ async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
   }
 
   const allTickers = Array.from(new Set([
-    ...(portfolio?.activeHoldings || []).map(h => h.ticker),
+    ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
     ...(state?.watchlist || []).map(w => w.ticker)
   ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
 
@@ -4719,10 +4729,14 @@ async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
 
   showToast(`Syncing live prices for ${allTickers.length} tickers & refreshing GitHub Python data...`, 'info');
 
-  // Step 1: If triggerGitHubWorkflow is true, dispatch update-historical-prices.yml on GitHub Actions (non-blocking)
+  // Step 1: If triggerGitHubWorkflow is true, dispatch update-historical-prices.yml on GitHub Actions with all holdings + watchlist tickers
   let workflowStatus = null;
   if (triggerGitHubWorkflow) {
-    workflowStatus = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml');
+    const missingHistTickers = allTickers.filter(t => !Array.isArray(state?.historicalPrices?.[t]) || state.historicalPrices[t].length === 0);
+    const dispatchTickers = missingHistTickers.length > 0 ? allTickers.join(',') : allTickers.join(',');
+    workflowStatus = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
+      tickers: dispatchTickers
+    });
   }
 
   // Step 2: Pull latest committed historical_prices.json from GitHub repository / same-origin (for 15y monthly history, dividends & technicals)
@@ -5005,7 +5019,6 @@ window.MarketAPI = MarketAPI;
 window.syncAllMarketData = syncAllMarketData;
 window.syncFundamentalsViaAPI = syncFundamentalsViaAPI;
 window.triggerRowPriceFlash = triggerRowPriceFlash;
-
   </script>
   <!-- Module: portfolio.js -->
   <script data-module="portfolio.js">
@@ -7680,7 +7693,6 @@ window.restorePortfolioFromExcel = restorePortfolioFromExcel;
 window.ingestHistoricalPricesData = ingestHistoricalPricesData;
 window.ingestCompanyNewsData = ingestCompanyNewsData;
 window.normalizeNewsArticleSchema = normalizeNewsArticleSchema;
-
   </script>
   <!-- Module: charts.js -->
   <script data-module="charts.js">
@@ -8157,16 +8169,23 @@ function renderInlineStockChart(tabType) {
   const companyName = fund.name || ticker;
   const pm = typeof computeStockPriceMetrics === 'function' ? computeStockPriceMetrics(ticker, priceObj.price || 0) : null;
 
+  const sigColorCls = (typeof getSignalBadgeColorClasses === 'function')
+    ? getSignalBadgeColorClasses(pm?.signalLabel)
+    : (() => {
+        const lbl = String(pm?.signalLabel || 'HOLD').toUpperCase();
+        if (lbl === 'STRONG BUY') return 'bg-emerald-500 text-white border-emerald-400 shadow-sm shadow-emerald-500/30';
+        if (lbl === 'ACCUMULATE') return 'bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30';
+        if (lbl.includes('TRIM')) return 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30';
+        if (lbl.includes('SELL')) return 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30';
+        return 'bg-slate-500/15 text-slate-600 dark:text-slate-300 border-slate-500/30';
+      })();
+
+  const sigPill = pm
+    ? `<button type="button" onclick="openSignalDetailModal('${ticker}')" class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition hover:scale-105 ${sigColorCls}" title="Click for full 4-Pillar Technical & Qualitative Signal Breakdown">${pm.signalLabel} (${pm.signalScore}/100)</button>`
+    : '';
+
   if (titleEl) {
-    const sigPill = pm
-      ? `<button type="button" onclick="openSignalDetailModal('${ticker}')" class="ml-2 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold border ${
-          pm.signalScore >= 78 ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30' :
-          pm.signalScore >= 64 ? 'bg-teal-500/15 text-teal-500 border-teal-500/30' :
-          pm.signalScore >= 42 ? 'bg-slate-500/15 text-slate-500 border-slate-500/30' :
-          'bg-amber-500/15 text-amber-500 border-amber-500/30'
-        }">${pm.signalLabel} (${pm.signalScore}/100)</button>`
-      : '';
-    titleEl.innerHTML = `<span class="font-mono text-brand-600 dark:text-brand-400">${ticker}</span> <span class="text-slate-400 font-normal">&mdash;</span> <span>${companyName}</span>${sigPill}`;
+    titleEl.innerHTML = `<span class="font-mono text-brand-600 dark:text-brand-400">${ticker}</span> <span class="text-slate-400 font-normal">&mdash;</span> <span>${companyName}</span>`;
   }
 
   if (series.length === 0) {
@@ -8175,11 +8194,11 @@ function renderInlineStockChart(tabType) {
       emptyEl.innerHTML = `
         <i class="fa-solid fa-chart-line text-3xl mb-2 opacity-35"></i>
         <span class="font-medium text-slate-500 dark:text-slate-300">No historical monthly price data available for ${ticker}</span>
-        <span class="text-xs text-slate-400 mt-1">Run <code>update_historical_prices.py</code> / GitHub Action to populate <code>historical_prices.json</code> or click "Sync".</span>
+        <span class="text-xs text-slate-400 mt-1">Click "Sync Market Data" at the top (with GitHub Token in Settings) or run <code>update_historical_prices.py --tickers ${ticker}</code> to populate <code>historical_prices.json</code>.</span>
       `;
     }
     if (subEl) subEl.textContent = `Regime: ${pm?.regime || 'Awaiting History'} • RSI(14): ${pm?.rsi14 ?? '-'} • Next Ex-Date: ${pm?.divInfo?.nextExDate || '-'}`;
-    if (statsEl) statsEl.innerHTML = '';
+    if (statsEl) statsEl.innerHTML = sigPill;
     if (legendEl) legendEl.innerHTML = '';
     return;
   }
@@ -8233,6 +8252,7 @@ function renderInlineStockChart(tabType) {
          </span>`
       : '';
     statsEl.innerHTML = `
+      ${sigPill}
       <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${chgClass}">
         ${periodTag} Change: ${Fin.percent(periodChangePct, true)} (${Fin.currency(periodChange, true, currency)})
       </span>
@@ -8808,7 +8828,6 @@ window.renderInlineStockChart = renderInlineStockChart;
 window.renderAllocationChart = renderAllocationChart;
 window.renderDividendsChart = renderDividendsChart;
 window.renderPnlBreakdownChart = renderPnlBreakdownChart;
-
   </script>
   <!-- Module: app.js -->
   <script data-module="app.js">
@@ -9029,8 +9048,21 @@ function renderApiStatusUI() {
     }
   }
 
-  if (syncLabel && state.settings.lastApiSync) {
-    syncLabel.textContent = `Last synced: ${new Date(state.settings.lastApiSync).toLocaleTimeString()}`;
+  const effectiveSyncTs = state?.settings?.lastApiSync
+    || state?.settings?.lastHistoricalPricesUpdate
+    || window.EXTERNAL_HISTORICAL_PRICES?._meta?.generatedAt
+    || null;
+  const formattedSyncDt = formatUpdateTimestamp(effectiveSyncTs);
+  if (syncLabel) {
+    syncLabel.textContent = effectiveSyncTs ? `Last synced: ${formattedSyncDt}` : 'Never synced';
+  }
+  const headerSyncLabel = document.getElementById('header-last-sync-label');
+  if (headerSyncLabel) {
+    headerSyncLabel.textContent = effectiveSyncTs ? `Last Sync: ${formattedSyncDt}` : 'Last Sync: Not synced yet';
+  }
+  const mobileSyncLabel = document.getElementById('mobile-last-sync-label');
+  if (mobileSyncLabel) {
+    mobileSyncLabel.textContent = effectiveSyncTs ? formattedSyncDt.slice(0, 16) : 'Not synced';
   }
 
   const provSelect = document.getElementById('setting-api-provider');
@@ -9389,14 +9421,20 @@ function formatTrendRegimeCell(m) {
   `;
 }
 
+function getSignalBadgeColorClasses(signalLabel) {
+  const label = String(signalLabel || 'HOLD').toUpperCase();
+  if (label === 'STRONG BUY') return 'bg-emerald-500 text-white border-emerald-400 shadow-sm shadow-emerald-500/30';
+  if (label === 'ACCUMULATE') return 'bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30';
+  if (label.includes('TRIM')) return 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30';
+  if (label.includes('SELL')) return 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30';
+  return 'bg-slate-500/15 text-slate-600 dark:text-slate-300 border-slate-500/30';
+}
+window.getSignalBadgeColorClasses = getSignalBadgeColorClasses;
+
 function formatSignalBadgeCell(ticker, m) {
   const score = Number(m?.signalScore ?? 50);
   const label = m?.signalLabel || 'HOLD';
-  let cls = 'bg-slate-500/15 text-slate-600 dark:text-slate-300 border-slate-500/30';
-  if (label === 'STRONG BUY') cls = 'bg-emerald-500 text-white border-emerald-400 shadow-sm shadow-emerald-500/30';
-  else if (label === 'ACCUMULATE') cls = 'bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30';
-  else if (label.includes('TRIM')) cls = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30';
-  else if (label.includes('SELL')) cls = 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30';
+  const cls = getSignalBadgeColorClasses(label);
 
   const reasonsTip = (m?.signalReasons || []).join(' • ');
   return `
@@ -11268,7 +11306,20 @@ async function handleWatchlistSubmit(e) {
       const fund = await MarketAPI.fetchFundamentals(ticker);
       if (fund) state.fundamentals[ticker] = fund;
       const hist = await MarketAPI.fetchMonthlyHistory(ticker);
-      if (hist?.length) state.historicalPrices[ticker] = hist;
+      if (hist?.length) {
+        state.historicalPrices[ticker] = hist;
+      } else if (typeof MarketAPI.triggerGitHubWorkflow === 'function') {
+        const allTickers = Array.from(new Set([
+          ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
+          ...(state?.watchlist || []).map(w => w.ticker)
+        ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
+        const wfRes = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
+          tickers: allTickers.join(',')
+        });
+        if (wfRes?.triggered) {
+          showToast(`Triggered GitHub Python workflow to fetch 15Y monthly history for ${ticker}!`, 'info');
+        }
+      }
       recalculatePortfolio();
       saveState();
       renderAll();
@@ -11833,7 +11884,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.5 • Build 20261104_2135)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.6 • Build 20261106_1855)...');
   }
 
   try {
@@ -11870,7 +11921,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.2.5 boot sequence complete — triggering initial one-time live price API fetch.');
+      AppLogger.info('Boot', 'myPortfolio v3.2.6 boot sequence complete — triggering initial one-time live price API fetch.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;
@@ -11902,7 +11953,6 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 window.openTradeModal = openTradeModal;
 window.bootstrapPortfolioApp = bootstrapPortfolioApp;
-
   </script>
 </body>
 </html>

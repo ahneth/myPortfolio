@@ -471,16 +471,23 @@ function renderInlineStockChart(tabType) {
   const companyName = fund.name || ticker;
   const pm = typeof computeStockPriceMetrics === 'function' ? computeStockPriceMetrics(ticker, priceObj.price || 0) : null;
 
+  const sigColorCls = (typeof getSignalBadgeColorClasses === 'function')
+    ? getSignalBadgeColorClasses(pm?.signalLabel)
+    : (() => {
+        const lbl = String(pm?.signalLabel || 'HOLD').toUpperCase();
+        if (lbl === 'STRONG BUY') return 'bg-emerald-500 text-white border-emerald-400 shadow-sm shadow-emerald-500/30';
+        if (lbl === 'ACCUMULATE') return 'bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30';
+        if (lbl.includes('TRIM')) return 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30';
+        if (lbl.includes('SELL')) return 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30';
+        return 'bg-slate-500/15 text-slate-600 dark:text-slate-300 border-slate-500/30';
+      })();
+
+  const sigPill = pm
+    ? `<button type="button" onclick="openSignalDetailModal('${ticker}')" class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold border transition hover:scale-105 ${sigColorCls}" title="Click for full 4-Pillar Technical & Qualitative Signal Breakdown">${pm.signalLabel} (${pm.signalScore}/100)</button>`
+    : '';
+
   if (titleEl) {
-    const sigPill = pm
-      ? `<button type="button" onclick="openSignalDetailModal('${ticker}')" class="ml-2 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold border ${
-          pm.signalScore >= 78 ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30' :
-          pm.signalScore >= 64 ? 'bg-teal-500/15 text-teal-500 border-teal-500/30' :
-          pm.signalScore >= 42 ? 'bg-slate-500/15 text-slate-500 border-slate-500/30' :
-          'bg-amber-500/15 text-amber-500 border-amber-500/30'
-        }">${pm.signalLabel} (${pm.signalScore}/100)</button>`
-      : '';
-    titleEl.innerHTML = `<span class="font-mono text-brand-600 dark:text-brand-400">${ticker}</span> <span class="text-slate-400 font-normal">&mdash;</span> <span>${companyName}</span>${sigPill}`;
+    titleEl.innerHTML = `<span class="font-mono text-brand-600 dark:text-brand-400">${ticker}</span> <span class="text-slate-400 font-normal">&mdash;</span> <span>${companyName}</span>`;
   }
 
   if (series.length === 0) {
@@ -489,11 +496,11 @@ function renderInlineStockChart(tabType) {
       emptyEl.innerHTML = `
         <i class="fa-solid fa-chart-line text-3xl mb-2 opacity-35"></i>
         <span class="font-medium text-slate-500 dark:text-slate-300">No historical monthly price data available for ${ticker}</span>
-        <span class="text-xs text-slate-400 mt-1">Run <code>update_historical_prices.py</code> / GitHub Action to populate <code>historical_prices.json</code> or click "Sync".</span>
+        <span class="text-xs text-slate-400 mt-1">Click "Sync Market Data" at the top (with GitHub Token in Settings) or run <code>update_historical_prices.py --tickers ${ticker}</code> to populate <code>historical_prices.json</code>.</span>
       `;
     }
     if (subEl) subEl.textContent = `Regime: ${pm?.regime || 'Awaiting History'} • RSI(14): ${pm?.rsi14 ?? '-'} • Next Ex-Date: ${pm?.divInfo?.nextExDate || '-'}`;
-    if (statsEl) statsEl.innerHTML = '';
+    if (statsEl) statsEl.innerHTML = sigPill;
     if (legendEl) legendEl.innerHTML = '';
     return;
   }
@@ -547,6 +554,7 @@ function renderInlineStockChart(tabType) {
          </span>`
       : '';
     statsEl.innerHTML = `
+      ${sigPill}
       <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${chgClass}">
         ${periodTag} Change: ${Fin.percent(periodChangePct, true)} (${Fin.currency(periodChange, true, currency)})
       </span>

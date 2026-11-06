@@ -221,3 +221,16 @@ ightarrow$ `Actions`.
   - Cross-checks the monthly bar series against the 2-year daily bar series (`daily_bars`) on every run of `update_historical_prices.py` so any month present in `daily_bars` is guaranteed to exist in `prices[sym]`.
 - **Client-Side Shifted Month-End Auto-Normalization (`ingestHistoricalPricesData` in `portfolio.js`)**:
   - Automatically detects UTC-shifted 1st-of-month bars dated on the last day of the prior month (e.g., `2026-09-30` for `2026-10-01 BST`) in existing `historical_prices.json` payloads and normalizes them to their true calendar month (`2026-10`) immediately on load.
+
+
+## 18. Version 3.2.6 Architecture Update (Build 20261106_1855)
+- **Automatic Watchlist & Holdings Ticker Sync to GitHub Actions (`api.js`, `app.js`, `update_historical_prices.py`, `stock_hist_prices.py`)**:
+  - `syncAllMarketData()` in `api.js` and `handleWatchlistSubmit()` in `app.js` now automatically pass the user's complete Holdings + Watchlist ticker list (`inputs: { tickers: allTickers.join(',') }`) when triggering `update-historical-prices.yml`.
+  - `discover_tickers()` in `update_historical_prices.py` (and `discover_myportfolio_stocks()` in `stock_hist_prices.py`) merges `--tickers` with the full portfolio universe (`DEFAULT_TICKERS`, `portfolio_tickers.json`, existing `historical_prices.json`, and `.xlsx` backups) so `_meta.tickers` always retains the full union of tickers.
+- **Top Header & Holdings Action Bar Streamlining (`index.html`, `app.js`)**:
+  - Removed the `New Trade` and `Rebalance` buttons from `#app-top-header` (trades are recorded via the Holdings and Transactions tabs).
+  - Added the `Rebalance` button (`#btn-open-rebalance-modal`) next to `Record Trade` (`#btn-holdings-new-trade`) in the Holdings header.
+  - Added `#header-last-sync-label` (and `#mobile-last-sync-label`) next to `Sync Market Data` in `#app-top-header` displaying the latest sync date and time (`YYYY-MM-DD HH:MM:SS`).
+- **Holdings & Watchlist Chart Layout & Unified Signal Badge Colors (`index.html`, `charts.js`, `app.js`)**:
+  - Moved the ticker signal badge and period stats (`#holdings-chart-period-stats` and `#watchlist-chart-period-stats`: Signal, Period Change, High/Low, 52W High/Low, MoM, QoQ, YoY) below the chart canvas and tightened spacing between the tables and charts.
+  - Unified the chart signal badge color scheme with the Holdings and Watchlist tables via `getSignalBadgeColorClasses(signalLabel)` (`STRONG BUY` emerald solid, `ACCUMULATE` teal, `HOLD` slate, `TRIM` amber, `SELL` rose).

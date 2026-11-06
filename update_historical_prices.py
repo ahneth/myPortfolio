@@ -56,8 +56,8 @@ except ImportError:
     yf = None
     HAS_YFINANCE = False
 
-VERSION = "3.2.5"
-BUILD_ID = "20261104_2135"
+VERSION = "3.2.6"
+BUILD_ID = "20261106_1855"
 
 DEFAULT_TICKERS: List[str] = [
     "2800.HK",
@@ -475,7 +475,6 @@ def discover_tickers(
     if cli_tickers:
         for part in re.split(r"[\s,]+", cli_tickers.strip()):
             add(part)
-        return tickers
 
     for t in DEFAULT_TICKERS:
         add(t)
@@ -1825,7 +1824,18 @@ def main() -> int:
     args = parser.parse_args()
 
     out_path = Path(args.output).resolve()
-    tickers = discover_tickers(out_path, args.tickers)
+    all_universe_tickers = discover_tickers(out_path, args.tickers)
+    if args.tickers:
+        cli_only: List[str] = []
+        cli_seen = set()
+        for part in re.split(r"[\s,]+", args.tickers.strip()):
+            norm = normalize_ticker(part)
+            if norm and norm != "CASH" and not norm.endswith("=X") and norm not in cli_seen:
+                cli_seen.add(norm)
+                cli_only.append(norm)
+        tickers = cli_only if cli_only else all_universe_tickers
+    else:
+        tickers = all_universe_tickers
 
     existing_data: Dict[str, Any] = {}
     if out_path.exists():
@@ -1888,7 +1898,7 @@ def main() -> int:
                 "note": "Populated with real monthly OHLCV + adjusted close data, FX rates, 2018+ dividend histories, and daily technical signals by update_historical_prices.py. Populated by update_historical_prices.py via GitHub Actions.",
                 "range": args.range_str,
                 "interval": "1mo",
-                "tickers": tickers,
+                "tickers": sorted(set(all_universe_tickers) | set(prices_map.keys())),
                 "tickerCount": 0,
             },
             "fxRates": {
@@ -2009,7 +2019,7 @@ def main() -> int:
             "source": "Yahoo Finance v8/v10 API (15y/1mo + 2y/1d technicals + events=div)",
             "range": args.range_str,
             "interval": "1mo",
-            "tickers": tickers,
+            "tickers": sorted(set(all_universe_tickers) | set(prices_map.keys())),
             "tickerCount": len(prices_map),
             "lastRunSuccessCount": success_count,
             "lastRunFailureCount": len(failures),
