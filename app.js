@@ -44,6 +44,7 @@ function renderAll() {
   try { renderNewsTab(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderNewsTab failed: ${err.message}`, err); }
   try { renderCharts(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderCharts failed: ${err.message}`, err); }
   try { updateTabCounters(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `updateTabCounters failed: ${err.message}`, err); }
+  try { if (typeof refreshSectorDatalist === 'function') refreshSectorDatalist(); } catch (_) {}
   try { renderVersionRegistryUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderVersionRegistryUI failed: ${err.message}`, err); }
   try {
     if (typeof AppLogger !== 'undefined') {
@@ -336,7 +337,9 @@ function renderKPIs() {
   const alertBox = document.getElementById('watchlist-alerts-box');
   const targetHits = state.watchlist.filter(w => {
     const cur = state.prices[w.ticker]?.price || 0;
-    return cur > 0 && cur <= w.targetBuyPrice;
+    const wm = cur > 0 ? computeStockPriceMetrics(w.ticker, cur) : null;
+    const recBuy = wm?.recommendedBuyPrice || 0;
+    return cur > 0 && recBuy > 0 && cur <= recBuy;
   });
   const strongBuys = portfolio.activeHoldings.filter(h => h.signalScore >= Number(state.settings?.signalStrongBuyMin ?? 78));
 
@@ -403,8 +406,21 @@ function populateHistorySelector() {
 }
 
 function getCanonicalHoldingsSector(holding) {
-  const rawSector = String(holding?.sector || 'Equities').trim();
-  if (MarketAPI.isEtfSector(rawSector, holding?.ticker, holding?.companyName)) {
+  const ticker = holding?.ticker || '';
+  const fund = state?.fundamentals?.[ticker] || {};
+  const wlMatch = (Array.isArray(state?.watchlist) ? state.watchlist.find(w => w.ticker === ticker) : null);
+  if (fund._userCustomSector && fund.sector) {
+    return String(fund.sector).trim();
+  }
+  const rawSector = String(holding?.sector || wlMatch?.sector || fund.sector || '').trim();
+  if (rawSector && rawSector !== 'Equities') {
+    return rawSector;
+  }
+  const staticMeta = MarketAPI.getStaticProfile(ticker);
+  if (staticMeta?.sector && staticMeta.sector !== 'Equities') {
+    return staticMeta.sector;
+  }
+  if (MarketAPI.isEtfSector('', ticker, holding?.companyName || fund.name || staticMeta?.name)) {
     return 'Index ETF';
   }
   return rawSector || 'Equities';
@@ -445,14 +461,54 @@ function setAllHoldingsSectorsCollapsed(collapsed) {
 window.setAllHoldingsSectorsCollapsed = setAllHoldingsSectorsCollapsed;
 
 function getCanonicalWatchlistSector(w) {
-  const staticMeta = MarketAPI.getStaticProfile(w?.ticker);
-  const rawSector = String(w?.sector || state.fundamentals?.[w?.ticker]?.sector || staticMeta?.sector || 'Equities').trim();
-  const compName = w?.name || state.fundamentals?.[w?.ticker]?.name || staticMeta?.name || '';
-  if (MarketAPI.isEtfSector(rawSector, w?.ticker, compName)) {
-    return 'Index ETF';
-  }
-  return rawSector || 'Equities';
+  const ticker = w?.ticker || '';
+  const fund = state?.fundamentals?.[ticker] || {};
+  const staticMeta = MarketAPI.getStaticProfile(ticker);
+  const userSec = String(w?.sector || '').trim();
+  if (userSec) return userSec;
+  if (fund._userCustomSector && fund.sector) return String(fund.sector).trim();
+  const fundSec = String(fund.sector || '').trim();
+  if (fundSec && fundSec !== 'Equities') return fundSec;
+  const staticSec = String(staticMeta?.sector || '').trim();
+  if (staticSec && staticSec !== 'Equities') return staticSec;
+  const compName = w?.name || fund.name || staticMeta?.name || '';
+  if (MarketAPI.isEtfSector('', ticker, compName)) return 'Index ETF';
+  return 'Equities';
 }
+
+function refreshSectorDatalist() {
+  const dl = document.getElementById('sector-suggestions-datalist');
+  if (!dl) return;
+  const defaults = [
+    'Index ETF',
+    'Technology',
+    'Financials',
+    'Healthcare',
+    'Consumer Discretionary',
+    'Consumer Staples',
+    'Energy',
+    'Industrials',
+    'Real Estate',
+    'Utilities',
+    'Communications',
+    'Equities'
+  ];
+  const customSet = new Set(defaults);
+  (portfolio?.allHoldings || portfolio?.activeHoldings || []).forEach(h => {
+    const s = getCanonicalHoldingsSector(h);
+    if (s) customSet.add(s);
+  });
+  (state?.watchlist || []).forEach(w => {
+    const s = getCanonicalWatchlistSector(w);
+    if (s) customSet.add(s);
+  });
+  Object.values(state?.fundamentals || {}).forEach(f => {
+    if (f?.sector) customSet.add(String(f.sector).trim());
+  });
+  const sorted = Array.from(customSet).filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  dl.innerHTML = sorted.map(s => `<option value="${s.replace(/"/g, '&quot;')}"></option>`).join('');
+}
+window.refreshSectorDatalist = refreshSectorDatalist;
 
 function toggleWatchlistSector(sectorName) {
   if (!state.settings.collapsedWatchlistSectors) state.settings.collapsedWatchlistSectors = {};
@@ -662,13 +718,28 @@ window.openSignalDetailModal = function(rawTicker) {
     </div>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+      <div class="p-2.5 rounded-lg border border-sky-500/30 bg-sky-500/5">
+        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-semibold block">Recommended Buy Price</span>
+        <span class="font-mono font-bold text-sky-600 dark:text-sky-400 text-sm">${m.recommendedBuyPrice ? Fin.currency(m.recommendedBuyPrice, false, curr) : '-'}</span>
+        <span class="text-[10px] text-slate-400 block">Prev Trough: ${m.prevTrough ? Fin.currency(m.prevTrough, false, curr) : '-'}</span>
+      </div>
+      <div class="p-2.5 rounded-lg border border-pink-500/30 bg-pink-500/5">
+        <span class="text-[10px] text-pink-600 dark:text-pink-400 font-semibold block">Recommended Sell Price</span>
+        <span class="font-mono font-bold text-pink-600 dark:text-pink-400 text-sm">${m.recommendedSellPrice ? Fin.currency(m.recommendedSellPrice, false, curr) : '-'}</span>
+        <span class="text-[10px] text-slate-400 block">Prev Peak: ${m.prevPeak ? Fin.currency(m.prevPeak, false, curr) : '-'}</span>
+      </div>
+      <div class="p-2.5 rounded-lg border border-red-700/30 bg-red-700/5">
+        <span class="text-[10px] text-red-700 dark:text-red-400 font-semibold block">Recommended Stop Loss</span>
+        <span class="font-mono font-bold text-red-700 dark:text-red-400 text-sm">${m.recommendedStopLoss ? Fin.currency(m.recommendedStopLoss, false, curr) : '-'}</span>
+        <span class="text-[10px] text-slate-400 block">ATR(${state.settings.atrStopMultiplier || 2}x): ${m.atr14 ?? '-'}</span>
+      </div>
       <div class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
         <span class="text-[10px] text-slate-400 block">SMA 20 / 50 / 200</span>
         <span class="font-mono font-semibold text-slate-800 dark:text-slate-200">${m.sma20 ?? '-'} / ${m.sma50 ?? '-'} / ${m.sma200 ?? '-'}</span>
       </div>
       <div class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
-        <span class="text-[10px] text-slate-400 block">ATR(14) &amp; Stop-Loss (${state.settings.atrStopMultiplier || 2}x)</span>
-        <span class="font-mono font-semibold text-rose-500">${m.suggestedStopLoss ? Fin.currency(m.suggestedStopLoss, false, curr) : '-'} (ATR ${m.atr14 ?? '-'})</span>
+        <span class="text-[10px] text-slate-400 block">12M Reg Channel (-1&sigma; / +1&sigma;)</span>
+        <span class="font-mono font-semibold text-purple-500">${m.regLowerNow ? Fin.currency(m.regLowerNow, false, curr) : '-'} &ndash; ${m.regUpperNow ? Fin.currency(m.regUpperNow, false, curr) : '-'}</span>
       </div>
       <div class="p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
         <span class="text-[10px] text-slate-400 block">Next Ex-Dividend Date</span>
@@ -786,9 +857,13 @@ function renderHoldingsTable() {
   const totRealXirrPct = totXirrPct !== null ? Fin.realReturn(totXirrPct, infRate) : null;
   const avgSignalScore = signalCount > 0 ? Math.round(weightedSignalSum / signalCount) : 50;
 
+  const totTotalReturnBase = Fin.round(totUnrealizedBase + totRealizedBase + totAccumDivBase, 2);
+  const totTotalReturnPct = refTotCostForYoC > 0 ? Fin.round((totTotalReturnBase / refTotCostForYoC) * 100, 2) : 0;
+
   const totDayColor = totDayPnLBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
   const totUnrColor = totUnrealizedBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
   const totRealColor = totRealizedBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+  const totRetColor = totTotalReturnBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
   const totXirrColor = totXirrPct === null ? 'text-slate-400' : (totXirrPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400');
 
   const totalTr = document.createElement('tr');
@@ -815,21 +890,26 @@ function renderHoldingsTable() {
       <div class="font-extrabold">${Fin.currency(totUnrealizedBase, true, baseCurr)}</div>
       <div class="text-[10px] font-semibold">${Fin.percent(totUnrealizedPct, true)}</div>
     </td>
-    <td class="py-1.5 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">
-      <div class="font-bold">${totNetYieldPct > 0 ? totNetYieldPct.toFixed(2) + '% Net' : '-'}</div>
-      <div class="text-[9.5px] font-mono text-slate-400">${totAnnualFwdDivBase > 0 ? Fin.currency(totAnnualFwdDivBase, false, baseCurr) + '/yr' : ''}</div>
+    <td class="py-1.5 px-3 text-right num-font font-extrabold ${totRealColor}">
+      ${Fin.currency(totRealizedBase, true, baseCurr)}
     </td>
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-cyan-600 dark:text-cyan-400">
       +${Fin.currency(totAccumDivBase, false, baseCurr)}
     </td>
-    <td class="py-1.5 px-3 text-right num-font font-extrabold ${totRealColor}">
-      ${Fin.currency(totRealizedBase, true, baseCurr)}
+    <td class="py-1.5 px-3 text-right num-font ${totRetColor}">
+      <div class="font-extrabold">${Fin.currency(totTotalReturnBase, true, baseCurr)}</div>
+      <div class="text-[10px] font-semibold">${Fin.percent(totTotalReturnPct, true)}</div>
+    </td>
+    <td class="py-1.5 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">
+      <div class="font-bold">${totNetYieldPct > 0 ? totNetYieldPct.toFixed(2) + '% Net' : '-'}</div>
+      <div class="text-[9.5px] font-mono text-slate-400">${totAnnualFwdDivBase > 0 ? Fin.currency(totAnnualFwdDivBase, false, baseCurr) + '/yr' : ''}</div>
     </td>
     <td class="py-1.5 px-3 text-right text-slate-400 font-mono">-</td>
     <td class="py-1.5 px-3 text-right text-slate-400 font-mono">-</td>
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-800 dark:text-slate-200">
       ${Fin.currency(totCostBasisBase, false, baseCurr)}
     </td>
+    <td colspan="3" class="py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono">Quant Levels</td>
     <td class="py-1.5 px-3 text-right num-font ${totXirrColor}">
       <div class="font-extrabold">${totXirrPct !== null ? Fin.percent(totXirrPct, true) : '-'}</div>
       ${totRealXirrPct !== null ? `<div class="text-[9.5px] font-normal text-slate-400">Real ${Fin.percent(totRealXirrPct, true)}</div>` : ''}
@@ -903,6 +983,8 @@ function renderHoldingsTable() {
       ? Fin.round((group.totalUnrealizedGain / group.totalCostBasis) * 100, 2)
       : 0;
     const refGroupCostYoC = group.totalCostBasis > 0 ? group.totalCostBasis : group.totalHistoricalCostBasis;
+    const groupTotalReturn = Fin.round(group.totalUnrealizedGain + group.totalRealizedGain + group.totalDividends, 2);
+    const groupTotalReturnPct = refGroupCostYoC > 0 ? Fin.round((groupTotalReturn / refGroupCostYoC) * 100, 2) : 0;
     const groupYoC = refGroupCostYoC > 0
       ? Fin.round((group.totalDividends / refGroupCostYoC) * 100, 2)
       : 0;
@@ -915,6 +997,7 @@ function renderHoldingsTable() {
     const groupDayColor = group.totalDayPnL >= 0 ? 'text-emerald-500' : 'text-rose-500';
     const groupPnlColor = group.totalUnrealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
     const groupRealColor = group.totalRealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
+    const groupRetColor = groupTotalReturn >= 0 ? 'text-emerald-500' : 'text-rose-500';
     const groupXirrPct = Fin.xirr(group.xirrFlowsBase || []);
     const groupRealXirrPct = groupXirrPct !== null ? Fin.realReturn(groupXirrPct, infRate) : null;
     const groupXirrColor = groupXirrPct === null ? 'text-slate-400' : (groupXirrPct >= 0 ? 'text-emerald-500' : 'text-rose-500');
@@ -959,19 +1042,24 @@ function renderHoldingsTable() {
         <div>${Fin.currency(group.totalUnrealizedGain, true, group.currency)}</div>
         <div class="text-[10px] font-semibold">${Fin.percent(groupUnrealizedPct)}</div>
       </td>
-      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
-        ${groupNetYieldPct > 0 ? groupNetYieldPct.toFixed(2) + '% Net' : '-'}
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${group.totalRealizedGain !== 0 ? groupRealColor : 'text-slate-400'}">
+        ${group.totalRealizedGain !== 0 ? Fin.currency(group.totalRealizedGain, true, group.currency) : Fin.currency(0, false, group.currency)}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-cyan-600 dark:text-cyan-400">
         ${group.totalDividends > 0 ? '+' + Fin.currency(group.totalDividends, false, group.currency) : Fin.currency(0, false, group.currency)}
       </td>
-      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${group.totalRealizedGain !== 0 ? groupRealColor : 'text-slate-400'}">
-        ${group.totalRealizedGain !== 0 ? Fin.currency(group.totalRealizedGain, true, group.currency) : Fin.currency(0, false, group.currency)}
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupRetColor}">
+        <div>${Fin.currency(groupTotalReturn, true, group.currency)}</div>
+        <div class="text-[10px] font-semibold">${Fin.percent(groupTotalReturnPct, true)}</div>
+      </td>
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
+        ${groupNetYieldPct > 0 ? groupNetYieldPct.toFixed(2) + '% Net' : '-'}
       </td>
       <td colspan="2" class="py-1 sm:py-1.5 px-3 text-right text-[10px] text-slate-400 font-mono">-</td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-slate-700 dark:text-slate-300">
         ${Fin.currency(group.totalCostBasis, false, group.currency)}
       </td>
+      <td colspan="3" class="py-1 sm:py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono">-</td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupXirrColor}" title="${groupXirrPct !== null ? `Sector Money-Weighted Annualized XIRR: ${Fin.percent(groupXirrPct, true)} p.a. (Real Inflation-Adjusted: ${Fin.percent(groupRealXirrPct, true)} p.a.)` : 'Insufficient cash flow span'}">
         <div>${groupXirrPct !== null ? Fin.percent(groupXirrPct, true) : '-'}</div>
         ${groupRealXirrPct !== null ? `<div class="text-[9.5px] font-normal text-slate-400">Real ${Fin.percent(groupRealXirrPct, true)}</div>` : ''}
@@ -1010,7 +1098,18 @@ function renderHoldingsTable() {
         const pnlColor = h.unrealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
         const realPnlVal = Number(h.realizedGain || 0);
         const realPnlColor = realPnlVal >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        const totalRetVal = Fin.round((h.unrealizedGain || 0) + realPnlVal + Number(h.totalDividends || 0), 2);
+        const refCostBasis = isAct && h.totalCostBasis > 0 ? h.totalCostBasis : (h.historicalCostBasis || h.cumulativeBuyCostBasis || 0);
+        const totalRetPct = refCostBasis > 0 ? Fin.round((totalRetVal / refCostBasis) * 100, 2) : 0;
+        const totalRetColor = totalRetVal >= 0 ? 'text-emerald-500' : 'text-rose-500';
         const priceChangeColor = h.priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
+
+        const recBuy = h.recommendedBuyPrice || null;
+        const recSell = h.recommendedSellPrice || null;
+        const recStop = h.recommendedStopLoss || h.suggestedStopLoss || null;
+        const recBuyDiffPct = (recBuy && h.currentPrice > 0) ? Fin.round(((recBuy - h.currentPrice) / h.currentPrice) * 100, 1) : null;
+        const recSellDiffPct = (recSell && h.currentPrice > 0) ? Fin.round(((recSell - h.currentPrice) / h.currentPrice) * 100, 1) : null;
+        const recStopDiffPct = (recStop && h.currentPrice > 0) ? Fin.round(((recStop - h.currentPrice) / h.currentPrice) * 100, 1) : null;
 
         tr.innerHTML = `
           <td class="py-1 pl-2.5 pr-2 sm:py-1.5 sm:pl-6 sm:pr-3 sticky-col-mobile max-w-[142px] sm:max-w-none">
@@ -1049,18 +1148,34 @@ function renderHoldingsTable() {
                  <div class="text-[10px] num-font ${pnlColor} font-semibold">${Fin.percent(h.unrealizedGainPct)}</div>`
               : '<span class="text-slate-400 text-xs font-mono">-</span>'}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right">
-            ${formatDividendExDateCell(h.divInfo)}
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${realPnlVal !== 0 ? realPnlColor : 'text-slate-400'}">
+            ${realPnlVal !== 0 ? Fin.currency(realPnlVal, true, h.currency) : Fin.currency(0, false, h.currency)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${h.totalDividends > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
             ${h.totalDividends > 0 ? '+' + Fin.currency(h.totalDividends, false, h.currency) : Fin.currency(0, false, h.currency)}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${realPnlVal !== 0 ? realPnlColor : 'text-slate-400'}">
-            ${realPnlVal !== 0 ? Fin.currency(realPnlVal, true, h.currency) : Fin.currency(0, false, h.currency)}
+          <td class="py-1 sm:py-1.5 px-3 text-right" title="Total Return = Unrealized P&L + Realized P&L + Accumulated Dividends">
+            <div class="font-bold num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.currency(totalRetVal, true, h.currency)}</div>
+            <div class="text-[10px] num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'} font-semibold">${Fin.percent(totalRetPct, true)}</div>
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right">
+            ${formatDividendExDateCell(h.divInfo)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium ${isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}">${Fin.shares(h.shares)}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? Fin.currency(h.avgCost, false, h.currency) : '<span class="text-slate-400">-</span>'}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? Fin.currency(h.totalCostBasis, false, h.currency) : `<span class="text-slate-400 text-[10px]" title="Historical total buy cost: ${Fin.currency(h.historicalCostBasis || 0, false, h.currency)}">-</span>`}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font" title="Recommended Buy Price based on trend support, prev trough (${h.prevTrough ? Fin.currency(h.prevTrough, false, h.currency) : '-'}), avg cost & signal">
+            <div class="font-bold text-sky-500">${recBuy ? Fin.currency(recBuy, false, h.currency) : '-'}</div>
+            ${recBuyDiffPct !== null ? `<div class="text-[9.5px] text-slate-400">${Fin.percent(recBuyDiffPct, true)}</div>` : ''}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font" title="Recommended Sell Price based on target gain, prev peak (${h.prevPeak ? Fin.currency(h.prevPeak, false, h.currency) : '-'}), reg upper band & signal">
+            <div class="font-bold text-pink-500">${recSell ? Fin.currency(recSell, false, h.currency) : '-'}</div>
+            ${recSellDiffPct !== null ? `<div class="text-[9.5px] text-slate-400">${Fin.percent(recSellDiffPct, true)}</div>` : ''}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font" title="Recommended Stop Loss based on ATR(${state.settings.atrStopMultiplier || 2}x), swing support & profit protection">
+            <div class="font-bold text-red-700 dark:text-red-500">${recStop ? Fin.currency(recStop, false, h.currency) : '-'}</div>
+            ${recStopDiffPct !== null ? `<div class="text-[9.5px] text-slate-400">${Fin.percent(recStopDiffPct, true)}</div>` : ''}
+          </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font" title="${h.xirrPct !== null && h.xirrPct !== undefined ? `Annualized Money-Weighted Return (XIRR): ${Fin.percent(h.xirrPct, true)} p.a. | Real Inflation-Adjusted: ${Fin.percent(h.realXirrPct, true)} p.a. (includes all BUY/SELL cash flows & dividends)` : 'Insufficient cash flow span'}">
             <div class="font-bold text-xs ${h.xirrPct === null || h.xirrPct !== undefined && h.xirrPct === null ? 'text-slate-400' : (h.xirrPct >= 0 ? 'text-emerald-500' : 'text-rose-500')}">
               ${h.xirrPct !== null && h.xirrPct !== undefined ? Fin.percent(h.xirrPct, true) : '-'}
@@ -1100,6 +1215,9 @@ function renderHoldingsTable() {
             <div class="flex items-center justify-center gap-1">
               <button onclick="event.stopPropagation(); selectStockForInlineChart('holdings', '${h.ticker}', true)" class="p-1.5 text-xs ${isSelected ? 'bg-brand-500 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Price & Trend Chart Below">
                 <i class="fa-solid fa-chart-line"></i>
+              </button>
+              <button onclick="event.stopPropagation(); openEditHoldingModal('${h.ticker}')" class="p-1.5 text-xs text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded" title="Edit Holding Info (Ticker, Name, Sector, Shares & Cost)">
+                <i class="fa-solid fa-pen-to-square"></i>
               </button>
               <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'BUY')" class="p-1.5 text-xs text-brand-600 dark:text-brand-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded" title="Buy Shares">
                 <i class="fa-solid fa-cart-plus"></i>
@@ -1267,9 +1385,14 @@ function renderTransactionsTable() {
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right">${gainCell}</td>
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-slate-500 max-w-xs truncate">${tx.notes || ''}</td>
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-center">
-        <button onclick="deleteTransaction('${tx.id}')" class="text-slate-400 hover:text-rose-500 transition p-0.5 leading-none" title="Delete">
-          <i class="fa-solid fa-trash-can text-[11px]"></i>
-        </button>
+        <div class="inline-flex items-center justify-center gap-1.5">
+          <button onclick="openEditTransactionModal('${tx.id}')" class="text-slate-400 hover:text-amber-500 transition p-0.5 leading-none" title="Edit Transaction">
+            <i class="fa-solid fa-pen-to-square text-[11px]"></i>
+          </button>
+          <button onclick="deleteTransaction('${tx.id}')" class="text-slate-400 hover:text-rose-500 transition p-0.5 leading-none" title="Delete Transaction">
+            <i class="fa-solid fa-trash-can text-[11px]"></i>
+          </button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
@@ -1515,7 +1638,8 @@ function renderWatchlistAndFundamentals() {
         const g = groupsMap[sec];
         g.items.push(item);
         g.scoreSum += item.signalScore;
-        if (item.curPrice > 0 && item.curPrice <= item.w.targetBuyPrice) {
+        const recBuyVal = item.wm?.recommendedBuyPrice || 0;
+        if (item.curPrice > 0 && recBuyVal > 0 && item.curPrice <= recBuyVal * 1.005) {
           g.triggeredCount += 1;
         }
       });
@@ -1563,10 +1687,10 @@ function renderWatchlistAndFundamentals() {
           <td colspan="9" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
             Watchlist Sector Group (${group.items.length} ${group.items.length === 1 ? 'ticker' : 'tickers'})
           </td>
-          <td colspan="3" class="py-1 sm:py-1.5 px-3 text-center">
+          <td colspan="5" class="py-1 sm:py-1.5 px-3 text-center">
             ${group.triggeredCount > 0
-              ? `<span class="px-2 py-0.5 rounded-full font-bold bg-rose-500 text-white text-[10px]">${group.triggeredCount} BUY TARGET HIT</span>`
-              : `<span class="text-[11px] text-slate-400 font-mono">0 target alerts</span>`}
+              ? `<span class="px-2 py-0.5 rounded-full font-bold bg-emerald-500 text-white text-[10px]">${group.triggeredCount} IN BUY ZONE</span>`
+              : `<span class="text-[11px] text-slate-400 font-mono">Monitoring quant levels</span>`}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-center text-[11px] font-semibold text-purple-600 dark:text-purple-400">
             <span>${isCollapsed ? 'Expand' : 'Collapse'}</span>
@@ -1580,9 +1704,11 @@ function renderWatchlistAndFundamentals() {
             const priceChangePct = state.prices[w.ticker]?.changePct || 0;
             const priceChangeColor = (state.prices[w.ticker]?.change || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500';
             const wlCurrency = state.prices[w.ticker]?.currency || state.fundamentals[w.ticker]?.currency || (w.ticker.endsWith('.HK') ? 'HKD' : (w.ticker.endsWith('.L') ? 'GBp' : 'USD'));
-            const targetPrice = w.targetBuyPrice;
-            const distPct = curPrice > 0 ? ((curPrice - targetPrice) / targetPrice) * 100 : 0;
-            const isTriggered = curPrice > 0 && curPrice <= targetPrice;
+            const recBuy = wm?.recommendedBuyPrice || 0;
+            const recSell = wm?.recommendedSellPrice || 0;
+            const recStop = wm?.recommendedStopLoss || 0;
+            const distPct = (curPrice > 0 && recBuy > 0) ? ((curPrice - recBuy) / recBuy) * 100 : 0;
+            const isTriggered = curPrice > 0 && recBuy > 0 && curPrice <= recBuy * 1.005;
 
             const tr = document.createElement('tr');
             tr.className = `cursor-pointer transition text-xs ${
@@ -1640,13 +1766,21 @@ function renderWatchlistAndFundamentals() {
               <td class="py-3 px-3 text-center">
                 ${formatSignalBadgeCell(w.ticker, wm)}
               </td>
-              <td class="py-3 px-3 text-right font-bold num-font text-purple-600 dark:text-purple-400">${Fin.currency(targetPrice, false, wlCurrency)}</td>
-              <td class="py-3 px-3 text-right num-font font-medium ${distPct <= 0 && curPrice > 0 ? 'text-emerald-500' : 'text-slate-400'}">
-                ${curPrice > 0 ? (distPct <= 0 ? 'At / Below Target' : `+${distPct.toFixed(1)}% above`) : '-'}
+              <td class="py-3 px-3 text-right font-bold num-font text-sky-500" title="Auto-calculated Recommended Buy Price from trend support, prev trough (${wm?.prevTrough ? Fin.currency(wm.prevTrough, false, wlCurrency) : '-'}) & signal">
+                ${recBuy > 0 ? Fin.currency(recBuy, false, wlCurrency) : '-'}
+              </td>
+              <td class="py-3 px-3 text-right num-font font-medium ${distPct <= 0.5 && curPrice > 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}">
+                ${curPrice > 0 && recBuy > 0 ? (distPct <= 0.5 ? 'In Buy Zone' : `+${distPct.toFixed(1)}% above`) : '-'}
+              </td>
+              <td class="py-3 px-3 text-right font-bold num-font text-pink-500" title="Auto-calculated Recommended Sell Price from target gain & prev peak (${wm?.prevPeak ? Fin.currency(wm.prevPeak, false, wlCurrency) : '-'})">
+                ${recSell > 0 ? Fin.currency(recSell, false, wlCurrency) : '-'}
+              </td>
+              <td class="py-3 px-3 text-right font-bold num-font text-red-700 dark:text-red-500" title="Auto-calculated Recommended Stop Loss">
+                ${recStop > 0 ? Fin.currency(recStop, false, wlCurrency) : '-'}
               </td>
               <td class="py-3 px-3 text-center">
                 ${isTriggered
-                  ? '<span class="px-2.5 py-1 rounded-full font-bold bg-rose-500 text-white text-[10px] animate-pulse">BUY TARGET HIT</span>'
+                  ? '<span class="px-2.5 py-1 rounded-full font-bold bg-emerald-500 text-white text-[10px] animate-pulse">BUY ZONE HIT</span>'
                   : '<span class="px-2 py-0.5 rounded font-medium bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px]">WATCHING</span>'}
               </td>
               <td class="py-3 px-3 text-center">
@@ -1654,10 +1788,13 @@ function renderWatchlistAndFundamentals() {
                   <button onclick="event.stopPropagation(); selectStockForInlineChart('watchlist', '${w.ticker}', true)" class="p-1.5 ${isSelected ? 'bg-purple-600 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Monthly Price Chart Below">
                     <i class="fa-solid fa-chart-line"></i>
                   </button>
-                  <button onclick="event.stopPropagation(); openTradeModalForTicker('${w.ticker}', 'BUY', ${curPrice || targetPrice})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold text-[11px]">
+                  <button onclick="event.stopPropagation(); openEditWatchlistModal('${w.ticker}')" class="p-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded transition" title="Edit Watchlist Ticker (Symbol, Name, Sector)">
+                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                  </button>
+                  <button onclick="event.stopPropagation(); openTradeModalForTicker('${w.ticker}', 'BUY', ${curPrice || recBuy})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold text-[11px]">
                     Buy
                   </button>
-                  <button onclick="event.stopPropagation(); deleteFromWatchlist('${w.ticker}')" class="p-1.5 text-slate-400 hover:text-rose-500 transition">
+                  <button onclick="event.stopPropagation(); deleteFromWatchlist('${w.ticker}')" class="p-1.5 text-slate-400 hover:text-rose-500 transition" title="Remove from Watchlist">
                     <i class="fa-solid fa-trash-can text-xs"></i>
                   </button>
                 </div>
@@ -2051,6 +2188,12 @@ function renderQuantSettingsUI() {
   setVal('setting-sma-med', cfg.smaMedPeriod ?? 50);
   setVal('setting-sma-long', cfg.smaLongPeriod ?? 200);
   setVal('setting-atr-mult', cfg.atrStopMultiplier ?? 2.0);
+  setVal('setting-stop-floor-pct', cfg.stopLossFloorPct ?? 8.0);
+  setVal('setting-peak-trough-months', cfg.peakTroughLookbackMonths ?? 12);
+  setVal('setting-rec-buy-pullback', cfg.recBuyPullbackPct ?? 6.0);
+  setVal('setting-rec-buy-trough-wt', cfg.recBuyTroughWeightPct ?? 40.0);
+  setVal('setting-rec-sell-gain', cfg.recSellTargetGainPct ?? 18.0);
+  setVal('setting-rec-sell-peak-wt', cfg.recSellPeakWeightPct ?? 45.0);
   setVal('setting-sig-strong-buy', cfg.signalStrongBuyMin ?? 78);
   setVal('setting-sig-buy', cfg.signalBuyMin ?? 64);
   setVal('setting-sig-hold', cfg.signalHoldMin ?? 42);
@@ -2098,6 +2241,12 @@ function saveQuantSettingsFromUI() {
   state.settings.smaMedPeriod = num('setting-sma-med', 50);
   state.settings.smaLongPeriod = num('setting-sma-long', 200);
   state.settings.atrStopMultiplier = num('setting-atr-mult', 2.0);
+  state.settings.stopLossFloorPct = num('setting-stop-floor-pct', 8.0);
+  state.settings.peakTroughLookbackMonths = num('setting-peak-trough-months', 12);
+  state.settings.recBuyPullbackPct = num('setting-rec-buy-pullback', 6.0);
+  state.settings.recBuyTroughWeightPct = num('setting-rec-buy-trough-wt', 40.0);
+  state.settings.recSellTargetGainPct = num('setting-rec-sell-gain', 18.0);
+  state.settings.recSellPeakWeightPct = num('setting-rec-sell-peak-wt', 45.0);
   state.settings.signalStrongBuyMin = num('setting-sig-strong-buy', 78);
   state.settings.signalBuyMin = num('setting-sig-buy', 64);
   state.settings.signalHoldMin = num('setting-sig-hold', 42);
@@ -2224,11 +2373,80 @@ function closeModal(id) {
   if (el) el.classList.add('hidden');
 }
 
-function openTradeModal(ticker = null, forceType = 'BUY', defaultPrice = null) {
-  const type = forceType || 'BUY';
+var editingTransactionId = null;
+var editingWatchlistOriginalTicker = null;
+var editingHoldingOriginalTicker = null;
+
+function migrateTickerAcrossState(oldSym, newSym) {
+  const fromSym = MarketAPI.normalizeTicker(oldSym);
+  const toSym = MarketAPI.normalizeTicker(newSym);
+  if (!fromSym || !toSym || fromSym === toSym) return toSym;
+
+  (state.transactions || []).forEach(tx => {
+    if (MarketAPI.normalizeTicker(tx.ticker) === fromSym) {
+      tx.ticker = toSym;
+    }
+  });
+  (state.dividends || []).forEach(div => {
+    if (MarketAPI.normalizeTicker(div.ticker) === fromSym) {
+      div.ticker = toSym;
+    }
+  });
+  (state.watchlist || []).forEach(w => {
+    if (MarketAPI.normalizeTicker(w.ticker) === fromSym) {
+      w.ticker = toSym;
+    }
+  });
+
+  ['prices', 'historicalPrices', 'fundamentals', 'dividendSchedules', 'technicals'].forEach(mapKey => {
+    if (state[mapKey] && state[mapKey][fromSym]) {
+      if (!state[mapKey][toSym]) {
+        state[mapKey][toSym] = state[mapKey][fromSym];
+      }
+      delete state[mapKey][fromSym];
+    }
+  });
+
+  if (selectedHoldingsTicker === fromSym) selectedHoldingsTicker = toSym;
+  if (selectedWatchlistTicker === fromSym) selectedWatchlistTicker = toSym;
+  return toSym;
+}
+
+function prefillTradeTickerMetadata(rawTicker) {
+  const norm = MarketAPI.normalizeTicker(rawTicker);
+  const nameEl = document.getElementById('trade-company-name');
+  const secEl = document.getElementById('trade-sector');
+  if (!norm) {
+    if (nameEl) nameEl.value = '';
+    if (secEl) secEl.value = '';
+    return;
+  }
+  const held = (portfolio?.allHoldings || portfolio?.activeHoldings || []).find(h => h.ticker === norm);
+  const wl = (state?.watchlist || []).find(w => w.ticker === norm);
+  const fund = state?.fundamentals?.[norm] || {};
+  const staticMeta = MarketAPI.getStaticProfile(norm);
+
+  const existingName = (fund._userCustomName && fund.name)
+    ? fund.name
+    : (held?.companyName || wl?.name || fund.name || (staticMeta?.name !== norm ? staticMeta?.name : '') || '');
+  const existingSector = (fund._userCustomSector && fund.sector)
+    ? fund.sector
+    : (wl?.sector || (held ? getCanonicalHoldingsSector(held) : '') || (fund.sector && fund.sector !== 'Equities' ? fund.sector : '') || (staticMeta?.sector && staticMeta.sector !== 'Equities' ? staticMeta.sector : ''));
+
+  if (nameEl) nameEl.value = existingName;
+  if (secEl) secEl.value = existingSector;
+}
+
+function openTradeModal(ticker = null, forceType = 'BUY', defaultPrice = null, editTxId = null) {
+  if (typeof refreshSectorDatalist === 'function') refreshSectorDatalist();
+  editingTransactionId = editTxId || null;
+  const editTx = editingTransactionId ? (state.transactions || []).find(t => t.id === editingTransactionId) : null;
+
+  const type = editTx ? editTx.type : (forceType || 'BUY');
   document.getElementById('trade-type-val').value = type;
-  document.getElementById('trade-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('trade-cash-date').value = new Date().toISOString().split('T')[0];
+  const todayStr = new Date().toISOString().split('T')[0];
+  document.getElementById('trade-date').value = editTx?.date || todayStr;
+  document.getElementById('trade-cash-date').value = editTx?.date || todayStr;
   document.getElementById('trade-error-msg').classList.add('hidden');
 
   document.querySelectorAll('.tx-type-btn').forEach(b => {
@@ -2238,34 +2456,69 @@ function openTradeModal(ticker = null, forceType = 'BUY', defaultPrice = null) {
       : 'tx-type-btn py-2 text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400';
   });
 
-  updateTradeModalFields(type);
+  updateTradeModalFields(type, Boolean(editTx));
 
-  if (ticker) {
-    const norm = MarketAPI.normalizeTicker(ticker);
-    document.getElementById('trade-ticker').value = norm;
-    const price = defaultPrice || state.prices[norm]?.price || '';
-    document.getElementById('trade-price').value = price;
-    updateHoldingHint(norm);
-  } else {
-    document.getElementById('trade-ticker').value = '';
-    document.getElementById('trade-price').value = '';
-    document.getElementById('trade-holding-hint').textContent = '';
+  const submitBtn = document.getElementById('trade-modal-submit-btn');
+  if (submitBtn) {
+    submitBtn.textContent = editTx ? 'Save Changes' : 'Save Transaction';
   }
 
-  document.getElementById('trade-shares').value = '';
-  document.getElementById('trade-fees').value = '0.00';
+  if (editTx) {
+    if (type === 'DEPOSIT' || type === 'WITHDRAW') {
+      document.getElementById('trade-cash-amount').value = editTx.amount ?? '';
+      document.getElementById('trade-cash-date').value = editTx.date || todayStr;
+    } else {
+      const norm = MarketAPI.normalizeTicker(editTx.ticker);
+      document.getElementById('trade-ticker').value = norm;
+      document.getElementById('trade-shares').value = editTx.shares ?? '';
+      document.getElementById('trade-price').value = editTx.price ?? '';
+      document.getElementById('trade-fees').value = editTx.fees ?? '0.00';
+      prefillTradeTickerMetadata(norm);
+      if (editTx.sector && document.getElementById('trade-sector')) {
+        document.getElementById('trade-sector').value = editTx.sector;
+      }
+      updateHoldingHint(norm);
+    }
+    document.getElementById('trade-notes').value = editTx.notes || '';
+  } else {
+    if (ticker) {
+      const norm = MarketAPI.normalizeTicker(ticker);
+      document.getElementById('trade-ticker').value = norm;
+      const price = defaultPrice || state.prices[norm]?.price || '';
+      document.getElementById('trade-price').value = price;
+      prefillTradeTickerMetadata(norm);
+      updateHoldingHint(norm);
+    } else {
+      document.getElementById('trade-ticker').value = '';
+      document.getElementById('trade-price').value = '';
+      document.getElementById('trade-holding-hint').textContent = '';
+      prefillTradeTickerMetadata('');
+    }
+    document.getElementById('trade-shares').value = '';
+    document.getElementById('trade-fees').value = '0.00';
+    if (document.getElementById('trade-cash-amount')) document.getElementById('trade-cash-amount').value = '';
+    document.getElementById('trade-notes').value = '';
+  }
+
   updateTradeCalculatedTotal();
   openModal('modal-trade');
 }
 
 window.openTradeModalForTicker = function(ticker, type, defaultPrice = null) {
-  openTradeModal(ticker, type, defaultPrice);
+  openTradeModal(ticker, type, defaultPrice, null);
 };
 
-function updateTradeModalFields(type) {
+window.openEditTransactionModal = function(txId) {
+  const tx = (state.transactions || []).find(t => t.id === txId);
+  if (!tx) return;
+  openTradeModal(tx.ticker || null, tx.type, tx.price || null, tx.id);
+};
+
+function updateTradeModalFields(type, isEdit = false) {
   const stockFields = document.getElementById('stock-trade-fields');
   const cashFields = document.getElementById('cash-trade-fields');
   const title = document.getElementById('trade-modal-title');
+  const actionVerb = isEdit ? 'Edit' : 'Record';
 
   if (type === 'DEPOSIT' || type === 'WITHDRAW') {
     stockFields.classList.add('hidden');
@@ -2273,14 +2526,14 @@ function updateTradeModalFields(type) {
     document.getElementById('trade-ticker').removeAttribute('required');
     document.getElementById('trade-shares').removeAttribute('required');
     document.getElementById('trade-price').removeAttribute('required');
-    title.innerHTML = `<i class="fa-solid fa-money-bill-transfer text-indigo-500"></i> ${type === 'DEPOSIT' ? 'Deposit Cash' : 'Withdraw Cash'}`;
+    title.innerHTML = `<i class="fa-solid fa-money-bill-transfer text-indigo-500"></i> ${isEdit ? `Edit ${type} Cash Transaction` : (type === 'DEPOSIT' ? 'Deposit Cash' : 'Withdraw Cash')}`;
   } else {
     stockFields.classList.remove('hidden');
     cashFields.classList.add('hidden');
     document.getElementById('trade-ticker').setAttribute('required', 'true');
     document.getElementById('trade-shares').setAttribute('required', 'true');
     document.getElementById('trade-price').setAttribute('required', 'true');
-    title.innerHTML = `<i class="fa-solid fa-money-bill-trend-up text-brand-500"></i> Record ${type} Order`;
+    title.innerHTML = `<i class="fa-solid fa-money-bill-trend-up text-brand-500"></i> ${actionVerb} ${type} Order`;
   }
 }
 
@@ -2305,6 +2558,10 @@ async function handleTradeSubmit(e) {
   const type = document.getElementById('trade-type-val').value;
   const errorMsg = document.getElementById('trade-error-msg');
   errorMsg.classList.add('hidden');
+  const existingTxIdx = editingTransactionId
+    ? (state.transactions || []).findIndex(t => t.id === editingTransactionId)
+    : -1;
+  const existingTx = existingTxIdx >= 0 ? state.transactions[existingTxIdx] : null;
 
   if (type === 'DEPOSIT' || type === 'WITHDRAW') {
     const amt = parseFloat(document.getElementById('trade-cash-amount').value);
@@ -2313,32 +2570,48 @@ async function handleTradeSubmit(e) {
       errorMsg.classList.remove('hidden');
       return;
     }
-    if (type === 'WITHDRAW' && amt > portfolio.cashBalance) {
-      errorMsg.textContent = `Insufficient cash. Available balance is ${Fin.currency(portfolio.cashBalance)}.`;
+    const availableCash = portfolio.cashBalance
+      + (existingTx && existingTx.type === 'WITHDRAW' ? Number(existingTx.amount || 0) : 0)
+      - (existingTx && existingTx.type === 'DEPOSIT' ? Number(existingTx.amount || 0) : 0);
+    if (type === 'WITHDRAW' && amt > availableCash) {
+      errorMsg.textContent = `Insufficient cash. Available balance is ${Fin.currency(availableCash)}.`;
       errorMsg.classList.remove('hidden');
       return;
     }
     const date = document.getElementById('trade-cash-date').value || new Date().toISOString().split('T')[0];
     const notes = document.getElementById('trade-notes').value.trim() || `${type} cash transaction`;
 
-    state.transactions.push({
-      id: `TX-${Date.now().toString().slice(-6)}`,
-      date,
-      type,
-      amount: amt,
-      notes
-    });
+    if (existingTxIdx >= 0) {
+      state.transactions[existingTxIdx] = {
+        ...existingTx,
+        date,
+        type,
+        amount: amt,
+        notes
+      };
+    } else {
+      state.transactions.push({
+        id: `TX-${Date.now().toString().slice(-6)}`,
+        date,
+        type,
+        amount: amt,
+        notes
+      });
+    }
 
+    editingTransactionId = null;
     recalculatePortfolio();
     saveState();
     renderAll();
     closeModal('modal-trade');
-    showToast(`${type === 'DEPOSIT' ? 'Deposited' : 'Withdrew'} ${Fin.currency(amt)}`, 'success');
+    showToast(existingTx ? `Updated ${type} transaction` : `${type === 'DEPOSIT' ? 'Deposited' : 'Withdrew'} ${Fin.currency(amt)}`, 'success');
     return;
   }
 
   const rawTicker = document.getElementById('trade-ticker').value.trim();
   const ticker = MarketAPI.normalizeTicker(rawTicker);
+  const customCompanyName = (document.getElementById('trade-company-name')?.value || '').trim();
+  const customSector = (document.getElementById('trade-sector')?.value || '').trim();
   const shares = parseFloat(document.getElementById('trade-shares').value);
   const price = parseFloat(document.getElementById('trade-price').value);
   const fees = parseFloat(document.getElementById('trade-fees').value) || 0;
@@ -2353,9 +2626,13 @@ async function handleTradeSubmit(e) {
 
   if (type === 'SELL') {
     const active = portfolio.activeHoldings.find(h => h.ticker === ticker);
-    const held = active ? active.shares : 0;
-    if (shares > held) {
-      errorMsg.textContent = `Cannot sell ${Fin.shares(shares)} shares of ${ticker}. You hold ${Fin.shares(held)} shares.`;
+    let held = active ? active.shares : 0;
+    if (existingTx && MarketAPI.normalizeTicker(existingTx.ticker) === ticker) {
+      if (existingTx.type === 'SELL') held += Number(existingTx.shares || 0);
+      else if (existingTx.type === 'BUY') held -= Number(existingTx.shares || 0);
+    }
+    if (shares > held + 1e-6) {
+      errorMsg.textContent = `Cannot sell ${Fin.shares(shares)} shares of ${ticker}. Available held shares: ${Fin.shares(Math.max(0, held))}.`;
       errorMsg.classList.remove('hidden');
       return;
     }
@@ -2365,22 +2642,54 @@ async function handleTradeSubmit(e) {
     state.prices[ticker] = { price, prevPrice: price, change: 0, changePct: 0, lastUpdated: new Date().toISOString() };
   }
 
-  state.transactions.push({
-    id: `TX-${Date.now().toString().slice(-6)}`,
-    date,
-    type,
-    ticker,
-    shares,
-    price,
-    fees,
-    notes
-  });
+  // Save custom company name and personalized sector into state.fundamentals and matching watchlist item
+  const prevFund = state.fundamentals[ticker] || {};
+  const staticMeta = MarketAPI.getStaticProfile(ticker);
+  state.fundamentals[ticker] = {
+    ...prevFund,
+    name: customCompanyName || prevFund.name || staticMeta.name || ticker,
+    sector: customSector || prevFund.sector || staticMeta.sector || 'Equities',
+    _userCustomName: Boolean(customCompanyName) || Boolean(prevFund._userCustomName),
+    _userCustomSector: Boolean(customSector) || Boolean(prevFund._userCustomSector),
+    currency: prevFund.currency || staticMeta.currency
+  };
+  if (customSector) {
+    const wlMatch = (state.watchlist || []).find(w => w.ticker === ticker);
+    if (wlMatch) wlMatch.sector = customSector;
+  }
 
+  if (existingTxIdx >= 0) {
+    state.transactions[existingTxIdx] = {
+      ...existingTx,
+      date,
+      type,
+      ticker,
+      shares,
+      price,
+      fees,
+      sector: customSector || existingTx.sector || state.fundamentals[ticker].sector,
+      notes
+    };
+  } else {
+    state.transactions.push({
+      id: `TX-${Date.now().toString().slice(-6)}`,
+      date,
+      type,
+      ticker,
+      shares,
+      price,
+      fees,
+      sector: customSector || state.fundamentals[ticker].sector,
+      notes
+    });
+  }
+
+  editingTransactionId = null;
   recalculatePortfolio();
   saveState();
   renderAll();
   closeModal('modal-trade');
-  showToast(`Recorded ${type} order for ${Fin.shares(shares)} ${ticker}`, 'success');
+  showToast(existingTx ? `Updated ${type} transaction for ${ticker}` : `Recorded ${type} order for ${Fin.shares(shares)} ${ticker}`, 'success');
 
   if (MarketAPI.hasKey()) {
     try {
@@ -2391,7 +2700,16 @@ async function handleTradeSubmit(e) {
         if (hist?.length) state.historicalPrices[ticker] = hist;
       }
       if (!state.fundamentals[ticker] || !state.fundamentals[ticker].pe) {
-        state.fundamentals[ticker] = await MarketAPI.fetchFundamentals(ticker);
+        const fetchedFund = await MarketAPI.fetchFundamentals(ticker);
+        if (fetchedFund) {
+          state.fundamentals[ticker] = {
+            ...fetchedFund,
+            name: customCompanyName || (state.fundamentals[ticker]?._userCustomName ? state.fundamentals[ticker].name : fetchedFund.name),
+            sector: customSector || (state.fundamentals[ticker]?._userCustomSector ? state.fundamentals[ticker].sector : fetchedFund.sector),
+            _userCustomName: Boolean(customCompanyName) || Boolean(state.fundamentals[ticker]?._userCustomName),
+            _userCustomSector: Boolean(customSector) || Boolean(state.fundamentals[ticker]?._userCustomSector)
+          };
+        }
       }
       state.settings.lastApiSync = new Date().toISOString();
       recalculatePortfolio();
@@ -2437,28 +2755,92 @@ function handleDividendSubmit(e) {
   showToast(`Logged ${Fin.currency(totalAmount, false, dCurr)} cash dividend for ${ticker}`, 'success');
 }
 
+function openWatchlistModal(editTicker = null) {
+  if (typeof refreshSectorDatalist === 'function') refreshSectorDatalist();
+  const norm = editTicker ? MarketAPI.normalizeTicker(editTicker) : null;
+  const existing = norm ? (state.watchlist || []).find(w => w.ticker === norm) : null;
+  editingWatchlistOriginalTicker = existing ? existing.ticker : null;
+
+  const titleEl = document.getElementById('watchlist-modal-title');
+  const submitBtn = document.getElementById('watchlist-modal-submit-btn');
+  const tickerInput = document.getElementById('wl-ticker');
+  const nameInput = document.getElementById('wl-name');
+  const sectorInput = document.getElementById('wl-sector');
+
+  if (existing) {
+    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square text-purple-500"></i> Edit Watchlist Ticker (${existing.ticker})`;
+    if (submitBtn) submitBtn.textContent = 'Save Changes';
+    if (tickerInput) tickerInput.value = existing.ticker;
+    const compName = existing.name || state.fundamentals?.[existing.ticker]?.name || MarketAPI.getStaticProfile(existing.ticker)?.name || '';
+    if (nameInput) nameInput.value = compName === existing.ticker ? '' : compName;
+    if (sectorInput) sectorInput.value = getCanonicalWatchlistSector(existing);
+  } else {
+    if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-binoculars text-purple-500"></i> Add Ticker to Watchlist`;
+    if (submitBtn) submitBtn.textContent = 'Add & Fetch API Data';
+    if (tickerInput) tickerInput.value = '';
+    if (nameInput) nameInput.value = '';
+    if (sectorInput) sectorInput.value = '';
+  }
+
+  openModal('modal-watchlist');
+}
+window.openWatchlistModal = openWatchlistModal;
+
+window.openEditWatchlistModal = function(ticker) {
+  openWatchlistModal(ticker);
+};
+
 async function handleWatchlistSubmit(e) {
   e.preventDefault();
   const ticker = MarketAPI.normalizeTicker(document.getElementById('wl-ticker').value);
   const name = document.getElementById('wl-name').value.trim();
-  const sector = document.getElementById('wl-sector').value;
-  const targetBuyPrice = parseFloat(document.getElementById('wl-target-price').value);
+  const sector = (document.getElementById('wl-sector').value || '').trim() || 'Equities';
 
-  if (!ticker || !targetBuyPrice || targetBuyPrice <= 0) return;
+  if (!ticker) return;
+
+  const isEditing = Boolean(editingWatchlistOriginalTicker);
+  if (isEditing && editingWatchlistOriginalTicker !== ticker) {
+    const origIdx = state.watchlist.findIndex(w => w.ticker === editingWatchlistOriginalTicker);
+    const duplicateIdx = state.watchlist.findIndex(w => w.ticker === ticker);
+    if (origIdx >= 0) {
+      if (duplicateIdx >= 0 && duplicateIdx !== origIdx) {
+        state.watchlist.splice(origIdx, 1);
+      } else {
+        state.watchlist[origIdx].ticker = ticker;
+      }
+    }
+  }
+
+  const autoMetrics = computeStockPriceMetrics(ticker, state.prices[ticker]?.price || 0);
+  const autoRecBuy = autoMetrics?.recommendedBuyPrice || 0;
 
   const existing = state.watchlist.find(w => w.ticker === ticker);
   if (existing) {
-    existing.targetBuyPrice = targetBuyPrice;
+    existing.targetBuyPrice = autoRecBuy;
     if (name) existing.name = name;
     existing.sector = sector;
   } else {
-    state.watchlist.push({ ticker, name: name || ticker, sector, targetBuyPrice });
+    state.watchlist.push({ ticker, name: name || ticker, sector, targetBuyPrice: autoRecBuy });
   }
 
+  // Persist user's chosen sector & name in state.fundamentals so API/JSON syncs never overwrite it
+  const prevFund = state.fundamentals[ticker] || {};
+  const staticMeta = MarketAPI.getStaticProfile(ticker);
+  state.fundamentals[ticker] = {
+    ...prevFund,
+    name: name || (prevFund._userCustomName ? prevFund.name : (prevFund.name || staticMeta.name || ticker)),
+    sector,
+    _userCustomSector: true,
+    _userCustomName: Boolean(name) || Boolean(prevFund._userCustomName),
+    currency: prevFund.currency || staticMeta.currency
+  };
+
+  editingWatchlistOriginalTicker = null;
+  recalculatePortfolio();
   saveState();
   renderAll();
   closeModal('modal-watchlist');
-  showToast(`Added ${ticker} to Watchlist`, 'success');
+  showToast(isEditing ? `Updated ${ticker} in Watchlist (${sector})` : `Added ${ticker} to Watchlist (${sector})`, 'success');
 
   if (MarketAPI.hasKey()) {
     try {
@@ -2466,12 +2848,20 @@ async function handleWatchlistSubmit(e) {
       if (q?.price) {
         state.prices[ticker] = { ...q, lastUpdated: new Date().toISOString() };
         const wlItem = state.watchlist.find(w => w.ticker === ticker);
-        if (wlItem && (!wlItem.name || wlItem.name === ticker) && q.name) {
+        if (wlItem && (!wlItem.name || wlItem.name === ticker) && q.name && !name) {
           wlItem.name = q.name;
         }
       }
       const fund = await MarketAPI.fetchFundamentals(ticker);
-      if (fund) state.fundamentals[ticker] = fund;
+      if (fund) {
+        state.fundamentals[ticker] = {
+          ...fund,
+          name: name || (state.fundamentals[ticker]?._userCustomName ? state.fundamentals[ticker].name : (fund.name || ticker)),
+          sector,
+          _userCustomSector: true,
+          _userCustomName: Boolean(name) || Boolean(state.fundamentals[ticker]?._userCustomName)
+        };
+      }
       const hist = await MarketAPI.fetchMonthlyHistory(ticker);
       if (hist?.length) {
         state.historicalPrices[ticker] = hist;
@@ -2495,6 +2885,157 @@ async function handleWatchlistSubmit(e) {
     }
   }
 }
+
+window.openEditHoldingModal = function(rawTicker) {
+  if (typeof refreshSectorDatalist === 'function') refreshSectorDatalist();
+  const ticker = MarketAPI.normalizeTicker(rawTicker);
+  if (!ticker) return;
+  const h = (portfolio?.allHoldings || portfolio?.activeHoldings || []).find(item => item.ticker === ticker);
+  const fund = state.fundamentals[ticker] || {};
+  const staticMeta = MarketAPI.getStaticProfile(ticker);
+
+  editingHoldingOriginalTicker = ticker;
+  const titleEl = document.getElementById('edit-holding-modal-title');
+  if (titleEl) {
+    titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square text-amber-500"></i> Edit Holding (${ticker})`;
+  }
+  document.getElementById('edit-holding-ticker').value = ticker;
+  document.getElementById('edit-holding-name').value = h?.companyName || fund.name || staticMeta.name || ticker;
+  document.getElementById('edit-holding-sector').value = h ? getCanonicalHoldingsSector(h) : (fund.sector || staticMeta.sector || 'Equities');
+  document.getElementById('edit-holding-currency').value = h?.currency || fund.currency || staticMeta.currency || 'HKD';
+  document.getElementById('edit-holding-shares').value = h ? h.shares : 0;
+  document.getElementById('edit-holding-avg-cost').value = (h && h.avgCost > 0) ? h.avgCost : (state.prices[ticker]?.price || '');
+  const errEl = document.getElementById('edit-holding-error-msg');
+  if (errEl) errEl.classList.add('hidden');
+
+  openModal('modal-edit-holding');
+};
+
+function handleEditHoldingSubmit(e) {
+  e.preventDefault();
+  const origTicker = editingHoldingOriginalTicker;
+  if (!origTicker) return;
+
+  const newTicker = MarketAPI.normalizeTicker(document.getElementById('edit-holding-ticker').value);
+  const newName = (document.getElementById('edit-holding-name').value || '').trim();
+  const newSector = (document.getElementById('edit-holding-sector').value || '').trim() || 'Equities';
+  const newCurrency = (document.getElementById('edit-holding-currency').value || 'HKD').trim();
+  const newShares = parseFloat(document.getElementById('edit-holding-shares').value);
+  const newAvgCost = parseFloat(document.getElementById('edit-holding-avg-cost').value);
+  const errEl = document.getElementById('edit-holding-error-msg');
+  if (errEl) errEl.classList.add('hidden');
+
+  if (!newTicker) {
+    if (errEl) {
+      errEl.textContent = 'Ticker symbol cannot be empty.';
+      errEl.classList.remove('hidden');
+    }
+    return;
+  }
+
+  const targetSym = (newTicker !== origTicker) ? migrateTickerAcrossState(origTicker, newTicker) : origTicker;
+
+  // Update fundamentals & custom flags
+  const prevFund = state.fundamentals[targetSym] || {};
+  state.fundamentals[targetSym] = {
+    ...prevFund,
+    name: newName || prevFund.name || targetSym,
+    sector: newSector,
+    currency: newCurrency,
+    _userCustomName: true,
+    _userCustomSector: true,
+    _userCustomCurrency: true
+  };
+  if (state.prices[targetSym]) {
+    state.prices[targetSym].currency = newCurrency;
+  }
+
+  // Sync sector & name to any matching Watchlist entry and transactions for this ticker
+  const wlMatch = (state.watchlist || []).find(w => w.ticker === targetSym);
+  if (wlMatch) {
+    wlMatch.sector = newSector;
+    if (newName) wlMatch.name = newName;
+  }
+  (state.transactions || []).forEach(tx => {
+    if (MarketAPI.normalizeTicker(tx.ticker) === targetSym) {
+      tx.sector = newSector;
+    }
+  });
+
+  // Check if user modified active Shares or Average Cost Basis
+  const currentHolding = (portfolio?.allHoldings || portfolio?.activeHoldings || []).find(item => item.ticker === targetSym);
+  const origShares = currentHolding ? Number(currentHolding.shares || 0) : 0;
+  const origAvgCost = currentHolding ? Number(currentHolding.avgCost || 0) : 0;
+  const sharesChanged = Number.isFinite(newShares) && newShares >= 0 && Math.abs(newShares - origShares) > 1e-4;
+  const costChanged = Number.isFinite(newAvgCost) && newAvgCost > 0 && Math.abs(newAvgCost - origAvgCost) > 1e-4;
+
+  if (sharesChanged || (costChanged && newShares > 0)) {
+    const tickerTxs = (state.transactions || []).filter(tx => MarketAPI.normalizeTicker(tx.ticker) === targetSym);
+    const buyTxs = tickerTxs.filter(tx => tx.type === 'BUY');
+    const sellTxs = tickerTxs.filter(tx => tx.type === 'SELL');
+
+    if (buyTxs.length === 1 && sellTxs.length === 0 && newShares > 0) {
+      buyTxs[0].shares = newShares;
+      if (Number.isFinite(newAvgCost) && newAvgCost > 0) {
+        buyTxs[0].price = newAvgCost;
+        buyTxs[0].fees = 0;
+      }
+    } else if (newShares > origShares) {
+      const diffShares = Fin.round(newShares - origShares, 4);
+      const effectivePrice = (Number.isFinite(newAvgCost) && newAvgCost > 0) ? newAvgCost : (origAvgCost || state.prices[targetSym]?.price || 1);
+      state.transactions.push({
+        id: `TX-${Date.now().toString().slice(-6)}`,
+        date: new Date().toISOString().split('T')[0],
+        type: 'BUY',
+        ticker: targetSym,
+        shares: diffShares,
+        price: effectivePrice,
+        fees: 0,
+        sector: newSector,
+        notes: 'Holding adjustment via Edit Holding'
+      });
+    } else if (newShares < origShares && newShares >= 0) {
+      const diffShares = Fin.round(origShares - newShares, 4);
+      const effectivePrice = state.prices[targetSym]?.price || origAvgCost || 1;
+      state.transactions.push({
+        id: `TX-${Date.now().toString().slice(-6)}`,
+        date: new Date().toISOString().split('T')[0],
+        type: 'SELL',
+        ticker: targetSym,
+        shares: diffShares,
+        price: effectivePrice,
+        fees: 0,
+        sector: newSector,
+        notes: 'Holding share reduction via Edit Holding'
+      });
+    } else if (costChanged && buyTxs.length > 0 && origAvgCost > 0) {
+      const scaleRatio = newAvgCost / origAvgCost;
+      buyTxs.forEach(btx => {
+        btx.price = Fin.round(Number(btx.price || 0) * scaleRatio, 4);
+        btx.fees = Fin.round(Number(btx.fees || 0) * scaleRatio, 2);
+      });
+    }
+  }
+
+  editingHoldingOriginalTicker = null;
+  recalculatePortfolio();
+  saveState();
+  renderAll();
+  closeModal('modal-edit-holding');
+  showToast(`Updated holding ${targetSym} (${newSector})`, 'success');
+}
+
+window.viewTransactionsForHoldingModal = function() {
+  const sym = MarketAPI.normalizeTicker(document.getElementById('edit-holding-ticker')?.value || editingHoldingOriginalTicker || '');
+  closeModal('modal-edit-holding');
+  switchTab('transactions');
+  const searchEl = document.getElementById('tx-search-ticker');
+  if (searchEl && sym) {
+    searchEl.value = sym;
+    tablePageState.tx = 1;
+    renderTransactionsTable();
+  }
+};
 
 window.deleteTransaction = function(id) {
   state.transactions = state.transactions.filter(t => t.id !== id);
@@ -2888,8 +3429,38 @@ function setupEventListeners() {
 
   on('form-dividend', 'submit', handleDividendSubmit);
 
-  on('btn-open-watchlist-modal', 'click', () => openModal('modal-watchlist'));
+  on('btn-open-watchlist-modal', 'click', () => openWatchlistModal(null));
   on('form-watchlist', 'submit', handleWatchlistSubmit);
+  on('form-edit-holding', 'submit', handleEditHoldingSubmit);
+  on('trade-ticker', 'change', (e) => {
+    const val = MarketAPI.normalizeTicker(e.target.value);
+    if (val) {
+      e.target.value = val;
+      updateHoldingHint(val);
+      const secEl = document.getElementById('trade-sector');
+      const nameEl = document.getElementById('trade-company-name');
+      if ((!secEl || !secEl.value.trim()) && (!nameEl || !nameEl.value.trim())) {
+        prefillTradeTickerMetadata(val);
+      }
+    }
+  });
+  on('wl-ticker', 'change', (e) => {
+    const val = MarketAPI.normalizeTicker(e.target.value);
+    if (val && !editingWatchlistOriginalTicker) {
+      e.target.value = val;
+      const nameEl = document.getElementById('wl-name');
+      const secEl = document.getElementById('wl-sector');
+      const fund = state?.fundamentals?.[val] || {};
+      const staticMeta = MarketAPI.getStaticProfile(val);
+      if (nameEl && !nameEl.value.trim() && (fund.name || (staticMeta.name && staticMeta.name !== val))) {
+        nameEl.value = fund.name || staticMeta.name;
+      }
+      if (secEl && !secEl.value.trim()) {
+        const defaultSec = (fund.sector && fund.sector !== 'Equities') ? fund.sector : (staticMeta.sector || '');
+        if (defaultSec) secEl.value = defaultSec;
+      }
+    }
+  });
 
   on('btn-open-calc-modal', 'click', () => {
     populateCalculatorTickers();
@@ -3051,7 +3622,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.6 • Build 20261106_1855)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.8 • Build 20261107_0930)...');
   }
 
   try {
@@ -3088,7 +3659,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.2.6 boot sequence complete — triggering initial one-time live price API fetch.');
+      AppLogger.info('Boot', 'myPortfolio v3.2.8 boot sequence complete — triggering initial one-time live price API fetch.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

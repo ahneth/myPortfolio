@@ -230,3 +230,24 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
   - Removed `New Trade` and `Rebalance` buttons from the top header bar; placed `Rebalance` right next to `Record Trade` in the Holdings tab header.
   - Added `Last Sync: YYYY-MM-DD HH:MM:SS` next to `Sync Market Data` in the top navigation bar.
   - Moved ticker signal, period change, high, low, 52W high/low, MoM, QoQ, and YoY badges below the charts on the Holdings and Watchlist pages, positioned the charts closer to the tables, and unified the chart signal badge color scheme with the Holdings/Watchlist tables.
+
+
+## Version 3.2.7 (Build 20261107_0910) — 2026-11-07
+- **Bug Fix: Watchlist & Holdings Sector Forced to `Index ETF`**:
+  - Root Cause: `getCanonicalWatchlistSector()`, `getCanonicalHoldingsSector()`, `recalculatePortfolio()`, and `MarketAPI.isEtfSector()` previously checked ticker regexes and company names and overwrote user-entered sectors with `'Index ETF'`, while `ingestHistoricalPricesData()` and `fetchQuote()` overwrote `state.fundamentals[sym].sector`.
+  - Fix: Updated `getCanonicalWatchlistSector()`, `getCanonicalHoldingsSector()`, `recalculatePortfolio()`, `ingestHistoricalPricesData()`, and `MarketAPI.isEtfSector()` to always prioritize user-entered sectors (`_userCustomSector: true`, `w.sector`, `tx.sector`) and tightened HK ETF code detection in `getStaticProfile()`.
+- **Free-Text Personalized Sector Input**:
+  - Converted `#wl-sector` from a `<select>` dropdown to a free-text `<input list="sector-suggestions-datalist">`, and added free-text sector inputs to `#modal-trade` (`#trade-sector`) and `#modal-edit-holding` (`#edit-holding-sector`).
+- **Edit Function for Holdings, Transactions, and Watchlist**:
+  - Added Edit (`fa-pen-to-square`) buttons and full in-place edit modals/handlers for Holdings (`openEditHoldingModal`), Transactions (`openEditTransactionModal`), and Watchlist (`openEditWatchlistModal`).
+
+
+## Version 3.2.8 (Build 20261107_0930) — 2026-11-07
+- **Quantitative Recommended Buy, Recommended Sell & Stop Loss Engine**:
+  - Added multi-factor calculation of `recommendedBuyPrice`, `recommendedSellPrice`, and `recommendedStopLoss` (`prevPeak`, `prevTrough`, `regUpperNow`, `regLowerNow`, `sma20/50/200`, `avgCost`, `atr14`, and `signalLabel`) in `portfolio.js`.
+  - Replaced manual Target Buy Price input in Watchlist with the auto-calculated Recommended Buy Price, and added Recommended Buy, Recommended Sell, and Stop Loss columns to both Holdings and Watchlist tables.
+  - Exposed configurable calculation parameters in Settings (`Rec. Buy Pullback %`, `Rec. Buy Trough Wt %`, `Rec. Sell Gain %`, `Rec. Sell Peak Wt %`, `Stop-Loss Floor %`, `Peak/Trough Win (m)`).
+- **Holdings Chart Dotted Target & Stop Lines**:
+  - Added `Target Buy Price` (light blue dotted `#38bdf8`), `Target Sell Price` (pink dotted `#f472b6`), and `Stop Loss` (dark red dotted `#b91c1c`) lines in `charts.js`.
+- **Holdings Table Column Ordering & `Total Return` Column**:
+  - Moved `Realized P&L` next to `Unrealized P&L`, placed `Accumulated Div` after `Realized P&L`, and added `Total Return` (`Unrealized P&L + Realized P&L + Accumulated Div`) across all row levels.

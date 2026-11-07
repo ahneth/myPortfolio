@@ -46,6 +46,12 @@ var DEFAULT_QUANT_SETTINGS = {
   smaMedPeriod: 50,               // Medium SMA period (days; or 3M on monthly fallback)
   smaLongPeriod: 200,             // Long SMA period (days; or 10M on monthly fallback)
   atrStopMultiplier: 2.0,         // ATR Stop-Loss distance multiplier (Price - k * ATR)
+  stopLossFloorPct: 8.0,          // Stop-Loss max drawdown floor (%) below price/support
+  peakTroughLookbackMonths: 12,   // Lookback window (months) for Previous Swing Peak & Trough
+  recBuyPullbackPct: 6.0,         // Base pullback discount (%) for Recommended Buy Price
+  recBuyTroughWeightPct: 40.0,    // Weight (%) given to Previous Trough / Reg Lower Band in Rec. Buy
+  recSellTargetGainPct: 18.0,     // Base target gain (%) above price / Avg Cost for Recommended Sell Price
+  recSellPeakWeightPct: 45.0,     // Weight (%) given to Previous Peak / Reg Upper Band in Rec. Sell
   signalStrongBuyMin: 78,         // Minimum score (0-100) for STRONG BUY badge
   signalBuyMin: 62,               // Minimum score (0-100) for ACCUMULATE badge
   signalHoldMin: 45,              // Minimum score (0-100) for HOLD badge
@@ -843,7 +849,22 @@ function ingestHistoricalPricesData(data) {
     Object.entries(data.fundamentals).forEach(([k, f]) => {
       const sym = MarketAPI.normalizeTicker(k);
       if (sym && f && typeof f === 'object') {
-        state.fundamentals[sym] = { ...(state.fundamentals[sym] || {}), ...f };
+        const prev = state.fundamentals[sym] || {};
+        const wlItem = (Array.isArray(state?.watchlist) ? state.watchlist.find(w => w.ticker === sym) : null);
+        const merged = { ...prev, ...f };
+        if (prev._userCustomSector && prev.sector) {
+          merged.sector = prev.sector;
+          merged._userCustomSector = true;
+        } else if (wlItem && wlItem.sector) {
+          merged.sector = wlItem.sector;
+        } else if (prev.sector && prev.sector !== 'Equities' && (!f.sector || f.sector === 'Index ETF')) {
+          merged.sector = prev.sector;
+        }
+        if (prev._userCustomName && prev.name) {
+          merged.name = prev.name;
+          merged._userCustomName = true;
+        }
+        state.fundamentals[sym] = merged;
       }
     });
   }
@@ -1243,7 +1264,7 @@ function saveState() {
  * Dividend Schedule Metrics, and 4-Pillar Composite Buy/Sell Signal Score (0-100) using
  * the user's customizable parameters in state.settings.
  */
-function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitPosWeightPct = null) {
+function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitPosWeightPct = null, explicitAvgCost = null) {
   const ticker = MarketAPI.normalizeTicker(rawTicker);
   const cfg = state?.settings || DEFAULT_QUANT_SETTINGS;
   const priceObj = state?.prices?.[ticker] || {};
@@ -1502,24 +1523,84 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
   }
   p2Norm = Math.max(0, Math.min(1, p2Norm));
 
-  // Pillar 3: Valuation & Target Buy Margin (normalized 0..1)
+  // Compute Previous Swing Peak, Previous Swing Trough & 12M Log-Linear Regression Band Bounds
+  const lookbackMos = Math.max(3, Math.min(60, parseInt(cfg.peakTroughLookbackMonths ?? 12, 10) || 12));
+  let prevPeak = high52w;
+  let prevTrough = low52w;
+  let regUpperNow = null;
+  let regLowerNow = null;
+
+  if (hist.length > 0) {
+    const winBars = hist.slice(-lookbackMos);
+    const winHighs = winBars.map(r => Number(r.high ?? r.rawClose ?? r.close ?? 0)).filter(v => Number.isFinite(v) && v > 0);
+    const winLows = winBars.map(r => Number(r.low ?? r.rawClose ?? r.close ?? 0)).filter(v => Number.isFinite(v) && v > 0);
+    if (winHighs.length > 0) prevPeak = Math.max(...winHighs, refCurrent || 0);
+    if (winLows.length > 0) prevTrough = Math.min(...winLows, refCurrent > 0 ? refCurrent : Infinity);
+  }
+  if (hist.length >= 6) {
+    const mReg = hist.slice(-Math.min(lookbackMos, hist.length)).map(b => getBarRawPrice(b)).filter(v => v > 0);
+    if (mReg.length >= 6) {
+      const nm = mReg.length;
+      const xs = mReg.map((_, idx) => idx);
+      const ys = mReg.map(p => Math.log(Math.max(0.0001, p)));
+      const xm = xs.reduce((a, b) => a + b, 0) / nm;
+      const ym = ys.reduce((a, b) => a + b, 0) / nm;
+      let cov = 0, vx = 0;
+      for (let i = 0; i < nm; i++) {
+        cov += (xs[i] - xm) * (ys[i] - ym);
+        vx += (xs[i] - xm) ** 2;
+      }
+      const slope = vx > 0 ? cov / vx : 0;
+      const intercept = ym - slope * xm;
+      const residuals = ys.map((y, i) => y - (intercept + slope * i));
+      const stdRes = Math.sqrt(residuals.reduce((s, r) => s + r * r, 0) / nm);
+      const lastX = nm - 1;
+      regUpperNow = Fin.round(Math.exp(intercept + slope * lastX + stdRes), 4);
+      regLowerNow = Fin.round(Math.exp(intercept + slope * lastX - stdRes), 4);
+    }
+  }
+
+  prevPeak = (prevPeak && prevPeak > 0) ? Fin.round(prevPeak, 4) : (refCurrent > 0 ? Fin.round(refCurrent * 1.12, 4) : null);
+  prevTrough = (prevTrough && prevTrough > 0 && prevTrough < Infinity) ? Fin.round(prevTrough, 4) : (refCurrent > 0 ? Fin.round(refCurrent * 0.88, 4) : null);
+
+  // Resolve Average Cost for active holding if available
+  let avgCost = explicitAvgCost;
+  if ((avgCost === null || avgCost === undefined) && portfolio?.activeHoldings) {
+    const heldObj = portfolio.activeHoldings.find(h => h.ticker === ticker);
+    if (heldObj && heldObj.avgCost > 0) avgCost = Number(heldObj.avgCost);
+  }
+  avgCost = (Number.isFinite(Number(avgCost)) && Number(avgCost) > 0) ? Number(avgCost) : 0;
+
+  // Preliminary technical support anchor for Pillar 3 Valuation scoring
+  const recBuyPullbackPct = Math.max(0.5, Number(cfg.recBuyPullbackPct ?? 6.0));
+  const recBuyTroughWeight = Math.max(0, Math.min(1, Number(cfg.recBuyTroughWeightPct ?? 40.0) / 100));
+  const recSellTargetGainPct = Math.max(1.0, Number(cfg.recSellTargetGainPct ?? 18.0));
+  const recSellPeakWeight = Math.max(0, Math.min(1, Number(cfg.recSellPeakWeightPct ?? 45.0) / 100));
+  const stopMult = Math.max(0.5, Number(cfg.atrStopMultiplier ?? 2.0));
+  const stopFloorPct = Math.max(1.0, Number(cfg.stopLossFloorPct ?? 8.0));
+
+  let prelimSupport = refCurrent > 0 ? refCurrent * (1 - recBuyPullbackPct / 100) : 0;
+  if (refCurrent > 0) {
+    const smaAnchor = sma50 || sma20 || sma200 || prelimSupport;
+    const troughAnchor = (prevTrough && regLowerNow) ? (0.55 * prevTrough + 0.45 * regLowerNow) : (prevTrough || regLowerNow || prelimSupport);
+    prelimSupport = (1 - recBuyTroughWeight) * Math.min(prelimSupport, smaAnchor) + recBuyTroughWeight * troughAnchor;
+  }
+
+  // Pillar 3: Valuation & Support Margin (normalized 0..1)
   let p3Norm = 0.50;
-  const wlItem = (state?.watchlist || []).find(w => w.ticker === ticker);
-  const targetBuy = Number(wlItem?.targetBuyPrice || 0);
-  if (targetBuy > 0 && refCurrent > 0) {
-    const distFromTargetPct = ((refCurrent - targetBuy) / targetBuy) * 100;
-    if (refCurrent <= targetBuy) {
-      p3Norm += 0.38;
-      reasons.push(`Price at/below Target Buy (${Fin.currency(refCurrent, false, priceObj.currency)} <= ${Fin.currency(targetBuy, false, priceObj.currency)})`);
-    } else if (distFromTargetPct <= 6.0) {
+  if (prelimSupport > 0 && refCurrent > 0) {
+    const distFromSupportPct = ((refCurrent - prelimSupport) / prelimSupport) * 100;
+    if (refCurrent <= prelimSupport * 1.015) {
+      p3Norm += 0.35;
+      reasons.push(`Trading at/below technical buy support (${Fin.currency(prelimSupport, false, priceObj.currency)})`);
+    } else if (distFromSupportPct <= 5.5) {
       p3Norm += 0.18;
-      reasons.push(`Within ${distFromTargetPct.toFixed(1)}% of Target Buy (${Fin.currency(targetBuy, false, priceObj.currency)})`);
-    } else if (distFromTargetPct >= 25.0) {
-      p3Norm -= 0.35;
-      reasons.push(`Extended +${distFromTargetPct.toFixed(1)}% above Target Buy — Profit-taking zone`);
-    } else if (distFromTargetPct >= 16.0) {
-      p3Norm -= 0.22;
-      reasons.push(`Trading +${distFromTargetPct.toFixed(1)}% above Target Buy (${Fin.currency(targetBuy, false, priceObj.currency)})`);
+      reasons.push(`Within ${distFromSupportPct.toFixed(1)}% of recommended buy support (${Fin.currency(prelimSupport, false, priceObj.currency)})`);
+    } else if (distFromSupportPct >= 24.0) {
+      p3Norm -= 0.32;
+      reasons.push(`Extended +${distFromSupportPct.toFixed(1)}% above support — Profit-taking zone`);
+    } else if (distFromSupportPct >= 15.0) {
+      p3Norm -= 0.18;
     }
   }
 
@@ -1597,12 +1678,110 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
   else if (signalScore >= 30) signalLabel = 'TRIM / OFFLOAD';
   else signalLabel = 'SELL / AVOID';
 
-  const stopMult = Number(cfg.atrStopMultiplier ?? 2.0);
-  const suggestedStopLoss = (refCurrent > 0 && atr14 > 0) ? Fin.round(Math.max(0, refCurrent - stopMult * atr14), 3) : null;
+  // =========================================================================
+  // QUANTITATIVE RECOMMENDED BUY PRICE, RECOMMENDED SELL PRICE & STOP LOSS
+  // Combines Current Price, Avg Cost, Trend SMAs, Prev Peak/Trough, Reg Channel & Signal
+  // =========================================================================
+  let recommendedBuyPrice = null;
+  let recommendedSellPrice = null;
+  let recommendedStopLoss = null;
+
+  if (refCurrent > 0) {
+    // 1. Recommended Buy Price
+    let trendBuyAnchor = refCurrent * (1 - recBuyPullbackPct / 100);
+    if (regime === 'Stage 2 Strong Uptrend' || regime === 'Stage 2 Uptrend (Consolidating)') {
+      const maRef = sma50 || sma20 || trendBuyAnchor;
+      trendBuyAnchor = 0.55 * trendBuyAnchor + 0.45 * Math.min(refCurrent, maRef);
+    } else if (regime === 'Bullish Pullback (Buy-the-Dip)' || regime === 'Stage 1 Bullish Inflection') {
+      const dipRef = sma200 || regLowerNow || sma50 || trendBuyAnchor;
+      trendBuyAnchor = 0.50 * (refCurrent * (1 - (recBuyPullbackPct * 0.70) / 100)) + 0.50 * Math.min(refCurrent, dipRef);
+    } else if (regime === 'Stage 3 Topping / Distribution' || regime === 'Stage 4 Confirmed Downtrend') {
+      const bearRef = Math.min(sma200 || refCurrent, regLowerNow || refCurrent, refCurrent * (1 - (recBuyPullbackPct * 1.5) / 100));
+      trendBuyAnchor = bearRef;
+    }
+
+    const troughRef = (prevTrough && regLowerNow)
+      ? (0.60 * prevTrough + 0.40 * regLowerNow)
+      : (prevTrough || regLowerNow || trendBuyAnchor);
+
+    let rawRecBuy = (1 - recBuyTroughWeight) * trendBuyAnchor + recBuyTroughWeight * troughRef;
+
+    // Signal conviction adjustment
+    if (signalLabel === 'STRONG BUY') {
+      rawRecBuy = Math.max(rawRecBuy, refCurrent * (1 - (recBuyPullbackPct * 0.35) / 100));
+    } else if (signalLabel === 'ACCUMULATE') {
+      rawRecBuy = Math.max(rawRecBuy, refCurrent * (1 - (recBuyPullbackPct * 0.75) / 100));
+    } else if (signalLabel.includes('TRIM') || signalLabel.includes('SELL')) {
+      rawRecBuy = Math.min(rawRecBuy, refCurrent * (1 - (recBuyPullbackPct * 1.35) / 100));
+    }
+
+    // Average Cost basis integration for existing holdings
+    if (avgCost > 0) {
+      if (refCurrent < avgCost && regime !== 'Stage 4 Confirmed Downtrend') {
+        // Position is below average cost: target opportunistic averaging-down level
+        rawRecBuy = 0.70 * rawRecBuy + 0.30 * Math.min(refCurrent, avgCost * 0.96);
+      } else if (refCurrent >= avgCost) {
+        // Position is in profit: anchor pullback entry between technical support and avgCost
+        rawRecBuy = 0.80 * rawRecBuy + 0.20 * Math.min(refCurrent, Math.max(avgCost, troughRef));
+      }
+    }
+
+    const minBuyFloor = prevTrough ? Math.min(prevTrough * 0.92, refCurrent * 0.70) : refCurrent * 0.70;
+    recommendedBuyPrice = Fin.round(Math.min(refCurrent, Math.max(minBuyFloor, rawRecBuy)), 2);
+
+    // 2. Recommended Sell Price (Take-Profit / Resistance Target)
+    const costOrPriceBase = avgCost > 0 ? Math.max(refCurrent, avgCost) : refCurrent;
+    const gainTarget = costOrPriceBase * (1 + recSellTargetGainPct / 100);
+    let peakResistance = (prevPeak && regUpperNow)
+      ? Math.max(prevPeak, 0.55 * prevPeak + 0.45 * regUpperNow)
+      : (prevPeak || regUpperNow || gainTarget);
+    if (peakResistance <= refCurrent * 1.02) {
+      peakResistance = Math.max(refCurrent * (1 + recSellTargetGainPct / 100), refCurrent + 3.0 * (atr14 || refCurrent * 0.025));
+    }
+
+    let rawRecSell = (1 - recSellPeakWeight) * gainTarget + recSellPeakWeight * peakResistance;
+
+    if (signalLabel.includes('SELL') || (signalLabel.includes('TRIM') && (rsi14 !== null && rsi14 >= rsiHigh))) {
+      // Already in overbought / offload territory: set tight take-profit target just above current price
+      rawRecSell = Math.min(rawRecSell, refCurrent * 1.035);
+    } else if (regime === 'Stage 2 Strong Uptrend' && signalLabel === 'STRONG BUY') {
+      // Strong uptrend breakout: extend target
+      rawRecSell = Math.max(rawRecSell, costOrPriceBase * (1 + (recSellTargetGainPct * 1.2) / 100));
+    }
+
+    recommendedSellPrice = Fin.round(Math.max(refCurrent * 1.015, rawRecSell), 2);
+
+    // 3. Recommended Stop Loss (ATR Volatility Stop + Swing Trough / SMA Support + Profit Protection)
+    const atrStop = atr14 > 0 ? (refCurrent - stopMult * atr14) : (refCurrent * (1 - stopFloorPct / 100));
+    const maxDrawdownStop = refCurrent * (1 - stopFloorPct / 100);
+    let supportStop = maxDrawdownStop;
+    if (prevTrough && prevTrough < refCurrent && prevTrough >= refCurrent * 0.84) {
+      supportStop = prevTrough * 0.98;
+    } else if (sma50 && sma50 < refCurrent && sma50 >= refCurrent * 0.88) {
+      supportStop = sma50 * 0.98;
+    } else if (sma200 && sma200 < refCurrent && sma200 >= refCurrent * 0.85) {
+      supportStop = sma200 * 0.98;
+    }
+
+    let rawStop = 0.65 * Math.max(maxDrawdownStop, atrStop) + 0.35 * supportStop;
+    if (avgCost > 0 && refCurrent >= avgCost * 1.14) {
+      // Protect locked-in gain above break-even when unrealized gain >= +14%
+      rawStop = Math.max(rawStop, Math.min(refCurrent * 0.96, avgCost * 1.01));
+    }
+    // Ensure Stop Loss sits strictly below Recommended Buy Price (or below 97.5% of current price)
+    const stopCeiling = Math.min(refCurrent * 0.975, recommendedBuyPrice > 0 ? recommendedBuyPrice * 0.985 : refCurrent * 0.975);
+    recommendedStopLoss = Fin.round(Math.max(0.01, Math.min(stopCeiling, rawStop)), 2);
+  }
+
+  const suggestedStopLoss = recommendedStopLoss;
 
   return {
     low52w,
     high52w,
+    prevPeak,
+    prevTrough,
+    regUpperNow,
+    regLowerNow,
     pos52wPct,
     momPct,
     qoqPct,
@@ -1616,6 +1795,9 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
     sma200,
     rsi14,
     atr14,
+    recommendedBuyPrice,
+    recommendedSellPrice,
+    recommendedStopLoss,
     suggestedStopLoss,
     bbPctB,
     regime,
@@ -2039,13 +2221,30 @@ function recalculatePortfolio() {
     const unrealizedGain = isActive ? Fin.round(marketValue - h.totalCostBasis, 2) : 0;
     const unrealizedGainPct = (isActive && h.totalCostBasis > 0) ? Fin.round((unrealizedGain / h.totalCostBasis) * 100, 2) : 0;
     const fund = state.fundamentals[ticker] || {};
-    const currency = priceObj.currency || fund.currency || staticProfile.currency;
-    const companyName = (OFFICIAL_NAMES_MAP[ticker]) || ((fund.name && fund.name !== ticker) ? fund.name : staticProfile.name);
-    const rawSector = (fund.sector && fund.sector !== 'Equities') ? fund.sector : staticProfile.sector;
-    const sector = MarketAPI.isEtfSector(rawSector, ticker, companyName) ? 'Index ETF' : (rawSector || 'Equities');
+    const wlMatch = (Array.isArray(state?.watchlist) ? state.watchlist.find(w => w.ticker === ticker) : null);
+    const txWithSector = [...(state?.transactions || [])].reverse().find(tx => tx.ticker === ticker && tx.sector);
+    const currency = (fund._userCustomCurrency && fund.currency) ? fund.currency : (priceObj.currency || fund.currency || staticProfile.currency);
+    const companyName = (fund._userCustomName && fund.name)
+      ? fund.name
+      : ((OFFICIAL_NAMES_MAP[ticker]) || ((fund.name && fund.name !== ticker) ? fund.name : (wlMatch?.name && wlMatch.name !== ticker ? wlMatch.name : staticProfile.name)));
+    let resolvedSector = '';
+    if (fund._userCustomSector && fund.sector) {
+      resolvedSector = fund.sector;
+    } else if (txWithSector && txWithSector.sector) {
+      resolvedSector = txWithSector.sector;
+    } else if (wlMatch && wlMatch.sector) {
+      resolvedSector = wlMatch.sector;
+    } else if (fund.sector && fund.sector !== 'Equities') {
+      resolvedSector = fund.sector;
+    } else if (staticProfile.sector && staticProfile.sector !== 'Equities') {
+      resolvedSector = staticProfile.sector;
+    } else {
+      resolvedSector = MarketAPI.isEtfSector('', ticker, companyName) ? 'Index ETF' : 'Equities';
+    }
+    const sector = String(resolvedSector || 'Equities').trim() || 'Equities';
     const mvBaseCandidate = Fin.convertCurrency(marketValue, currency, baseCurr);
     const posWeightPct = (isActive && preTotalStockMvBase > 0) ? (mvBaseCandidate / preTotalStockMvBase) * 100 : 0;
-    const priceMetrics = computeStockPriceMetrics(ticker, currentPrice, posWeightPct);
+    const priceMetrics = computeStockPriceMetrics(ticker, currentPrice, posWeightPct, isActive ? h.avgCost : null);
     const divInfo = priceMetrics.divInfo || {};
 
     // Annualized Forward Yield on Cost (or cumulative YoC; for 0-share closed holdings, use cumulativeBuyCostBasis)
@@ -2142,6 +2341,11 @@ function recalculatePortfolio() {
       sma200: priceMetrics.sma200,
       rsi14: priceMetrics.rsi14,
       atr14: priceMetrics.atr14,
+      prevPeak: priceMetrics.prevPeak,
+      prevTrough: priceMetrics.prevTrough,
+      recommendedBuyPrice: priceMetrics.recommendedBuyPrice,
+      recommendedSellPrice: priceMetrics.recommendedSellPrice,
+      recommendedStopLoss: priceMetrics.recommendedStopLoss,
       suggestedStopLoss: priceMetrics.suggestedStopLoss,
       regime: priceMetrics.regime,
       regTrendAnnualPct: priceMetrics.regTrendAnnualPct,
@@ -2166,7 +2370,10 @@ function recalculatePortfolio() {
       annualForwardDivNative: Fin.round(annualDivNative, 2),
       annualForwardDivBase: Fin.round(annualDivBase, 2),
       realizedGain: h.realizedGain,
-      realizedGainBase
+      realizedGainBase,
+      totalReturn: Fin.round(unrealizedGain + (h.realizedGain || 0) + (h.totalDividends || 0), 2),
+      totalReturnBase: Fin.round(Fin.convertCurrency(unrealizedGain, currency, baseCurr) + realizedGainBase + totalDividendsBase, 2),
+      totalReturnPct: refCostForYoC > 0 ? Fin.round(((unrealizedGain + (h.realizedGain || 0) + (h.totalDividends || 0)) / refCostForYoC) * 100, 2) : 0
     };
 
     allHoldings.push(holdingRecord);

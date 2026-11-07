@@ -96,7 +96,7 @@ var MarketAPI = {
       return { ...TICKER_STATIC_DIRECTORY[sym] };
     }
     const currency = sym.endsWith('.HK') ? 'HKD' : (sym.endsWith('.L') ? 'GBp' : 'USD');
-    const isHkEtfCode = /^(28|30|31|34|72|73|75|828|90|91)\d{2,3}\.HK$/.test(sym);
+    const isHkEtfCode = /^(0?(28[0-4]\d|30\d\d|31\d\d|34\d\d|7[235]\d\d|9[01]\d\d)|828\d\d)\.HK$/.test(sym);
     return {
       name: sym,
       sector: isHkEtfCode ? 'Index ETF' : 'Equities',
@@ -106,10 +106,13 @@ var MarketAPI = {
 
   isEtfSector(sectorName, ticker = '', companyName = '') {
     const sec = String(sectorName || '').trim();
-    if (/\betf\b|index fund|exchange traded|inverse product/i.test(sec)) return true;
+    // If a non-default sector name is explicitly provided, respect it and only classify as ETF if the sector name itself says ETF / Index Fund
+    if (sec && sec.toLowerCase() !== 'equities') {
+      return /\betf\b|index fund|exchange traded/i.test(sec);
+    }
     const sym = this.normalizeTicker(ticker);
     if (TICKER_STATIC_DIRECTORY[sym]?.sector === 'Index ETF') return true;
-    if (/^(28|30|31|34|72|73|75|828|90|91)\d{2,3}\.HK$/.test(sym)) return true;
+    if (/^(0?(28[0-4]\d|30\d\d|31\d\d|34\d\d|7[235]\d\d|9[01]\d\d)|828\d\d)\.HK$/.test(sym)) return true;
     if (/\betf\b|tracker fund|spdr gold|vanguard|ishares|csop|premia/i.test(String(companyName || ''))) return true;
     return false;
   },
@@ -514,16 +517,24 @@ var MarketAPI = {
             const longName = meta.longName || meta.shortName || state?.fundamentals?.[symbol]?.name || staticMeta.name || symbol;
 
             const existingFund = state.fundamentals[symbol] || {};
-            const inferredSector = (meta.instrumentType === 'ETF' || this.isEtfSector(existingFund.sector, symbol, longName))
-              ? 'Index ETF'
-              : (existingFund.sector || staticMeta.sector || 'Equities');
+            const wlEntry = (typeof state !== 'undefined' && Array.isArray(state?.watchlist))
+              ? state.watchlist.find(w => w.ticker === symbol)
+              : null;
+            const userSector = (existingFund._userCustomSector && existingFund.sector)
+              ? existingFund.sector
+              : (wlEntry?.sector || (existingFund.sector && existingFund.sector !== 'Equities' ? existingFund.sector : ''));
+            const inferredSector = userSector
+              || ((meta.instrumentType === 'ETF' || this.isEtfSector('', symbol, longName)) ? 'Index ETF' : (staticMeta.sector || 'Equities'));
+            const resolvedName = (existingFund._userCustomName && existingFund.name)
+              ? existingFund.name
+              : (existingFund.name && existingFund.name !== symbol ? existingFund.name : longName);
             const high52w = meta.fiftyTwoWeekHigh ? Fin.round(parseFloat(meta.fiftyTwoWeekHigh), 4) : (existingFund.high52w || null);
             const low52w = meta.fiftyTwoWeekLow ? Fin.round(parseFloat(meta.fiftyTwoWeekLow), 4) : (existingFund.low52w || null);
             state.fundamentals[symbol] = {
               ...existingFund,
-              name: existingFund.name && existingFund.name !== symbol ? existingFund.name : longName,
+              name: resolvedName,
               sector: inferredSector,
-              currency,
+              currency: existingFund.currency || currency,
               high52w,
               low52w
             };

@@ -469,7 +469,10 @@ function renderInlineStockChart(tabType) {
   const priceObj = state.prices[ticker] || {};
   const currency = priceObj.currency || fund.currency || (ticker.endsWith('.HK') ? 'HKD' : (ticker.endsWith('.L') ? 'GBp' : 'USD'));
   const companyName = fund.name || ticker;
-  const pm = typeof computeStockPriceMetrics === 'function' ? computeStockPriceMetrics(ticker, priceObj.price || 0) : null;
+  const holdingForCalc = (portfolio?.allHoldings || portfolio?.activeHoldings || []).find(h => h.ticker === ticker);
+  const pm = typeof computeStockPriceMetrics === 'function'
+    ? computeStockPriceMetrics(ticker, priceObj.price || 0, null, (holdingForCalc && holdingForCalc.isActive !== false && holdingForCalc.avgCost > 0) ? holdingForCalc.avgCost : null)
+    : null;
 
   const sigColorCls = (typeof getSignalBadgeColorClasses === 'function')
     ? getSignalBadgeColorClasses(pm?.signalLabel)
@@ -553,8 +556,16 @@ function renderInlineStockChart(tabType) {
            YoY: <strong class="${(pm.yoyPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm.yoyPct !== null ? Fin.percent(pm.yoyPct, true) : '-'}</strong>
          </span>`
       : '';
+    const recLevelsBadge = (pm && (pm.recommendedBuyPrice || pm.recommendedSellPrice || pm.recommendedStopLoss))
+      ? `<span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+           Rec Buy: <strong class="text-sky-500">${pm.recommendedBuyPrice ? Fin.currency(pm.recommendedBuyPrice, false, currency) : '-'}</strong> &bull;
+           Rec Sell: <strong class="text-pink-500">${pm.recommendedSellPrice ? Fin.currency(pm.recommendedSellPrice, false, currency) : '-'}</strong> &bull;
+           Stop Loss: <strong class="text-red-700 dark:text-red-500">${pm.recommendedStopLoss ? Fin.currency(pm.recommendedStopLoss, false, currency) : '-'}</strong>
+         </span>`
+      : '';
     statsEl.innerHTML = `
       ${sigPill}
+      ${recLevelsBadge}
       <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${chgClass}">
         ${periodTag} Change: ${Fin.percent(periodChangePct, true)} (${Fin.currency(periodChange, true, currency)})
       </span>
@@ -567,13 +578,10 @@ function renderInlineStockChart(tabType) {
   }
 
   const holding = (portfolio.allHoldings || portfolio.activeHoldings || []).find(h => h.ticker === ticker);
-  const watched = state.watchlist.find(w => w.ticker === ticker);
-  const refValue = isHoldings
-    ? (holding && holding.avgCost > 0 ? holding.avgCost : null)
-    : (watched ? watched.targetBuyPrice : (holding && holding.avgCost > 0 ? holding.avgCost : null));
-  const refLabel = isHoldings
-    ? (holding && holding.avgCost > 0 ? `Your Avg Cost (${Fin.currency(refValue, false, currency)})` : null)
-    : (watched ? `Target Buy Price (${Fin.currency(refValue, false, currency)})` : null);
+  const avgCostValue = (isHoldings && holding && holding.isActive !== false && holding.avgCost > 0) ? holding.avgCost : null;
+  const targetBuyPriceVal = pm?.recommendedBuyPrice || holding?.recommendedBuyPrice || null;
+  const targetSellPriceVal = pm?.recommendedSellPrice || holding?.recommendedSellPrice || null;
+  const stopLossVal = pm?.recommendedStopLoss || holding?.recommendedStopLoss || null;
 
   // Clear any previously clicked trade marker detail banner when re-rendering chart
   const tradeMarkerBoxEl = document.getElementById(isHoldings ? 'holdings-chart-trade-marker-box' : 'watchlist-chart-trade-marker-box');
@@ -762,12 +770,54 @@ function renderInlineStockChart(tabType) {
     });
   }
 
-  if (refValue && refValue > 0) {
+  if (avgCostValue && avgCostValue > 0) {
     datasets.push({
-      label: refLabel,
-      data: labels.map(() => refValue),
-      borderColor: isHoldings ? '#f59e0b' : '#ec4899',
-      borderDash: [6, 6],
+      label: `Your Avg Cost (${Fin.currency(avgCostValue, false, currency)})`,
+      data: labels.map(() => avgCostValue),
+      borderColor: '#f59e0b',
+      borderDash: [6, 4],
+      borderWidth: 2.0,
+      pointRadius: 0,
+      fill: false,
+      order: 2,
+      _legendStyle: 'dashed'
+    });
+  }
+
+  if (targetBuyPriceVal && targetBuyPriceVal > 0) {
+    datasets.push({
+      label: `Target Buy Price (${Fin.currency(targetBuyPriceVal, false, currency)})`,
+      data: labels.map(() => targetBuyPriceVal),
+      borderColor: '#38bdf8',
+      borderDash: [3, 3],
+      borderWidth: 2.2,
+      pointRadius: 0,
+      fill: false,
+      order: 2,
+      _legendStyle: 'dashed'
+    });
+  }
+
+  if (targetSellPriceVal && targetSellPriceVal > 0) {
+    datasets.push({
+      label: `Target Sell Price (${Fin.currency(targetSellPriceVal, false, currency)})`,
+      data: labels.map(() => targetSellPriceVal),
+      borderColor: '#f472b6',
+      borderDash: [3, 3],
+      borderWidth: 2.2,
+      pointRadius: 0,
+      fill: false,
+      order: 2,
+      _legendStyle: 'dashed'
+    });
+  }
+
+  if (stopLossVal && stopLossVal > 0) {
+    datasets.push({
+      label: `Stop Loss (${Fin.currency(stopLossVal, false, currency)})`,
+      data: labels.map(() => stopLossVal),
+      borderColor: '#b91c1c',
+      borderDash: [3, 3],
       borderWidth: 2.2,
       pointRadius: 0,
       fill: false,

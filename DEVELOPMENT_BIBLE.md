@@ -234,3 +234,27 @@ ightarrow$ `Actions`.
 - **Holdings & Watchlist Chart Layout & Unified Signal Badge Colors (`index.html`, `charts.js`, `app.js`)**:
   - Moved the ticker signal badge and period stats (`#holdings-chart-period-stats` and `#watchlist-chart-period-stats`: Signal, Period Change, High/Low, 52W High/Low, MoM, QoQ, YoY) below the chart canvas and tightened spacing between the tables and charts.
   - Unified the chart signal badge color scheme with the Holdings and Watchlist tables via `getSignalBadgeColorClasses(signalLabel)` (`STRONG BUY` emerald solid, `ACCUMULATE` teal, `HOLD` slate, `TRIM` amber, `SELL` rose).
+
+
+## 19. Version 3.2.7 Architecture Update (Build 20261107_0910)
+- **Personalized Sector Resolution & ETF Override Bug Fix (`api.js`, `portfolio.js`, `app.js`)**:
+  - Fixed `getCanonicalWatchlistSector()`, `getCanonicalHoldingsSector()`, `recalculatePortfolio()`, `ingestHistoricalPricesData()`, and `MarketAPI.isEtfSector()` so user-provided sector strings (`w.sector`, `tx.sector`, or `state.fundamentals[ticker].sector` with `_userCustomSector: true`) are preserved verbatim and never forcibly overwritten into `'Index ETF'`.
+  - Replaced the fixed `<select id="wl-sector">` dropdown with a free-text `<input type="text" id="wl-sector" list="sector-suggestions-datalist">` (and added `#trade-sector` and `#edit-holding-sector`), backed by `refreshSectorDatalist()` for dynamic autocomplete of personalized and standard sectors.
+- **Full Edit Functionality for Holdings, Transactions, and Watchlist (`index.html`, `app.js`)**:
+  - **Holdings Edit (`openEditHoldingModal` / `#modal-edit-holding`)**: Allows amending Ticker Symbol (migrating all transactions, dividends, watchlist entries, prices, fundamentals, and historical prices via `migrateTickerAcrossState()`), Company Name, Personalized Sector, Currency, and Active Shares / Average Cost Basis.
+  - **Transactions Edit (`openEditTransactionModal` / `#modal-trade`)**: Allows editing any `BUY`, `SELL`, `DEPOSIT`, or `WITHDRAW` transaction in place (`editingTransactionId`).
+  - **Watchlist Edit (`openEditWatchlistModal` / `#modal-watchlist`)**: Allows editing any Watchlist ticker's Symbol, Company Name, Personalized Sector, and Target Buy Price in place (`editingWatchlistOriginalTicker`).
+
+
+## 20. Version 3.2.8 Architecture Update (Build 20261107_0930)
+- **Quantitative Recommended Buy Price, Sell Price & Stop Loss Engine (`portfolio.js`, `app.js`, `index.html`)**:
+  - `computeStockPriceMetrics(rawTicker, fallbackCurrentPrice, explicitPosWeightPct, explicitAvgCost)` calculates `prevPeak`, `prevTrough`, `recommendedBuyPrice`, `recommendedSellPrice`, and `recommendedStopLoss` using current price, holding average cost, 6-state trend regime, SMA 20/50/200, 12M log-linear regression channel ($\pm 1\sigma$), previous swing peak/trough, ATR(14), and composite signal conviction.
+  - Replaced manual `targetBuyPrice` input on the Watchlist page (`#modal-watchlist` and `#watchlist-main-table`) with the auto-calculated `recommendedBuyPrice`, `recommendedSellPrice`, and `recommendedStopLoss`.
+  - Added 6 configurable parameters in `DEFAULT_QUANT_SETTINGS` and the Settings UI (`peakTroughLookbackMonths`, `recBuyPullbackPct`, `recBuyTroughWeightPct`, `recSellTargetGainPct`, `recSellPeakWeightPct`, and `stopLossFloorPct`, alongside `atrStopMultiplier`).
+- **Holdings Chart Reference Lines (`charts.js`)**:
+  - `renderInlineStockChart()` plots three horizontal dotted reference lines on the Holdings (and Watchlist) monthly charts:
+    1. **Target Buy Price**: Light blue dotted (`#38bdf8`, `borderDash: [3, 3]`)
+    2. **Target Sell Price**: Pink dotted (`#f472b6`, `borderDash: [3, 3]`)
+    3. **Stop Loss**: Dark red dotted (`#b91c1c`, `borderDash: [3, 3]`)
+- **Holdings Table Column Reordering & Total Return Column (`index.html`, `app.js`, `portfolio.js`)**:
+  - Reordered Holdings table columns so `Realized P&L` sits immediately next to `Unrealized P&L`, followed by `Accumulated Div`, and added `Total Return` (`Unrealized P&L + Realized P&L + Accumulated Div`, with % return on cost basis) across the Portfolio Total row, Sector Group header rows, and individual holding rows.
