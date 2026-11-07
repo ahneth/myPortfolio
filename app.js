@@ -338,8 +338,8 @@ function renderKPIs() {
   const targetHits = state.watchlist.filter(w => {
     const cur = state.prices[w.ticker]?.price || 0;
     const wm = cur > 0 ? computeStockPriceMetrics(w.ticker, cur) : null;
-    const recBuy = wm?.recommendedBuyPrice || 0;
-    return cur > 0 && recBuy > 0 && cur <= recBuy;
+    const activeBuyTarget = Number(w.customBuyPrice || wm?.customBuyPrice || wm?.recommendedBuyPrice || 0);
+    return cur > 0 && activeBuyTarget > 0 && cur <= activeBuyTarget * 1.005;
   });
   const strongBuys = portfolio.activeHoldings.filter(h => h.signalScore >= Number(state.settings?.signalStrongBuyMin ?? 78));
 
@@ -643,6 +643,32 @@ function formatTrendRegimeCell(m) {
     </div>
   `;
 }
+
+function formatTargetLevelCell(customVal, recVal, currentPrice, currency, colorClass, labelTitle = 'Target') {
+  const cVal = (Number.isFinite(Number(customVal)) && Number(customVal) > 0) ? Number(customVal) : null;
+  const rVal = (Number.isFinite(Number(recVal)) && Number(recVal) > 0) ? Number(recVal) : null;
+  const activeVal = cVal || rVal;
+  if (!activeVal) {
+    return '<span class="text-slate-400 text-xs font-mono">-</span>';
+  }
+  const diffPct = (currentPrice > 0) ? Fin.round(((activeVal - currentPrice) / currentPrice) * 100, 1) : null;
+  if (cVal) {
+    const recSub = rVal ? `Rec: ${Fin.currency(rVal, false, currency)}` : (diffPct !== null ? Fin.percent(diffPct, true) : 'Custom');
+    return `
+      <div class="font-bold num-font ${colorClass}" title="User Custom ${labelTitle}: ${Fin.currency(cVal, false, currency)}${diffPct !== null ? ` (${Fin.percent(diffPct, true)} vs current)` : ''}${rVal ? ` | Quant Recommended: ${Fin.currency(rVal, false, currency)}` : ''}">
+        <i class="fa-solid fa-thumbtack text-[9px] mr-0.5 opacity-80"></i>${Fin.currency(cVal, false, currency)}
+      </div>
+      <div class="text-[9.5px] font-mono text-slate-400">${recSub}</div>
+    `;
+  }
+  return `
+    <div class="font-bold num-font ${colorClass}" title="Quant Recommended ${labelTitle}: ${Fin.currency(rVal, false, currency)}">
+      ${Fin.currency(rVal, false, currency)}
+    </div>
+    <div class="text-[9.5px] font-mono text-slate-400">${diffPct !== null ? Fin.percent(diffPct, true) : 'Rec'}</div>
+  `;
+}
+window.formatTargetLevelCell = formatTargetLevelCell;
 
 function getSignalBadgeColorClasses(signalLabel) {
   const label = String(signalLabel || 'HOLD').toUpperCase();
@@ -1107,9 +1133,9 @@ function renderHoldingsTable() {
         const recBuy = h.recommendedBuyPrice || null;
         const recSell = h.recommendedSellPrice || null;
         const recStop = h.recommendedStopLoss || h.suggestedStopLoss || null;
-        const recBuyDiffPct = (recBuy && h.currentPrice > 0) ? Fin.round(((recBuy - h.currentPrice) / h.currentPrice) * 100, 1) : null;
-        const recSellDiffPct = (recSell && h.currentPrice > 0) ? Fin.round(((recSell - h.currentPrice) / h.currentPrice) * 100, 1) : null;
-        const recStopDiffPct = (recStop && h.currentPrice > 0) ? Fin.round(((recStop - h.currentPrice) / h.currentPrice) * 100, 1) : null;
+        const custBuy = h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice || null;
+        const custSell = h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice || null;
+        const custStop = h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss || null;
 
         tr.innerHTML = `
           <td class="py-1 pl-2.5 pr-2 sm:py-1.5 sm:pl-6 sm:pr-3 sticky-col-mobile max-w-[142px] sm:max-w-none">
@@ -1164,17 +1190,14 @@ function renderHoldingsTable() {
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium ${isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}">${Fin.shares(h.shares)}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? Fin.currency(h.avgCost, false, h.currency) : '<span class="text-slate-400">-</span>'}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? Fin.currency(h.totalCostBasis, false, h.currency) : `<span class="text-slate-400 text-[10px]" title="Historical total buy cost: ${Fin.currency(h.historicalCostBasis || 0, false, h.currency)}">-</span>`}</td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font" title="Recommended Buy Price based on trend support, prev trough (${h.prevTrough ? Fin.currency(h.prevTrough, false, h.currency) : '-'}), avg cost & signal">
-            <div class="font-bold text-sky-500">${recBuy ? Fin.currency(recBuy, false, h.currency) : '-'}</div>
-            ${recBuyDiffPct !== null ? `<div class="text-[9.5px] text-slate-400">${Fin.percent(recBuyDiffPct, true)}</div>` : ''}
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font">
+            ${formatTargetLevelCell(custBuy, recBuy, h.currentPrice, h.currency, 'text-sky-500', 'Buy Target')}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font" title="Recommended Sell Price based on target gain, prev peak (${h.prevPeak ? Fin.currency(h.prevPeak, false, h.currency) : '-'}), reg upper band & signal">
-            <div class="font-bold text-pink-500">${recSell ? Fin.currency(recSell, false, h.currency) : '-'}</div>
-            ${recSellDiffPct !== null ? `<div class="text-[9.5px] text-slate-400">${Fin.percent(recSellDiffPct, true)}</div>` : ''}
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font">
+            ${formatTargetLevelCell(custSell, recSell, h.currentPrice, h.currency, 'text-pink-500', 'Sell Target')}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font" title="Recommended Stop Loss based on ATR(${state.settings.atrStopMultiplier || 2}x), swing support & profit protection">
-            <div class="font-bold text-red-700 dark:text-red-500">${recStop ? Fin.currency(recStop, false, h.currency) : '-'}</div>
-            ${recStopDiffPct !== null ? `<div class="text-[9.5px] text-slate-400">${Fin.percent(recStopDiffPct, true)}</div>` : ''}
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font">
+            ${formatTargetLevelCell(custStop, recStop, h.currentPrice, h.currency, 'text-red-700 dark:text-red-500', 'Stop Loss')}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font" title="${h.xirrPct !== null && h.xirrPct !== undefined ? `Annualized Money-Weighted Return (XIRR): ${Fin.percent(h.xirrPct, true)} p.a. | Real Inflation-Adjusted: ${Fin.percent(h.realXirrPct, true)} p.a. (includes all BUY/SELL cash flows & dividends)` : 'Insufficient cash flow span'}">
             <div class="font-bold text-xs ${h.xirrPct === null || h.xirrPct !== undefined && h.xirrPct === null ? 'text-slate-400' : (h.xirrPct >= 0 ? 'text-emerald-500' : 'text-rose-500')}">
@@ -1638,8 +1661,8 @@ function renderWatchlistAndFundamentals() {
         const g = groupsMap[sec];
         g.items.push(item);
         g.scoreSum += item.signalScore;
-        const recBuyVal = item.wm?.recommendedBuyPrice || 0;
-        if (item.curPrice > 0 && recBuyVal > 0 && item.curPrice <= recBuyVal * 1.005) {
+        const activeBuyVal = Number(item.w?.customBuyPrice || item.wm?.customBuyPrice || item.wm?.recommendedBuyPrice || 0);
+        if (item.curPrice > 0 && activeBuyVal > 0 && item.curPrice <= activeBuyVal * 1.005) {
           g.triggeredCount += 1;
         }
       });
@@ -1707,8 +1730,12 @@ function renderWatchlistAndFundamentals() {
             const recBuy = wm?.recommendedBuyPrice || 0;
             const recSell = wm?.recommendedSellPrice || 0;
             const recStop = wm?.recommendedStopLoss || 0;
-            const distPct = (curPrice > 0 && recBuy > 0) ? ((curPrice - recBuy) / recBuy) * 100 : 0;
-            const isTriggered = curPrice > 0 && recBuy > 0 && curPrice <= recBuy * 1.005;
+            const custBuy = Number(w.customBuyPrice || wm?.customBuyPrice || 0) || null;
+            const custSell = Number(w.customSellPrice || wm?.customSellPrice || 0) || null;
+            const custStop = Number(w.customStopLoss || wm?.customStopLoss || 0) || null;
+            const activeBuy = custBuy || recBuy;
+            const distPct = (curPrice > 0 && activeBuy > 0) ? ((curPrice - activeBuy) / activeBuy) * 100 : 0;
+            const isTriggered = curPrice > 0 && activeBuy > 0 && curPrice <= activeBuy * 1.005;
 
             const tr = document.createElement('tr');
             tr.className = `cursor-pointer transition text-xs ${
@@ -1766,17 +1793,17 @@ function renderWatchlistAndFundamentals() {
               <td class="py-3 px-3 text-center">
                 ${formatSignalBadgeCell(w.ticker, wm)}
               </td>
-              <td class="py-3 px-3 text-right font-bold num-font text-sky-500" title="Auto-calculated Recommended Buy Price from trend support, prev trough (${wm?.prevTrough ? Fin.currency(wm.prevTrough, false, wlCurrency) : '-'}) & signal">
-                ${recBuy > 0 ? Fin.currency(recBuy, false, wlCurrency) : '-'}
+              <td class="py-1.5 px-3 text-right num-font">
+                ${formatTargetLevelCell(custBuy, recBuy, curPrice, wlCurrency, 'text-sky-500', 'Buy Target')}
               </td>
-              <td class="py-3 px-3 text-right num-font font-medium ${distPct <= 0.5 && curPrice > 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}">
-                ${curPrice > 0 && recBuy > 0 ? (distPct <= 0.5 ? 'In Buy Zone' : `+${distPct.toFixed(1)}% above`) : '-'}
+              <td class="py-1.5 px-3 text-right num-font font-medium ${distPct <= 0.5 && curPrice > 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}">
+                ${curPrice > 0 && activeBuy > 0 ? (distPct <= 0.5 ? 'In Buy Zone' : `+${distPct.toFixed(1)}% above`) : '-'}
               </td>
-              <td class="py-3 px-3 text-right font-bold num-font text-pink-500" title="Auto-calculated Recommended Sell Price from target gain & prev peak (${wm?.prevPeak ? Fin.currency(wm.prevPeak, false, wlCurrency) : '-'})">
-                ${recSell > 0 ? Fin.currency(recSell, false, wlCurrency) : '-'}
+              <td class="py-1.5 px-3 text-right num-font">
+                ${formatTargetLevelCell(custSell, recSell, curPrice, wlCurrency, 'text-pink-500', 'Sell Target')}
               </td>
-              <td class="py-3 px-3 text-right font-bold num-font text-red-700 dark:text-red-500" title="Auto-calculated Recommended Stop Loss">
-                ${recStop > 0 ? Fin.currency(recStop, false, wlCurrency) : '-'}
+              <td class="py-1.5 px-3 text-right num-font">
+                ${formatTargetLevelCell(custStop, recStop, curPrice, wlCurrency, 'text-red-700 dark:text-red-500', 'Stop Loss')}
               </td>
               <td class="py-3 px-3 text-center">
                 ${isTriggered
@@ -2755,6 +2782,65 @@ function handleDividendSubmit(e) {
   showToast(`Logged ${Fin.currency(totalAmount, false, dCurr)} cash dividend for ${ticker}`, 'success');
 }
 
+function updateWatchlistModalRecPreview(rawTicker) {
+  const sym = MarketAPI.normalizeTicker(rawTicker);
+  const previewEl = document.getElementById('wl-rec-levels-preview');
+  if (!previewEl) return;
+  if (!sym) {
+    previewEl.innerHTML = 'Enter a ticker symbol above to preview calculated Recommended Buy, Sell &amp; Stop-Loss levels.';
+    return;
+  }
+  const curP = state?.prices?.[sym]?.price || 0;
+  const curr = state?.prices?.[sym]?.currency || state?.fundamentals?.[sym]?.currency || MarketAPI.getStaticProfile(sym).currency || 'HKD';
+  const pm = computeStockPriceMetrics(sym, curP);
+  if (!pm || (!pm.recommendedBuyPrice && !pm.recommendedSellPrice && !pm.recommendedStopLoss)) {
+    previewEl.innerHTML = `<span class="text-slate-400">Live price / history will be fetched on save to compute Recommended levels for <strong>${sym}</strong>.</span>`;
+    return;
+  }
+  previewEl.innerHTML = `
+    <span>Quant Recommended (${curr}):</span>
+    <strong class="text-sky-500 ml-1">Buy ${pm.recommendedBuyPrice ? Fin.currency(pm.recommendedBuyPrice, false, curr) : '-'}</strong> &bull;
+    <strong class="text-pink-500">Sell ${pm.recommendedSellPrice ? Fin.currency(pm.recommendedSellPrice, false, curr) : '-'}</strong> &bull;
+    <strong class="text-red-700 dark:text-red-500">Stop ${pm.recommendedStopLoss ? Fin.currency(pm.recommendedStopLoss, false, curr) : '-'}</strong>
+  `;
+}
+
+window.copyRecommendedToCustomInModal = function(mode) {
+  if (mode === 'holding') {
+    const sym = MarketAPI.normalizeTicker(document.getElementById('edit-holding-ticker')?.value || editingHoldingOriginalTicker || '');
+    if (!sym) return;
+    const h = (portfolio?.allHoldings || portfolio?.activeHoldings || []).find(item => item.ticker === sym);
+    const curP = state?.prices?.[sym]?.price || h?.currentPrice || 0;
+    const avgC = parseFloat(document.getElementById('edit-holding-avg-cost')?.value) || h?.avgCost || null;
+    const pm = computeStockPriceMetrics(sym, curP, null, avgC);
+    if (pm?.recommendedBuyPrice) document.getElementById('edit-holding-custom-buy').value = pm.recommendedBuyPrice;
+    if (pm?.recommendedSellPrice) document.getElementById('edit-holding-custom-sell').value = pm.recommendedSellPrice;
+    if (pm?.recommendedStopLoss) document.getElementById('edit-holding-custom-stop').value = pm.recommendedStopLoss;
+    showToast(`Copied today's Recommended levels into Custom inputs for ${sym}`, 'info');
+  } else if (mode === 'watchlist') {
+    const sym = MarketAPI.normalizeTicker(document.getElementById('wl-ticker')?.value || editingWatchlistOriginalTicker || '');
+    if (!sym) return;
+    const curP = state?.prices?.[sym]?.price || 0;
+    const pm = computeStockPriceMetrics(sym, curP);
+    if (pm?.recommendedBuyPrice) document.getElementById('wl-custom-buy').value = pm.recommendedBuyPrice;
+    if (pm?.recommendedSellPrice) document.getElementById('wl-custom-sell').value = pm.recommendedSellPrice;
+    if (pm?.recommendedStopLoss) document.getElementById('wl-custom-stop').value = pm.recommendedStopLoss;
+    showToast(`Copied today's Recommended levels into Custom inputs for ${sym}`, 'info');
+  }
+};
+
+window.clearCustomTargetsInModal = function(mode) {
+  if (mode === 'holding') {
+    if (document.getElementById('edit-holding-custom-buy')) document.getElementById('edit-holding-custom-buy').value = '';
+    if (document.getElementById('edit-holding-custom-sell')) document.getElementById('edit-holding-custom-sell').value = '';
+    if (document.getElementById('edit-holding-custom-stop')) document.getElementById('edit-holding-custom-stop').value = '';
+  } else if (mode === 'watchlist') {
+    if (document.getElementById('wl-custom-buy')) document.getElementById('wl-custom-buy').value = '';
+    if (document.getElementById('wl-custom-sell')) document.getElementById('wl-custom-sell').value = '';
+    if (document.getElementById('wl-custom-stop')) document.getElementById('wl-custom-stop').value = '';
+  }
+};
+
 function openWatchlistModal(editTicker = null) {
   if (typeof refreshSectorDatalist === 'function') refreshSectorDatalist();
   const norm = editTicker ? MarketAPI.normalizeTicker(editTicker) : null;
@@ -2766,20 +2852,32 @@ function openWatchlistModal(editTicker = null) {
   const tickerInput = document.getElementById('wl-ticker');
   const nameInput = document.getElementById('wl-name');
   const sectorInput = document.getElementById('wl-sector');
+  const custBuyEl = document.getElementById('wl-custom-buy');
+  const custSellEl = document.getElementById('wl-custom-sell');
+  const custStopEl = document.getElementById('wl-custom-stop');
 
   if (existing) {
+    const fund = state.fundamentals?.[existing.ticker] || {};
     if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square text-purple-500"></i> Edit Watchlist Ticker (${existing.ticker})`;
     if (submitBtn) submitBtn.textContent = 'Save Changes';
     if (tickerInput) tickerInput.value = existing.ticker;
-    const compName = existing.name || state.fundamentals?.[existing.ticker]?.name || MarketAPI.getStaticProfile(existing.ticker)?.name || '';
+    const compName = existing.name || fund.name || MarketAPI.getStaticProfile(existing.ticker)?.name || '';
     if (nameInput) nameInput.value = compName === existing.ticker ? '' : compName;
     if (sectorInput) sectorInput.value = getCanonicalWatchlistSector(existing);
+    if (custBuyEl) custBuyEl.value = (existing.customBuyPrice ?? fund.customBuyPrice) || '';
+    if (custSellEl) custSellEl.value = (existing.customSellPrice ?? fund.customSellPrice) || '';
+    if (custStopEl) custStopEl.value = (existing.customStopLoss ?? fund.customStopLoss) || '';
+    updateWatchlistModalRecPreview(existing.ticker);
   } else {
     if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-binoculars text-purple-500"></i> Add Ticker to Watchlist`;
     if (submitBtn) submitBtn.textContent = 'Add & Fetch API Data';
     if (tickerInput) tickerInput.value = '';
     if (nameInput) nameInput.value = '';
     if (sectorInput) sectorInput.value = '';
+    if (custBuyEl) custBuyEl.value = '';
+    if (custSellEl) custSellEl.value = '';
+    if (custStopEl) custStopEl.value = '';
+    updateWatchlistModalRecPreview('');
   }
 
   openModal('modal-watchlist');
@@ -2795,6 +2893,12 @@ async function handleWatchlistSubmit(e) {
   const ticker = MarketAPI.normalizeTicker(document.getElementById('wl-ticker').value);
   const name = document.getElementById('wl-name').value.trim();
   const sector = (document.getElementById('wl-sector').value || '').trim() || 'Equities';
+  const rawCustBuy = parseFloat(document.getElementById('wl-custom-buy')?.value);
+  const rawCustSell = parseFloat(document.getElementById('wl-custom-sell')?.value);
+  const rawCustStop = parseFloat(document.getElementById('wl-custom-stop')?.value);
+  const customBuyPrice = (Number.isFinite(rawCustBuy) && rawCustBuy > 0) ? Fin.round(rawCustBuy, 4) : null;
+  const customSellPrice = (Number.isFinite(rawCustSell) && rawCustSell > 0) ? Fin.round(rawCustSell, 4) : null;
+  const customStopLoss = (Number.isFinite(rawCustStop) && rawCustStop > 0) ? Fin.round(rawCustStop, 4) : null;
 
   if (!ticker) return;
 
@@ -2816,20 +2920,34 @@ async function handleWatchlistSubmit(e) {
 
   const existing = state.watchlist.find(w => w.ticker === ticker);
   if (existing) {
-    existing.targetBuyPrice = autoRecBuy;
+    existing.targetBuyPrice = customBuyPrice || autoRecBuy;
+    existing.customBuyPrice = customBuyPrice;
+    existing.customSellPrice = customSellPrice;
+    existing.customStopLoss = customStopLoss;
     if (name) existing.name = name;
     existing.sector = sector;
   } else {
-    state.watchlist.push({ ticker, name: name || ticker, sector, targetBuyPrice: autoRecBuy });
+    state.watchlist.push({
+      ticker,
+      name: name || ticker,
+      sector,
+      targetBuyPrice: customBuyPrice || autoRecBuy,
+      customBuyPrice,
+      customSellPrice,
+      customStopLoss
+    });
   }
 
-  // Persist user's chosen sector & name in state.fundamentals so API/JSON syncs never overwrite it
+  // Persist user's chosen sector, name & custom levels in state.fundamentals so API/JSON syncs never overwrite them
   const prevFund = state.fundamentals[ticker] || {};
   const staticMeta = MarketAPI.getStaticProfile(ticker);
   state.fundamentals[ticker] = {
     ...prevFund,
     name: name || (prevFund._userCustomName ? prevFund.name : (prevFund.name || staticMeta.name || ticker)),
     sector,
+    customBuyPrice,
+    customSellPrice,
+    customStopLoss,
     _userCustomSector: true,
     _userCustomName: Boolean(name) || Boolean(prevFund._userCustomName),
     currency: prevFund.currency || staticMeta.currency
@@ -2858,6 +2976,9 @@ async function handleWatchlistSubmit(e) {
           ...fund,
           name: name || (state.fundamentals[ticker]?._userCustomName ? state.fundamentals[ticker].name : (fund.name || ticker)),
           sector,
+          customBuyPrice,
+          customSellPrice,
+          customStopLoss,
           _userCustomSector: true,
           _userCustomName: Boolean(name) || Boolean(state.fundamentals[ticker]?._userCustomName)
         };
@@ -2892,7 +3013,9 @@ window.openEditHoldingModal = function(rawTicker) {
   if (!ticker) return;
   const h = (portfolio?.allHoldings || portfolio?.activeHoldings || []).find(item => item.ticker === ticker);
   const fund = state.fundamentals[ticker] || {};
+  const wlMatch = (state.watchlist || []).find(w => w.ticker === ticker);
   const staticMeta = MarketAPI.getStaticProfile(ticker);
+  const curr = h?.currency || fund.currency || staticMeta.currency || 'HKD';
 
   editingHoldingOriginalTicker = ticker;
   const titleEl = document.getElementById('edit-holding-modal-title');
@@ -2902,9 +3025,28 @@ window.openEditHoldingModal = function(rawTicker) {
   document.getElementById('edit-holding-ticker').value = ticker;
   document.getElementById('edit-holding-name').value = h?.companyName || fund.name || staticMeta.name || ticker;
   document.getElementById('edit-holding-sector').value = h ? getCanonicalHoldingsSector(h) : (fund.sector || staticMeta.sector || 'Equities');
-  document.getElementById('edit-holding-currency').value = h?.currency || fund.currency || staticMeta.currency || 'HKD';
+  document.getElementById('edit-holding-currency').value = curr;
   document.getElementById('edit-holding-shares').value = h ? h.shares : 0;
   document.getElementById('edit-holding-avg-cost').value = (h && h.avgCost > 0) ? h.avgCost : (state.prices[ticker]?.price || '');
+
+  const custBuyEl = document.getElementById('edit-holding-custom-buy');
+  const custSellEl = document.getElementById('edit-holding-custom-sell');
+  const custStopEl = document.getElementById('edit-holding-custom-stop');
+  if (custBuyEl) custBuyEl.value = (fund.customBuyPrice ?? wlMatch?.customBuyPrice ?? h?.customBuyPrice) || '';
+  if (custSellEl) custSellEl.value = (fund.customSellPrice ?? wlMatch?.customSellPrice ?? h?.customSellPrice) || '';
+  if (custStopEl) custStopEl.value = (fund.customStopLoss ?? wlMatch?.customStopLoss ?? h?.customStopLoss) || '';
+
+  const recPreviewEl = document.getElementById('edit-holding-rec-levels-preview');
+  if (recPreviewEl) {
+    const pm = computeStockPriceMetrics(ticker, h?.currentPrice || state.prices[ticker]?.price || 0, null, h?.avgCost || null);
+    recPreviewEl.innerHTML = `
+      <span>Quant Recommended (${curr}):</span>
+      <strong class="text-sky-500 ml-1">Buy ${pm?.recommendedBuyPrice ? Fin.currency(pm.recommendedBuyPrice, false, curr) : '-'}</strong> &bull;
+      <strong class="text-pink-500">Sell ${pm?.recommendedSellPrice ? Fin.currency(pm.recommendedSellPrice, false, curr) : '-'}</strong> &bull;
+      <strong class="text-red-700 dark:text-red-500">Stop ${pm?.recommendedStopLoss ? Fin.currency(pm.recommendedStopLoss, false, curr) : '-'}</strong>
+    `;
+  }
+
   const errEl = document.getElementById('edit-holding-error-msg');
   if (errEl) errEl.classList.add('hidden');
 
@@ -2922,6 +3064,13 @@ function handleEditHoldingSubmit(e) {
   const newCurrency = (document.getElementById('edit-holding-currency').value || 'HKD').trim();
   const newShares = parseFloat(document.getElementById('edit-holding-shares').value);
   const newAvgCost = parseFloat(document.getElementById('edit-holding-avg-cost').value);
+  const rawCustBuy = parseFloat(document.getElementById('edit-holding-custom-buy')?.value);
+  const rawCustSell = parseFloat(document.getElementById('edit-holding-custom-sell')?.value);
+  const rawCustStop = parseFloat(document.getElementById('edit-holding-custom-stop')?.value);
+  const customBuyPrice = (Number.isFinite(rawCustBuy) && rawCustBuy > 0) ? Fin.round(rawCustBuy, 4) : null;
+  const customSellPrice = (Number.isFinite(rawCustSell) && rawCustSell > 0) ? Fin.round(rawCustSell, 4) : null;
+  const customStopLoss = (Number.isFinite(rawCustStop) && rawCustStop > 0) ? Fin.round(rawCustStop, 4) : null;
+
   const errEl = document.getElementById('edit-holding-error-msg');
   if (errEl) errEl.classList.add('hidden');
 
@@ -2942,6 +3091,9 @@ function handleEditHoldingSubmit(e) {
     name: newName || prevFund.name || targetSym,
     sector: newSector,
     currency: newCurrency,
+    customBuyPrice,
+    customSellPrice,
+    customStopLoss,
     _userCustomName: true,
     _userCustomSector: true,
     _userCustomCurrency: true
@@ -2950,10 +3102,14 @@ function handleEditHoldingSubmit(e) {
     state.prices[targetSym].currency = newCurrency;
   }
 
-  // Sync sector & name to any matching Watchlist entry and transactions for this ticker
+  // Sync sector, name & custom levels to any matching Watchlist entry and transactions for this ticker
   const wlMatch = (state.watchlist || []).find(w => w.ticker === targetSym);
   if (wlMatch) {
     wlMatch.sector = newSector;
+    wlMatch.customBuyPrice = customBuyPrice;
+    wlMatch.customSellPrice = customSellPrice;
+    wlMatch.customStopLoss = customStopLoss;
+    if (customBuyPrice) wlMatch.targetBuyPrice = customBuyPrice;
     if (newName) wlMatch.name = newName;
   }
   (state.transactions || []).forEach(tx => {
@@ -3446,18 +3602,21 @@ function setupEventListeners() {
   });
   on('wl-ticker', 'change', (e) => {
     const val = MarketAPI.normalizeTicker(e.target.value);
-    if (val && !editingWatchlistOriginalTicker) {
+    if (val) {
       e.target.value = val;
-      const nameEl = document.getElementById('wl-name');
-      const secEl = document.getElementById('wl-sector');
-      const fund = state?.fundamentals?.[val] || {};
-      const staticMeta = MarketAPI.getStaticProfile(val);
-      if (nameEl && !nameEl.value.trim() && (fund.name || (staticMeta.name && staticMeta.name !== val))) {
-        nameEl.value = fund.name || staticMeta.name;
-      }
-      if (secEl && !secEl.value.trim()) {
-        const defaultSec = (fund.sector && fund.sector !== 'Equities') ? fund.sector : (staticMeta.sector || '');
-        if (defaultSec) secEl.value = defaultSec;
+      updateWatchlistModalRecPreview(val);
+      if (!editingWatchlistOriginalTicker) {
+        const nameEl = document.getElementById('wl-name');
+        const secEl = document.getElementById('wl-sector');
+        const fund = state?.fundamentals?.[val] || {};
+        const staticMeta = MarketAPI.getStaticProfile(val);
+        if (nameEl && !nameEl.value.trim() && (fund.name || (staticMeta.name && staticMeta.name !== val))) {
+          nameEl.value = fund.name || staticMeta.name;
+        }
+        if (secEl && !secEl.value.trim()) {
+          const defaultSec = (fund.sector && fund.sector !== 'Equities') ? fund.sector : (staticMeta.sector || '');
+          if (defaultSec) secEl.value = defaultSec;
+        }
       }
     }
   });
@@ -3622,7 +3781,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.8 • Build 20261107_0930)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.9 • Build 20261107_1750)...');
   }
 
   try {
@@ -3659,7 +3818,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.2.8 boot sequence complete — triggering initial one-time live price API fetch.');
+      AppLogger.info('Boot', 'myPortfolio v3.2.9 boot sequence complete — triggering initial one-time live price API fetch.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.2.8',
-  buildId: '20261107_0930',
-  releaseDate: '2026-11-07 09:30 HKT',
-  driveFolder: '/myPortfolio/20261107_0930/',
+  appVersion: '3.2.9',
+  buildId: '20261107_1750',
+  releaseDate: '2026-11-07 17:50 HKT',
+  driveFolder: '/myPortfolio/20261107_1750/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -24,8 +24,19 @@ var APP_VERSION_MANIFEST = {
   },
   changelog: [
     {
+      version: '3.2.9',
+      buildId: '20261107_1750',
+      date: '2026-11-07 17:50 HKT',
+      summary: 'Implemented Option 2 chart visualization (full-width dotted lines for Custom target/stop levels + compact right-edge 2M ticks/pins for daily Recommended levels), added Custom Buy/Sell/Stop-Loss inputs with 1-click Copy from Recommended in Edit modals, and updated Holdings & Watchlist tables to display Custom and Recommended levels together.',
+      changes: [
+        'Implemented Option 2 on Holdings & Watchlist charts: full-width dotted lines for Custom Buy (light blue), Custom Sell (pink), and Custom Stop Loss (dark red) paired with compact right-edge 2-month ticks/pins for daily quant Recommended levels.',
+        'Added Custom Buy Price, Custom Sell Price, and Custom Stop Loss inputs in the Edit Holding and Add/Edit Watchlist modals alongside live Recommended previews and 1-click "Copy from Recommended" and "Clear Custom" buttons.',
+        'Updated Holdings and Watchlist table columns (Buy Target, Sell Target, Stop Loss) to display pinned Custom prices on the primary line and daily Recommended prices on the sub-line.'
+      ]
+    },
+    {
       version: '3.2.8',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-07 09:30 HKT',
       summary: 'Added quantitative calculation engine for Recommended Buy Price, Recommended Sell Price, and Recommended Stop Loss (with configurable parameters in Settings), plotted Target Buy (light blue dotted), Target Sell (pink dotted), and Stop Loss (dark red dotted) lines on the Holdings chart, reordered Holdings P&L columns, and added the Total Return column.',
       changes: [
@@ -37,7 +48,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.7',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-07 09:10 HKT',
       summary: 'Fixed Watchlist and Holdings sector override bug (preventing forced Index ETF classification), converted Sector inputs to free-text with personalized sector autocomplete, and added full Edit modals/actions for Holdings, Transactions, and Watchlist.',
       changes: [
@@ -48,7 +59,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.6',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-06 18:55 HKT',
       summary: 'Automated Watchlist/Holdings ticker sync to GitHub Actions, moved Rebalance button to Holdings header, added Last Sync timestamp next to Sync Market Data in top bar, and moved chart ticker signal & period metrics below Holdings/Watchlist charts with unified table signal color scheme.',
       changes: [
@@ -60,7 +71,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.5',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-04 21:35 HKT',
       summary: 'Fixed missing October 2026 (2026-10) monthly data for London Stock Exchange ETFs (SPYL.L, VWRA.L) caused by British Summer Time (BST = UTC+1) midnight timestamps shifting back 1 hour into the previous month when parsed in UTC.',
       changes: [
@@ -71,7 +82,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.4',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-04 15:15 HKT',
       summary: 'Enhanced the Holdings table with Day P&L, reordered Market Value / Unrealized P&L / Div / Ex-Date next to Day P&L, added Accumulated Div and Realized P&L columns, added a top PORTFOLIO TOTAL aggregation row, included all historical (0-share closed) holdings with an "Active only" checkbox, and added clickable Monthly Buy (Blue X) and Sell (Red X) markers on the Holdings stock chart.',
       changes: [
@@ -84,7 +95,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.3',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-04 14:35 HKT',
       summary: 'Removed header subtitle ("Global HK, US & London Stock Portfolio Tracker") and "Test 2800.HK & VOO" button, added automatic one-time Live Price API fetch on initial page load, enforced a 3-month (90-day) cutoff for fetching and retaining company news, and displayed the latest update dates and times for Historical Monthly Prices and News Analysis in the page footer.',
       changes: [
@@ -96,7 +107,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.2',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-04 13:50 HKT',
       summary: 'Halved the fixed height of the Holdings and Watchlist scrollable table viewports so they take significantly less vertical screen space and leave ample room for the stock charts and page scrolling.',
       changes: [
@@ -106,7 +117,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.1',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-04 13:10 HKT',
       summary: 'Moved Live Price column immediately after Asset / Sector in Holdings and Watchlist tables, added fixed-height single-screen scrollable table viewports with vertical/horizontal scrollbars and top/bottom page margins, removed TOP ETF badge, enabled freeze-pane first column on PC desktop and mobile, expanded PC desktop layout to 100% full browser width with permanently pinned top title/tab bar, and unified compact row top/bottom margins across all tables in the app.',
       changes: [
@@ -120,7 +131,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.0',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-01 20:15 HKT',
       summary: 'Added Signal filter dropdowns on Holdings and Watchlist pages, grouped Watchlist stocks by collapsible sectors with ETF top-priority sorting, and reduced vertical row margins on Transaction Audit Log and Dividend Payout Logs so all 20 paginated rows fit on a single mobile screen without scrolling.',
       changes: [
@@ -131,7 +142,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.9',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-01 19:45 HKT',
       summary: 'Fixed historical monthly Close vs. Low mismatch on multi-year charts by aligning Monthly Close to unadjusted market close (rawClose) on the same price scale as Monthly High, Monthly Low, and Avg Cost.',
       changes: [
@@ -141,7 +152,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.8',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-01 14:05 HKT',
       summary: 'Moved stock chart legend below the chart canvas, added translucent green Monthly High–Low range band around Monthly Close, increased Reg Trend Upper/Lower visibility and chart height (350px–430px), restricted top KPI summary cards to the Home (Dashboard) page only, and added 20-row pagination (Prev 20 / Next 20) to all Transaction and Dividend tables.',
       changes: [
@@ -154,7 +165,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.7',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-01',
       changes: [
         'Added automatic startup and ingestion data validation for historical monthly price series, technical indicators, and company news feeds',
@@ -164,7 +175,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.6',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-11-01',
       changes: [
         'Dedicated browser MarketAPI strictly to fast parallel Live Price quotes only (eliminated all third-party browser API calls for 15y historical data and news)',
@@ -175,7 +186,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.5',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-10-31',
       changes: [
         'Changed clicked/selected row highlight in Holdings and Watchlist (and active nav tabs) to dark slate grey (#1e293b) for high-contrast text readability in dark mode',
@@ -184,7 +195,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.4',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-10-31',
       changes: [
         'Fixed Holdings sector group header sticky bar width on mobile (changed sticky cell from colspan=3 to colspan=1 matching stock rows) so sector subtotals/aggregates are never blocked during horizontal scroll',
@@ -193,7 +204,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.3',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-10-31',
       changes: [
         'Styled unpaid/pending dividends (where Ex-Date has passed but Pay Date is in the future) in distinct amber/yellow font color with an Unpaid badge in Dividend Payout Logs',
@@ -203,7 +214,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.2',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-10-31',
       changes: [
         'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging legacy baseline dates with live Yahoo Finance ex-dates',
@@ -215,7 +226,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.1',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-10-31',
       changes: [
         'Fixed Service Worker (sw.js) cache-first trap by bumping cache version and switching to Network-First plus automatic stale CacheStorage purge on startup',
@@ -225,7 +236,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.0',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-10-31 16:50 HKT',
       title: '1-Day Quote Previous-Close Fix, 100% Cash Dividends, Dividend Ticker Filter, Complete 3476.HK/3433.HK Dividends & TRIM/OFFLOAD Signal Engine',
       changes: [
@@ -238,7 +249,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.1',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-10-31 11:15 HKT',
       title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
       changes: [
@@ -253,7 +264,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.0',
-      buildId: '20261107_0930',
+      buildId: '20261107_1750',
       date: '2026-10-30 23:30 HKT',
       title: 'Full Quantitative Suite: 2018+ Auto-Dividends, Buy/Sell Signal Engine, Scheduled News, Trend Regimes, Real XIRR & Settings Customizer',
       changes: [

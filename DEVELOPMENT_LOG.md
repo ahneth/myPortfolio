@@ -251,3 +251,10 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
   - Added `Target Buy Price` (light blue dotted `#38bdf8`), `Target Sell Price` (pink dotted `#f472b6`), and `Stop Loss` (dark red dotted `#b91c1c`) lines in `charts.js`.
 - **Holdings Table Column Ordering & `Total Return` Column**:
   - Moved `Realized P&L` next to `Unrealized P&L`, placed `Accumulated Div` after `Realized P&L`, and added `Total Return` (`Unrealized P&L + Realized P&L + Accumulated Div`) across all row levels.
+
+
+## Version 3.2.9 (Build 20261107_1750) — 2026-11-07
+- **Option 2 Chart Visualization (Custom Full Lines + Recommended Right-Edge Pins)**:
+  - `charts.js`: Implemented Option 2 so full-width dotted lines represent Custom Buy/Sell/Stop-Loss targets (or Recommended when no Custom value is set) and compact 2-month right-edge ticks + endpoint markers represent daily Recommended levels.
+- **Custom Target & Stop-Loss Inputs in Edit Modals & Dual-Line Table Cells**:
+  - `index.html`, `app.js`, `portfolio.js`: Added Custom Buy, Custom Sell, and Custom Stop-Loss inputs with 1-click "Copy Recommended" and "Clear" buttons in `#modal-edit-holding` and `#modal-watchlist`, and updated Holdings and Watchlist table cells (`formatTargetLevelCell`) to show Custom targets as primary and daily Recommended levels underneath.

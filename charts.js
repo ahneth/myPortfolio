@@ -556,11 +556,26 @@ function renderInlineStockChart(tabType) {
            YoY: <strong class="${(pm.yoyPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm.yoyPct !== null ? Fin.percent(pm.yoyPct, true) : '-'}</strong>
          </span>`
       : '';
-    const recLevelsBadge = (pm && (pm.recommendedBuyPrice || pm.recommendedSellPrice || pm.recommendedStopLoss))
+    const cBuy = pm?.customBuyPrice || null;
+    const cSell = pm?.customSellPrice || null;
+    const cStop = pm?.customStopLoss || null;
+    const rBuy = pm?.recommendedBuyPrice || null;
+    const rSell = pm?.recommendedSellPrice || null;
+    const rStop = pm?.recommendedStopLoss || null;
+
+    const fmtPair = (cVal, rVal, colorCls) => {
+      if (cVal && rVal) {
+        return `<strong class="${colorCls}" title="Custom Pinned Target"><i class="fa-solid fa-thumbtack text-[9px] mr-0.5"></i>${Fin.currency(cVal, false, currency)}</strong> <span class="text-[10px] text-slate-400">(Rec ${Fin.currency(rVal, false, currency)})</span>`;
+      }
+      const v = cVal || rVal;
+      return `<strong class="${colorCls}">${v ? Fin.currency(v, false, currency) : '-'}</strong>`;
+    };
+
+    const recLevelsBadge = (pm && (rBuy || rSell || rStop || cBuy || cSell || cStop))
       ? `<span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-           Rec Buy: <strong class="text-sky-500">${pm.recommendedBuyPrice ? Fin.currency(pm.recommendedBuyPrice, false, currency) : '-'}</strong> &bull;
-           Rec Sell: <strong class="text-pink-500">${pm.recommendedSellPrice ? Fin.currency(pm.recommendedSellPrice, false, currency) : '-'}</strong> &bull;
-           Stop Loss: <strong class="text-red-700 dark:text-red-500">${pm.recommendedStopLoss ? Fin.currency(pm.recommendedStopLoss, false, currency) : '-'}</strong>
+           Buy: ${fmtPair(cBuy, rBuy, 'text-sky-500')} &bull;
+           Sell: ${fmtPair(cSell, rSell, 'text-pink-500')} &bull;
+           Stop: ${fmtPair(cStop, rStop, 'text-red-700 dark:text-red-500')}
          </span>`
       : '';
     statsEl.innerHTML = `
@@ -579,9 +594,12 @@ function renderInlineStockChart(tabType) {
 
   const holding = (portfolio.allHoldings || portfolio.activeHoldings || []).find(h => h.ticker === ticker);
   const avgCostValue = (isHoldings && holding && holding.isActive !== false && holding.avgCost > 0) ? holding.avgCost : null;
-  const targetBuyPriceVal = pm?.recommendedBuyPrice || holding?.recommendedBuyPrice || null;
-  const targetSellPriceVal = pm?.recommendedSellPrice || holding?.recommendedSellPrice || null;
-  const stopLossVal = pm?.recommendedStopLoss || holding?.recommendedStopLoss || null;
+  const customBuyVal = pm?.customBuyPrice || holding?.customBuyPrice || null;
+  const customSellVal = pm?.customSellPrice || holding?.customSellPrice || null;
+  const customStopVal = pm?.customStopLoss || holding?.customStopLoss || null;
+  const recBuyVal = pm?.recommendedBuyPrice || holding?.recommendedBuyPrice || null;
+  const recSellVal = pm?.recommendedSellPrice || holding?.recommendedSellPrice || null;
+  const recStopVal = pm?.recommendedStopLoss || holding?.recommendedStopLoss || null;
 
   // Clear any previously clicked trade marker detail banner when re-rendering chart
   const tradeMarkerBoxEl = document.getElementById(isHoldings ? 'holdings-chart-trade-marker-box' : 'watchlist-chart-trade-marker-box');
@@ -784,10 +802,25 @@ function renderInlineStockChart(tabType) {
     });
   }
 
-  if (targetBuyPriceVal && targetBuyPriceVal > 0) {
+  // Option 2 Layout:
+  // - Full-width horizontal dotted line for Custom level (or Recommended if no Custom level is set for that target)
+  // - Short 2-month right-edge tick + endpoint pin marker at the right edge of the chart for Recommended levels!
+  const buildRightEdgeTickSeries = (val) => {
+    const nL = labels.length;
+    return labels.map((_, idx) => (idx >= Math.max(0, nL - 2) ? val : null));
+  };
+  const buildRightEdgePointRadii = (r) => {
+    const nL = labels.length;
+    return labels.map((_, idx) => (idx === nL - 1 ? r : 0));
+  };
+
+  // 1. BUY LEVEL(S) — Light Blue (#38bdf8)
+  const fullBuyLineVal = customBuyVal || recBuyVal;
+  const fullBuyIsCustom = Boolean(customBuyVal);
+  if (fullBuyLineVal && fullBuyLineVal > 0) {
     datasets.push({
-      label: `Target Buy Price (${Fin.currency(targetBuyPriceVal, false, currency)})`,
-      data: labels.map(() => targetBuyPriceVal),
+      label: `${fullBuyIsCustom ? 'Custom Buy Target' : 'Target Buy Price'} (${Fin.currency(fullBuyLineVal, false, currency)})`,
+      data: labels.map(() => fullBuyLineVal),
       borderColor: '#38bdf8',
       borderDash: [3, 3],
       borderWidth: 2.2,
@@ -797,11 +830,35 @@ function renderInlineStockChart(tabType) {
       _legendStyle: 'dashed'
     });
   }
-
-  if (targetSellPriceVal && targetSellPriceVal > 0) {
+  if (recBuyVal && recBuyVal > 0 && (fullBuyIsCustom || labels.length >= 2)) {
     datasets.push({
-      label: `Target Sell Price (${Fin.currency(targetSellPriceVal, false, currency)})`,
-      data: labels.map(() => targetSellPriceVal),
+      label: `Rec. Buy Pin (${Fin.currency(recBuyVal, false, currency)})`,
+      data: buildRightEdgeTickSeries(recBuyVal),
+      borderColor: '#0284c7',
+      backgroundColor: '#38bdf8',
+      borderDash: [2, 2],
+      borderWidth: 2.4,
+      pointStyle: 'triangle',
+      pointRadius: buildRightEdgePointRadii(isMobile ? 5.5 : 6.5),
+      pointHoverRadius: isMobile ? 7 : 8,
+      pointBackgroundColor: '#38bdf8',
+      pointBorderColor: '#0284c7',
+      pointBorderWidth: 1.8,
+      spanGaps: false,
+      fill: false,
+      order: 1,
+      _legendStyle: 'dashed',
+      _hideFromExternalLegend: !fullBuyIsCustom
+    });
+  }
+
+  // 2. SELL LEVEL(S) — Pink (#f472b6)
+  const fullSellLineVal = customSellVal || recSellVal;
+  const fullSellIsCustom = Boolean(customSellVal);
+  if (fullSellLineVal && fullSellLineVal > 0) {
+    datasets.push({
+      label: `${fullSellIsCustom ? 'Custom Sell Target' : 'Target Sell Price'} (${Fin.currency(fullSellLineVal, false, currency)})`,
+      data: labels.map(() => fullSellLineVal),
       borderColor: '#f472b6',
       borderDash: [3, 3],
       borderWidth: 2.2,
@@ -811,11 +868,35 @@ function renderInlineStockChart(tabType) {
       _legendStyle: 'dashed'
     });
   }
-
-  if (stopLossVal && stopLossVal > 0) {
+  if (recSellVal && recSellVal > 0 && (fullSellIsCustom || labels.length >= 2)) {
     datasets.push({
-      label: `Stop Loss (${Fin.currency(stopLossVal, false, currency)})`,
-      data: labels.map(() => stopLossVal),
+      label: `Rec. Sell Pin (${Fin.currency(recSellVal, false, currency)})`,
+      data: buildRightEdgeTickSeries(recSellVal),
+      borderColor: '#db2777',
+      backgroundColor: '#f472b6',
+      borderDash: [2, 2],
+      borderWidth: 2.4,
+      pointStyle: 'rectRot',
+      pointRadius: buildRightEdgePointRadii(isMobile ? 5.5 : 6.5),
+      pointHoverRadius: isMobile ? 7 : 8,
+      pointBackgroundColor: '#f472b6',
+      pointBorderColor: '#db2777',
+      pointBorderWidth: 1.8,
+      spanGaps: false,
+      fill: false,
+      order: 1,
+      _legendStyle: 'dashed',
+      _hideFromExternalLegend: !fullSellIsCustom
+    });
+  }
+
+  // 3. STOP-LOSS LEVEL(S) — Dark Red (#b91c1c)
+  const fullStopLineVal = customStopVal || recStopVal;
+  const fullStopIsCustom = Boolean(customStopVal);
+  if (fullStopLineVal && fullStopLineVal > 0) {
+    datasets.push({
+      label: `${fullStopIsCustom ? 'Custom Stop Loss' : 'Stop Loss'} (${Fin.currency(fullStopLineVal, false, currency)})`,
+      data: labels.map(() => fullStopLineVal),
       borderColor: '#b91c1c',
       borderDash: [3, 3],
       borderWidth: 2.2,
@@ -823,6 +904,27 @@ function renderInlineStockChart(tabType) {
       fill: false,
       order: 2,
       _legendStyle: 'dashed'
+    });
+  }
+  if (recStopVal && recStopVal > 0 && (fullStopIsCustom || labels.length >= 2)) {
+    datasets.push({
+      label: `Rec. Stop Pin (${Fin.currency(recStopVal, false, currency)})`,
+      data: buildRightEdgeTickSeries(recStopVal),
+      borderColor: '#991b1b',
+      backgroundColor: '#b91c1c',
+      borderDash: [2, 2],
+      borderWidth: 2.4,
+      pointStyle: 'circle',
+      pointRadius: buildRightEdgePointRadii(isMobile ? 5 : 6),
+      pointHoverRadius: isMobile ? 7 : 8,
+      pointBackgroundColor: '#b91c1c',
+      pointBorderColor: '#7f1d1d',
+      pointBorderWidth: 1.8,
+      spanGaps: false,
+      fill: false,
+      order: 1,
+      _legendStyle: 'dashed',
+      _hideFromExternalLegend: !fullStopIsCustom
     });
   }
 

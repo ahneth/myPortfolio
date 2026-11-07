@@ -864,6 +864,9 @@ function ingestHistoricalPricesData(data) {
           merged.name = prev.name;
           merged._userCustomName = true;
         }
+        if (prev.customBuyPrice !== undefined) merged.customBuyPrice = prev.customBuyPrice;
+        if (prev.customSellPrice !== undefined) merged.customSellPrice = prev.customSellPrice;
+        if (prev.customStopLoss !== undefined) merged.customStopLoss = prev.customStopLoss;
         state.fundamentals[sym] = merged;
       }
     });
@@ -1774,6 +1777,13 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
   }
 
   const suggestedStopLoss = recommendedStopLoss;
+  const wlEntryForCustom = (Array.isArray(state?.watchlist) ? state.watchlist.find(w => w.ticker === ticker) : null);
+  const rawCustBuy = Number(fundObj.customBuyPrice ?? wlEntryForCustom?.customBuyPrice ?? 0);
+  const rawCustSell = Number(fundObj.customSellPrice ?? wlEntryForCustom?.customSellPrice ?? 0);
+  const rawCustStop = Number(fundObj.customStopLoss ?? wlEntryForCustom?.customStopLoss ?? 0);
+  const customBuyPrice = (Number.isFinite(rawCustBuy) && rawCustBuy > 0) ? Fin.round(rawCustBuy, 4) : null;
+  const customSellPrice = (Number.isFinite(rawCustSell) && rawCustSell > 0) ? Fin.round(rawCustSell, 4) : null;
+  const customStopLoss = (Number.isFinite(rawCustStop) && rawCustStop > 0) ? Fin.round(rawCustStop, 4) : null;
 
   return {
     low52w,
@@ -1798,6 +1808,9 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
     recommendedBuyPrice,
     recommendedSellPrice,
     recommendedStopLoss,
+    customBuyPrice,
+    customSellPrice,
+    customStopLoss,
     suggestedStopLoss,
     bbPctB,
     regime,
@@ -2346,6 +2359,9 @@ function recalculatePortfolio() {
       recommendedBuyPrice: priceMetrics.recommendedBuyPrice,
       recommendedSellPrice: priceMetrics.recommendedSellPrice,
       recommendedStopLoss: priceMetrics.recommendedStopLoss,
+      customBuyPrice: priceMetrics.customBuyPrice,
+      customSellPrice: priceMetrics.customSellPrice,
+      customStopLoss: priceMetrics.customStopLoss,
       suggestedStopLoss: priceMetrics.suggestedStopLoss,
       regime: priceMetrics.regime,
       regTrendAnnualPct: priceMetrics.regTrendAnnualPct,

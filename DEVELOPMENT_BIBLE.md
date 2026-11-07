@@ -258,3 +258,11 @@ ightarrow$ `Actions`.
     3. **Stop Loss**: Dark red dotted (`#b91c1c`, `borderDash: [3, 3]`)
 - **Holdings Table Column Reordering & Total Return Column (`index.html`, `app.js`, `portfolio.js`)**:
   - Reordered Holdings table columns so `Realized P&L` sits immediately next to `Unrealized P&L`, followed by `Accumulated Div`, and added `Total Return` (`Unrealized P&L + Realized P&L + Accumulated Div`, with % return on cost basis) across the Portfolio Total row, Sector Group header rows, and individual holding rows.
+
+
+## 21. Version 3.2.9 Architecture Update (Build 20261107_1750) — Option 2 Chart Display (Full-Width Custom Lines + Right-Edge Recommended Pins) & Custom Target Inputs
+- **Option 2 Chart Display (`charts.js`)**:
+  - Draws full-width horizontal dotted lines across the chart for the user's pinned **Custom** levels (`Custom Buy Target` in light blue `#38bdf8`, `Custom Sell Target` in pink `#f472b6`, `Custom Stop Loss` in dark red `#b91c1c`; or falls back to Recommended when Custom is unset), while rendering the daily quant **Recommended** levels as compact **2-month right-edge ticks + endpoint pin markers** (`Rec. Buy Pin`, `Rec. Sell Pin`, `Rec. Stop Pin`) at the right edge of the chart.
+- **Custom vs. Recommended Target Inputs & Table Display (`index.html`, `app.js`, `portfolio.js`)**:
+  - Added optional `customBuyPrice`, `customSellPrice`, and `customStopLoss` fields to `#modal-edit-holding` and `#modal-watchlist` with live Recommended level previews, a 1-click **Copy Recommended** button (`copyRecommendedToCustomInModal()`), and a **Clear** button (`clearCustomTargetsInModal()`).
+  - `formatTargetLevelCell()` renders the pinned Custom price on the primary bold line (with a thumbtack icon) and the daily Recommended price on the secondary sub-line across both the Holdings and Watchlist tables.
