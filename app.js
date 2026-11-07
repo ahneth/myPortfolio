@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.3.1-20261107_2255') {
+      if (k !== 'myportfolio-cache-v3.3.2-20261107_2310') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -51,6 +51,10 @@ function updatePrivacyToggleUI() {
 window.updatePrivacyToggleUI = updatePrivacyToggleUI;
 
 function togglePrivacyMode() {
+  const now = Date.now();
+  if (now - (window._lastPrivacyToggleTs || 0) < 200) return;
+  window._lastPrivacyToggleTs = now;
+
   if (!state.settings) state.settings = {};
   state.settings.hideMonetaryValues = !Boolean(state.settings.hideMonetaryValues);
   saveState();
@@ -64,6 +68,7 @@ function togglePrivacyMode() {
   );
 }
 window.togglePrivacyMode = togglePrivacyMode;
+window._appTogglePrivacyMode = togglePrivacyMode;
 
 function updateThemeUI(isDark) {
   if (typeof isDark === 'undefined') {

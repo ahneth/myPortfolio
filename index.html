@@ -127,6 +127,9 @@
             window._appTogglePrivacyMode();
             return;
           }
+          var now = Date.now();
+          if (now - (window._lastPrivacyToggleTs || 0) < 200) return;
+          window._lastPrivacyToggleTs = now;
           var raw = localStorage.getItem('myPortfolio_state');
           var st = raw ? JSON.parse(raw) : { settings: {} };
           if (!st.settings) st.settings = {};
@@ -782,7 +785,7 @@ tr.portfolio-total-row > td.sticky-col-mobile {
           </div>
 
           <!-- Privacy / Show-Hide Monetary Values Toggle -->
-          <button id="privacy-toggle-btn" type="button" onclick="if(window.togglePrivacyMode) window.togglePrivacyMode();" class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition" title="Click to hide all monetary values, number of shares, and average cost (show % &amp; market prices only)" aria-label="Toggle Monetary Values Visibility" aria-pressed="false">
+          <button id="privacy-toggle-btn" type="button" class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition" title="Click to hide all monetary values, number of shares, and average cost (show % &amp; market prices only)" aria-label="Toggle Monetary Values Visibility" aria-pressed="false">
             <i id="privacy-toggle-icon" class="fa-solid fa-eye text-brand-500"></i>
             <span id="privacy-toggle-label" class="hidden sm:inline">Hide $</span>
           </button>
@@ -2930,10 +2933,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.1',
-  buildId: '20261107_2255',
-  releaseDate: '2026-11-07 22:55 HKT',
-  driveFolder: '/myPortfolio/20261107_2255/',
+  appVersion: '3.3.2',
+  buildId: '20261107_2310',
+  releaseDate: '2026-11-07 23:10 HKT',
+  driveFolder: '/myPortfolio/20261107_2310/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -2946,6 +2949,17 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.3.2',
+      buildId: '20261107_2310',
+      date: '2026-11-07 23:10 HKT',
+      summary: 'Fixed duplicate event firing on #privacy-toggle-btn where having both inline onclick and addEventListener caused Privacy Mode to toggle on and immediately off on a single click.',
+      changes: [
+        'Removed duplicate inline onclick attribute from #privacy-toggle-btn in index.html so the button is handled exclusively by a single event listener in setupEventListeners().',
+        'Added a 200ms click-debounce guard inside togglePrivacyMode() and linked window._appTogglePrivacyMode to prevent any possibility of double-toggling on a single interaction.',
+        'Bumped Service Worker cache to myportfolio-cache-v3.3.2-20261107_2310 and synchronized all modules into index.html.'
+      ]
+    },
     {
       version: '3.3.1',
       buildId: '20261107_2255',
@@ -9688,7 +9702,7 @@ window.renderPnlBreakdownChart = renderPnlBreakdownChart;
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.3.1-20261107_2255') {
+      if (k !== 'myportfolio-cache-v3.3.2-20261107_2310') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -9736,6 +9750,10 @@ function updatePrivacyToggleUI() {
 window.updatePrivacyToggleUI = updatePrivacyToggleUI;
 
 function togglePrivacyMode() {
+  const now = Date.now();
+  if (now - (window._lastPrivacyToggleTs || 0) < 200) return;
+  window._lastPrivacyToggleTs = now;
+
   if (!state.settings) state.settings = {};
   state.settings.hideMonetaryValues = !Boolean(state.settings.hideMonetaryValues);
   saveState();
@@ -9749,6 +9767,7 @@ function togglePrivacyMode() {
   );
 }
 window.togglePrivacyMode = togglePrivacyMode;
+window._appTogglePrivacyMode = togglePrivacyMode;
 
 function updateThemeUI(isDark) {
   if (typeof isDark === 'undefined') {

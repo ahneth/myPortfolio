@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.1',
-  buildId: '20261107_2255',
-  releaseDate: '2026-11-07 22:55 HKT',
-  driveFolder: '/myPortfolio/20261107_2255/',
+  appVersion: '3.3.2',
+  buildId: '20261107_2310',
+  releaseDate: '2026-11-07 23:10 HKT',
+  driveFolder: '/myPortfolio/20261107_2310/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,17 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.3.2',
+      buildId: '20261107_2310',
+      date: '2026-11-07 23:10 HKT',
+      summary: 'Fixed duplicate event firing on #privacy-toggle-btn where having both inline onclick and addEventListener caused Privacy Mode to toggle on and immediately off on a single click.',
+      changes: [
+        'Removed duplicate inline onclick attribute from #privacy-toggle-btn in index.html so the button is handled exclusively by a single event listener in setupEventListeners().',
+        'Added a 200ms click-debounce guard inside togglePrivacyMode() and linked window._appTogglePrivacyMode to prevent any possibility of double-toggling on a single interaction.',
+        'Bumped Service Worker cache to myportfolio-cache-v3.3.2-20261107_2310 and synchronized all modules into index.html.'
+      ]
+    },
     {
       version: '3.3.1',
       buildId: '20261107_2255',

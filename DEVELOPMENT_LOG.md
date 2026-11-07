@@ -276,3 +276,10 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
 - **Service Worker & Modular Synchronization (`sw.js`, `version.js`, `index.html`)**:
   - Bumped Service Worker cache name to `myportfolio-cache-v3.3.1-20261107_2255` and startup stale cache purger in `app.js`.
   - Bumped version manifest to `v3.3.1` (Build `20261107_2255`) and fully synchronized all standalone modules into embedded `<script data-module="...">` tags.
+
+## 2026-11-07 23:10 — v3.3.2 (Build 20261107_2310) — Fix Privacy Mode Double-Toggle (On Then Immediately Off)
+- **Root Cause**: `#privacy-toggle-btn` had both an inline `onclick` attribute in `index.html` and a `click` listener registered via `on('privacy-toggle-btn', 'click', ...)` in `setupEventListeners()`. Clicking the button once triggered both handlers sequentially—turning Privacy Mode on and immediately flipping it back off.
+- **Fix (`index.html`, `app.js`, `version.js`, `sw.js`)**:
+  - Removed the inline `onclick` attribute from `<button id="privacy-toggle-btn">` in `index.html`, leaving the single `on('privacy-toggle-btn', 'click', () => togglePrivacyMode())` listener in `setupEventListeners()`.
+  - Added a 200ms click-debounce guard (`window._lastPrivacyToggleTs`) inside `togglePrivacyMode()` and assigned `window._appTogglePrivacyMode = togglePrivacyMode` so rapid/duplicate invocations within the same click cycle cannot re-flip the state.
+  - Bumped Service Worker cache to `myportfolio-cache-v3.3.2-20261107_2310` and synchronized all standalone modules into `index.html`.
