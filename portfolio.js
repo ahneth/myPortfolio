@@ -25,6 +25,7 @@ var STORAGE_KEY = 'MYPORTFOLIO_STATE_V1';
  */
 var DEFAULT_QUANT_SETTINGS = {
   currency: 'HKD',
+  hideMonetaryValues: false,      // Privacy toggle: hide monetary balances, P&L $, shares & avg cost
   githubRepo: 'ahneth/myPortfolio',
   githubBranch: 'main',
   githubToken: '',                // Base reporting currency ('HKD' | 'USD' | 'GBP')

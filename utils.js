@@ -14,6 +14,20 @@ var Fin = {
     return Number(Math.round(Number(val + 'e' + decimals)) + 'e-' + decimals);
   },
 
+  isPrivacyMode: () => {
+    return Boolean(typeof state !== 'undefined' && state?.settings?.hideMonetaryValues);
+  },
+
+  privateCurrency: (val, showPlus = false, currencyCode = null, maskStr = '••••••') => {
+    if (Fin.isPrivacyMode()) return maskStr;
+    return Fin.currency(val, showPlus, currencyCode);
+  },
+
+  privateShares: (val, maskStr = '••••') => {
+    if (Fin.isPrivacyMode()) return maskStr;
+    return Fin.shares(val);
+  },
+
   currency: (val, showPlus = false, currencyCode = null) => {
     const activeCurr = currencyCode || (typeof state !== 'undefined' && state?.settings?.currency) || 'HKD';
     const rawNum = Number(val);

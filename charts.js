@@ -249,6 +249,74 @@ function renderMonthlyHistoryChart() {
   const latestBalance = balanceSeries[balanceSeries.length - 1] || 0;
   const latestReturnDollar = accumReturnDollarSeries[accumReturnDollarSeries.length - 1] || 0;
   const latestReturnPct = accumReturnPctSeries[accumReturnPctSeries.length - 1] || 0;
+  const hideMoney = Fin.isPrivacyMode();
+
+  if (hideMoney) {
+    if (subtitle) {
+      subtitle.textContent = `Monthly Accumulative Total Return (%) including Unrealized Gains, Realized P&L & Dividends (${labels.length} months • Monetary Values Hidden)`;
+    }
+    if (metricSummaryBadge) {
+      const signColor = latestReturnPct >= 0
+        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
+      metricSummaryBadge.className = `text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${signColor}`;
+      metricSummaryBadge.textContent = `Total Return: ${Fin.percent(latestReturnPct, true)}`;
+    }
+
+    const isPositiveEnd = latestReturnPct >= 0;
+    const lineColor = isPositiveEnd ? '#10b981' : '#f43f5e';
+    const fillColor = isPositiveEnd ? 'rgba(16, 185, 129, 0.14)' : 'rgba(244, 63, 94, 0.14)';
+
+    charts.monthlyHistory = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Accumulative Return (%)',
+            data: accumReturnPctSeries,
+            borderColor: lineColor,
+            backgroundColor: fillColor,
+            fill: true,
+            tension: 0.32,
+            pointRadius: isMobile ? 2 : 3.5,
+            pointBackgroundColor: lineColor
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: {
+            grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
+            ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: isMobile ? 9 : 10 }, maxTicksLimit: isMobile ? 6 : 12 }
+          },
+          y: {
+            position: 'left',
+            grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
+            ticks: {
+              color: isDark ? '#94a3b8' : '#64748b',
+              font: { size: isMobile ? 9 : 10 },
+              callback: (v) => (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: { color: isDark ? '#cbd5e1' : '#334155', font: { size: 11 } }
+          },
+          tooltip: {
+            callbacks: {
+              label: (c) => ` ${c.dataset.label}: ${Fin.percent(c.raw, true)}`
+            }
+          }
+        }
+      }
+    });
+    return;
+  }
 
   if (portfolioHistoryMode === 'return') {
     if (subtitle) {
@@ -593,7 +661,8 @@ function renderInlineStockChart(tabType) {
   }
 
   const holding = (portfolio.allHoldings || portfolio.activeHoldings || []).find(h => h.ticker === ticker);
-  const avgCostValue = (isHoldings && holding && holding.isActive !== false && holding.avgCost > 0) ? holding.avgCost : null;
+  const hideMoney = Fin.isPrivacyMode();
+  const avgCostValue = (!hideMoney && isHoldings && holding && holding.isActive !== false && holding.avgCost > 0) ? holding.avgCost : null;
   const customBuyVal = pm?.customBuyPrice || holding?.customBuyPrice || null;
   const customSellVal = pm?.customSellPrice || holding?.customSellPrice || null;
   const customStopVal = pm?.customStopLoss || holding?.customStopLoss || null;
@@ -928,8 +997,8 @@ function renderInlineStockChart(tabType) {
     });
   }
 
-  // Add Monthly Buy Avg Price (Blue X) and Monthly Sell Avg Price (Red X) markers on the Holdings chart
-  if (isHoldings) {
+  // Add Monthly Buy Avg Price (Blue X) and Monthly Sell Avg Price (Red X) markers on the Holdings chart (hidden in Privacy Mode)
+  if (isHoldings && !hideMoney) {
     if (buyMarkerData.some(v => v !== null)) {
       datasets.push({
         label: 'Buy Avg Price (Blue X)',
@@ -1178,6 +1247,9 @@ function renderAllocationChart() {
               const val = c.raw || 0;
               const total = data.reduce((a, b) => a + b, 0);
               const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+              if (Fin.isPrivacyMode()) {
+                return ` ${c.label}: ${pct}%`;
+              }
               return ` ${c.label}: ${Fin.currency(val, false, baseCurr)} (${pct}%)`;
             }
           }
@@ -1200,9 +1272,15 @@ function renderDividendsChart() {
     monthlyMap[m] = (monthlyMap[m] || 0) + amtBase;
   });
 
+  const hideMoney = Fin.isPrivacyMode();
   const months = Object.keys(monthlyMap).sort();
   const totals = months.map(m => Fin.round(monthlyMap[m], 2));
-  document.getElementById('chart-div-total-badge').textContent = `${Fin.currency(portfolio.totalDividendsEarned, false, baseCurr)} Total`;
+  const avgYoc = portfolio.totalStockCostBasis > 0
+    ? Fin.round((portfolio.totalDividendsEarned / portfolio.totalStockCostBasis) * 100, 2)
+    : 0;
+  document.getElementById('chart-div-total-badge').textContent = hideMoney
+    ? `YoC ${avgYoc.toFixed(2)}%`
+    : `${Fin.currency(portfolio.totalDividendsEarned, false, baseCurr)} Total`;
 
   const isDark = document.documentElement.classList.contains('dark');
   charts.dividends = new Chart(ctx, {
@@ -1210,7 +1288,7 @@ function renderDividendsChart() {
     data: {
       labels: months.length > 0 ? months : ['No Dividends Logged'],
       datasets: [{
-        label: `Monthly Dividend (${baseCurr})`,
+        label: hideMoney ? 'Monthly Dividend (Hidden)' : `Monthly Dividend (${baseCurr})`,
         data: totals.length > 0 ? totals : [0],
         backgroundColor: '#06b6d4',
         borderRadius: 6
@@ -1223,10 +1301,23 @@ function renderDividendsChart() {
         x: { grid: { display: false }, ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 } } },
         y: {
           grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
-          ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 }, callback: (v) => Fin.currency(v, false, baseCurr) }
+          ticks: {
+            color: isDark ? '#94a3b8' : '#64748b',
+            font: { size: 10 },
+            callback: (v) => hideMoney ? '••••' : Fin.currency(v, false, baseCurr)
+          }
         }
       },
-      plugins: { legend: { display: false } }
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (c) => hideMoney
+              ? ' Monthly Dividend: ••••••'
+              : ` ${c.dataset.label}: ${Fin.currency(c.raw, false, baseCurr)}`
+          }
+        }
+      }
     }
   });
 }
@@ -1236,6 +1327,7 @@ function renderPnlBreakdownChart() {
   const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
   if (charts.pnlBreakdown) charts.pnlBreakdown.destroy();
 
+  const hideMoney = Fin.isPrivacyMode();
   const tickers = Array.from(new Set([
     ...portfolio.activeHoldings.map(h => h.ticker),
     ...Object.keys(portfolio.allHoldingsMap).filter(t => (portfolio.allHoldingsMap[t].realizedGain || 0) !== 0)
@@ -1243,10 +1335,17 @@ function renderPnlBreakdownChart() {
 
   const unrealizedSeries = tickers.map(t => {
     const active = portfolio.activeHoldings.find(h => h.ticker === t);
-    return active ? Fin.convertCurrency(active.unrealizedGain, active.currency, baseCurr) : 0;
+    if (!active) return 0;
+    if (hideMoney) return Fin.round(active.unrealizedGainPct || 0, 2);
+    return Fin.convertCurrency(active.unrealizedGain, active.currency, baseCurr);
   });
   const realizedSeries = tickers.map(t => {
-    const rg = portfolio.allHoldingsMap[t]?.realizedGain || 0;
+    const pos = portfolio.allHoldingsMap[t];
+    const rg = pos?.realizedGain || 0;
+    if (hideMoney) {
+      const refCost = (pos?.totalCostBasis > 0 ? pos.totalCostBasis : (pos?.historicalCostBasis || pos?.cumulativeBuyCostBasis || 0));
+      return refCost > 0 ? Fin.round((rg / refCost) * 100, 2) : 0;
+    }
     const tCurr = state.prices[t]?.currency || MarketAPI.getStaticProfile(t).currency || baseCurr;
     return Fin.convertCurrency(rg, tCurr, baseCurr);
   });
@@ -1257,8 +1356,8 @@ function renderPnlBreakdownChart() {
     data: {
       labels: tickers.length > 0 ? tickers : ['No Positions'],
       datasets: [
-        { label: `Unrealized P&L (${baseCurr})`, data: unrealizedSeries.length > 0 ? unrealizedSeries : [0], backgroundColor: '#10b981', borderRadius: 5 },
-        { label: `Realized P&L (${baseCurr})`, data: realizedSeries.length > 0 ? realizedSeries : [0], backgroundColor: '#6366f1', borderRadius: 5 }
+        { label: hideMoney ? 'Unrealized Return (%)' : `Unrealized P&L (${baseCurr})`, data: unrealizedSeries.length > 0 ? unrealizedSeries : [0], backgroundColor: '#10b981', borderRadius: 5 },
+        { label: hideMoney ? 'Realized Return (%)' : `Realized P&L (${baseCurr})`, data: realizedSeries.length > 0 ? realizedSeries : [0], backgroundColor: '#6366f1', borderRadius: 5 }
       ]
     },
     options: {
@@ -1268,10 +1367,23 @@ function renderPnlBreakdownChart() {
         x: { grid: { display: false }, ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 } } },
         y: {
           grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
-          ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 }, callback: (v) => Fin.currency(v, true, baseCurr) }
+          ticks: {
+            color: isDark ? '#94a3b8' : '#64748b',
+            font: { size: 10 },
+            callback: (v) => hideMoney ? Fin.percent(v, true) : Fin.currency(v, true, baseCurr)
+          }
         }
       },
-      plugins: { legend: { position: 'top', labels: { color: isDark ? '#94a3b8' : '#475569', font: { size: 11 } } } }
+      plugins: {
+        legend: { position: 'top', labels: { color: isDark ? '#94a3b8' : '#475569', font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: (c) => hideMoney
+              ? ` ${c.dataset.label}: ${Fin.percent(c.raw, true)}`
+              : ` ${c.dataset.label}: ${Fin.currency(c.raw, true, baseCurr)}`
+          }
+        }
+      }
     }
   });
 }

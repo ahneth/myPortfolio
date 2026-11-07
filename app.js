@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.2.5-20261104_2135') {
+      if (k !== 'myportfolio-cache-v3.3.0-20261107_2225') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -27,12 +27,51 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
 
 var CURATED_BASELINE_NEWS = [];
 
+function updatePrivacyToggleUI() {
+  const hide = Fin.isPrivacyMode();
+  const btn = document.getElementById('privacy-toggle-btn');
+  const icon = document.getElementById('privacy-toggle-icon');
+  const lbl = document.getElementById('privacy-toggle-label');
+  if (btn) {
+    btn.className = hide
+      ? 'h-7 sm:h-9 px-2 sm:px-3 rounded-lg border border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-bold transition shadow-sm'
+      : 'h-7 sm:h-9 px-2 sm:px-3 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition';
+    btn.setAttribute('aria-pressed', String(hide));
+    btn.title = hide
+      ? 'Monetary values, shares & avg cost are hidden (showing % & market prices only). Click to show all values.'
+      : 'Click to hide all monetary values, number of shares, and average cost (show % & market prices only)';
+  }
+  if (icon) {
+    icon.className = hide ? 'fa-solid fa-eye-slash text-amber-500' : 'fa-solid fa-eye text-brand-500';
+  }
+  if (lbl) {
+    lbl.textContent = hide ? 'Show $' : 'Hide $';
+  }
+}
+window.updatePrivacyToggleUI = updatePrivacyToggleUI;
+
+function togglePrivacyMode() {
+  if (!state.settings) state.settings = {};
+  state.settings.hideMonetaryValues = !Boolean(state.settings.hideMonetaryValues);
+  saveState();
+  updatePrivacyToggleUI();
+  renderAll();
+  showToast(
+    state.settings.hideMonetaryValues
+      ? 'Privacy Mode On: Monetary values, shares & avg cost hidden (% and market prices shown)'
+      : 'Privacy Mode Off: All monetary values, shares & avg cost visible',
+    'info'
+  );
+}
+window.togglePrivacyMode = togglePrivacyMode;
+
 function renderAll() {
   try {
     if (!portfolio) recalculatePortfolio();
   } catch (err) {
     if (typeof AppLogger !== 'undefined') AppLogger.error('Portfolio', `recalculatePortfolio failed: ${err.message}`, err);
   }
+  try { updatePrivacyToggleUI(); } catch (_) {}
   try { renderApiStatusUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderApiStatusUI failed: ${err.message}`, err); }
   try { renderQuantSettingsUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderQuantSettingsUI failed: ${err.message}`, err); }
   try { renderKPIs(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderKPIs failed: ${err.message}`, err); }
@@ -255,29 +294,67 @@ function renderApiStatusUI() {
 
 function renderKPIs() {
   const baseCurr = portfolio.baseCurrency || state.settings.currency || 'HKD';
-  document.getElementById('kpi-portfolio-value').textContent = Fin.currency(portfolio.totalPortfolioValue, false, baseCurr);
-  document.getElementById('kpi-cash-balance').textContent = Fin.currency(portfolio.cashBalance, false, baseCurr);
-
+  const hideMoney = Fin.isPrivacyMode();
   const cashPct = portfolio.totalPortfolioValue > 0
     ? Fin.round((Math.max(0, portfolio.cashBalance) / portfolio.totalPortfolioValue) * 100, 1)
     : 0;
-  document.getElementById('kpi-cash-pct').textContent = `${cashPct}% of total`;
-  document.getElementById('kpi-cost-basis').textContent = Fin.currency(portfolio.totalStockCostBasis, false, baseCurr);
+  const investedPct = portfolio.totalPortfolioValue > 0
+    ? Fin.round(Math.max(0, 100 - cashPct), 1)
+    : 0;
+  const totReturnBase = (portfolio.totalUnrealizedGain || 0) + (portfolio.totalRealizedPnL || 0) + (portfolio.totalDividendsEarned || 0);
+  const totReturnPct = portfolio.totalStockCostBasis > 0
+    ? Fin.round((totReturnBase / portfolio.totalStockCostBasis) * 100, 2)
+    : 0;
+  const realizedPct = portfolio.totalStockCostBasis > 0
+    ? Fin.round(((portfolio.totalRealizedPnL || 0) / portfolio.totalStockCostBasis) * 100, 2)
+    : 0;
+  const avgYocKpi = portfolio.totalStockCostBasis > 0
+    ? Fin.round((portfolio.totalDividendsEarned / portfolio.totalStockCostBasis) * 100, 2)
+    : 0;
+
+  document.getElementById('kpi-portfolio-value').textContent = hideMoney
+    ? Fin.percent(totReturnPct, true)
+    : Fin.currency(portfolio.totalPortfolioValue, false, baseCurr);
+  const portSubEl = document.getElementById('kpi-portfolio-value')?.nextElementSibling;
+  if (portSubEl) {
+    portSubEl.innerHTML = hideMoney ? '<span>Total Return % ($ Hidden)</span>' : '<span>Total Net Worth</span>';
+  }
+
+  document.getElementById('kpi-cash-balance').textContent = hideMoney
+    ? `${cashPct}%`
+    : Fin.currency(portfolio.cashBalance, false, baseCurr);
+  document.getElementById('kpi-cash-pct').textContent = hideMoney ? 'of total portfolio' : `${cashPct}% of total`;
+
+  document.getElementById('kpi-cost-basis').textContent = hideMoney
+    ? `${investedPct}%`
+    : Fin.currency(portfolio.totalStockCostBasis, false, baseCurr);
+  const costSubEl = document.getElementById('kpi-cost-basis')?.nextElementSibling;
+  if (costSubEl) {
+    costSubEl.innerHTML = hideMoney ? '<span>Invested Weight %</span>' : '<span>Active Cost Basis</span>';
+  }
 
   const uEl = document.getElementById('kpi-unrealized-val');
   const uPctEl = document.getElementById('kpi-unrealized-pct');
-  uEl.textContent = Fin.currency(portfolio.totalUnrealizedGain, true, baseCurr);
-  uPctEl.textContent = Fin.percent(portfolio.totalUnrealizedGainPct, true);
+  uEl.textContent = hideMoney
+    ? Fin.percent(portfolio.totalUnrealizedGainPct, true)
+    : Fin.currency(portfolio.totalUnrealizedGain, true, baseCurr);
+  uPctEl.textContent = hideMoney
+    ? 'Unrealized Return %'
+    : Fin.percent(portfolio.totalUnrealizedGainPct, true);
 
   const uPositive = portfolio.totalUnrealizedGain >= 0;
   uEl.className = `mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font tracking-tight ${uPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
   uPctEl.className = `mt-1 flex items-center text-[11px] font-semibold num-font ${uPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
   const rEl = document.getElementById('kpi-realized-val');
-  rEl.textContent = Fin.currency(portfolio.totalRealizedPnL, true, baseCurr);
+  rEl.textContent = hideMoney
+    ? Fin.percent(realizedPct, true)
+    : Fin.currency(portfolio.totalRealizedPnL, true, baseCurr);
   rEl.className = `mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font tracking-tight ${portfolio.totalRealizedPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
-  document.getElementById('kpi-dividends-val').textContent = Fin.currency(portfolio.totalDividendsEarned, false, baseCurr);
+  document.getElementById('kpi-dividends-val').textContent = hideMoney
+    ? `${avgYocKpi.toFixed(2)}% YoC`
+    : Fin.currency(portfolio.totalDividendsEarned, false, baseCurr);
   const detCount = portfolio.detectedDividends?.length || 0;
   document.getElementById('kpi-dividends-count').innerHTML = detCount > 0
     ? `${state.dividends.length} logged • <button onclick="switchTab('dividends')" class="text-amber-500 font-bold underline">${detCount} detected</button>`
@@ -311,7 +388,7 @@ function renderKPIs() {
           <span class="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-semibold text-slate-500">${top.companyName}</span>
         </div>
         <div class="text-xs num-font ${gainColor} font-bold mt-1">
-          ${Fin.percent(top.unrealizedGainPct)} (${Fin.currency(top.unrealizedGain, true, top.currency)})
+          ${hideMoney ? Fin.percent(top.unrealizedGainPct) : `${Fin.percent(top.unrealizedGainPct)} (${Fin.currency(top.unrealizedGain, true, top.currency)})`}
         </div>
       </div>
       <div class="text-right">
@@ -883,8 +960,10 @@ function renderHoldingsTable() {
   const totRealXirrPct = totXirrPct !== null ? Fin.realReturn(totXirrPct, infRate) : null;
   const avgSignalScore = signalCount > 0 ? Math.round(weightedSignalSum / signalCount) : 50;
 
+  const hideMoney = Fin.isPrivacyMode();
   const totTotalReturnBase = Fin.round(totUnrealizedBase + totRealizedBase + totAccumDivBase, 2);
   const totTotalReturnPct = refTotCostForYoC > 0 ? Fin.round((totTotalReturnBase / refTotCostForYoC) * 100, 2) : 0;
+  const totRealizedPct = refTotCostForYoC > 0 ? Fin.round((totRealizedBase / refTotCostForYoC) * 100, 2) : 0;
 
   const totDayColor = totDayPnLBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
   const totUnrColor = totUnrealizedBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
@@ -906,34 +985,37 @@ function renderHoldingsTable() {
     </td>
     <td class="py-1.5 px-3 text-right font-mono text-[10px] text-slate-500 dark:text-slate-400">100.0% wt</td>
     <td class="py-1.5 px-3 text-right num-font ${totDayColor}">
-      <div class="font-extrabold">${Fin.currency(totDayPnLBase, true, baseCurr)}</div>
-      <div class="text-[10px] font-semibold">1D ${Fin.percent(totDayPnLPct, true)}</div>
+      ${hideMoney
+        ? `<div class="font-extrabold">1D ${Fin.percent(totDayPnLPct, true)}</div>`
+        : `<div class="font-extrabold">${Fin.currency(totDayPnLBase, true, baseCurr)}</div><div class="text-[10px] font-semibold">1D ${Fin.percent(totDayPnLPct, true)}</div>`}
     </td>
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-900 dark:text-white">
-      ${Fin.currency(totMarketValueBase, false, baseCurr)}
+      ${hideMoney ? '100.0% wt' : Fin.currency(totMarketValueBase, false, baseCurr)}
     </td>
     <td class="py-1.5 px-3 text-right num-font ${totUnrColor}">
-      <div class="font-extrabold">${Fin.currency(totUnrealizedBase, true, baseCurr)}</div>
-      <div class="text-[10px] font-semibold">${Fin.percent(totUnrealizedPct, true)}</div>
+      ${hideMoney
+        ? `<div class="font-extrabold">${Fin.percent(totUnrealizedPct, true)}</div>`
+        : `<div class="font-extrabold">${Fin.currency(totUnrealizedBase, true, baseCurr)}</div><div class="text-[10px] font-semibold">${Fin.percent(totUnrealizedPct, true)}</div>`}
     </td>
     <td class="py-1.5 px-3 text-right num-font font-extrabold ${totRealColor}">
-      ${Fin.currency(totRealizedBase, true, baseCurr)}
+      ${hideMoney ? Fin.percent(totRealizedPct, true) : Fin.currency(totRealizedBase, true, baseCurr)}
     </td>
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-cyan-600 dark:text-cyan-400">
-      +${Fin.currency(totAccumDivBase, false, baseCurr)}
+      ${hideMoney ? `${totYoCPct.toFixed(2)}% YoC` : ('+' + Fin.currency(totAccumDivBase, false, baseCurr))}
     </td>
     <td class="py-1.5 px-3 text-right num-font ${totRetColor}">
-      <div class="font-extrabold">${Fin.currency(totTotalReturnBase, true, baseCurr)}</div>
-      <div class="text-[10px] font-semibold">${Fin.percent(totTotalReturnPct, true)}</div>
+      ${hideMoney
+        ? `<div class="font-extrabold">${Fin.percent(totTotalReturnPct, true)}</div>`
+        : `<div class="font-extrabold">${Fin.currency(totTotalReturnBase, true, baseCurr)}</div><div class="text-[10px] font-semibold">${Fin.percent(totTotalReturnPct, true)}</div>`}
     </td>
     <td class="py-1.5 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">
       <div class="font-bold">${totNetYieldPct > 0 ? totNetYieldPct.toFixed(2) + '% Net' : '-'}</div>
-      <div class="text-[9.5px] font-mono text-slate-400">${totAnnualFwdDivBase > 0 ? Fin.currency(totAnnualFwdDivBase, false, baseCurr) + '/yr' : ''}</div>
+      ${hideMoney ? '' : `<div class="text-[9.5px] font-mono text-slate-400">${totAnnualFwdDivBase > 0 ? Fin.currency(totAnnualFwdDivBase, false, baseCurr) + '/yr' : ''}</div>`}
     </td>
-    <td class="py-1.5 px-3 text-right text-slate-400 font-mono">-</td>
-    <td class="py-1.5 px-3 text-right text-slate-400 font-mono">-</td>
+    <td class="py-1.5 px-3 text-right text-slate-400 font-mono">${hideMoney ? '••••' : '-'}</td>
+    <td class="py-1.5 px-3 text-right text-slate-400 font-mono">${hideMoney ? '••••••' : '-'}</td>
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-800 dark:text-slate-200">
-      ${Fin.currency(totCostBasisBase, false, baseCurr)}
+      ${hideMoney ? '••••••' : Fin.currency(totCostBasisBase, false, baseCurr)}
     </td>
     <td colspan="3" class="py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono">Quant Levels</td>
     <td class="py-1.5 px-3 text-right num-font ${totXirrColor}">
@@ -1058,32 +1140,39 @@ function renderHoldingsTable() {
         <span>${weightPct}% wt</span>
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupDayColor}">
-        <div>${Fin.currency(group.totalDayPnL, true, group.currency)}</div>
-        <div class="text-[10px] font-semibold">1D ${Fin.percent(groupDayPnlPct, true)}</div>
+        ${hideMoney
+          ? `<div>1D ${Fin.percent(groupDayPnlPct, true)}</div>`
+          : `<div>${Fin.currency(group.totalDayPnL, true, group.currency)}</div><div class="text-[10px] font-semibold">1D ${Fin.percent(groupDayPnlPct, true)}</div>`}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-extrabold text-slate-900 dark:text-white">
-        ${Fin.currency(group.totalMarketValue, false, group.currency)}
+        ${hideMoney ? `${weightPct}% wt` : Fin.currency(group.totalMarketValue, false, group.currency)}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupPnlColor}">
-        <div>${Fin.currency(group.totalUnrealizedGain, true, group.currency)}</div>
-        <div class="text-[10px] font-semibold">${Fin.percent(groupUnrealizedPct)}</div>
+        ${hideMoney
+          ? `<div>${Fin.percent(groupUnrealizedPct)}</div>`
+          : `<div>${Fin.currency(group.totalUnrealizedGain, true, group.currency)}</div><div class="text-[10px] font-semibold">${Fin.percent(groupUnrealizedPct)}</div>`}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${group.totalRealizedGain !== 0 ? groupRealColor : 'text-slate-400'}">
-        ${group.totalRealizedGain !== 0 ? Fin.currency(group.totalRealizedGain, true, group.currency) : Fin.currency(0, false, group.currency)}
+        ${hideMoney
+          ? (refGroupCostYoC > 0 ? Fin.percent(Fin.round((group.totalRealizedGain / refGroupCostYoC) * 100, 2), true) : '-')
+          : (group.totalRealizedGain !== 0 ? Fin.currency(group.totalRealizedGain, true, group.currency) : Fin.currency(0, false, group.currency))}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-cyan-600 dark:text-cyan-400">
-        ${group.totalDividends > 0 ? '+' + Fin.currency(group.totalDividends, false, group.currency) : Fin.currency(0, false, group.currency)}
+        ${hideMoney
+          ? `${groupYoC.toFixed(2)}% YoC`
+          : (group.totalDividends > 0 ? '+' + Fin.currency(group.totalDividends, false, group.currency) : Fin.currency(0, false, group.currency))}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupRetColor}">
-        <div>${Fin.currency(groupTotalReturn, true, group.currency)}</div>
-        <div class="text-[10px] font-semibold">${Fin.percent(groupTotalReturnPct, true)}</div>
+        ${hideMoney
+          ? `<div>${Fin.percent(groupTotalReturnPct, true)}</div>`
+          : `<div>${Fin.currency(groupTotalReturn, true, group.currency)}</div><div class="text-[10px] font-semibold">${Fin.percent(groupTotalReturnPct, true)}</div>`}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
         ${groupNetYieldPct > 0 ? groupNetYieldPct.toFixed(2) + '% Net' : '-'}
       </td>
-      <td colspan="2" class="py-1 sm:py-1.5 px-3 text-right text-[10px] text-slate-400 font-mono">-</td>
+      <td colspan="2" class="py-1 sm:py-1.5 px-3 text-right text-[10px] text-slate-400 font-mono">${hideMoney ? '••••' : '-'}</td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-slate-700 dark:text-slate-300">
-        ${Fin.currency(group.totalCostBasis, false, group.currency)}
+        ${hideMoney ? '••••••' : Fin.currency(group.totalCostBasis, false, group.currency)}
       </td>
       <td colspan="3" class="py-1 sm:py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono">-</td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupXirrColor}" title="${groupXirrPct !== null ? `Sector Money-Weighted Annualized XIRR: ${Fin.percent(groupXirrPct, true)} p.a. (Real Inflation-Adjusted: ${Fin.percent(groupRealXirrPct, true)} p.a.)` : 'Insufficient cash flow span'}">
@@ -1161,35 +1250,49 @@ function renderHoldingsTable() {
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             ${isAct
-              ? `<div class="font-bold num-font ${dayPnlColor}">${Fin.currency(dayPnlVal, true, h.currency)}</div>
-                 <div class="text-[10px] num-font ${dayPnlColor} font-semibold">${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct, true)}</div>`
+              ? (hideMoney
+                  ? `<div class="font-bold num-font ${dayPnlColor}">${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct, true)}</div>`
+                  : `<div class="font-bold num-font ${dayPnlColor}">${Fin.currency(dayPnlVal, true, h.currency)}</div>
+                     <div class="text-[10px] num-font ${dayPnlColor} font-semibold">${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct, true)}</div>`)
               : '<span class="text-slate-400 text-xs font-mono">-</span>'}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right font-bold num-font text-slate-900 dark:text-white">
-            ${isAct ? Fin.currency(h.marketValue, false, h.currency) : '<span class="text-slate-400 font-normal">-</span>'}
+            ${isAct
+              ? (hideMoney
+                  ? `<span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">${portfolio.totalStockMarketValue > 0 ? Fin.round(((h.marketValueBase || h.marketValue) / portfolio.totalStockMarketValue) * 100, 1) + '% wt' : '••••••'}</span>`
+                  : Fin.currency(h.marketValue, false, h.currency))
+              : '<span class="text-slate-400 font-normal">-</span>'}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             ${isAct
-              ? `<div class="font-bold num-font ${pnlColor}">${Fin.currency(h.unrealizedGain, true, h.currency)}</div>
-                 <div class="text-[10px] num-font ${pnlColor} font-semibold">${Fin.percent(h.unrealizedGainPct)}</div>`
+              ? (hideMoney
+                  ? `<div class="font-bold num-font ${pnlColor}">${Fin.percent(h.unrealizedGainPct)}</div>`
+                  : `<div class="font-bold num-font ${pnlColor}">${Fin.currency(h.unrealizedGain, true, h.currency)}</div>
+                     <div class="text-[10px] num-font ${pnlColor} font-semibold">${Fin.percent(h.unrealizedGainPct)}</div>`)
               : '<span class="text-slate-400 text-xs font-mono">-</span>'}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${realPnlVal !== 0 ? realPnlColor : 'text-slate-400'}">
-            ${realPnlVal !== 0 ? Fin.currency(realPnlVal, true, h.currency) : Fin.currency(0, false, h.currency)}
+            ${hideMoney
+              ? (refCostBasis > 0 ? Fin.percent(Fin.round((realPnlVal / refCostBasis) * 100, 2), true) : '-')
+              : (realPnlVal !== 0 ? Fin.currency(realPnlVal, true, h.currency) : Fin.currency(0, false, h.currency))}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${h.totalDividends > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
-            ${h.totalDividends > 0 ? '+' + Fin.currency(h.totalDividends, false, h.currency) : Fin.currency(0, false, h.currency)}
+            ${hideMoney
+              ? `${h.yieldOnCost.toFixed(2)}% YoC`
+              : (h.totalDividends > 0 ? '+' + Fin.currency(h.totalDividends, false, h.currency) : Fin.currency(0, false, h.currency))}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right" title="Total Return = Unrealized P&L + Realized P&L + Accumulated Dividends">
-            <div class="font-bold num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.currency(totalRetVal, true, h.currency)}</div>
-            <div class="text-[10px] num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'} font-semibold">${Fin.percent(totalRetPct, true)}</div>
+            ${hideMoney
+              ? `<div class="font-bold num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.percent(totalRetPct, true)}</div>`
+              : `<div class="font-bold num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.currency(totalRetVal, true, h.currency)}</div>
+                 <div class="text-[10px] num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'} font-semibold">${Fin.percent(totalRetPct, true)}</div>`}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             ${formatDividendExDateCell(h.divInfo)}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium ${isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}">${Fin.shares(h.shares)}</td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? Fin.currency(h.avgCost, false, h.currency) : '<span class="text-slate-400">-</span>'}</td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? Fin.currency(h.totalCostBasis, false, h.currency) : `<span class="text-slate-400 text-[10px]" title="Historical total buy cost: ${Fin.currency(h.historicalCostBasis || 0, false, h.currency)}">-</span>`}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium ${isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}">${hideMoney ? '••••' : Fin.shares(h.shares)}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? (hideMoney ? '••••••' : Fin.currency(h.avgCost, false, h.currency)) : '<span class="text-slate-400">-</span>'}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? (hideMoney ? '••••••' : Fin.currency(h.totalCostBasis, false, h.currency)) : `<span class="text-slate-400 text-[10px]">-</span>`}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font">
             ${formatTargetLevelCell(custBuy, recBuy, h.currentPrice, h.currency, 'text-sky-500', 'Buy Target')}
           </td>
@@ -1391,20 +1494,21 @@ function renderTransactionsTable() {
       ? tx.amount
       : (tx.shares * tx.price + (tx.type === 'BUY' ? (tx.fees || 0) : -(tx.fees || 0)));
 
+    const hideMoney = Fin.isPrivacyMode();
     let gainCell = '<span class="text-slate-400">-</span>';
     if (tx.type === 'SELL' && tx.realizedGain !== undefined) {
       const color = tx.realizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
-      gainCell = `<span class="font-bold num-font ${color}">${Fin.currency(tx.realizedGain, true, tCurr)}</span>`;
+      gainCell = `<span class="font-bold num-font ${color}">${hideMoney ? '••••••' : Fin.currency(tx.realizedGain, true, tCurr)}</span>`;
     }
 
     tr.innerHTML = `
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 font-mono text-slate-500">${tx.date}</td>
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3">${badgeMap[tx.type] || tx.type}</td>
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 font-bold text-slate-900 dark:text-white">${isCashOnly ? 'CASH' : tx.ticker}</td>
-      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font font-medium">${isCashOnly ? '-' : Fin.shares(tx.shares)}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font font-medium">${isCashOnly ? '-' : (hideMoney ? '••••' : Fin.shares(tx.shares))}</td>
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font">${isCashOnly ? '-' : Fin.currency(tx.price, false, tCurr)}</td>
-      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font text-slate-400">${isCashOnly ? '-' : Fin.currency(tx.fees || 0, false, tCurr)}</td>
-      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right font-bold num-font text-slate-900 dark:text-white">${Fin.currency(totalAmt, false, tCurr)}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font text-slate-400">${isCashOnly ? '-' : (hideMoney ? '••••••' : Fin.currency(tx.fees || 0, false, tCurr))}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right font-bold num-font text-slate-900 dark:text-white">${hideMoney ? '••••••' : Fin.currency(totalAmt, false, tCurr)}</td>
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right">${gainCell}</td>
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-slate-500 max-w-xs truncate">${tx.notes || ''}</td>
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-center">
@@ -1437,8 +1541,9 @@ function renderDividendsTable() {
   const statDrip = document.getElementById('div-stat-drip');
   const statYoc = document.getElementById('div-stat-yoc');
 
-  if (statCum) statCum.textContent = Fin.currency(portfolio.totalDividendsEarned, false, baseCurr);
-  if (statCash) statCash.textContent = `${Fin.currency(portfolio.estimatedAnnualForwardDivBase || 0, false, baseCurr)}/yr`;
+  const hideMoney = Fin.isPrivacyMode();
+  if (statCum) statCum.textContent = hideMoney ? '••••••' : Fin.currency(portfolio.totalDividendsEarned, false, baseCurr);
+  if (statCash) statCash.textContent = hideMoney ? '••••••/yr' : `${Fin.currency(portfolio.estimatedAnnualForwardDivBase || 0, false, baseCurr)}/yr`;
   if (statCount) statCount.textContent = `${state.dividends.length} Payouts`;
   if (statDrip) statDrip.textContent = `${state.dividends.length} Payouts`;
   const avgYoc = portfolio.totalStockCostBasis > 0
@@ -1476,7 +1581,9 @@ function renderDividendsTable() {
       detCard.classList.remove('hidden');
       const totalDetBase = detectedList.reduce((s, d) => s + Fin.convertCurrency(d.totalAmount, d.currency, baseCurr), 0);
       if (detSumBadge) {
-        detSumBadge.textContent = `${detectedList.length} Payouts Detected (${Fin.currency(totalDetBase, false, baseCurr)})`;
+        detSumBadge.textContent = hideMoney
+          ? `${detectedList.length} Payouts Detected`
+          : `${detectedList.length} Payouts Detected (${Fin.currency(totalDetBase, false, baseCurr)})`;
       }
       const { startIdx: detStart, endIdx: detEnd } = renderTablePaginationControls('detected-dividends-pagination-bar', 'divDet', detectedList.length, renderDividendsTable, 'records');
       const pagedDetected = detectedList.slice(detStart, detEnd);
@@ -1485,9 +1592,9 @@ function renderDividendsTable() {
           <td class="py-2.5 px-4 font-mono font-bold text-slate-900 dark:text-white">${d.ticker}</td>
           <td class="py-2.5 px-3 font-mono text-amber-600 dark:text-amber-400 font-semibold">${d.exDate}</td>
           <td class="py-2.5 px-3 font-mono text-slate-500">${d.payDate}</td>
-          <td class="py-2.5 px-3 text-right num-font">${Fin.shares(d.eligibleShares)}</td>
+          <td class="py-2.5 px-3 text-right num-font">${hideMoney ? '••••' : Fin.shares(d.eligibleShares)}</td>
           <td class="py-2.5 px-3 text-right num-font">${Fin.currency(d.amountPerShare, false, d.currency)}</td>
-          <td class="py-2.5 px-3 text-right font-bold num-font text-emerald-600 dark:text-emerald-400">+${Fin.currency(d.totalAmount, false, d.currency)}</td>
+          <td class="py-2.5 px-3 text-right font-bold num-font text-emerald-600 dark:text-emerald-400">${hideMoney ? '••••••' : ('+' + Fin.currency(d.totalAmount, false, d.currency))}</td>
           <td class="py-2.5 px-3 text-center">
             <button type="button" onclick="approveDetectedDividend('${d.id}')" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[10px] shadow-sm transition">
               + Approve (Cash)
@@ -1525,7 +1632,7 @@ function renderDividendsTable() {
           <td class="py-2.5 px-3 text-right num-font">${d.divCagr3Y !== null && d.divCagr3Y !== undefined ? Fin.percent(d.divCagr3Y, true) : '-'}</td>
           <td class="py-2.5 px-3 font-mono text-center">${d.nextExDate || '-'}</td>
           <td class="py-2.5 px-3 font-mono text-center text-slate-400">${d.nextPayDate || '-'}</td>
-          <td class="py-2.5 px-3 text-right num-font font-bold text-amber-500 dark:text-amber-400 unpaid-dividend-amount" title="Estimated upcoming dividend (not yet paid)">${estCash ? '+' + Fin.currency(estCash, false, d.currency) : '-'}</td>
+          <td class="py-2.5 px-3 text-right num-font font-bold text-amber-500 dark:text-amber-400 unpaid-dividend-amount" title="Estimated upcoming dividend (not yet paid)">${estCash ? (hideMoney ? '••••••' : ('+' + Fin.currency(estCash, false, d.currency))) : '-'}</td>
         </tr>
       `;
     }).join('');
@@ -1550,7 +1657,9 @@ function renderDividendsTable() {
       return s + Fin.convertCurrency(Number(div.totalAmount || 0), dCurr, baseCurr);
     }, 0);
     filterSumEl.textContent = filtered.length > 0
-      ? `${filtered.length} ${filtered.length === 1 ? 'payout' : 'payouts'} (${Fin.currency(filteredSumBase, false, baseCurr)})`
+      ? (hideMoney
+          ? `${filtered.length} ${filtered.length === 1 ? 'payout' : 'payouts'}`
+          : `${filtered.length} ${filtered.length === 1 ? 'payout' : 'payouts'} (${Fin.currency(filteredSumBase, false, baseCurr)})`)
       : '0 payouts';
   }
 
@@ -1584,7 +1693,7 @@ function renderDividendsTable() {
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 font-mono text-slate-400 whitespace-nowrap">${div.exDate || '-'}</td>
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 font-bold text-slate-900 dark:text-white whitespace-nowrap">${div.ticker}</td>
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-right num-font text-slate-500 dark:text-slate-400 whitespace-nowrap">${div.amountPerShare ? Fin.currency(div.amountPerShare, false, dCurr) : '-'}</td>
-      <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-right font-bold num-font ${amountColorCls} whitespace-nowrap" title="${isUnpaid ? 'Dividend declared (Ex-Date passed) but not yet paid until ' + div.payDate : 'Paid cash dividend'}">+${Fin.currency(div.totalAmount, false, dCurr)}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-right font-bold num-font ${amountColorCls} whitespace-nowrap" title="${isUnpaid ? 'Dividend declared (Ex-Date passed) but not yet paid until ' + div.payDate : 'Paid cash dividend'}">${hideMoney ? '••••••' : ('+' + Fin.currency(div.totalAmount, false, dCurr))}</td>
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 ${isUnpaid ? 'text-amber-600/80 dark:text-amber-300/80' : 'text-slate-400'} max-w-xs truncate">${div.notes || 'Cash Dividend'}</td>
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-center">
         <button onclick="deleteDividend('${div.id}')" class="text-slate-400 hover:text-rose-500 transition p-0.5 leading-none" title="Delete Dividend Record">
@@ -2088,7 +2197,7 @@ window.runRebalanceSimulation = function() {
                 <div>
                   <span class="font-mono font-bold text-slate-900 dark:text-white">${o.ticker}</span>
                   <span class="text-[10px] text-amber-600 dark:text-amber-400 font-mono ml-1">${o.reasonTag}</span>
-                  <div class="text-[10px] text-slate-500">Suggested trim: ~${Fin.shares(o.trimShares)} sh @ ${Fin.currency(o.currentPrice, false, o.currency)}</div>
+                  <div class="text-[10px] text-slate-500">Suggested trim: ~${Fin.privateShares(o.trimShares)} sh @ ${Fin.currency(o.currentPrice, false, o.currency)}</div>
                 </div>
                 <button type="button" onclick="stageRebalanceOrder('${o.ticker}', 'SELL', ${o.trimShares}, ${o.currentPrice})" class="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-300 font-bold text-[10px] transition shrink-0">
                   Stage Trim
@@ -2170,9 +2279,9 @@ window.runRebalanceSimulation = function() {
         <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${p.ticker} <span class="text-[10px] text-slate-400 font-normal">(${(allocShare * 100).toFixed(0)}%)</span></td>
         <td class="py-2.5 px-3 text-center"><span class="px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-500 font-mono font-bold text-[10px]">${p.signalLabel} (${p.signalScore})</span></td>
         <td class="py-2.5 px-3 text-right num-font">${Fin.currency(p.price, false, p.currency)}</td>
-        <td class="py-2.5 px-3 text-right num-font font-bold text-emerald-500">+${Fin.shares(estShares)} sh</td>
-        <td class="py-2.5 px-3 text-right num-font">${Fin.currency(estOutlayNative, false, p.currency)}</td>
-        <td class="py-2.5 px-3 text-right num-font text-cyan-500">+${Fin.currency(estAnnualDiv, false, p.currency)}/yr</td>
+        <td class="py-2.5 px-3 text-right num-font font-bold text-emerald-500">+${Fin.privateShares(estShares)} sh</td>
+        <td class="py-2.5 px-3 text-right num-font">${Fin.privateCurrency(estOutlayNative, false, p.currency)}</td>
+        <td class="py-2.5 px-3 text-right num-font text-cyan-500">${Fin.isPrivacyMode() ? '••••••/yr' : ('+' + Fin.currency(estAnnualDiv, false, p.currency) + '/yr')}</td>
         <td class="py-2.5 px-3 text-center">
           <button type="button" onclick="stageRebalanceOrder('${p.ticker}', 'BUY', ${estShares}, ${p.price})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-bold text-[10px] transition">
             Stage Buy

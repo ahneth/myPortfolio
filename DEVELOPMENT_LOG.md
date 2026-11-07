@@ -253,8 +253,14 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
   - Moved `Realized P&L` next to `Unrealized P&L`, placed `Accumulated Div` after `Realized P&L`, and added `Total Return` (`Unrealized P&L + Realized P&L + Accumulated Div`) across all row levels.
 
 
-## Version 3.2.9 (Build 20261107_1750) — 2026-11-07
+## Version 3.3.0 (Build 20261107_2225) — 2026-11-07
 - **Option 2 Chart Visualization (Custom Full Lines + Recommended Right-Edge Pins)**:
   - `charts.js`: Implemented Option 2 so full-width dotted lines represent Custom Buy/Sell/Stop-Loss targets (or Recommended when no Custom value is set) and compact 2-month right-edge ticks + endpoint markers represent daily Recommended levels.
 - **Custom Target & Stop-Loss Inputs in Edit Modals & Dual-Line Table Cells**:
   - `index.html`, `app.js`, `portfolio.js`: Added Custom Buy, Custom Sell, and Custom Stop-Loss inputs with 1-click "Copy Recommended" and "Clear" buttons in `#modal-edit-holding` and `#modal-watchlist`, and updated Holdings and Watchlist table cells (`formatTargetLevelCell`) to show Custom targets as primary and daily Recommended levels underneath.
+
+## 2026-11-07 22:25 — v3.3.0 (Build 20261107_2225) — Top-Bar Show/Hide Monetary Values Toggle (Privacy Mode)
+- **Top Header Toggle Button (`index.html`, `app.js`, `utils.js`, `portfolio.js`)**: Added `#privacy-toggle-btn` (`Hide $` / `Show $`) in the top header bar, backed by `state.settings.hideMonetaryValues` and helper methods `Fin.isPrivacyMode()`, `Fin.privateCurrency()`, and `Fin.privateShares()`.
+- **Percentages & Market Data Shown in Hide Mode (`app.js`, `charts.js`)**:
+  - KPI strip, Holdings table (`PORTFOLIO TOTAL`, Sector Subtotals, and Individual Holding rows), Dashboard charts, Transactions, Dividends, and Rebalance modal hide all personal monetary figures, share counts (`••••`), and average cost (`••••••`), showing only return/weight percentages and market data (current prices, 1D %, custom & recommended target buy/sell/stop-loss, 52W range, MoM/QoQ/YoY %, per-share dividends, yields, and fundamentals).
+  - Holdings inline stock chart hides the `Your Avg Cost` horizontal line and personal trade markers when Hide Mode is active.

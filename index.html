@@ -681,7 +681,7 @@ tr.portfolio-total-row > td.sticky-col-mobile {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.2.9 (20261107_1750)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.3.0 (20261107_2225)</span>
             </div>
           </div>
         </div>
@@ -712,6 +712,12 @@ tr.portfolio-total-row > td.sticky-col-mobile {
             <span class="text-slate-300 dark:text-slate-600">|</span>
             <span id="mobile-last-sync-label" class="text-[10px] font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap" title="Latest live market data sync date &amp; time">Not synced</span>
           </div>
+
+          <!-- Privacy / Show-Hide Monetary Values Toggle -->
+          <button id="privacy-toggle-btn" type="button" onclick="togglePrivacyMode()" class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition" title="Click to hide all monetary values, number of shares, and average cost (show % &amp; market prices only)" aria-label="Toggle Monetary Values Visibility" aria-pressed="false">
+            <i id="privacy-toggle-icon" class="fa-solid fa-eye text-brand-500"></i>
+            <span id="privacy-toggle-label" class="hidden sm:inline">Hide $</span>
+          </button>
 
           <!-- Dark / Light Mode Toggle -->
           <button id="theme-toggle" class="w-7 h-7 sm:w-9 sm:h-9 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition" aria-label="Toggle Theme">
@@ -1989,13 +1995,13 @@ tr.portfolio-total-row > td.sticky-col-mobile {
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.2.9 • Build 20261107_1750</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.3.0 • Build 20261107_2225</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261107_1750</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261107_2225</span>/
           </span>
         </div>
 
@@ -2230,7 +2236,7 @@ tr.portfolio-total-row > td.sticky-col-mobile {
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 flex flex-col lg:flex-row items-center justify-between gap-2.5">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.2.9 (Build 20261107_1750)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.3.0 (Build 20261107_2225)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
       <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
@@ -2813,10 +2819,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.2.9',
-  buildId: '20261107_1750',
+  appVersion: '3.3.0',
+  buildId: '20261107_2225',
   releaseDate: '2026-11-07 17:50 HKT',
-  driveFolder: '/myPortfolio/20261107_1750/',
+  driveFolder: '/myPortfolio/20261107_2225/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -2830,8 +2836,8 @@ var APP_VERSION_MANIFEST = {
   },
   changelog: [
     {
-      version: '3.2.9',
-      buildId: '20261107_1750',
+      version: '3.3.0',
+      buildId: '20261107_2225',
       date: '2026-11-07 17:50 HKT',
       summary: 'Implemented Option 2 chart visualization (full-width dotted lines for Custom target/stop levels + compact right-edge 2M ticks/pins for daily Recommended levels), added Custom Buy/Sell/Stop-Loss inputs with 1-click Copy from Recommended in Edit modals, and updated Holdings & Watchlist tables to display Custom and Recommended levels together.',
       changes: [
@@ -2842,7 +2848,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.8',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-07 09:30 HKT',
       summary: 'Added quantitative calculation engine for Recommended Buy Price, Recommended Sell Price, and Recommended Stop Loss (with configurable parameters in Settings), plotted Target Buy (light blue dotted), Target Sell (pink dotted), and Stop Loss (dark red dotted) lines on the Holdings chart, reordered Holdings P&L columns, and added the Total Return column.',
       changes: [
@@ -2854,7 +2860,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.7',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-07 09:10 HKT',
       summary: 'Fixed Watchlist and Holdings sector override bug (preventing forced Index ETF classification), converted Sector inputs to free-text with personalized sector autocomplete, and added full Edit modals/actions for Holdings, Transactions, and Watchlist.',
       changes: [
@@ -2865,7 +2871,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.6',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-06 18:55 HKT',
       summary: 'Automated Watchlist/Holdings ticker sync to GitHub Actions, moved Rebalance button to Holdings header, added Last Sync timestamp next to Sync Market Data in top bar, and moved chart ticker signal & period metrics below Holdings/Watchlist charts with unified table signal color scheme.',
       changes: [
@@ -2877,7 +2883,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.5',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-04 21:35 HKT',
       summary: 'Fixed missing October 2026 (2026-10) monthly data for London Stock Exchange ETFs (SPYL.L, VWRA.L) caused by British Summer Time (BST = UTC+1) midnight timestamps shifting back 1 hour into the previous month when parsed in UTC.',
       changes: [
@@ -2888,7 +2894,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.4',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-04 15:15 HKT',
       summary: 'Enhanced the Holdings table with Day P&L, reordered Market Value / Unrealized P&L / Div / Ex-Date next to Day P&L, added Accumulated Div and Realized P&L columns, added a top PORTFOLIO TOTAL aggregation row, included all historical (0-share closed) holdings with an "Active only" checkbox, and added clickable Monthly Buy (Blue X) and Sell (Red X) markers on the Holdings stock chart.',
       changes: [
@@ -2901,7 +2907,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.3',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-04 14:35 HKT',
       summary: 'Removed header subtitle ("Global HK, US & London Stock Portfolio Tracker") and "Test 2800.HK & VOO" button, added automatic one-time Live Price API fetch on initial page load, enforced a 3-month (90-day) cutoff for fetching and retaining company news, and displayed the latest update dates and times for Historical Monthly Prices and News Analysis in the page footer.',
       changes: [
@@ -2913,7 +2919,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.2',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-04 13:50 HKT',
       summary: 'Halved the fixed height of the Holdings and Watchlist scrollable table viewports so they take significantly less vertical screen space and leave ample room for the stock charts and page scrolling.',
       changes: [
@@ -2923,7 +2929,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.1',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-04 13:10 HKT',
       summary: 'Moved Live Price column immediately after Asset / Sector in Holdings and Watchlist tables, added fixed-height single-screen scrollable table viewports with vertical/horizontal scrollbars and top/bottom page margins, removed TOP ETF badge, enabled freeze-pane first column on PC desktop and mobile, expanded PC desktop layout to 100% full browser width with permanently pinned top title/tab bar, and unified compact row top/bottom margins across all tables in the app.',
       changes: [
@@ -2937,7 +2943,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.0',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-01 20:15 HKT',
       summary: 'Added Signal filter dropdowns on Holdings and Watchlist pages, grouped Watchlist stocks by collapsible sectors with ETF top-priority sorting, and reduced vertical row margins on Transaction Audit Log and Dividend Payout Logs so all 20 paginated rows fit on a single mobile screen without scrolling.',
       changes: [
@@ -2948,7 +2954,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.9',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-01 19:45 HKT',
       summary: 'Fixed historical monthly Close vs. Low mismatch on multi-year charts by aligning Monthly Close to unadjusted market close (rawClose) on the same price scale as Monthly High, Monthly Low, and Avg Cost.',
       changes: [
@@ -2958,7 +2964,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.8',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-01 14:05 HKT',
       summary: 'Moved stock chart legend below the chart canvas, added translucent green Monthly High–Low range band around Monthly Close, increased Reg Trend Upper/Lower visibility and chart height (350px–430px), restricted top KPI summary cards to the Home (Dashboard) page only, and added 20-row pagination (Prev 20 / Next 20) to all Transaction and Dividend tables.',
       changes: [
@@ -2971,7 +2977,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.7',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-01',
       changes: [
         'Added automatic startup and ingestion data validation for historical monthly price series, technical indicators, and company news feeds',
@@ -2981,7 +2987,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.6',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-11-01',
       changes: [
         'Dedicated browser MarketAPI strictly to fast parallel Live Price quotes only (eliminated all third-party browser API calls for 15y historical data and news)',
@@ -2992,7 +2998,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.5',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-10-31',
       changes: [
         'Changed clicked/selected row highlight in Holdings and Watchlist (and active nav tabs) to dark slate grey (#1e293b) for high-contrast text readability in dark mode',
@@ -3001,7 +3007,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.4',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-10-31',
       changes: [
         'Fixed Holdings sector group header sticky bar width on mobile (changed sticky cell from colspan=3 to colspan=1 matching stock rows) so sector subtotals/aggregates are never blocked during horizontal scroll',
@@ -3010,7 +3016,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.3',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-10-31',
       changes: [
         'Styled unpaid/pending dividends (where Ex-Date has passed but Pay Date is in the future) in distinct amber/yellow font color with an Unpaid badge in Dividend Payout Logs',
@@ -3020,7 +3026,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.2',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-10-31',
       changes: [
         'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging legacy baseline dates with live Yahoo Finance ex-dates',
@@ -3032,7 +3038,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.1',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-10-31',
       changes: [
         'Fixed Service Worker (sw.js) cache-first trap by bumping cache version and switching to Network-First plus automatic stale CacheStorage purge on startup',
@@ -3042,7 +3048,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.0',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-10-31 16:50 HKT',
       title: '1-Day Quote Previous-Close Fix, 100% Cash Dividends, Dividend Ticker Filter, Complete 3476.HK/3433.HK Dividends & TRIM/OFFLOAD Signal Engine',
       changes: [
@@ -3055,7 +3061,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.1',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-10-31 11:15 HKT',
       title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
       changes: [
@@ -3070,7 +3076,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.0',
-      buildId: '20261107_1750',
+      buildId: '20261107_2225',
       date: '2026-10-30 23:30 HKT',
       title: 'Full Quantitative Suite: 2018+ Auto-Dividends, Buy/Sell Signal Engine, Scheduled News, Trend Regimes, Real XIRR & Settings Customizer',
       changes: [
@@ -13205,7 +13211,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.9 • Build 20261107_1750)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.3.0 • Build 20261107_2225)...');
   }
 
   try {
@@ -13242,7 +13248,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.2.9 boot sequence complete — triggering initial one-time live price API fetch.');
+      AppLogger.info('Boot', 'myPortfolio v3.3.0 boot sequence complete — triggering initial one-time live price API fetch.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

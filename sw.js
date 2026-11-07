@@ -1,4 +1,4 @@
-const CACHE_NAME = "myportfolio-cache-v3.2.9-20261107_1750";
+const CACHE_NAME = "myportfolio-cache-v3.3.0-20261107_2225";
 const APP_SHELL = [
   "./",
   "./index.html",
