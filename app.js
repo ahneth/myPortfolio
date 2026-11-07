@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.3.0-20261107_2225') {
+      if (k !== 'myportfolio-cache-v3.3.1-20261107_2255') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -65,6 +65,58 @@ function togglePrivacyMode() {
 }
 window.togglePrivacyMode = togglePrivacyMode;
 
+function updateThemeUI(isDark) {
+  if (typeof isDark === 'undefined') {
+    isDark = document.documentElement.classList.contains('dark');
+  }
+  const badge = document.getElementById('settings-theme-badge');
+  const btnIcon = document.getElementById('settings-theme-btn-icon');
+  const btnLabel = document.getElementById('settings-theme-btn-label');
+  const btnDark = document.getElementById('btn-set-dark-theme');
+  const btnLight = document.getElementById('btn-set-light-theme');
+
+  if (badge) {
+    badge.innerHTML = isDark
+      ? '<i class="fa-solid fa-moon mr-1 text-indigo-400"></i> Dark Mode Active'
+      : '<i class="fa-solid fa-sun mr-1 text-amber-500"></i> Light Mode Active';
+  }
+  if (btnIcon) {
+    btnIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  }
+  if (btnLabel) {
+    btnLabel.textContent = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+  }
+  if (btnDark && btnLight) {
+    if (isDark) {
+      btnDark.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg border border-indigo-500 bg-indigo-500/20 text-indigo-400 flex items-center gap-1.5 transition';
+      btnLight.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1.5 transition';
+    } else {
+      btnDark.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1.5 transition';
+      btnLight.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-500 bg-amber-500/20 text-amber-600 flex items-center gap-1.5 transition';
+    }
+  }
+}
+window.updateThemeUI = updateThemeUI;
+
+function setTheme(isDark) {
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+  if (!state.settings) state.settings = {};
+  state.settings.darkMode = isDark;
+  saveState();
+  updateThemeUI(isDark);
+  try {
+    if (typeof renderCharts === 'function') renderCharts();
+  } catch (_) {}
+  if (typeof AppLogger !== 'undefined') {
+    AppLogger.action('UI', );
+  }
+}
+window.setTheme = setTheme;
+
 function renderAll() {
   try {
     if (!portfolio) recalculatePortfolio();
@@ -72,6 +124,7 @@ function renderAll() {
     if (typeof AppLogger !== 'undefined') AppLogger.error('Portfolio', `recalculatePortfolio failed: ${err.message}`, err);
   }
   try { updatePrivacyToggleUI(); } catch (_) {}
+  try { updateThemeUI(); } catch (_) {}
   try { renderApiStatusUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderApiStatusUI failed: ${err.message}`, err); }
   try { renderQuantSettingsUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderQuantSettingsUI failed: ${err.message}`, err); }
   try { renderKPIs(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderKPIs failed: ${err.message}`, err); }
@@ -3495,13 +3548,15 @@ function setupEventListeners() {
     });
   });
 
-  on('theme-toggle', 'click', () => {
-    const isDark = document.documentElement.classList.toggle('dark');
-    state.settings.darkMode = isDark;
-    saveState();
-    renderCharts();
-    if (typeof AppLogger !== 'undefined') AppLogger.action('UI', `Switched theme to ${isDark ? 'Dark' : 'Light'} mode.`);
-  });
+  const handleThemeToggle = () => {
+    const isDark = !document.documentElement.classList.contains('dark');
+    setTheme(isDark);
+  };
+  on('settings-theme-toggle', 'click', handleThemeToggle);
+  on('theme-toggle', 'click', handleThemeToggle);
+  on('btn-set-dark-theme', 'click', () => setTheme(true));
+  on('btn-set-light-theme', 'click', () => setTheme(false));
+  on('privacy-toggle-btn', 'click', () => togglePrivacyMode());
 
   on('banner-configure-api-btn', 'click', () => {
     switchTab('settings');

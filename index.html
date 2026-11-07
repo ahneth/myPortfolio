@@ -108,6 +108,74 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Chart.js CDN -->
+    <script id="myportfolio-early-init">
+    // Early bootstrap for global helpers before DOM elements bind onclick
+    (function() {
+      try {
+        var raw = localStorage.getItem('myPortfolio_state');
+        var s = raw ? JSON.parse(raw) : {};
+        if (s && s.settings && s.settings.darkMode === false) {
+          document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {}
+
+      window.togglePrivacyMode = function() {
+        try {
+          if (typeof window._appTogglePrivacyMode === 'function') {
+            window._appTogglePrivacyMode();
+            return;
+          }
+          var raw = localStorage.getItem('myPortfolio_state');
+          var st = raw ? JSON.parse(raw) : { settings: {} };
+          if (!st.settings) st.settings = {};
+          st.settings.hideMonetaryValues = !Boolean(st.settings.hideMonetaryValues);
+          localStorage.setItem('myPortfolio_state', JSON.stringify(st));
+          if (typeof window.updatePrivacyToggleUI === 'function') {
+            window.updatePrivacyToggleUI();
+          }
+          if (typeof renderAll === 'function') {
+            renderAll();
+          }
+        } catch (err) {
+          console.error('Early togglePrivacyMode error:', err);
+        }
+      };
+
+      window.updatePrivacyToggleUI = function() {
+        try {
+          var hide = false;
+          if (typeof Fin !== 'undefined' && typeof Fin.isPrivacyMode === 'function') {
+            hide = Fin.isPrivacyMode();
+          } else {
+            var raw = localStorage.getItem('myPortfolio_state');
+            var st = raw ? JSON.parse(raw) : {};
+            hide = Boolean(st && st.settings && st.settings.hideMonetaryValues);
+          }
+          var btn = document.getElementById('privacy-toggle-btn');
+          var icon = document.getElementById('privacy-toggle-icon');
+          var lbl = document.getElementById('privacy-toggle-label');
+          if (btn) {
+            btn.className = hide
+              ? 'h-7 sm:h-9 px-2 sm:px-3 rounded-lg border border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-bold transition shadow-sm'
+              : 'h-7 sm:h-9 px-2 sm:px-3 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition';
+            btn.setAttribute('aria-pressed', String(hide));
+            btn.title = hide
+              ? 'Monetary values, shares & avg cost are hidden (showing % & market prices only). Click to show all values.'
+              : 'Click to hide all monetary values, number of shares, and average cost (show % & market prices only)';
+          }
+          if (icon) {
+            icon.className = hide ? 'fa-solid fa-eye-slash text-amber-500' : 'fa-solid fa-eye text-brand-500';
+          }
+          if (lbl) {
+            lbl.textContent = hide ? 'Show $' : 'Hide $';
+          }
+        } catch (e) {}
+      };
+    })();
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <!-- SheetJS CDN -->
@@ -714,16 +782,12 @@ tr.portfolio-total-row > td.sticky-col-mobile {
           </div>
 
           <!-- Privacy / Show-Hide Monetary Values Toggle -->
-          <button id="privacy-toggle-btn" type="button" onclick="togglePrivacyMode()" class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition" title="Click to hide all monetary values, number of shares, and average cost (show % &amp; market prices only)" aria-label="Toggle Monetary Values Visibility" aria-pressed="false">
+          <button id="privacy-toggle-btn" type="button" onclick="if(window.togglePrivacyMode) window.togglePrivacyMode();" class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition" title="Click to hide all monetary values, number of shares, and average cost (show % &amp; market prices only)" aria-label="Toggle Monetary Values Visibility" aria-pressed="false">
             <i id="privacy-toggle-icon" class="fa-solid fa-eye text-brand-500"></i>
             <span id="privacy-toggle-label" class="hidden sm:inline">Hide $</span>
           </button>
 
-          <!-- Dark / Light Mode Toggle -->
-          <button id="theme-toggle" class="w-7 h-7 sm:w-9 sm:h-9 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition" aria-label="Toggle Theme">
-            <i class="fa-solid fa-moon dark:hidden"></i>
-            <i class="fa-solid fa-sun hidden dark:inline"></i>
-          </button>
+          
         </div>
       </div>
 
@@ -1898,6 +1962,53 @@ tr.portfolio-total-row > td.sticky-col-mobile {
         </div>
       </div>
 
+            <!-- 2. Display Theme & Visual Appearance (Dark / Light Mode) -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-5 sm:p-6 rounded-2xl shadow-sm">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center text-xl">
+              <i class="fa-solid fa-circle-half-stroke"></i>
+            </div>
+            <div>
+              <h2 class="font-bold text-slate-900 dark:text-white">Display Theme &amp; Visual Appearance</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Switch between Dark Mode and Light Mode. Clean high-contrast palettes customized for charts and financial tables.</p>
+            </div>
+          </div>
+          <span id="settings-theme-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+            <i class="fa-solid fa-moon mr-1 text-indigo-400"></i> Dark Mode Active
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <div class="text-xs font-bold text-slate-900 dark:text-white">Theme Switcher</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Toggle between dark obsidian theme and clean light theme</div>
+            </div>
+            <button id="settings-theme-toggle" type="button" class="px-4 py-2 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white flex items-center gap-2 transition shadow-sm" aria-label="Toggle Theme">
+              <i id="settings-theme-btn-icon" class="fa-solid fa-sun"></i>
+              <span id="settings-theme-btn-label">Switch to Light Mode</span>
+            </button>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <div class="text-xs font-bold text-slate-900 dark:text-white">Quick Preset Selection</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Directly choose your preferred color scheme</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btn-set-dark-theme" type="button" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-moon text-indigo-400"></i> Dark
+              </button>
+              <button id="btn-set-light-theme" type="button" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-sun text-amber-500"></i> Light
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
       <!-- 2. Automatic Device Detection & Responsive Display Diagnostics -->
       <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-5 sm:p-6 rounded-2xl shadow-sm">
         <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -2819,10 +2930,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.0',
-  buildId: '20261107_2225',
-  releaseDate: '2026-11-07 17:50 HKT',
-  driveFolder: '/myPortfolio/20261107_2225/',
+  appVersion: '3.3.1',
+  buildId: '20261107_2255',
+  releaseDate: '2026-11-07 22:55 HKT',
+  driveFolder: '/myPortfolio/20261107_2255/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -2836,8 +2947,19 @@ var APP_VERSION_MANIFEST = {
   },
   changelog: [
     {
+      version: '3.3.1',
+      buildId: '20261107_2255',
+      date: '2026-11-07 22:55 HKT',
+      summary: 'Fixed togglePrivacyMode ReferenceError on GitHub Pages via early head bootstrapper and moved Dark/Light theme toggle button from header to Settings tab.',
+      changes: [
+        'Fixed ReferenceError: togglePrivacyMode is not defined by adding an early bootstrap script in <head> and dual event-listener binding, ensuring monetary values show/hide toggle works immediately on initial page load.',
+        'Moved Dark / Light mode toggle button from the top right navigation bar to a dedicated "Display Theme & Visual Appearance" card in the Settings tab, featuring live theme status badge, 1-click toggle button, and instant Dark / Light preset selectors.',
+        'Bumped Service Worker cache to myportfolio-cache-v3.3.1-20261107_2255 and synchronized all modular scripts into index.html.'
+      ]
+    },
+    {
       version: '3.3.0',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-07 17:50 HKT',
       summary: 'Implemented Option 2 chart visualization (full-width dotted lines for Custom target/stop levels + compact right-edge 2M ticks/pins for daily Recommended levels), added Custom Buy/Sell/Stop-Loss inputs with 1-click Copy from Recommended in Edit modals, and updated Holdings & Watchlist tables to display Custom and Recommended levels together.',
       changes: [
@@ -2848,7 +2970,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.8',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-07 09:30 HKT',
       summary: 'Added quantitative calculation engine for Recommended Buy Price, Recommended Sell Price, and Recommended Stop Loss (with configurable parameters in Settings), plotted Target Buy (light blue dotted), Target Sell (pink dotted), and Stop Loss (dark red dotted) lines on the Holdings chart, reordered Holdings P&L columns, and added the Total Return column.',
       changes: [
@@ -2860,7 +2982,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.7',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-07 09:10 HKT',
       summary: 'Fixed Watchlist and Holdings sector override bug (preventing forced Index ETF classification), converted Sector inputs to free-text with personalized sector autocomplete, and added full Edit modals/actions for Holdings, Transactions, and Watchlist.',
       changes: [
@@ -2871,7 +2993,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.6',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-06 18:55 HKT',
       summary: 'Automated Watchlist/Holdings ticker sync to GitHub Actions, moved Rebalance button to Holdings header, added Last Sync timestamp next to Sync Market Data in top bar, and moved chart ticker signal & period metrics below Holdings/Watchlist charts with unified table signal color scheme.',
       changes: [
@@ -2883,7 +3005,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.5',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-04 21:35 HKT',
       summary: 'Fixed missing October 2026 (2026-10) monthly data for London Stock Exchange ETFs (SPYL.L, VWRA.L) caused by British Summer Time (BST = UTC+1) midnight timestamps shifting back 1 hour into the previous month when parsed in UTC.',
       changes: [
@@ -2894,7 +3016,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.4',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-04 15:15 HKT',
       summary: 'Enhanced the Holdings table with Day P&L, reordered Market Value / Unrealized P&L / Div / Ex-Date next to Day P&L, added Accumulated Div and Realized P&L columns, added a top PORTFOLIO TOTAL aggregation row, included all historical (0-share closed) holdings with an "Active only" checkbox, and added clickable Monthly Buy (Blue X) and Sell (Red X) markers on the Holdings stock chart.',
       changes: [
@@ -2907,7 +3029,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.3',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-04 14:35 HKT',
       summary: 'Removed header subtitle ("Global HK, US & London Stock Portfolio Tracker") and "Test 2800.HK & VOO" button, added automatic one-time Live Price API fetch on initial page load, enforced a 3-month (90-day) cutoff for fetching and retaining company news, and displayed the latest update dates and times for Historical Monthly Prices and News Analysis in the page footer.',
       changes: [
@@ -2919,7 +3041,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.2',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-04 13:50 HKT',
       summary: 'Halved the fixed height of the Holdings and Watchlist scrollable table viewports so they take significantly less vertical screen space and leave ample room for the stock charts and page scrolling.',
       changes: [
@@ -2929,7 +3051,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.1',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-04 13:10 HKT',
       summary: 'Moved Live Price column immediately after Asset / Sector in Holdings and Watchlist tables, added fixed-height single-screen scrollable table viewports with vertical/horizontal scrollbars and top/bottom page margins, removed TOP ETF badge, enabled freeze-pane first column on PC desktop and mobile, expanded PC desktop layout to 100% full browser width with permanently pinned top title/tab bar, and unified compact row top/bottom margins across all tables in the app.',
       changes: [
@@ -2943,7 +3065,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.2.0',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-01 20:15 HKT',
       summary: 'Added Signal filter dropdowns on Holdings and Watchlist pages, grouped Watchlist stocks by collapsible sectors with ETF top-priority sorting, and reduced vertical row margins on Transaction Audit Log and Dividend Payout Logs so all 20 paginated rows fit on a single mobile screen without scrolling.',
       changes: [
@@ -2954,7 +3076,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.9',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-01 19:45 HKT',
       summary: 'Fixed historical monthly Close vs. Low mismatch on multi-year charts by aligning Monthly Close to unadjusted market close (rawClose) on the same price scale as Monthly High, Monthly Low, and Avg Cost.',
       changes: [
@@ -2964,7 +3086,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.8',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-01 14:05 HKT',
       summary: 'Moved stock chart legend below the chart canvas, added translucent green Monthly High–Low range band around Monthly Close, increased Reg Trend Upper/Lower visibility and chart height (350px–430px), restricted top KPI summary cards to the Home (Dashboard) page only, and added 20-row pagination (Prev 20 / Next 20) to all Transaction and Dividend tables.',
       changes: [
@@ -2977,7 +3099,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.7',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-01',
       changes: [
         'Added automatic startup and ingestion data validation for historical monthly price series, technical indicators, and company news feeds',
@@ -2987,7 +3109,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.6',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-11-01',
       changes: [
         'Dedicated browser MarketAPI strictly to fast parallel Live Price quotes only (eliminated all third-party browser API calls for 15y historical data and news)',
@@ -2998,7 +3120,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.5',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-10-31',
       changes: [
         'Changed clicked/selected row highlight in Holdings and Watchlist (and active nav tabs) to dark slate grey (#1e293b) for high-contrast text readability in dark mode',
@@ -3007,7 +3129,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.4',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-10-31',
       changes: [
         'Fixed Holdings sector group header sticky bar width on mobile (changed sticky cell from colspan=3 to colspan=1 matching stock rows) so sector subtotals/aggregates are never blocked during horizontal scroll',
@@ -3016,7 +3138,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.3',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-10-31',
       changes: [
         'Styled unpaid/pending dividends (where Ex-Date has passed but Pay Date is in the future) in distinct amber/yellow font color with an Unpaid badge in Dividend Payout Logs',
@@ -3026,7 +3148,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.2',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-10-31',
       changes: [
         'Fixed duplicate dividend logs across all holdings (e.g. 2318.HK showing 6 payouts instead of 3) caused by merging legacy baseline dates with live Yahoo Finance ex-dates',
@@ -3038,7 +3160,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.1',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-10-31',
       changes: [
         'Fixed Service Worker (sw.js) cache-first trap by bumping cache version and switching to Network-First plus automatic stale CacheStorage purge on startup',
@@ -3048,7 +3170,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.1.0',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-10-31 16:50 HKT',
       title: '1-Day Quote Previous-Close Fix, 100% Cash Dividends, Dividend Ticker Filter, Complete 3476.HK/3433.HK Dividends & TRIM/OFFLOAD Signal Engine',
       changes: [
@@ -3061,7 +3183,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.1',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-10-31 11:15 HKT',
       title: 'Sandbox Simulation Bug Fixes, Pre-Seeded 36M History & UX Polish',
       changes: [
@@ -3076,7 +3198,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.0.0',
-      buildId: '20261107_2225',
+      buildId: '20261107_2255',
       date: '2026-10-30 23:30 HKT',
       title: 'Full Quantitative Suite: 2018+ Auto-Dividends, Buy/Sell Signal Engine, Scheduled News, Trend Regimes, Real XIRR & Settings Customizer',
       changes: [
@@ -3091,7 +3213,8 @@ var APP_VERSION_MANIFEST = {
 };
 
 window.APP_VERSION_MANIFEST = APP_VERSION_MANIFEST;
-  </script>
+
+</script>
   <!-- Module: logger.js -->
   <script data-module="logger.js">
 /**
@@ -3551,7 +3674,8 @@ var AppLogger = (function() {
 })();
 
 window.AppLogger = AppLogger;
-  </script>
+
+</script>
   <!-- Module: utils.js -->
   <script data-module="utils.js">
 /**
@@ -3568,6 +3692,20 @@ var Fin = {
   round: (val, decimals = 2) => {
     if (val === null || val === undefined || isNaN(val)) return 0;
     return Number(Math.round(Number(val + 'e' + decimals)) + 'e-' + decimals);
+  },
+
+  isPrivacyMode: () => {
+    return Boolean(typeof state !== 'undefined' && state?.settings?.hideMonetaryValues);
+  },
+
+  privateCurrency: (val, showPlus = false, currencyCode = null, maskStr = '••••••') => {
+    if (Fin.isPrivacyMode()) return maskStr;
+    return Fin.currency(val, showPlus, currencyCode);
+  },
+
+  privateShares: (val, maskStr = '••••') => {
+    if (Fin.isPrivacyMode()) return maskStr;
+    return Fin.shares(val);
   },
 
   currency: (val, showPlus = false, currencyCode = null) => {
@@ -3870,7 +4008,8 @@ var DeviceDetector = {
 
 window.Fin = Fin;
 window.DeviceDetector = DeviceDetector;
-  </script>
+
+</script>
   <!-- Module: api.js -->
   <script data-module="api.js">
 /**
@@ -5241,7 +5380,8 @@ window.MarketAPI = MarketAPI;
 window.syncAllMarketData = syncAllMarketData;
 window.syncFundamentalsViaAPI = syncFundamentalsViaAPI;
 window.triggerRowPriceFlash = triggerRowPriceFlash;
-  </script>
+
+</script>
   <!-- Module: portfolio.js -->
   <script data-module="portfolio.js">
 var OFFICIAL_NAMES_MAP = {
@@ -5271,6 +5411,7 @@ var STORAGE_KEY = 'MYPORTFOLIO_STATE_V1';
  */
 var DEFAULT_QUANT_SETTINGS = {
   currency: 'HKD',
+  hideMonetaryValues: false,      // Privacy toggle: hide monetary balances, P&L $, shares & avg cost
   githubRepo: 'ahneth/myPortfolio',
   githubBranch: 'main',
   githubToken: '',                // Base reporting currency ('HKD' | 'USD' | 'GBP')
@@ -8138,7 +8279,8 @@ window.restorePortfolioFromExcel = restorePortfolioFromExcel;
 window.ingestHistoricalPricesData = ingestHistoricalPricesData;
 window.ingestCompanyNewsData = ingestCompanyNewsData;
 window.normalizeNewsArticleSchema = normalizeNewsArticleSchema;
-  </script>
+
+</script>
   <!-- Module: charts.js -->
   <script data-module="charts.js">
 /**
@@ -8392,6 +8534,74 @@ function renderMonthlyHistoryChart() {
   const latestBalance = balanceSeries[balanceSeries.length - 1] || 0;
   const latestReturnDollar = accumReturnDollarSeries[accumReturnDollarSeries.length - 1] || 0;
   const latestReturnPct = accumReturnPctSeries[accumReturnPctSeries.length - 1] || 0;
+  const hideMoney = Fin.isPrivacyMode();
+
+  if (hideMoney) {
+    if (subtitle) {
+      subtitle.textContent = `Monthly Accumulative Total Return (%) including Unrealized Gains, Realized P&L & Dividends (${labels.length} months • Monetary Values Hidden)`;
+    }
+    if (metricSummaryBadge) {
+      const signColor = latestReturnPct >= 0
+        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
+      metricSummaryBadge.className = `text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${signColor}`;
+      metricSummaryBadge.textContent = `Total Return: ${Fin.percent(latestReturnPct, true)}`;
+    }
+
+    const isPositiveEnd = latestReturnPct >= 0;
+    const lineColor = isPositiveEnd ? '#10b981' : '#f43f5e';
+    const fillColor = isPositiveEnd ? 'rgba(16, 185, 129, 0.14)' : 'rgba(244, 63, 94, 0.14)';
+
+    charts.monthlyHistory = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Accumulative Return (%)',
+            data: accumReturnPctSeries,
+            borderColor: lineColor,
+            backgroundColor: fillColor,
+            fill: true,
+            tension: 0.32,
+            pointRadius: isMobile ? 2 : 3.5,
+            pointBackgroundColor: lineColor
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: {
+            grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
+            ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: isMobile ? 9 : 10 }, maxTicksLimit: isMobile ? 6 : 12 }
+          },
+          y: {
+            position: 'left',
+            grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
+            ticks: {
+              color: isDark ? '#94a3b8' : '#64748b',
+              font: { size: isMobile ? 9 : 10 },
+              callback: (v) => (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: { color: isDark ? '#cbd5e1' : '#334155', font: { size: 11 } }
+          },
+          tooltip: {
+            callbacks: {
+              label: (c) => ` ${c.dataset.label}: ${Fin.percent(c.raw, true)}`
+            }
+          }
+        }
+      }
+    });
+    return;
+  }
 
   if (portfolioHistoryMode === 'return') {
     if (subtitle) {
@@ -8736,7 +8946,8 @@ function renderInlineStockChart(tabType) {
   }
 
   const holding = (portfolio.allHoldings || portfolio.activeHoldings || []).find(h => h.ticker === ticker);
-  const avgCostValue = (isHoldings && holding && holding.isActive !== false && holding.avgCost > 0) ? holding.avgCost : null;
+  const hideMoney = Fin.isPrivacyMode();
+  const avgCostValue = (!hideMoney && isHoldings && holding && holding.isActive !== false && holding.avgCost > 0) ? holding.avgCost : null;
   const customBuyVal = pm?.customBuyPrice || holding?.customBuyPrice || null;
   const customSellVal = pm?.customSellPrice || holding?.customSellPrice || null;
   const customStopVal = pm?.customStopLoss || holding?.customStopLoss || null;
@@ -9071,8 +9282,8 @@ function renderInlineStockChart(tabType) {
     });
   }
 
-  // Add Monthly Buy Avg Price (Blue X) and Monthly Sell Avg Price (Red X) markers on the Holdings chart
-  if (isHoldings) {
+  // Add Monthly Buy Avg Price (Blue X) and Monthly Sell Avg Price (Red X) markers on the Holdings chart (hidden in Privacy Mode)
+  if (isHoldings && !hideMoney) {
     if (buyMarkerData.some(v => v !== null)) {
       datasets.push({
         label: 'Buy Avg Price (Blue X)',
@@ -9321,6 +9532,9 @@ function renderAllocationChart() {
               const val = c.raw || 0;
               const total = data.reduce((a, b) => a + b, 0);
               const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+              if (Fin.isPrivacyMode()) {
+                return ` ${c.label}: ${pct}%`;
+              }
               return ` ${c.label}: ${Fin.currency(val, false, baseCurr)} (${pct}%)`;
             }
           }
@@ -9343,9 +9557,15 @@ function renderDividendsChart() {
     monthlyMap[m] = (monthlyMap[m] || 0) + amtBase;
   });
 
+  const hideMoney = Fin.isPrivacyMode();
   const months = Object.keys(monthlyMap).sort();
   const totals = months.map(m => Fin.round(monthlyMap[m], 2));
-  document.getElementById('chart-div-total-badge').textContent = `${Fin.currency(portfolio.totalDividendsEarned, false, baseCurr)} Total`;
+  const avgYoc = portfolio.totalStockCostBasis > 0
+    ? Fin.round((portfolio.totalDividendsEarned / portfolio.totalStockCostBasis) * 100, 2)
+    : 0;
+  document.getElementById('chart-div-total-badge').textContent = hideMoney
+    ? `YoC ${avgYoc.toFixed(2)}%`
+    : `${Fin.currency(portfolio.totalDividendsEarned, false, baseCurr)} Total`;
 
   const isDark = document.documentElement.classList.contains('dark');
   charts.dividends = new Chart(ctx, {
@@ -9353,7 +9573,7 @@ function renderDividendsChart() {
     data: {
       labels: months.length > 0 ? months : ['No Dividends Logged'],
       datasets: [{
-        label: `Monthly Dividend (${baseCurr})`,
+        label: hideMoney ? 'Monthly Dividend (Hidden)' : `Monthly Dividend (${baseCurr})`,
         data: totals.length > 0 ? totals : [0],
         backgroundColor: '#06b6d4',
         borderRadius: 6
@@ -9366,10 +9586,23 @@ function renderDividendsChart() {
         x: { grid: { display: false }, ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 } } },
         y: {
           grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
-          ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 }, callback: (v) => Fin.currency(v, false, baseCurr) }
+          ticks: {
+            color: isDark ? '#94a3b8' : '#64748b',
+            font: { size: 10 },
+            callback: (v) => hideMoney ? '••••' : Fin.currency(v, false, baseCurr)
+          }
         }
       },
-      plugins: { legend: { display: false } }
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (c) => hideMoney
+              ? ' Monthly Dividend: ••••••'
+              : ` ${c.dataset.label}: ${Fin.currency(c.raw, false, baseCurr)}`
+          }
+        }
+      }
     }
   });
 }
@@ -9379,6 +9612,7 @@ function renderPnlBreakdownChart() {
   const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
   if (charts.pnlBreakdown) charts.pnlBreakdown.destroy();
 
+  const hideMoney = Fin.isPrivacyMode();
   const tickers = Array.from(new Set([
     ...portfolio.activeHoldings.map(h => h.ticker),
     ...Object.keys(portfolio.allHoldingsMap).filter(t => (portfolio.allHoldingsMap[t].realizedGain || 0) !== 0)
@@ -9386,10 +9620,17 @@ function renderPnlBreakdownChart() {
 
   const unrealizedSeries = tickers.map(t => {
     const active = portfolio.activeHoldings.find(h => h.ticker === t);
-    return active ? Fin.convertCurrency(active.unrealizedGain, active.currency, baseCurr) : 0;
+    if (!active) return 0;
+    if (hideMoney) return Fin.round(active.unrealizedGainPct || 0, 2);
+    return Fin.convertCurrency(active.unrealizedGain, active.currency, baseCurr);
   });
   const realizedSeries = tickers.map(t => {
-    const rg = portfolio.allHoldingsMap[t]?.realizedGain || 0;
+    const pos = portfolio.allHoldingsMap[t];
+    const rg = pos?.realizedGain || 0;
+    if (hideMoney) {
+      const refCost = (pos?.totalCostBasis > 0 ? pos.totalCostBasis : (pos?.historicalCostBasis || pos?.cumulativeBuyCostBasis || 0));
+      return refCost > 0 ? Fin.round((rg / refCost) * 100, 2) : 0;
+    }
     const tCurr = state.prices[t]?.currency || MarketAPI.getStaticProfile(t).currency || baseCurr;
     return Fin.convertCurrency(rg, tCurr, baseCurr);
   });
@@ -9400,8 +9641,8 @@ function renderPnlBreakdownChart() {
     data: {
       labels: tickers.length > 0 ? tickers : ['No Positions'],
       datasets: [
-        { label: `Unrealized P&L (${baseCurr})`, data: unrealizedSeries.length > 0 ? unrealizedSeries : [0], backgroundColor: '#10b981', borderRadius: 5 },
-        { label: `Realized P&L (${baseCurr})`, data: realizedSeries.length > 0 ? realizedSeries : [0], backgroundColor: '#6366f1', borderRadius: 5 }
+        { label: hideMoney ? 'Unrealized Return (%)' : `Unrealized P&L (${baseCurr})`, data: unrealizedSeries.length > 0 ? unrealizedSeries : [0], backgroundColor: '#10b981', borderRadius: 5 },
+        { label: hideMoney ? 'Realized Return (%)' : `Realized P&L (${baseCurr})`, data: realizedSeries.length > 0 ? realizedSeries : [0], backgroundColor: '#6366f1', borderRadius: 5 }
       ]
     },
     options: {
@@ -9411,10 +9652,23 @@ function renderPnlBreakdownChart() {
         x: { grid: { display: false }, ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 } } },
         y: {
           grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
-          ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 }, callback: (v) => Fin.currency(v, true, baseCurr) }
+          ticks: {
+            color: isDark ? '#94a3b8' : '#64748b',
+            font: { size: 10 },
+            callback: (v) => hideMoney ? Fin.percent(v, true) : Fin.currency(v, true, baseCurr)
+          }
         }
       },
-      plugins: { legend: { position: 'top', labels: { color: isDark ? '#94a3b8' : '#475569', font: { size: 11 } } } }
+      plugins: {
+        legend: { position: 'top', labels: { color: isDark ? '#94a3b8' : '#475569', font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: (c) => hideMoney
+              ? ` ${c.dataset.label}: ${Fin.percent(c.raw, true)}`
+              : ` ${c.dataset.label}: ${Fin.currency(c.raw, true, baseCurr)}`
+          }
+        }
+      }
     }
   });
 }
@@ -9425,7 +9679,8 @@ window.renderInlineStockChart = renderInlineStockChart;
 window.renderAllocationChart = renderAllocationChart;
 window.renderDividendsChart = renderDividendsChart;
 window.renderPnlBreakdownChart = renderPnlBreakdownChart;
-  </script>
+
+</script>
   <!-- Module: app.js -->
   <script data-module="app.js">
 
@@ -9433,7 +9688,7 @@ window.renderPnlBreakdownChart = renderPnlBreakdownChart;
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.2.5-20261104_2135') {
+      if (k !== 'myportfolio-cache-v3.3.1-20261107_2255') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -9457,12 +9712,104 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
 
 var CURATED_BASELINE_NEWS = [];
 
+function updatePrivacyToggleUI() {
+  const hide = Fin.isPrivacyMode();
+  const btn = document.getElementById('privacy-toggle-btn');
+  const icon = document.getElementById('privacy-toggle-icon');
+  const lbl = document.getElementById('privacy-toggle-label');
+  if (btn) {
+    btn.className = hide
+      ? 'h-7 sm:h-9 px-2 sm:px-3 rounded-lg border border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-bold transition shadow-sm'
+      : 'h-7 sm:h-9 px-2 sm:px-3 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition';
+    btn.setAttribute('aria-pressed', String(hide));
+    btn.title = hide
+      ? 'Monetary values, shares & avg cost are hidden (showing % & market prices only). Click to show all values.'
+      : 'Click to hide all monetary values, number of shares, and average cost (show % & market prices only)';
+  }
+  if (icon) {
+    icon.className = hide ? 'fa-solid fa-eye-slash text-amber-500' : 'fa-solid fa-eye text-brand-500';
+  }
+  if (lbl) {
+    lbl.textContent = hide ? 'Show $' : 'Hide $';
+  }
+}
+window.updatePrivacyToggleUI = updatePrivacyToggleUI;
+
+function togglePrivacyMode() {
+  if (!state.settings) state.settings = {};
+  state.settings.hideMonetaryValues = !Boolean(state.settings.hideMonetaryValues);
+  saveState();
+  updatePrivacyToggleUI();
+  renderAll();
+  showToast(
+    state.settings.hideMonetaryValues
+      ? 'Privacy Mode On: Monetary values, shares & avg cost hidden (% and market prices shown)'
+      : 'Privacy Mode Off: All monetary values, shares & avg cost visible',
+    'info'
+  );
+}
+window.togglePrivacyMode = togglePrivacyMode;
+
+function updateThemeUI(isDark) {
+  if (typeof isDark === 'undefined') {
+    isDark = document.documentElement.classList.contains('dark');
+  }
+  const badge = document.getElementById('settings-theme-badge');
+  const btnIcon = document.getElementById('settings-theme-btn-icon');
+  const btnLabel = document.getElementById('settings-theme-btn-label');
+  const btnDark = document.getElementById('btn-set-dark-theme');
+  const btnLight = document.getElementById('btn-set-light-theme');
+
+  if (badge) {
+    badge.innerHTML = isDark
+      ? '<i class="fa-solid fa-moon mr-1 text-indigo-400"></i> Dark Mode Active'
+      : '<i class="fa-solid fa-sun mr-1 text-amber-500"></i> Light Mode Active';
+  }
+  if (btnIcon) {
+    btnIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  }
+  if (btnLabel) {
+    btnLabel.textContent = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+  }
+  if (btnDark && btnLight) {
+    if (isDark) {
+      btnDark.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg border border-indigo-500 bg-indigo-500/20 text-indigo-400 flex items-center gap-1.5 transition';
+      btnLight.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1.5 transition';
+    } else {
+      btnDark.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1.5 transition';
+      btnLight.className = 'px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-500 bg-amber-500/20 text-amber-600 flex items-center gap-1.5 transition';
+    }
+  }
+}
+window.updateThemeUI = updateThemeUI;
+
+function setTheme(isDark) {
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+  if (!state.settings) state.settings = {};
+  state.settings.darkMode = isDark;
+  saveState();
+  updateThemeUI(isDark);
+  try {
+    if (typeof renderCharts === 'function') renderCharts();
+  } catch (_) {}
+  if (typeof AppLogger !== 'undefined') {
+    AppLogger.action('UI', );
+  }
+}
+window.setTheme = setTheme;
+
 function renderAll() {
   try {
     if (!portfolio) recalculatePortfolio();
   } catch (err) {
     if (typeof AppLogger !== 'undefined') AppLogger.error('Portfolio', `recalculatePortfolio failed: ${err.message}`, err);
   }
+  try { updatePrivacyToggleUI(); } catch (_) {}
+  try { updateThemeUI(); } catch (_) {}
   try { renderApiStatusUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderApiStatusUI failed: ${err.message}`, err); }
   try { renderQuantSettingsUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderQuantSettingsUI failed: ${err.message}`, err); }
   try { renderKPIs(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderKPIs failed: ${err.message}`, err); }
@@ -9685,29 +10032,67 @@ function renderApiStatusUI() {
 
 function renderKPIs() {
   const baseCurr = portfolio.baseCurrency || state.settings.currency || 'HKD';
-  document.getElementById('kpi-portfolio-value').textContent = Fin.currency(portfolio.totalPortfolioValue, false, baseCurr);
-  document.getElementById('kpi-cash-balance').textContent = Fin.currency(portfolio.cashBalance, false, baseCurr);
-
+  const hideMoney = Fin.isPrivacyMode();
   const cashPct = portfolio.totalPortfolioValue > 0
     ? Fin.round((Math.max(0, portfolio.cashBalance) / portfolio.totalPortfolioValue) * 100, 1)
     : 0;
-  document.getElementById('kpi-cash-pct').textContent = `${cashPct}% of total`;
-  document.getElementById('kpi-cost-basis').textContent = Fin.currency(portfolio.totalStockCostBasis, false, baseCurr);
+  const investedPct = portfolio.totalPortfolioValue > 0
+    ? Fin.round(Math.max(0, 100 - cashPct), 1)
+    : 0;
+  const totReturnBase = (portfolio.totalUnrealizedGain || 0) + (portfolio.totalRealizedPnL || 0) + (portfolio.totalDividendsEarned || 0);
+  const totReturnPct = portfolio.totalStockCostBasis > 0
+    ? Fin.round((totReturnBase / portfolio.totalStockCostBasis) * 100, 2)
+    : 0;
+  const realizedPct = portfolio.totalStockCostBasis > 0
+    ? Fin.round(((portfolio.totalRealizedPnL || 0) / portfolio.totalStockCostBasis) * 100, 2)
+    : 0;
+  const avgYocKpi = portfolio.totalStockCostBasis > 0
+    ? Fin.round((portfolio.totalDividendsEarned / portfolio.totalStockCostBasis) * 100, 2)
+    : 0;
+
+  document.getElementById('kpi-portfolio-value').textContent = hideMoney
+    ? Fin.percent(totReturnPct, true)
+    : Fin.currency(portfolio.totalPortfolioValue, false, baseCurr);
+  const portSubEl = document.getElementById('kpi-portfolio-value')?.nextElementSibling;
+  if (portSubEl) {
+    portSubEl.innerHTML = hideMoney ? '<span>Total Return % ($ Hidden)</span>' : '<span>Total Net Worth</span>';
+  }
+
+  document.getElementById('kpi-cash-balance').textContent = hideMoney
+    ? `${cashPct}%`
+    : Fin.currency(portfolio.cashBalance, false, baseCurr);
+  document.getElementById('kpi-cash-pct').textContent = hideMoney ? 'of total portfolio' : `${cashPct}% of total`;
+
+  document.getElementById('kpi-cost-basis').textContent = hideMoney
+    ? `${investedPct}%`
+    : Fin.currency(portfolio.totalStockCostBasis, false, baseCurr);
+  const costSubEl = document.getElementById('kpi-cost-basis')?.nextElementSibling;
+  if (costSubEl) {
+    costSubEl.innerHTML = hideMoney ? '<span>Invested Weight %</span>' : '<span>Active Cost Basis</span>';
+  }
 
   const uEl = document.getElementById('kpi-unrealized-val');
   const uPctEl = document.getElementById('kpi-unrealized-pct');
-  uEl.textContent = Fin.currency(portfolio.totalUnrealizedGain, true, baseCurr);
-  uPctEl.textContent = Fin.percent(portfolio.totalUnrealizedGainPct, true);
+  uEl.textContent = hideMoney
+    ? Fin.percent(portfolio.totalUnrealizedGainPct, true)
+    : Fin.currency(portfolio.totalUnrealizedGain, true, baseCurr);
+  uPctEl.textContent = hideMoney
+    ? 'Unrealized Return %'
+    : Fin.percent(portfolio.totalUnrealizedGainPct, true);
 
   const uPositive = portfolio.totalUnrealizedGain >= 0;
   uEl.className = `mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font tracking-tight ${uPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
   uPctEl.className = `mt-1 flex items-center text-[11px] font-semibold num-font ${uPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
   const rEl = document.getElementById('kpi-realized-val');
-  rEl.textContent = Fin.currency(portfolio.totalRealizedPnL, true, baseCurr);
+  rEl.textContent = hideMoney
+    ? Fin.percent(realizedPct, true)
+    : Fin.currency(portfolio.totalRealizedPnL, true, baseCurr);
   rEl.className = `mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font tracking-tight ${portfolio.totalRealizedPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
-  document.getElementById('kpi-dividends-val').textContent = Fin.currency(portfolio.totalDividendsEarned, false, baseCurr);
+  document.getElementById('kpi-dividends-val').textContent = hideMoney
+    ? `${avgYocKpi.toFixed(2)}% YoC`
+    : Fin.currency(portfolio.totalDividendsEarned, false, baseCurr);
   const detCount = portfolio.detectedDividends?.length || 0;
   document.getElementById('kpi-dividends-count').innerHTML = detCount > 0
     ? `${state.dividends.length} logged • <button onclick="switchTab('dividends')" class="text-amber-500 font-bold underline">${detCount} detected</button>`
@@ -9741,7 +10126,7 @@ function renderKPIs() {
           <span class="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-semibold text-slate-500">${top.companyName}</span>
         </div>
         <div class="text-xs num-font ${gainColor} font-bold mt-1">
-          ${Fin.percent(top.unrealizedGainPct)} (${Fin.currency(top.unrealizedGain, true, top.currency)})
+          ${hideMoney ? Fin.percent(top.unrealizedGainPct) : `${Fin.percent(top.unrealizedGainPct)} (${Fin.currency(top.unrealizedGain, true, top.currency)})`}
         </div>
       </div>
       <div class="text-right">
@@ -10313,8 +10698,10 @@ function renderHoldingsTable() {
   const totRealXirrPct = totXirrPct !== null ? Fin.realReturn(totXirrPct, infRate) : null;
   const avgSignalScore = signalCount > 0 ? Math.round(weightedSignalSum / signalCount) : 50;
 
+  const hideMoney = Fin.isPrivacyMode();
   const totTotalReturnBase = Fin.round(totUnrealizedBase + totRealizedBase + totAccumDivBase, 2);
   const totTotalReturnPct = refTotCostForYoC > 0 ? Fin.round((totTotalReturnBase / refTotCostForYoC) * 100, 2) : 0;
+  const totRealizedPct = refTotCostForYoC > 0 ? Fin.round((totRealizedBase / refTotCostForYoC) * 100, 2) : 0;
 
   const totDayColor = totDayPnLBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
   const totUnrColor = totUnrealizedBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
@@ -10336,34 +10723,37 @@ function renderHoldingsTable() {
     </td>
     <td class="py-1.5 px-3 text-right font-mono text-[10px] text-slate-500 dark:text-slate-400">100.0% wt</td>
     <td class="py-1.5 px-3 text-right num-font ${totDayColor}">
-      <div class="font-extrabold">${Fin.currency(totDayPnLBase, true, baseCurr)}</div>
-      <div class="text-[10px] font-semibold">1D ${Fin.percent(totDayPnLPct, true)}</div>
+      ${hideMoney
+        ? `<div class="font-extrabold">1D ${Fin.percent(totDayPnLPct, true)}</div>`
+        : `<div class="font-extrabold">${Fin.currency(totDayPnLBase, true, baseCurr)}</div><div class="text-[10px] font-semibold">1D ${Fin.percent(totDayPnLPct, true)}</div>`}
     </td>
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-900 dark:text-white">
-      ${Fin.currency(totMarketValueBase, false, baseCurr)}
+      ${hideMoney ? '100.0% wt' : Fin.currency(totMarketValueBase, false, baseCurr)}
     </td>
     <td class="py-1.5 px-3 text-right num-font ${totUnrColor}">
-      <div class="font-extrabold">${Fin.currency(totUnrealizedBase, true, baseCurr)}</div>
-      <div class="text-[10px] font-semibold">${Fin.percent(totUnrealizedPct, true)}</div>
+      ${hideMoney
+        ? `<div class="font-extrabold">${Fin.percent(totUnrealizedPct, true)}</div>`
+        : `<div class="font-extrabold">${Fin.currency(totUnrealizedBase, true, baseCurr)}</div><div class="text-[10px] font-semibold">${Fin.percent(totUnrealizedPct, true)}</div>`}
     </td>
     <td class="py-1.5 px-3 text-right num-font font-extrabold ${totRealColor}">
-      ${Fin.currency(totRealizedBase, true, baseCurr)}
+      ${hideMoney ? Fin.percent(totRealizedPct, true) : Fin.currency(totRealizedBase, true, baseCurr)}
     </td>
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-cyan-600 dark:text-cyan-400">
-      +${Fin.currency(totAccumDivBase, false, baseCurr)}
+      ${hideMoney ? `${totYoCPct.toFixed(2)}% YoC` : ('+' + Fin.currency(totAccumDivBase, false, baseCurr))}
     </td>
     <td class="py-1.5 px-3 text-right num-font ${totRetColor}">
-      <div class="font-extrabold">${Fin.currency(totTotalReturnBase, true, baseCurr)}</div>
-      <div class="text-[10px] font-semibold">${Fin.percent(totTotalReturnPct, true)}</div>
+      ${hideMoney
+        ? `<div class="font-extrabold">${Fin.percent(totTotalReturnPct, true)}</div>`
+        : `<div class="font-extrabold">${Fin.currency(totTotalReturnBase, true, baseCurr)}</div><div class="text-[10px] font-semibold">${Fin.percent(totTotalReturnPct, true)}</div>`}
     </td>
     <td class="py-1.5 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">
       <div class="font-bold">${totNetYieldPct > 0 ? totNetYieldPct.toFixed(2) + '% Net' : '-'}</div>
-      <div class="text-[9.5px] font-mono text-slate-400">${totAnnualFwdDivBase > 0 ? Fin.currency(totAnnualFwdDivBase, false, baseCurr) + '/yr' : ''}</div>
+      ${hideMoney ? '' : `<div class="text-[9.5px] font-mono text-slate-400">${totAnnualFwdDivBase > 0 ? Fin.currency(totAnnualFwdDivBase, false, baseCurr) + '/yr' : ''}</div>`}
     </td>
-    <td class="py-1.5 px-3 text-right text-slate-400 font-mono">-</td>
-    <td class="py-1.5 px-3 text-right text-slate-400 font-mono">-</td>
+    <td class="py-1.5 px-3 text-right text-slate-400 font-mono">${hideMoney ? '••••' : '-'}</td>
+    <td class="py-1.5 px-3 text-right text-slate-400 font-mono">${hideMoney ? '••••••' : '-'}</td>
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-800 dark:text-slate-200">
-      ${Fin.currency(totCostBasisBase, false, baseCurr)}
+      ${hideMoney ? '••••••' : Fin.currency(totCostBasisBase, false, baseCurr)}
     </td>
     <td colspan="3" class="py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono">Quant Levels</td>
     <td class="py-1.5 px-3 text-right num-font ${totXirrColor}">
@@ -10488,32 +10878,39 @@ function renderHoldingsTable() {
         <span>${weightPct}% wt</span>
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupDayColor}">
-        <div>${Fin.currency(group.totalDayPnL, true, group.currency)}</div>
-        <div class="text-[10px] font-semibold">1D ${Fin.percent(groupDayPnlPct, true)}</div>
+        ${hideMoney
+          ? `<div>1D ${Fin.percent(groupDayPnlPct, true)}</div>`
+          : `<div>${Fin.currency(group.totalDayPnL, true, group.currency)}</div><div class="text-[10px] font-semibold">1D ${Fin.percent(groupDayPnlPct, true)}</div>`}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-extrabold text-slate-900 dark:text-white">
-        ${Fin.currency(group.totalMarketValue, false, group.currency)}
+        ${hideMoney ? `${weightPct}% wt` : Fin.currency(group.totalMarketValue, false, group.currency)}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupPnlColor}">
-        <div>${Fin.currency(group.totalUnrealizedGain, true, group.currency)}</div>
-        <div class="text-[10px] font-semibold">${Fin.percent(groupUnrealizedPct)}</div>
+        ${hideMoney
+          ? `<div>${Fin.percent(groupUnrealizedPct)}</div>`
+          : `<div>${Fin.currency(group.totalUnrealizedGain, true, group.currency)}</div><div class="text-[10px] font-semibold">${Fin.percent(groupUnrealizedPct)}</div>`}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${group.totalRealizedGain !== 0 ? groupRealColor : 'text-slate-400'}">
-        ${group.totalRealizedGain !== 0 ? Fin.currency(group.totalRealizedGain, true, group.currency) : Fin.currency(0, false, group.currency)}
+        ${hideMoney
+          ? (refGroupCostYoC > 0 ? Fin.percent(Fin.round((group.totalRealizedGain / refGroupCostYoC) * 100, 2), true) : '-')
+          : (group.totalRealizedGain !== 0 ? Fin.currency(group.totalRealizedGain, true, group.currency) : Fin.currency(0, false, group.currency))}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-cyan-600 dark:text-cyan-400">
-        ${group.totalDividends > 0 ? '+' + Fin.currency(group.totalDividends, false, group.currency) : Fin.currency(0, false, group.currency)}
+        ${hideMoney
+          ? `${groupYoC.toFixed(2)}% YoC`
+          : (group.totalDividends > 0 ? '+' + Fin.currency(group.totalDividends, false, group.currency) : Fin.currency(0, false, group.currency))}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupRetColor}">
-        <div>${Fin.currency(groupTotalReturn, true, group.currency)}</div>
-        <div class="text-[10px] font-semibold">${Fin.percent(groupTotalReturnPct, true)}</div>
+        ${hideMoney
+          ? `<div>${Fin.percent(groupTotalReturnPct, true)}</div>`
+          : `<div>${Fin.currency(groupTotalReturn, true, group.currency)}</div><div class="text-[10px] font-semibold">${Fin.percent(groupTotalReturnPct, true)}</div>`}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
         ${groupNetYieldPct > 0 ? groupNetYieldPct.toFixed(2) + '% Net' : '-'}
       </td>
-      <td colspan="2" class="py-1 sm:py-1.5 px-3 text-right text-[10px] text-slate-400 font-mono">-</td>
+      <td colspan="2" class="py-1 sm:py-1.5 px-3 text-right text-[10px] text-slate-400 font-mono">${hideMoney ? '••••' : '-'}</td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-slate-700 dark:text-slate-300">
-        ${Fin.currency(group.totalCostBasis, false, group.currency)}
+        ${hideMoney ? '••••••' : Fin.currency(group.totalCostBasis, false, group.currency)}
       </td>
       <td colspan="3" class="py-1 sm:py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono">-</td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupXirrColor}" title="${groupXirrPct !== null ? `Sector Money-Weighted Annualized XIRR: ${Fin.percent(groupXirrPct, true)} p.a. (Real Inflation-Adjusted: ${Fin.percent(groupRealXirrPct, true)} p.a.)` : 'Insufficient cash flow span'}">
@@ -10591,35 +10988,49 @@ function renderHoldingsTable() {
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             ${isAct
-              ? `<div class="font-bold num-font ${dayPnlColor}">${Fin.currency(dayPnlVal, true, h.currency)}</div>
-                 <div class="text-[10px] num-font ${dayPnlColor} font-semibold">${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct, true)}</div>`
+              ? (hideMoney
+                  ? `<div class="font-bold num-font ${dayPnlColor}">${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct, true)}</div>`
+                  : `<div class="font-bold num-font ${dayPnlColor}">${Fin.currency(dayPnlVal, true, h.currency)}</div>
+                     <div class="text-[10px] num-font ${dayPnlColor} font-semibold">${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct, true)}</div>`)
               : '<span class="text-slate-400 text-xs font-mono">-</span>'}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right font-bold num-font text-slate-900 dark:text-white">
-            ${isAct ? Fin.currency(h.marketValue, false, h.currency) : '<span class="text-slate-400 font-normal">-</span>'}
+            ${isAct
+              ? (hideMoney
+                  ? `<span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">${portfolio.totalStockMarketValue > 0 ? Fin.round(((h.marketValueBase || h.marketValue) / portfolio.totalStockMarketValue) * 100, 1) + '% wt' : '••••••'}</span>`
+                  : Fin.currency(h.marketValue, false, h.currency))
+              : '<span class="text-slate-400 font-normal">-</span>'}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             ${isAct
-              ? `<div class="font-bold num-font ${pnlColor}">${Fin.currency(h.unrealizedGain, true, h.currency)}</div>
-                 <div class="text-[10px] num-font ${pnlColor} font-semibold">${Fin.percent(h.unrealizedGainPct)}</div>`
+              ? (hideMoney
+                  ? `<div class="font-bold num-font ${pnlColor}">${Fin.percent(h.unrealizedGainPct)}</div>`
+                  : `<div class="font-bold num-font ${pnlColor}">${Fin.currency(h.unrealizedGain, true, h.currency)}</div>
+                     <div class="text-[10px] num-font ${pnlColor} font-semibold">${Fin.percent(h.unrealizedGainPct)}</div>`)
               : '<span class="text-slate-400 text-xs font-mono">-</span>'}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${realPnlVal !== 0 ? realPnlColor : 'text-slate-400'}">
-            ${realPnlVal !== 0 ? Fin.currency(realPnlVal, true, h.currency) : Fin.currency(0, false, h.currency)}
+            ${hideMoney
+              ? (refCostBasis > 0 ? Fin.percent(Fin.round((realPnlVal / refCostBasis) * 100, 2), true) : '-')
+              : (realPnlVal !== 0 ? Fin.currency(realPnlVal, true, h.currency) : Fin.currency(0, false, h.currency))}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${h.totalDividends > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
-            ${h.totalDividends > 0 ? '+' + Fin.currency(h.totalDividends, false, h.currency) : Fin.currency(0, false, h.currency)}
+            ${hideMoney
+              ? `${h.yieldOnCost.toFixed(2)}% YoC`
+              : (h.totalDividends > 0 ? '+' + Fin.currency(h.totalDividends, false, h.currency) : Fin.currency(0, false, h.currency))}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right" title="Total Return = Unrealized P&L + Realized P&L + Accumulated Dividends">
-            <div class="font-bold num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.currency(totalRetVal, true, h.currency)}</div>
-            <div class="text-[10px] num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'} font-semibold">${Fin.percent(totalRetPct, true)}</div>
+            ${hideMoney
+              ? `<div class="font-bold num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.percent(totalRetPct, true)}</div>`
+              : `<div class="font-bold num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.currency(totalRetVal, true, h.currency)}</div>
+                 <div class="text-[10px] num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'} font-semibold">${Fin.percent(totalRetPct, true)}</div>`}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             ${formatDividendExDateCell(h.divInfo)}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium ${isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}">${Fin.shares(h.shares)}</td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? Fin.currency(h.avgCost, false, h.currency) : '<span class="text-slate-400">-</span>'}</td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? Fin.currency(h.totalCostBasis, false, h.currency) : `<span class="text-slate-400 text-[10px]" title="Historical total buy cost: ${Fin.currency(h.historicalCostBasis || 0, false, h.currency)}">-</span>`}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium ${isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}">${hideMoney ? '••••' : Fin.shares(h.shares)}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? (hideMoney ? '••••••' : Fin.currency(h.avgCost, false, h.currency)) : '<span class="text-slate-400">-</span>'}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? (hideMoney ? '••••••' : Fin.currency(h.totalCostBasis, false, h.currency)) : `<span class="text-slate-400 text-[10px]">-</span>`}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font">
             ${formatTargetLevelCell(custBuy, recBuy, h.currentPrice, h.currency, 'text-sky-500', 'Buy Target')}
           </td>
@@ -10821,20 +11232,21 @@ function renderTransactionsTable() {
       ? tx.amount
       : (tx.shares * tx.price + (tx.type === 'BUY' ? (tx.fees || 0) : -(tx.fees || 0)));
 
+    const hideMoney = Fin.isPrivacyMode();
     let gainCell = '<span class="text-slate-400">-</span>';
     if (tx.type === 'SELL' && tx.realizedGain !== undefined) {
       const color = tx.realizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
-      gainCell = `<span class="font-bold num-font ${color}">${Fin.currency(tx.realizedGain, true, tCurr)}</span>`;
+      gainCell = `<span class="font-bold num-font ${color}">${hideMoney ? '••••••' : Fin.currency(tx.realizedGain, true, tCurr)}</span>`;
     }
 
     tr.innerHTML = `
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 font-mono text-slate-500">${tx.date}</td>
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3">${badgeMap[tx.type] || tx.type}</td>
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 font-bold text-slate-900 dark:text-white">${isCashOnly ? 'CASH' : tx.ticker}</td>
-      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font font-medium">${isCashOnly ? '-' : Fin.shares(tx.shares)}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font font-medium">${isCashOnly ? '-' : (hideMoney ? '••••' : Fin.shares(tx.shares))}</td>
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font">${isCashOnly ? '-' : Fin.currency(tx.price, false, tCurr)}</td>
-      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font text-slate-400">${isCashOnly ? '-' : Fin.currency(tx.fees || 0, false, tCurr)}</td>
-      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right font-bold num-font text-slate-900 dark:text-white">${Fin.currency(totalAmt, false, tCurr)}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right num-font text-slate-400">${isCashOnly ? '-' : (hideMoney ? '••••••' : Fin.currency(tx.fees || 0, false, tCurr))}</td>
+      <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right font-bold num-font text-slate-900 dark:text-white">${hideMoney ? '••••••' : Fin.currency(totalAmt, false, tCurr)}</td>
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-right">${gainCell}</td>
       <td class="py-1 sm:py-1.5 px-2.5 sm:px-3 text-slate-500 max-w-xs truncate">${tx.notes || ''}</td>
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-center">
@@ -10867,8 +11279,9 @@ function renderDividendsTable() {
   const statDrip = document.getElementById('div-stat-drip');
   const statYoc = document.getElementById('div-stat-yoc');
 
-  if (statCum) statCum.textContent = Fin.currency(portfolio.totalDividendsEarned, false, baseCurr);
-  if (statCash) statCash.textContent = `${Fin.currency(portfolio.estimatedAnnualForwardDivBase || 0, false, baseCurr)}/yr`;
+  const hideMoney = Fin.isPrivacyMode();
+  if (statCum) statCum.textContent = hideMoney ? '••••••' : Fin.currency(portfolio.totalDividendsEarned, false, baseCurr);
+  if (statCash) statCash.textContent = hideMoney ? '••••••/yr' : `${Fin.currency(portfolio.estimatedAnnualForwardDivBase || 0, false, baseCurr)}/yr`;
   if (statCount) statCount.textContent = `${state.dividends.length} Payouts`;
   if (statDrip) statDrip.textContent = `${state.dividends.length} Payouts`;
   const avgYoc = portfolio.totalStockCostBasis > 0
@@ -10906,7 +11319,9 @@ function renderDividendsTable() {
       detCard.classList.remove('hidden');
       const totalDetBase = detectedList.reduce((s, d) => s + Fin.convertCurrency(d.totalAmount, d.currency, baseCurr), 0);
       if (detSumBadge) {
-        detSumBadge.textContent = `${detectedList.length} Payouts Detected (${Fin.currency(totalDetBase, false, baseCurr)})`;
+        detSumBadge.textContent = hideMoney
+          ? `${detectedList.length} Payouts Detected`
+          : `${detectedList.length} Payouts Detected (${Fin.currency(totalDetBase, false, baseCurr)})`;
       }
       const { startIdx: detStart, endIdx: detEnd } = renderTablePaginationControls('detected-dividends-pagination-bar', 'divDet', detectedList.length, renderDividendsTable, 'records');
       const pagedDetected = detectedList.slice(detStart, detEnd);
@@ -10915,9 +11330,9 @@ function renderDividendsTable() {
           <td class="py-2.5 px-4 font-mono font-bold text-slate-900 dark:text-white">${d.ticker}</td>
           <td class="py-2.5 px-3 font-mono text-amber-600 dark:text-amber-400 font-semibold">${d.exDate}</td>
           <td class="py-2.5 px-3 font-mono text-slate-500">${d.payDate}</td>
-          <td class="py-2.5 px-3 text-right num-font">${Fin.shares(d.eligibleShares)}</td>
+          <td class="py-2.5 px-3 text-right num-font">${hideMoney ? '••••' : Fin.shares(d.eligibleShares)}</td>
           <td class="py-2.5 px-3 text-right num-font">${Fin.currency(d.amountPerShare, false, d.currency)}</td>
-          <td class="py-2.5 px-3 text-right font-bold num-font text-emerald-600 dark:text-emerald-400">+${Fin.currency(d.totalAmount, false, d.currency)}</td>
+          <td class="py-2.5 px-3 text-right font-bold num-font text-emerald-600 dark:text-emerald-400">${hideMoney ? '••••••' : ('+' + Fin.currency(d.totalAmount, false, d.currency))}</td>
           <td class="py-2.5 px-3 text-center">
             <button type="button" onclick="approveDetectedDividend('${d.id}')" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-[10px] shadow-sm transition">
               + Approve (Cash)
@@ -10955,7 +11370,7 @@ function renderDividendsTable() {
           <td class="py-2.5 px-3 text-right num-font">${d.divCagr3Y !== null && d.divCagr3Y !== undefined ? Fin.percent(d.divCagr3Y, true) : '-'}</td>
           <td class="py-2.5 px-3 font-mono text-center">${d.nextExDate || '-'}</td>
           <td class="py-2.5 px-3 font-mono text-center text-slate-400">${d.nextPayDate || '-'}</td>
-          <td class="py-2.5 px-3 text-right num-font font-bold text-amber-500 dark:text-amber-400 unpaid-dividend-amount" title="Estimated upcoming dividend (not yet paid)">${estCash ? '+' + Fin.currency(estCash, false, d.currency) : '-'}</td>
+          <td class="py-2.5 px-3 text-right num-font font-bold text-amber-500 dark:text-amber-400 unpaid-dividend-amount" title="Estimated upcoming dividend (not yet paid)">${estCash ? (hideMoney ? '••••••' : ('+' + Fin.currency(estCash, false, d.currency))) : '-'}</td>
         </tr>
       `;
     }).join('');
@@ -10980,7 +11395,9 @@ function renderDividendsTable() {
       return s + Fin.convertCurrency(Number(div.totalAmount || 0), dCurr, baseCurr);
     }, 0);
     filterSumEl.textContent = filtered.length > 0
-      ? `${filtered.length} ${filtered.length === 1 ? 'payout' : 'payouts'} (${Fin.currency(filteredSumBase, false, baseCurr)})`
+      ? (hideMoney
+          ? `${filtered.length} ${filtered.length === 1 ? 'payout' : 'payouts'}`
+          : `${filtered.length} ${filtered.length === 1 ? 'payout' : 'payouts'} (${Fin.currency(filteredSumBase, false, baseCurr)})`)
       : '0 payouts';
   }
 
@@ -11014,7 +11431,7 @@ function renderDividendsTable() {
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 font-mono text-slate-400 whitespace-nowrap">${div.exDate || '-'}</td>
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 font-bold text-slate-900 dark:text-white whitespace-nowrap">${div.ticker}</td>
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-right num-font text-slate-500 dark:text-slate-400 whitespace-nowrap">${div.amountPerShare ? Fin.currency(div.amountPerShare, false, dCurr) : '-'}</td>
-      <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-right font-bold num-font ${amountColorCls} whitespace-nowrap" title="${isUnpaid ? 'Dividend declared (Ex-Date passed) but not yet paid until ' + div.payDate : 'Paid cash dividend'}">+${Fin.currency(div.totalAmount, false, dCurr)}</td>
+      <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-right font-bold num-font ${amountColorCls} whitespace-nowrap" title="${isUnpaid ? 'Dividend declared (Ex-Date passed) but not yet paid until ' + div.payDate : 'Paid cash dividend'}">${hideMoney ? '••••••' : ('+' + Fin.currency(div.totalAmount, false, dCurr))}</td>
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 ${isUnpaid ? 'text-amber-600/80 dark:text-amber-300/80' : 'text-slate-400'} max-w-xs truncate">${div.notes || 'Cash Dividend'}</td>
       <td class="py-1 sm:py-1.5 px-2 sm:px-3 text-center">
         <button onclick="deleteDividend('${div.id}')" class="text-slate-400 hover:text-rose-500 transition p-0.5 leading-none" title="Delete Dividend Record">
@@ -11518,7 +11935,7 @@ window.runRebalanceSimulation = function() {
                 <div>
                   <span class="font-mono font-bold text-slate-900 dark:text-white">${o.ticker}</span>
                   <span class="text-[10px] text-amber-600 dark:text-amber-400 font-mono ml-1">${o.reasonTag}</span>
-                  <div class="text-[10px] text-slate-500">Suggested trim: ~${Fin.shares(o.trimShares)} sh @ ${Fin.currency(o.currentPrice, false, o.currency)}</div>
+                  <div class="text-[10px] text-slate-500">Suggested trim: ~${Fin.privateShares(o.trimShares)} sh @ ${Fin.currency(o.currentPrice, false, o.currency)}</div>
                 </div>
                 <button type="button" onclick="stageRebalanceOrder('${o.ticker}', 'SELL', ${o.trimShares}, ${o.currentPrice})" class="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-600 dark:text-amber-300 font-bold text-[10px] transition shrink-0">
                   Stage Trim
@@ -11600,9 +12017,9 @@ window.runRebalanceSimulation = function() {
         <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${p.ticker} <span class="text-[10px] text-slate-400 font-normal">(${(allocShare * 100).toFixed(0)}%)</span></td>
         <td class="py-2.5 px-3 text-center"><span class="px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-500 font-mono font-bold text-[10px]">${p.signalLabel} (${p.signalScore})</span></td>
         <td class="py-2.5 px-3 text-right num-font">${Fin.currency(p.price, false, p.currency)}</td>
-        <td class="py-2.5 px-3 text-right num-font font-bold text-emerald-500">+${Fin.shares(estShares)} sh</td>
-        <td class="py-2.5 px-3 text-right num-font">${Fin.currency(estOutlayNative, false, p.currency)}</td>
-        <td class="py-2.5 px-3 text-right num-font text-cyan-500">+${Fin.currency(estAnnualDiv, false, p.currency)}/yr</td>
+        <td class="py-2.5 px-3 text-right num-font font-bold text-emerald-500">+${Fin.privateShares(estShares)} sh</td>
+        <td class="py-2.5 px-3 text-right num-font">${Fin.privateCurrency(estOutlayNative, false, p.currency)}</td>
+        <td class="py-2.5 px-3 text-right num-font text-cyan-500">${Fin.isPrivacyMode() ? '••••••/yr' : ('+' + Fin.currency(estAnnualDiv, false, p.currency) + '/yr')}</td>
         <td class="py-2.5 px-3 text-center">
           <button type="button" onclick="stageRebalanceOrder('${p.ticker}', 'BUY', ${estShares}, ${p.price})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-bold text-[10px] transition">
             Stage Buy
@@ -12816,13 +13233,15 @@ function setupEventListeners() {
     });
   });
 
-  on('theme-toggle', 'click', () => {
-    const isDark = document.documentElement.classList.toggle('dark');
-    state.settings.darkMode = isDark;
-    saveState();
-    renderCharts();
-    if (typeof AppLogger !== 'undefined') AppLogger.action('UI', `Switched theme to ${isDark ? 'Dark' : 'Light'} mode.`);
-  });
+  const handleThemeToggle = () => {
+    const isDark = !document.documentElement.classList.contains('dark');
+    setTheme(isDark);
+  };
+  on('settings-theme-toggle', 'click', handleThemeToggle);
+  on('theme-toggle', 'click', handleThemeToggle);
+  on('btn-set-dark-theme', 'click', () => setTheme(true));
+  on('btn-set-light-theme', 'click', () => setTheme(false));
+  on('privacy-toggle-btn', 'click', () => togglePrivacyMode());
 
   on('banner-configure-api-btn', 'click', () => {
     switchTab('settings');
@@ -13211,7 +13630,7 @@ function bootstrapPortfolioApp() {
   window.__MYPORTFOLIO_BOOTSTRAPPED__ = true;
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.3.0 • Build 20261107_2225)...');
+    AppLogger.info('Boot', 'Starting myPortfolio bootstrap sequence (v3.2.9 • Build 20261107_1750)...');
   }
 
   try {
@@ -13248,7 +13667,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.3.0 boot sequence complete — triggering initial one-time live price API fetch.');
+      AppLogger.info('Boot', 'myPortfolio v3.2.9 boot sequence complete — triggering initial one-time live price API fetch.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;
@@ -13280,6 +13699,7 @@ window.openModal = openModal;
 window.closeModal = closeModal;
 window.openTradeModal = openTradeModal;
 window.bootstrapPortfolioApp = bootstrapPortfolioApp;
-  </script>
+
+</script>
 </body>
 </html>

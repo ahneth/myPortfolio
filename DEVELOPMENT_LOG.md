@@ -264,3 +264,15 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
 - **Percentages & Market Data Shown in Hide Mode (`app.js`, `charts.js`)**:
   - KPI strip, Holdings table (`PORTFOLIO TOTAL`, Sector Subtotals, and Individual Holding rows), Dashboard charts, Transactions, Dividends, and Rebalance modal hide all personal monetary figures, share counts (`••••`), and average cost (`••••••`), showing only return/weight percentages and market data (current prices, 1D %, custom & recommended target buy/sell/stop-loss, 52W range, MoM/QoQ/YoY %, per-share dividends, yields, and fundamentals).
   - Holdings inline stock chart hides the `Your Avg Cost` horizontal line and personal trade markers when Hide Mode is active.
+
+## 2026-11-07 22:55 — v3.3.1 (Build 20261107_2255) — Global Privacy Mode Early Bootstrapper & Theme Toggle Relocation to Settings
+- **Fixed `ReferenceError: togglePrivacyMode is not defined` (`index.html`, `app.js`)**:
+  - Injected an early bootstrapper `<script id="myportfolio-early-init">` into `<head>` prior to DOM rendering, defining global fallback implementations for `window.togglePrivacyMode` and `window.updatePrivacyToggleUI` and reading stored dark mode state to prevent theme flicker.
+  - Updated inline button event handler to safe defensive call `if(window.togglePrivacyMode) window.togglePrivacyMode();` and attached listener via `on('privacy-toggle-btn', 'click', ...)` in `setupEventListeners()`.
+- **Relocated Theme Toggle to Settings Page (`index.html`, `app.js`)**:
+  - Removed `#theme-toggle` from the top right navigation header, decluttering the header bar.
+  - Added dedicated "Display Theme & Visual Appearance" settings card in `#tab-content-settings` featuring active status badge (`#settings-theme-badge`), 1-click toggle button (`#settings-theme-toggle`), and instant Dark/Light preset selectors (`#btn-set-dark-theme` / `#btn-set-light-theme`).
+  - Added `updateThemeUI()` and `setTheme()` helper functions in `app.js` and wired up all interactive controls with automatic Chart.js palette re-rendering and localStorage persistence.
+- **Service Worker & Modular Synchronization (`sw.js`, `version.js`, `index.html`)**:
+  - Bumped Service Worker cache name to `myportfolio-cache-v3.3.1-20261107_2255` and startup stale cache purger in `app.js`.
+  - Bumped version manifest to `v3.3.1` (Build `20261107_2255`) and fully synchronized all standalone modules into embedded `<script data-module="...">` tags.
