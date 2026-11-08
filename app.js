@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.3.2-20261107_2310') {
+      if (k !== 'myportfolio-cache-v3.3.4-20261108_1435') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -117,12 +117,71 @@ function setTheme(isDark) {
     if (typeof renderCharts === 'function') renderCharts();
   } catch (_) {}
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.action('UI', );
+    AppLogger.action('UI', `Switched theme to ${isDark ? 'Dark' : 'Light'} mode.`);
   }
 }
 window.setTheme = setTheme;
 
-function renderAll() {
+var _dirtyTabs = new Set();
+var _initialBootRenderCompleted = false;
+var _allTabNames = ['dashboard', 'holdings', 'transactions', 'dividends', 'watchlist', 'news', 'settings', 'logs'];
+
+function markTabDirty(tabName) {
+  if (tabName) _dirtyTabs.add(tabName);
+}
+window.markTabDirty = markTabDirty;
+
+function getActiveTabName() {
+  for (let i = 0; i < _allTabNames.length; i++) {
+    const t = _allTabNames[i];
+    const el = document.getElementById(`tab-content-${t}`);
+    if (el && !el.classList.contains('hidden')) return t;
+  }
+  return 'dashboard';
+}
+window.getActiveTabName = getActiveTabName;
+
+function renderSingleTabContent(tabName) {
+  switch (tabName) {
+    case 'dashboard':
+      try { renderKPIs(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderKPIs failed: ${err.message}`, err); }
+      try { populateHistorySelector(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `populateHistorySelector failed: ${err.message}`, err); }
+      try { renderCharts(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderCharts failed: ${err.message}`, err); }
+      break;
+    case 'holdings':
+      try { populateHistorySelector(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `populateHistorySelector failed: ${err.message}`, err); }
+      try { renderHoldingsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderHoldingsTable failed: ${err.message}`, err); }
+      try { renderInlineStockChart('holdings'); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderInlineStockChart(holdings) failed: ${err.message}`, err); }
+      break;
+    case 'transactions':
+      try { renderTransactionsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderTransactionsTable failed: ${err.message}`, err); }
+      break;
+    case 'dividends':
+      try { renderDividendsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderDividendsTable failed: ${err.message}`, err); }
+      break;
+    case 'watchlist':
+      try { renderWatchlistAndFundamentals(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderWatchlistAndFundamentals failed: ${err.message}`, err); }
+      try { renderInlineStockChart('watchlist'); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderInlineStockChart(watchlist) failed: ${err.message}`, err); }
+      break;
+    case 'news':
+      try { renderNewsTab(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderNewsTab failed: ${err.message}`, err); }
+      break;
+    case 'settings':
+      try { renderQuantSettingsUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderQuantSettingsUI failed: ${err.message}`, err); }
+      try { renderVersionRegistryUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderVersionRegistryUI failed: ${err.message}`, err); }
+      break;
+    case 'logs':
+      try {
+        if (typeof AppLogger !== 'undefined') {
+          AppLogger.renderHealthCheckPanel();
+          AppLogger.renderLogTable();
+        }
+      } catch (_) {}
+      break;
+  }
+}
+
+function renderAll(forceAll = false) {
   try {
     if (!portfolio) recalculatePortfolio();
   } catch (err) {
@@ -131,24 +190,26 @@ function renderAll() {
   try { updatePrivacyToggleUI(); } catch (_) {}
   try { updateThemeUI(); } catch (_) {}
   try { renderApiStatusUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderApiStatusUI failed: ${err.message}`, err); }
-  try { renderQuantSettingsUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderQuantSettingsUI failed: ${err.message}`, err); }
-  try { renderKPIs(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderKPIs failed: ${err.message}`, err); }
-  try { populateHistorySelector(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `populateHistorySelector failed: ${err.message}`, err); }
-  try { renderHoldingsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderHoldingsTable failed: ${err.message}`, err); }
-  try { renderTransactionsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderTransactionsTable failed: ${err.message}`, err); }
-  try { renderDividendsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderDividendsTable failed: ${err.message}`, err); }
-  try { renderWatchlistAndFundamentals(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderWatchlistAndFundamentals failed: ${err.message}`, err); }
-  try { renderNewsTab(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderNewsTab failed: ${err.message}`, err); }
-  try { renderCharts(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderCharts failed: ${err.message}`, err); }
   try { updateTabCounters(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `updateTabCounters failed: ${err.message}`, err); }
   try { if (typeof refreshSectorDatalist === 'function') refreshSectorDatalist(); } catch (_) {}
-  try { renderVersionRegistryUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderVersionRegistryUI failed: ${err.message}`, err); }
   try {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.updateLogBadgesAndUI();
-      AppLogger.renderHealthCheckPanel();
     }
   } catch (_) {}
+
+  if (!_initialBootRenderCompleted || forceAll) {
+    _allTabNames.forEach(t => renderSingleTabContent(t));
+    _dirtyTabs.clear();
+    _initialBootRenderCompleted = true;
+    return;
+  }
+
+  // P1 Optimization: Mark background tabs dirty and immediately render only the active visible tab
+  _allTabNames.forEach(t => _dirtyTabs.add(t));
+  const activeTab = getActiveTabName();
+  renderSingleTabContent(activeTab);
+  _dirtyTabs.delete(activeTab);
 }
 
 function formatUpdateTimestamp(rawTs) {
@@ -578,19 +639,65 @@ function getSectorIconClass(sectorName, isEtf) {
 
 function toggleHoldingsSector(sectorName) {
   if (!state.settings.collapsedSectors) state.settings.collapsedSectors = {};
-  state.settings.collapsedSectors[sectorName] = !state.settings.collapsedSectors[sectorName];
+  const isCollapsed = !state.settings.collapsedSectors[sectorName];
+  state.settings.collapsedSectors[sectorName] = isCollapsed;
   saveState();
+
+  const tbody = document.getElementById('holdings-table-body');
+  if (tbody) {
+    let headerFound = false;
+    tbody.querySelectorAll('tr.sector-group-header').forEach(hdr => {
+      if (hdr.getAttribute('data-sector-group') === sectorName) {
+        headerFound = true;
+        hdr.setAttribute('aria-expanded', String(!isCollapsed));
+        const chev = hdr.querySelector('[data-sector-chevron], .fa-chevron-right, .fa-chevron-down');
+        if (chev) {
+          chev.classList.toggle('fa-chevron-right', isCollapsed);
+          chev.classList.toggle('fa-chevron-down', !isCollapsed);
+        }
+        const lbl = hdr.querySelector('[data-sector-toggle-label]');
+        if (lbl) lbl.textContent = isCollapsed ? 'Expand' : 'Collapse';
+      }
+    });
+    if (headerFound) {
+      tbody.querySelectorAll('tr[data-sector-item]').forEach(row => {
+        if (row.getAttribute('data-sector-item') === sectorName) {
+          row.classList.toggle('hidden', isCollapsed);
+        }
+      });
+      return;
+    }
+  }
   renderHoldingsTable();
 }
 window.toggleHoldingsSector = toggleHoldingsSector;
 
 function setAllHoldingsSectorsCollapsed(collapsed) {
   if (!state.settings.collapsedSectors) state.settings.collapsedSectors = {};
+  const isCollapsed = Boolean(collapsed);
   (portfolio?.allHoldings || portfolio?.activeHoldings || []).forEach(h => {
     const sec = getCanonicalHoldingsSector(h);
-    state.settings.collapsedSectors[sec] = Boolean(collapsed);
+    state.settings.collapsedSectors[sec] = isCollapsed;
   });
   saveState();
+
+  const tbody = document.getElementById('holdings-table-body');
+  if (tbody && tbody.querySelectorAll('tr.sector-group-header').length > 0) {
+    tbody.querySelectorAll('tr.sector-group-header').forEach(hdr => {
+      hdr.setAttribute('aria-expanded', String(!isCollapsed));
+      const chev = hdr.querySelector('[data-sector-chevron], .fa-chevron-right, .fa-chevron-down');
+      if (chev) {
+        chev.classList.toggle('fa-chevron-right', isCollapsed);
+        chev.classList.toggle('fa-chevron-down', !isCollapsed);
+      }
+      const lbl = hdr.querySelector('[data-sector-toggle-label]');
+      if (lbl) lbl.textContent = isCollapsed ? 'Expand' : 'Collapse';
+    });
+    tbody.querySelectorAll('tr[data-sector-item]').forEach(row => {
+      row.classList.toggle('hidden', isCollapsed);
+    });
+    return;
+  }
   renderHoldingsTable();
 }
 window.setAllHoldingsSectorsCollapsed = setAllHoldingsSectorsCollapsed;
@@ -647,19 +754,65 @@ window.refreshSectorDatalist = refreshSectorDatalist;
 
 function toggleWatchlistSector(sectorName) {
   if (!state.settings.collapsedWatchlistSectors) state.settings.collapsedWatchlistSectors = {};
-  state.settings.collapsedWatchlistSectors[sectorName] = !state.settings.collapsedWatchlistSectors[sectorName];
+  const isCollapsed = !state.settings.collapsedWatchlistSectors[sectorName];
+  state.settings.collapsedWatchlistSectors[sectorName] = isCollapsed;
   saveState();
+
+  const wlTbody = document.getElementById('watchlist-table-body');
+  if (wlTbody) {
+    let headerFound = false;
+    wlTbody.querySelectorAll('tr.sector-group-header').forEach(hdr => {
+      if (hdr.getAttribute('data-wl-sector-group') === sectorName) {
+        headerFound = true;
+        hdr.setAttribute('aria-expanded', String(!isCollapsed));
+        const chev = hdr.querySelector('[data-wl-sector-chevron], .fa-chevron-right, .fa-chevron-down');
+        if (chev) {
+          chev.classList.toggle('fa-chevron-right', isCollapsed);
+          chev.classList.toggle('fa-chevron-down', !isCollapsed);
+        }
+        const lbl = hdr.querySelector('[data-wl-sector-toggle-label]');
+        if (lbl) lbl.textContent = isCollapsed ? 'Expand' : 'Collapse';
+      }
+    });
+    if (headerFound) {
+      wlTbody.querySelectorAll('tr[data-wl-sector-item]').forEach(row => {
+        if (row.getAttribute('data-wl-sector-item') === sectorName) {
+          row.classList.toggle('hidden', isCollapsed);
+        }
+      });
+      return;
+    }
+  }
   renderWatchlistAndFundamentals();
 }
 window.toggleWatchlistSector = toggleWatchlistSector;
 
 function setAllWatchlistSectorsCollapsed(collapsed) {
   if (!state.settings.collapsedWatchlistSectors) state.settings.collapsedWatchlistSectors = {};
+  const isCollapsed = Boolean(collapsed);
   (state?.watchlist || []).forEach(w => {
     const sec = getCanonicalWatchlistSector(w);
-    state.settings.collapsedWatchlistSectors[sec] = Boolean(collapsed);
+    state.settings.collapsedWatchlistSectors[sec] = isCollapsed;
   });
   saveState();
+
+  const wlTbody = document.getElementById('watchlist-table-body');
+  if (wlTbody && wlTbody.querySelectorAll('tr.sector-group-header').length > 0) {
+    wlTbody.querySelectorAll('tr.sector-group-header').forEach(hdr => {
+      hdr.setAttribute('aria-expanded', String(!isCollapsed));
+      const chev = hdr.querySelector('[data-wl-sector-chevron], .fa-chevron-right, .fa-chevron-down');
+      if (chev) {
+        chev.classList.toggle('fa-chevron-right', isCollapsed);
+        chev.classList.toggle('fa-chevron-down', !isCollapsed);
+      }
+      const lbl = hdr.querySelector('[data-wl-sector-toggle-label]');
+      if (lbl) lbl.textContent = isCollapsed ? 'Expand' : 'Collapse';
+    });
+    wlTbody.querySelectorAll('tr[data-wl-sector-item]').forEach(row => {
+      row.classList.toggle('hidden', isCollapsed);
+    });
+    return;
+  }
   renderWatchlistAndFundamentals();
 }
 window.setAllWatchlistSectorsCollapsed = setAllWatchlistSectorsCollapsed;
@@ -787,6 +940,37 @@ function formatTargetLevelCell(customVal, recVal, currentPrice, currency, colorC
     return '<span class="text-slate-400 text-xs font-mono">-</span>';
   }
   const diffPct = (currentPrice > 0) ? Fin.round(((activeVal - currentPrice) / currentPrice) * 100, 1) : null;
+
+  // U2: Target Buy / Sell / Stop-Loss Proximity Badges
+  let proximityBadge = '';
+  const isBuy = labelTitle.toLowerCase().includes('buy');
+  const isSell = labelTitle.toLowerCase().includes('sell');
+  const isStop = labelTitle.toLowerCase().includes('stop');
+
+  if (currentPrice > 0 && activeVal > 0) {
+    if (isBuy) {
+      if (currentPrice <= activeVal * 1.002) {
+        proximityBadge = '<span class="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-bold bg-sky-500/20 text-sky-600 dark:text-sky-300 border border-sky-500/40 leading-tight">BUY ZONE</span>';
+      } else if (((currentPrice - activeVal) / activeVal) <= 0.025) {
+        const away = (((currentPrice - activeVal) / activeVal) * 100).toFixed(1);
+        proximityBadge = `<span class="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 leading-tight">+${away}% away</span>`;
+      }
+    } else if (isSell) {
+      if (currentPrice >= activeVal * 0.998) {
+        proximityBadge = '<span class="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-bold bg-pink-500/20 text-pink-600 dark:text-pink-300 border border-pink-500/40 leading-tight">TARGET HIT</span>';
+      } else if (((activeVal - currentPrice) / currentPrice) <= 0.025) {
+        const away = (((activeVal - currentPrice) / currentPrice) * 100).toFixed(1);
+        proximityBadge = `<span class="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-semibold bg-pink-500/10 text-pink-500 border border-pink-500/20 leading-tight">${away}% away</span>`;
+      }
+    } else if (isStop) {
+      if (currentPrice <= activeVal * 1.001) {
+        proximityBadge = '<span class="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-extrabold bg-red-600 text-white animate-pulse leading-tight">STOP BREACHED</span>';
+      } else if (((currentPrice - activeVal) / currentPrice) <= 0.025) {
+        proximityBadge = '<span class="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-bold bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 leading-tight">Near Stop</span>';
+      }
+    }
+  }
+
   if (cVal) {
     const recSub = rVal ? `Rec: ${Fin.currency(rVal, false, currency)}` : (diffPct !== null ? Fin.percent(diffPct, true) : 'Custom');
     return `
@@ -794,6 +978,7 @@ function formatTargetLevelCell(customVal, recVal, currentPrice, currency, colorC
         <i class="fa-solid fa-thumbtack text-[9px] mr-0.5 opacity-80"></i>${Fin.currency(cVal, false, currency)}
       </div>
       <div class="text-[9.5px] font-mono text-slate-400">${recSub}</div>
+      ${proximityBadge}
     `;
   }
   return `
@@ -801,6 +986,7 @@ function formatTargetLevelCell(customVal, recVal, currentPrice, currency, colorC
       ${Fin.currency(rVal, false, currency)}
     </div>
     <div class="text-[9.5px] font-mono text-slate-400">${diffPct !== null ? Fin.percent(diffPct, true) : 'Rec'}</div>
+    ${proximityBadge}
   `;
 }
 window.formatTargetLevelCell = formatTargetLevelCell;
@@ -911,6 +1097,79 @@ window.openSignalDetailModal = function(rawTicker) {
   openModal('modal-signal-detail');
 };
 
+
+// ============================================================================
+// U1, U3, U4, U6 UTILITY HANDLERS
+// ============================================================================
+function openDividendModalForTicker(rawTicker) {
+  const norm = MarketAPI.normalizeTicker(rawTicker);
+  const h = (portfolio?.activeHoldings || portfolio?.allHoldings || []).find(item => item.ticker === norm);
+  const divTickerEl = document.getElementById('div-ticker');
+  const divAmountEl = document.getElementById('div-amount');
+  const divPayDateEl = document.getElementById('div-pay-date');
+  const divExDateEl = document.getElementById('div-ex-date');
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  if (divTickerEl) divTickerEl.value = norm;
+  if (divPayDateEl) divPayDateEl.value = todayStr;
+  if (divExDateEl) divExDateEl.value = todayStr;
+  if (divAmountEl) {
+    divAmountEl.value = '';
+    divAmountEl.placeholder = (h && h.shares > 0) ? `Total payout for ${Fin.shares(h.shares)} sh...` : 'Total payout amount...';
+  }
+  openModal('modal-dividend');
+  setTimeout(() => { if (divAmountEl) divAmountEl.focus(); }, 80);
+}
+window.openDividendModalForTicker = openDividendModalForTicker;
+
+function setGhSyncStatus(active, message = 'Python Syncing...') {
+  const pill = document.getElementById('gh-sync-live-pill');
+  const txt = document.getElementById('gh-sync-live-text');
+  if (pill) {
+    pill.classList.toggle('hidden', !active);
+    pill.classList.toggle('flex', Boolean(active));
+  }
+  if (txt && message) txt.textContent = message;
+}
+window.setGhSyncStatus = setGhSyncStatus;
+
+function handleTableSortClick(tableType, col) {
+  if (!state.settings) state.settings = {};
+  const colKey = `${tableType}SortColumn`;
+  const orderKey = `${tableType}SortOrder`;
+  const currCol = state.settings[colKey];
+  const currOrder = state.settings[orderKey] || 'asc';
+
+  if (currCol === col) {
+    state.settings[orderKey] = currOrder === 'asc' ? 'desc' : 'asc';
+  } else {
+    state.settings[colKey] = col;
+    const descByDefault = ['price', 'dayPnL', 'marketValue', 'unrealizedGain', 'realizedGain', 'totalDividends', 'totalReturn', 'netYield', 'shares', 'avgCost', 'totalCost', 'xirr', 'yoc', '52wPos', 'mom', 'qoq', 'yoy', 'signalScore', 'divYield', 'dist'];
+    state.settings[orderKey] = descByDefault.includes(col) ? 'desc' : 'asc';
+  }
+  saveState();
+  if (tableType === 'holdings') renderHoldingsTable();
+  else if (tableType === 'watchlist') renderWatchlistAndFundamentals();
+}
+window.handleTableSortClick = handleTableSortClick;
+
+function updateHeaderSortIndicators(tableId, activeCol, activeOrder, attrName = 'data-sort-col') {
+  const tbl = document.getElementById(tableId);
+  if (!tbl) return;
+  tbl.querySelectorAll(`th[${attrName}]`).forEach(th => {
+    const col = th.getAttribute(attrName);
+    const icon = th.querySelector('i.fa-solid');
+    if (!icon) return;
+    if (col === activeCol) {
+      icon.className = activeOrder === 'desc'
+        ? 'fa-solid fa-sort-down text-brand-500 ml-1 text-xs'
+        : 'fa-solid fa-sort-up text-brand-500 ml-1 text-xs';
+    } else {
+      icon.className = 'fa-solid fa-sort text-[9px] opacity-30 ml-1';
+    }
+  });
+}
+
 function renderHoldingsTable() {
   const tbody = document.getElementById('holdings-table-body');
   const emptyState = document.getElementById('holdings-empty-state');
@@ -944,9 +1203,36 @@ function renderHoldingsTable() {
   }
   emptyState.classList.add('hidden');
 
-  const filteredHoldings = selectedSignal === 'ALL'
+  // U1: Quick Search Filter
+  const holdingsSearchQ = (document.getElementById('holdings-search-input')?.value || '').trim().toUpperCase();
+
+  let filteredHoldings = selectedSignal === 'ALL'
     ? poolForMode
     : poolForMode.filter(h => (h.signalLabel || 'HOLD') === selectedSignal);
+
+  if (holdingsSearchQ) {
+    filteredHoldings = filteredHoldings.filter(h =>
+      (h.ticker || '').toUpperCase().includes(holdingsSearchQ) ||
+      (h.companyName || '').toUpperCase().includes(holdingsSearchQ) ||
+      getCanonicalHoldingsSector(h).toUpperCase().includes(holdingsSearchQ)
+    );
+  }
+
+  // U6: Compact View Toggle on table
+  const isHoldingsCompact = Boolean(state?.settings?.holdingsCompactView);
+  const tblHoldings = document.getElementById('holdings-main-table');
+  if (tblHoldings) {
+    tblHoldings.classList.toggle('compact-view-active', isHoldingsCompact);
+  }
+  const btnCompactLbl = document.getElementById('holdings-compact-label');
+  if (btnCompactLbl) {
+    btnCompactLbl.textContent = isHoldingsCompact ? 'Full Quant View' : 'Compact View';
+  }
+
+  // U1: Header Sort Indicators
+  const hSortCol = state?.settings?.holdingsSortColumn || 'ticker';
+  const hSortOrder = state?.settings?.holdingsSortOrder || 'asc';
+  updateHeaderSortIndicators('holdings-main-table', hSortCol, hSortOrder, 'data-sort-col');
 
   if (filteredHoldings.length === 0) {
     tbody.innerHTML = `
@@ -1140,7 +1426,45 @@ function renderHoldingsTable() {
   });
 
   sortedGroups.forEach(group => {
-    group.items.sort((a, b) => a.ticker.localeCompare(b.ticker, undefined, { sensitivity: 'base' }));
+    const getHoldingsSortVal = (h, col) => {
+      switch (col) {
+        case 'ticker': return h.ticker || '';
+        case 'price': return Number(h.currentPrice || 0);
+        case 'dayPnL': return Number(h.dayPnL || 0);
+        case 'marketValue': return Number(h.marketValueBase ?? h.marketValue ?? 0);
+        case 'unrealizedGain': return Number(h.unrealizedGain || 0);
+        case 'realizedGain': return Number(h.realizedGain || 0);
+        case 'totalDividends': return Number(h.totalDividends || 0);
+        case 'totalReturn': return Number((h.unrealizedGain || 0) + Number(h.realizedGain || 0) + Number(h.totalDividends || 0));
+        case 'netYield': return Number(h.divInfo?.netYieldPct || h.divInfo?.trailingYieldPct || 0);
+        case 'shares': return Number(h.shares || 0);
+        case 'avgCost': return Number(h.avgCost || 0);
+        case 'totalCost': return Number(h.totalCostBasis || 0);
+        case 'buyTarget': return Number(h.customBuyPrice || h.recommendedBuyPrice || 0);
+        case 'sellTarget': return Number(h.customSellPrice || h.recommendedSellPrice || 0);
+        case 'stopLoss': return Number(h.customStopLoss || h.recommendedStopLoss || 0);
+        case 'xirr': return Number(h.xirrPct ?? -999);
+        case 'yoc': return Number(h.yieldOnCost || 0);
+        case '52wPos': return Number(h.pos52wPct || 0);
+        case 'mom': return Number(h.momPct || 0);
+        case 'qoq': return Number(h.qoqPct || 0);
+        case 'yoy': return Number(h.yoyPct || 0);
+        case 'signalScore': return Number(h.signalScore ?? 50);
+        default: return h.ticker || '';
+      }
+    };
+
+    group.items.sort((a, b) => {
+      const vA = getHoldingsSortVal(a, hSortCol);
+      const vB = getHoldingsSortVal(b, hSortCol);
+      let cmp = 0;
+      if (typeof vA === 'string') {
+        cmp = vA.localeCompare(vB, undefined, { sensitivity: 'base' });
+      } else {
+        cmp = vA < vB ? -1 : (vA > vB ? 1 : 0);
+      }
+      return hSortOrder === 'desc' ? -cmp : cmp;
+    });
 
     const isCollapsed = Boolean(state.settings.collapsedSectors[group.sector]);
     const prevGroupMv = group.totalMarketValue - group.totalDayPnL;
@@ -1240,21 +1564,22 @@ function renderHoldingsTable() {
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
         ${groupYoC.toFixed(2)}%
       </td>
-      <td colspan="8" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
+      <td colspan="7" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium col-quant-extra"></td>
+      <td class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
         Sector Subtotal (${group.items.length} ${group.items.length === 1 ? 'holding' : 'holdings'})
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-center text-[11px] font-semibold text-brand-600 dark:text-brand-400">
-        <span>${isCollapsed ? 'Expand' : 'Collapse'}</span>
+        <span data-sector-toggle-label>${isCollapsed ? 'Expand' : 'Collapse'}</span>
       </td>
     `;
     tbody.appendChild(headerTr);
 
-    if (!isCollapsed) {
+    {
       group.items.forEach(h => {
         const isSelected = selectedHoldingsTicker === h.ticker;
         const isAct = h.isActive !== false && h.shares > 0.0001;
         const tr = document.createElement('tr');
-        tr.className = `cursor-pointer transition ${
+        tr.className = `cursor-pointer transition ${isCollapsed ? 'hidden ' : ''}${
           isSelected
             ? 'selected-table-row bg-slate-300/80 dark:bg-slate-800 border-l-4 border-l-brand-500'
             : (isAct ? 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40' : 'opacity-80 bg-slate-50/40 dark:bg-slate-900/30 hover:bg-slate-100/60 dark:hover:bg-slate-800/40')
@@ -1371,25 +1696,25 @@ function renderHoldingsTable() {
               ${h.yieldOnCost.toFixed(2)}%
             </span>
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300">
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300 col-quant-extra">
             ${h.low52w !== null && h.low52w !== undefined ? Fin.currency(h.low52w, false, h.currency) : '<span class="text-slate-400 text-[11px]">-</span>'}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300">
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300 col-quant-extra">
             ${h.high52w !== null && h.high52w !== undefined ? Fin.currency(h.high52w, false, h.currency) : '<span class="text-slate-400 text-[11px]">-</span>'}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right">
+          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
             ${format52wPositionCell(h.low52w, h.high52w, h.pos52wPct, h.currency)}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right">
+          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
             ${formatPeriodChangeCell(h.momPct, 'MoM', h.momRefMonth)}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right">
+          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
             ${formatPeriodChangeCell(h.qoqPct, 'QoQ', h.qoqRefMonth)}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right">
+          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
             ${formatPeriodChangeCell(h.yoyPct, 'YoY', h.yoyRefMonth)}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right">
+          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
             ${formatTrendRegimeCell(h)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-center">
@@ -1402,6 +1727,9 @@ function renderHoldingsTable() {
               </button>
               <button onclick="event.stopPropagation(); openEditHoldingModal('${h.ticker}')" class="p-1.5 text-xs text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded" title="Edit Holding Info (Ticker, Name, Sector, Shares & Cost)">
                 <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button onclick="event.stopPropagation(); openDividendModalForTicker('${h.ticker}')" class="p-1.5 text-xs text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/40 rounded transition" title="Log Cash Dividend for ${h.ticker}">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
               </button>
               <button onclick="event.stopPropagation(); openTradeModalForTicker('${h.ticker}', 'BUY')" class="p-1.5 text-xs text-brand-600 dark:text-brand-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded" title="Buy Shares">
                 <i class="fa-solid fa-cart-plus"></i>
@@ -1797,9 +2125,36 @@ function renderWatchlistAndFundamentals() {
   } else {
     wlEmpty.classList.add('hidden');
 
-    const filteredWatchlist = selectedSignal === 'ALL'
+    // U1: Watchlist Search Filter
+    const wlSearchQ = (document.getElementById('watchlist-search-input')?.value || '').trim().toUpperCase();
+
+    let filteredWatchlist = selectedSignal === 'ALL'
       ? enrichedWatchlist
       : enrichedWatchlist.filter(item => item.signalLabel === selectedSignal);
+
+    if (wlSearchQ) {
+      filteredWatchlist = filteredWatchlist.filter(item =>
+        (item.w.ticker || '').toUpperCase().includes(wlSearchQ) ||
+        (item.compName || '').toUpperCase().includes(wlSearchQ) ||
+        (item.secName || '').toUpperCase().includes(wlSearchQ)
+      );
+    }
+
+    // U6: Compact View Toggle on Watchlist table
+    const isWlCompact = Boolean(state?.settings?.watchlistCompactView);
+    const tblWl = document.getElementById('watchlist-main-table');
+    if (tblWl) {
+      tblWl.classList.toggle('compact-view-active', isWlCompact);
+    }
+    const btnWlCompactLbl = document.getElementById('watchlist-compact-label');
+    if (btnWlCompactLbl) {
+      btnWlCompactLbl.textContent = isWlCompact ? 'Full Quant View' : 'Compact View';
+    }
+
+    // U1: Watchlist Header Sort Indicators
+    const wlSortCol = state?.settings?.watchlistSortColumn || 'ticker';
+    const wlSortOrder = state?.settings?.watchlistSortOrder || 'asc';
+    updateHeaderSortIndicators('watchlist-main-table', wlSortCol, wlSortOrder, 'data-wl-sort-col');
 
     if (filteredWatchlist.length === 0) {
       wlTbody.innerHTML = `
@@ -1840,7 +2195,42 @@ function renderWatchlistAndFundamentals() {
       });
 
       sortedGroups.forEach(group => {
-        group.items.sort((a, b) => a.w.ticker.localeCompare(b.w.ticker, undefined, { sensitivity: 'base' }));
+        const getWatchlistSortVal = (item, col) => {
+          const w = item.w;
+          const wm = item.wm;
+          const curP = Number(item.curPrice || 0);
+          switch (col) {
+            case 'ticker': return w.ticker || '';
+            case 'price': return curP;
+            case 'sector': return item.secName || '';
+            case '52wPos': return Number(wm?.pos52wPct || 0);
+            case 'mom': return Number(wm?.momPct || 0);
+            case 'qoq': return Number(wm?.qoqPct || 0);
+            case 'yoy': return Number(wm?.yoyPct || 0);
+            case 'divYield': return Number(wm?.divInfo?.netYieldPct || wm?.divInfo?.trailingYieldPct || 0);
+            case 'buyTarget': return Number(w.customBuyPrice || wm?.customBuyPrice || wm?.recommendedBuyPrice || 0);
+            case 'sellTarget': return Number(w.customSellPrice || wm?.customSellPrice || wm?.recommendedSellPrice || 0);
+            case 'stopLoss': return Number(w.customStopLoss || wm?.customStopLoss || wm?.recommendedStopLoss || 0);
+            case 'dist': {
+              const activeBuy = Number(w.customBuyPrice || wm?.customBuyPrice || wm?.recommendedBuyPrice || 0);
+              return (curP > 0 && activeBuy > 0) ? ((curP - activeBuy) / activeBuy) * 100 : 999;
+            }
+            case 'signalScore': return Number(item.signalScore ?? 50);
+            default: return w.ticker || '';
+          }
+        };
+
+        group.items.sort((a, b) => {
+          const vA = getWatchlistSortVal(a, wlSortCol);
+          const vB = getWatchlistSortVal(b, wlSortCol);
+          let cmp = 0;
+          if (typeof vA === 'string') {
+            cmp = vA.localeCompare(vB, undefined, { sensitivity: 'base' });
+          } else {
+            cmp = vA < vB ? -1 : (vA > vB ? 1 : 0);
+          }
+          return wlSortOrder === 'desc' ? -cmp : cmp;
+        });
 
         const isCollapsed = Boolean(state.settings.collapsedWatchlistSectors[group.sector]);
         const avgScore = group.items.length > 0 ? Math.round(group.scoreSum / group.items.length) : 50;
@@ -1883,12 +2273,12 @@ function renderWatchlistAndFundamentals() {
               : `<span class="text-[11px] text-slate-400 font-mono">Monitoring quant levels</span>`}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-center text-[11px] font-semibold text-purple-600 dark:text-purple-400">
-            <span>${isCollapsed ? 'Expand' : 'Collapse'}</span>
+            <span data-wl-sector-toggle-label>${isCollapsed ? 'Expand' : 'Collapse'}</span>
           </td>
         `;
         wlTbody.appendChild(headerTr);
 
-        if (!isCollapsed) {
+        {
           group.items.forEach(({ w, curPrice, wm, secName, compName }) => {
             const isSelected = selectedWatchlistTicker === w.ticker;
             const priceChangePct = state.prices[w.ticker]?.changePct || 0;
@@ -1905,7 +2295,7 @@ function renderWatchlistAndFundamentals() {
             const isTriggered = curPrice > 0 && activeBuy > 0 && curPrice <= activeBuy * 1.005;
 
             const tr = document.createElement('tr');
-            tr.className = `cursor-pointer transition text-xs ${
+            tr.className = `cursor-pointer transition text-xs ${isCollapsed ? 'hidden ' : ''}${
               isSelected
                 ? 'selected-table-row bg-slate-300/80 dark:bg-slate-800 border-l-4 border-l-purple-500'
                 : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40'
@@ -1933,28 +2323,28 @@ function renderWatchlistAndFundamentals() {
                   : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
               </td>
               <td class="py-1 sm:py-1.5 px-3 text-slate-500 dark:text-slate-400">${secName}</td>
-              <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">
+              <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300 col-quant-extra">
                 ${wm.low52w !== null && wm.low52w !== undefined ? Fin.currency(wm.low52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
               </td>
-              <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300">
+              <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300 col-quant-extra">
                 ${wm.high52w !== null && wm.high52w !== undefined ? Fin.currency(wm.high52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
               </td>
-              <td class="py-3 px-3 text-right">
+              <td class="py-3 px-3 text-right col-quant-extra">
                 ${format52wPositionCell(wm.low52w, wm.high52w, wm.pos52wPct, wlCurrency)}
               </td>
-              <td class="py-3 px-3 text-right">
+              <td class="py-3 px-3 text-right col-quant-extra">
                 ${formatPeriodChangeCell(wm.momPct, 'MoM', wm.momRefMonth)}
               </td>
-              <td class="py-3 px-3 text-right">
+              <td class="py-3 px-3 text-right col-quant-extra">
                 ${formatPeriodChangeCell(wm.qoqPct, 'QoQ', wm.qoqRefMonth)}
               </td>
-              <td class="py-3 px-3 text-right">
+              <td class="py-3 px-3 text-right col-quant-extra">
                 ${formatPeriodChangeCell(wm.yoyPct, 'YoY', wm.yoyRefMonth)}
               </td>
               <td class="py-3 px-3 text-right">
                 ${formatDividendExDateCell(wm.divInfo)}
               </td>
-              <td class="py-3 px-3 text-right">
+              <td class="py-3 px-3 text-right col-quant-extra">
                 ${formatTrendRegimeCell(wm)}
               </td>
               <td class="py-3 px-3 text-center">
@@ -2524,6 +2914,11 @@ function switchTab(target) {
   const kpiSec = document.getElementById('kpi-summary-section');
   if (kpiSec) kpiSec.classList.toggle('hidden', target !== 'dashboard');
 
+  if (_dirtyTabs.has(target)) {
+    renderSingleTabContent(target);
+    _dirtyTabs.delete(target);
+  }
+
   if (target === 'dashboard') {
     setTimeout(renderCharts, 40);
   } else if (target === 'holdings') {
@@ -2559,7 +2954,13 @@ function showToast(message, type = 'info') {
 
 function openModal(id) {
   const el = document.getElementById(id);
-  if (el) el.classList.remove('hidden');
+  if (el) {
+    el.classList.remove('hidden');
+    setTimeout(() => {
+      const firstInp = el.querySelector('input:not([type="hidden"]):not([disabled]), select:not([disabled])');
+      if (firstInp) firstInp.focus();
+    }, 60);
+  }
 }
 
 function closeModal(id) {
@@ -3546,6 +3947,73 @@ function setupEventListeners() {
     const el = document.getElementById(id);
     if (el) el.addEventListener(evt, fn);
   };
+
+  // U5: Modal Backdrop Click & Escape Key Ergonomics
+  document.querySelectorAll('.modal-backdrop').forEach(modalEl => {
+    modalEl.addEventListener('click', (e) => {
+      if (e.target === modalEl) closeModal(modalEl.id);
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop:not(.hidden)').forEach(m => closeModal(m.id));
+    }
+    // Press '/' to jump to table search
+    if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+      const activeTab = (typeof getActiveTabName === 'function') ? getActiveTabName() : 'dashboard';
+      let targetInput = null;
+      if (activeTab === 'holdings') targetInput = document.getElementById('holdings-search-input');
+      else if (activeTab === 'watchlist') targetInput = document.getElementById('watchlist-search-input');
+      else if (activeTab === 'transactions') targetInput = document.getElementById('tx-search-ticker');
+      else if (activeTab === 'dividends') targetInput = document.getElementById('div-log-search-text');
+      else if (activeTab === 'news') targetInput = document.getElementById('news-filter-ticker');
+
+      if (targetInput) {
+        e.preventDefault();
+        targetInput.focus();
+        targetInput.select();
+      }
+    }
+  });
+
+  // U1: Header sorting click handlers
+  document.querySelectorAll('th[data-sort-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.getAttribute('data-sort-col');
+      if (col) handleTableSortClick('holdings', col);
+    });
+  });
+  document.querySelectorAll('th[data-wl-sort-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.getAttribute('data-wl-sort-col');
+      if (col) handleTableSortClick('watchlist', col);
+    });
+  });
+
+  // U1: Quick search real-time listeners
+  const hSearch = document.getElementById('holdings-search-input');
+  if (hSearch) {
+    hSearch.addEventListener('input', () => renderHoldingsTable());
+  }
+  const wSearch = document.getElementById('watchlist-search-input');
+  if (wSearch) {
+    wSearch.addEventListener('input', () => renderWatchlistAndFundamentals());
+  }
+
+  // U6: Compact View Toggle button listeners
+  on('btn-toggle-holdings-compact', 'click', () => {
+    if (!state.settings) state.settings = {};
+    state.settings.holdingsCompactView = !Boolean(state.settings.holdingsCompactView);
+    saveState();
+    renderHoldingsTable();
+  });
+  on('btn-toggle-watchlist-compact', 'click', () => {
+    if (!state.settings) state.settings = {};
+    state.settings.watchlistCompactView = !Boolean(state.settings.watchlistCompactView);
+    saveState();
+    renderWatchlistAndFundamentals();
+  });
 
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => {

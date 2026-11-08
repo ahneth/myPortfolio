@@ -1,4 +1,5 @@
-const CACHE_NAME = "myportfolio-cache-v3.3.2-20261107_2310";
+const CACHE_NAME = "myportfolio-cache-v3.3.4-20261108_1435";
+const FETCH_TIMEOUT_MS = 2500;
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -12,6 +13,20 @@ const APP_SHELL = [
   "./app.js",
   "./manifest.json"
 ];
+
+function fetchWithTimeout(request, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(request, { cache: "no-store", signal: controller.signal })
+    .then((res) => {
+      clearTimeout(timer);
+      return res;
+    })
+    .catch((err) => {
+      clearTimeout(timer);
+      throw err;
+    });
+}
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -28,11 +43,11 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Network-First strategy across all assets so new releases take effect immediately on reload
+// Network-First strategy with 2.5s timeout fallback to cache for fast startup on spotty mobile networks
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   event.respondWith(
-    fetch(event.request, { cache: "no-store" })
+    fetchWithTimeout(event.request, FETCH_TIMEOUT_MS)
       .then((res) => {
         if (res && res.status === 200) {
           const clone = res.clone();

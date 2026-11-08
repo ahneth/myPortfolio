@@ -283,3 +283,37 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
   - Removed the inline `onclick` attribute from `<button id="privacy-toggle-btn">` in `index.html`, leaving the single `on('privacy-toggle-btn', 'click', () => togglePrivacyMode())` listener in `setupEventListeners()`.
   - Added a 200ms click-debounce guard (`window._lastPrivacyToggleTs`) inside `togglePrivacyMode()` and assigned `window._appTogglePrivacyMode = togglePrivacyMode` so rapid/duplicate invocations within the same click cycle cannot re-flip the state.
   - Bumped Service Worker cache to `myportfolio-cache-v3.3.2-20261107_2310` and synchronized all standalone modules into `index.html`.
+
+## 2026-11-08 14:20 — v3.3.3 (Build 20261108_1420) — Performance & Architecture Optimizations (P1–P6)
+- **P1 — Active-Tab Lazy Rendering & Dirty-Tab Tracking (`app.js`, `charts.js`)**:
+  - Added `_dirtyTabs`, `getActiveTabName()`, `markTabDirty()`, and `renderSingleTabContent()` in `app.js` so post-boot calls to `renderAll()` only re-render the active visible tab and mark background tabs dirty for on-demand rendering inside `switchTab()`.
+  - Added `#tab-content-dashboard` visibility check in `renderCharts()` (`charts.js`) to avoid destroying/rebuilding hidden Dashboard canvases.
+- **P2 — Quantitative Engine & Formatter Memoization (`portfolio.js`, `utils.js`)**:
+  - Added `_stockMetricsCache` and `invalidateStockMetricsCache()` in `portfolio.js` to memoize `computeStockPriceMetrics()` results across `recalculatePortfolio()`, table renders, and chart updates.
+  - Cached `Intl.NumberFormat` instances in `Fin._currFormatters` and `Fin._sharesFormatter` (`utils.js`).
+- **P3 — Instant Sector Collapse/Expand & XIRR Memoization (`app.js`, `utils.js`)**:
+  - Added `Fin._xirrCache` in `utils.js` for $O(1)$ repeated XIRR lookups.
+  - Upgraded `toggleHoldingsSector()`, `setAllHoldingsSectorsCollapsed()`, `toggleWatchlistSector()`, and `setAllWatchlistSectorsCollapsed()` to toggle `.hidden` on existing DOM `<tr>` rows in place without rebuilding the tables.
+- **P4 — Single-Pass $O(M + T)$ Historical Balance Curve (`charts.js`)**:
+  - Refactored `computeMonthlyPortfolioSeries()` in `charts.js` to pre-index monthly price bars into a `Map` and advance monotonic transaction and dividend pointers in a single chronological pass.
+- **P5 — Debounced `localStorage` State Persistence (`portfolio.js`)**:
+  - Added 150ms debounced `saveState()` with `flushSaveState()` lifecycle hooks on `beforeunload`, `pagehide`, and `visibilitychange`.
+- **P6 — Service Worker Network Timeout & Bundle Verifier (`sw.js`, `sync_bundle.py`, `version.js`)**:
+  - Added 2.5-second `AbortController` network timeout in `sw.js` (`myportfolio-cache-v3.3.3-20261108_1420`) and included `sync_bundle.py` in the release package.
+
+## 2026-11-08 14:35 — v3.3.4 (Build 20261108_1435) — Usability & UX Enhancements (U1–U6)
+- **U1 — Real-Time Quick Search & Clickable Column Sorting (`index.html`, `app.js`, `styles.css`)**:
+  - Added instant search inputs (`#holdings-search-input`, `#watchlist-search-input`) with real-time text matching against tickers, company names, and sectors.
+  - Added clickable table header sorting with ascending/descending visual arrows across all numeric and text columns in Holdings and Watchlist tables.
+- **U2 — Target Buy, Sell & Stop-Loss Proximity Badges (`app.js`)**:
+  - Enhanced `formatTargetLevelCell()` to render status badges: `BUY ZONE` / `+X% away` under Buy Target, `TARGET HIT` / `X% away` under Sell Target, and `STOP BREACHED` / `Near Stop` under Stop Loss.
+- **U3 — 1-Click "Log Dividend" from Holdings & "Buy" from Watchlist (`app.js`)**:
+  - Added `$ Div` button on Holdings rows calling `openDividendModalForTicker()` with pre-filled ticker and held shares placeholder.
+  - Added `+ Buy` button on Watchlist rows with shopping cart icon and pre-filled current price.
+- **U4 — Live GitHub Actions Status Pill & Auto-Refresh (`index.html`, `app.js`, `api.js`)**:
+  - Added animated `#gh-sync-live-pill` in the header bar and integrated live status messages during workflow dispatch and status polling in `pollGitHubWorkflowCompletion()`.
+- **U5 — Keyboard Shortcuts & Modal Backdrop Ergonomics (`app.js`)**:
+  - Added backdrop click and `Escape` key listeners to dismiss open modals.
+  - Added `/` shortcut to focus table search and auto-focus on modal open.
+- **U6 — Compact / Essential View Column Toggle (`index.html`, `app.js`, `styles.css`)**:
+  - Added `#btn-toggle-holdings-compact` and `#btn-toggle-watchlist-compact` toggle buttons and `.col-quant-extra` class rules for zero-scroll laptop viewing.

@@ -745,6 +745,7 @@ window.buildDividendScheduleForTicker = buildDividendScheduleForTicker;
  */
 function ingestHistoricalPricesData(data) {
   if (!data || typeof data !== 'object') return 0;
+  if (typeof invalidateStockMetricsCache === 'function') invalidateStockMetricsCache();
   window.EXTERNAL_HISTORICAL_PRICES = data;
   const histGeneratedAt = data?._meta?.generatedAt || data?.generatedAt || null;
   if (histGeneratedAt && state && state.settings) {
@@ -1253,14 +1254,61 @@ function initAppState() {
   loadCompanyNewsFromJson();
 }
 
-function saveState() {
+var _saveStateTimer = null;
+var _saveStatePending = false;
+
+function flushSaveState() {
+  if (_saveStateTimer) {
+    clearTimeout(_saveStateTimer);
+    _saveStateTimer = null;
+  }
   if (!state) return;
+  _saveStatePending = false;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
     console.warn('Could not save state to localStorage:', e);
   }
 }
+window.flushSaveState = flushSaveState;
+
+function saveState(immediate = false) {
+  if (!state) return;
+  if (immediate) {
+    flushSaveState();
+    return;
+  }
+  _saveStatePending = true;
+  if (_saveStateTimer) clearTimeout(_saveStateTimer);
+  _saveStateTimer = setTimeout(() => {
+    flushSaveState();
+  }, 150);
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    if (_saveStatePending) flushSaveState();
+  });
+  window.addEventListener('pagehide', () => {
+    if (_saveStatePending) flushSaveState();
+  });
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && _saveStatePending) {
+      flushSaveState();
+    }
+  });
+}
+
+var _stockMetricsCache = new Map();
+var _stockMetricsCacheEpoch = 1;
+
+function invalidateStockMetricsCache() {
+  _stockMetricsCacheEpoch++;
+  if (_stockMetricsCache) _stockMetricsCache.clear();
+}
+window.invalidateStockMetricsCache = invalidateStockMetricsCache;
 
 /**
  * Computes 52-week range, MoM/QoQ/YoY, Technical Indicators (SMA, RSI, MACD, Bollinger, ATR),
@@ -1285,6 +1333,16 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
 
   const latestBar = hist.length > 0 ? hist[hist.length - 1] : null;
   const currentPrice = Number(priceObj.price || fallbackCurrentPrice || getBarRawPrice(latestBar) || 0);
+
+  const wlMatchForCache = (state?.watchlist || []).find(w => w.ticker === ticker);
+  const custBKey = fundObj.customBuyPrice ?? wlMatchForCache?.customBuyPrice ?? '';
+  const custSKey = fundObj.customSellPrice ?? wlMatchForCache?.customSellPrice ?? '';
+  const custStKey = fundObj.customStopLoss ?? wlMatchForCache?.customStopLoss ?? '';
+  const divEventsLen = state?.dividendSchedules?.[ticker]?.events?.length || 0;
+  const cacheKey = `${_stockMetricsCacheEpoch}|${ticker}|${currentPrice}|${hist.length}|${latestBar?.month || ''}|${getBarRawPrice(latestBar)}|${explicitPosWeightPct ?? ''}|${explicitAvgCost ?? ''}|${custBKey}|${custSKey}|${custStKey}|${fundObj.pe || ''}|${fundObj.roe || ''}|${divEventsLen}`;
+  if (_stockMetricsCache && _stockMetricsCache.has(cacheKey)) {
+    return _stockMetricsCache.get(cacheKey);
+  }
 
   let low52w = Number(priceObj.low52w || fundObj.low52w || 0);
   let high52w = Number(priceObj.high52w || fundObj.high52w || 0);
@@ -1786,7 +1844,7 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
   const customSellPrice = (Number.isFinite(rawCustSell) && rawCustSell > 0) ? Fin.round(rawCustSell, 4) : null;
   const customStopLoss = (Number.isFinite(rawCustStop) && rawCustStop > 0) ? Fin.round(rawCustStop, 4) : null;
 
-  return {
+  const _computedResult = {
     low52w,
     high52w,
     prevPeak,
@@ -1829,6 +1887,11 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
     },
     signalReasons: reasons.length > 0 ? reasons.slice(0, 4) : ['Balanced technical and valuation profile']
   };
+  if (_stockMetricsCache) {
+    if (_stockMetricsCache.size > 400) _stockMetricsCache.clear();
+    _stockMetricsCache.set(cacheKey, _computedResult);
+  }
+  return _computedResult;
 }
 
 /**
@@ -1963,6 +2026,7 @@ function approveAllDetectedDividends() {
 window.approveAllDetectedDividends = approveAllDetectedDividends;
 
 function recalculatePortfolio() {
+  if (typeof invalidateStockMetricsCache === 'function') invalidateStockMetricsCache();
   const baseCurr = state?.settings?.currency || 'HKD';
   let runningCash = Fin.round(state.initialCash || 0, 2);
   let totalRealizedPnL = 0;

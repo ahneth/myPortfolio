@@ -16,10 +16,16 @@ function renderCharts() {
     }
     return;
   }
-  try { renderMonthlyHistoryChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderMonthlyHistoryChart failed: ${err.message}`, err); }
-  try { renderAllocationChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderAllocationChart failed: ${err.message}`, err); }
-  try { renderDividendsChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderDividendsChart failed: ${err.message}`, err); }
-  try { renderPnlBreakdownChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderPnlBreakdownChart failed: ${err.message}`, err); }
+  const dashPane = document.getElementById('tab-content-dashboard');
+  const isDashVisible = !dashPane || !dashPane.classList.contains('hidden');
+  if (isDashVisible) {
+    try { renderMonthlyHistoryChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderMonthlyHistoryChart failed: ${err.message}`, err); }
+    try { renderAllocationChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderAllocationChart failed: ${err.message}`, err); }
+    try { renderDividendsChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderDividendsChart failed: ${err.message}`, err); }
+    try { renderPnlBreakdownChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderPnlBreakdownChart failed: ${err.message}`, err); }
+  } else if (typeof window.markTabDirty === 'function') {
+    window.markTabDirty('dashboard');
+  }
   try {
     const holdingsPane = document.getElementById('tab-content-holdings');
     if (holdingsPane && !holdingsPane.classList.contains('hidden')) {
@@ -83,33 +89,70 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
   const sortedTx = [...state.transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
   const sortedDiv = [...state.dividends].sort((a, b) => new Date(a.payDate) - new Date(b.payDate));
 
+  // Pre-index monthly historical prices per ticker for O(1) lookup and monotonic cursor advancement
+  const histByTicker = {};
+  const histCursor = {};
+  relevantTickers.forEach(t => {
+    const arr = Array.isArray(state.historicalPrices[t]) ? state.historicalPrices[t] : [];
+    const byMonth = new Map();
+    arr.forEach(bar => {
+      if (bar && bar.month) byMonth.set(bar.month, bar);
+    });
+    histByTicker[t] = { arr, byMonth };
+    histCursor[t] = 0;
+  });
+
+  const resolveBarForMonth = (ticker, monthStr) => {
+    const entry = histByTicker[ticker];
+    if (!entry || entry.arr.length === 0) return null;
+    if (entry.byMonth.has(monthStr)) return entry.byMonth.get(monthStr);
+    const arr = entry.arr;
+    let idx = histCursor[ticker] || 0;
+    while (idx + 1 < arr.length && arr[idx + 1].month <= monthStr) {
+      idx++;
+    }
+    while (idx > 0 && arr[idx].month > monthStr) {
+      idx--;
+    }
+    histCursor[ticker] = idx;
+    return arr[idx].month <= monthStr ? arr[idx] : arr[0];
+  };
+
+  // Single-pass incremental state across slicedMonths: O(M + T + D)
+  let txPtr = 0;
+  let divPtr = 0;
+  let runningCash = Fin.round(state.initialCash || 0, 2);
+  let runningRealized = 0;
+  let runningDividends = 0;
+  let runningDividendsNoTx = 0;
+  let divNoTxPtr = 0;
+  const posMap = {};
+
   slicedMonths.forEach(monthStr => {
-    const txUpToMonth = earliestTxMonth && monthStr >= earliestTxMonth
-      ? sortedTx.filter(tx => (tx.date || '').slice(0, 7) <= monthStr)
-      : [];
+    const hasTxUpToMonth = Boolean(earliestTxMonth && monthStr >= earliestTxMonth);
 
     let monthMarketVal = 0;
     let monthCostBasis = 0;
-    let monthCash = Fin.round(state.initialCash || 0, 2);
+    let monthCash = 0;
     let cumRealized = 0;
     let cumDividends = 0;
 
-    if (txUpToMonth.length > 0) {
-      const posMap = {};
-      txUpToMonth.forEach(tx => {
+    if (hasTxUpToMonth) {
+      while (txPtr < sortedTx.length && (sortedTx[txPtr].date || '').slice(0, 7) <= monthStr) {
+        const tx = sortedTx[txPtr++];
         const fees = Fin.round(tx.fees || 0, 2);
         const shares = Fin.round(tx.shares || 0, 4);
         const price = Fin.round(tx.price || 0, 4);
         const tCurr = state.prices[tx.ticker]?.currency || state.fundamentals[tx.ticker]?.currency || MarketAPI.getStaticProfile(tx.ticker).currency || baseCurr;
 
         if (tx.type === 'DEPOSIT') {
-          monthCash = Fin.round(monthCash + (tx.amount || 0), 2);
+          runningCash = Fin.round(runningCash + (tx.amount || 0), 2);
         } else if (tx.type === 'WITHDRAW') {
-          monthCash = Fin.round(monthCash - (tx.amount || 0), 2);
+          runningCash = Fin.round(runningCash - (tx.amount || 0), 2);
         } else if (tx.type === 'BUY') {
           const outlayNative = Fin.round(shares * price + fees, 2);
           const outlayBase = Fin.convertCurrency(outlayNative, tCurr, baseCurr);
-          monthCash = Fin.round(monthCash - outlayBase, 2);
+          runningCash = Fin.round(runningCash - outlayBase, 2);
           if (!posMap[tx.ticker]) posMap[tx.ticker] = { shares: 0, costNative: 0, avgNative: 0, currency: tCurr };
           posMap[tx.ticker].shares = Fin.round(posMap[tx.ticker].shares + shares, 4);
           posMap[tx.ticker].costNative = Fin.round(posMap[tx.ticker].costNative + outlayNative, 2);
@@ -123,10 +166,10 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
         } else if (tx.type === 'SELL') {
           const netProceedsNative = Fin.round(shares * price - fees, 2);
           const netProceedsBase = Fin.convertCurrency(netProceedsNative, tCurr, baseCurr);
-          monthCash = Fin.round(monthCash + netProceedsBase, 2);
+          runningCash = Fin.round(runningCash + netProceedsBase, 2);
           if (!posMap[tx.ticker]) posMap[tx.ticker] = { shares: 0, costNative: 0, avgNative: 0, currency: tCurr };
           const soldCostNative = Fin.round(shares * posMap[tx.ticker].avgNative, 2);
-          cumRealized = Fin.round(cumRealized + Fin.convertCurrency(netProceedsNative - soldCostNative, tCurr, baseCurr), 2);
+          runningRealized = Fin.round(runningRealized + Fin.convertCurrency(netProceedsNative - soldCostNative, tCurr, baseCurr), 2);
           posMap[tx.ticker].shares = Fin.round(posMap[tx.ticker].shares - shares, 4);
           posMap[tx.ticker].costNative = Fin.round(posMap[tx.ticker].costNative - soldCostNative, 2);
           if (posMap[tx.ticker].shares <= 0.0001) {
@@ -135,28 +178,28 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
             posMap[tx.ticker].avgNative = posMap[tx.ticker].costNative / posMap[tx.ticker].shares;
           }
         }
-      });
+      }
 
-      sortedDiv.filter(d => (d.payDate || '').slice(0, 7) <= monthStr).forEach(d => {
+      while (divPtr < sortedDiv.length && (sortedDiv[divPtr].payDate || '').slice(0, 7) <= monthStr) {
+        const d = sortedDiv[divPtr++];
         const dCurr = d.currency || state.prices[d.ticker]?.currency || MarketAPI.getStaticProfile(d.ticker).currency || baseCurr;
         const amtBase = Fin.convertCurrency(d.totalAmount || 0, dCurr, baseCurr);
-        cumDividends = Fin.round(cumDividends + amtBase, 2);
+        runningDividends = Fin.round(runningDividends + amtBase, 2);
         if (!d.isDrip) {
-          monthCash = Fin.round(monthCash + amtBase, 2);
+          runningCash = Fin.round(runningCash + amtBase, 2);
         }
-      });
+      }
+
+      monthCash = runningCash;
+      cumRealized = runningRealized;
+      cumDividends = runningDividends;
 
       Object.keys(posMap).forEach(ticker => {
         const p = posMap[ticker];
         if (p.shares > 0.0001) {
-          const hist = state.historicalPrices[ticker] || [];
           let closePrice = state.prices[ticker]?.price || p.avgNative;
-          const exact = hist.find(item => item.month === monthStr);
-          if (exact) {
-            closePrice = Number(exact.rawClose ?? exact.close);
-          } else if (hist.length > 0) {
-            const prior = hist.filter(item => item.month <= monthStr);
-            const refBar = prior.length > 0 ? prior[prior.length - 1] : hist[0];
+          const refBar = resolveBarForMonth(ticker, monthStr);
+          if (refBar) {
             closePrice = Number(refBar.rawClose ?? refBar.close);
           }
           monthMarketVal += Fin.convertCurrency(p.shares * closePrice, p.currency, baseCurr);
@@ -166,22 +209,20 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
     } else {
       monthCash = Math.max(0, portfolio.cashBalance);
       portfolio.activeHoldings.forEach(h => {
-        const hist = state.historicalPrices[h.ticker] || [];
         let closePrice = h.currentPrice;
-        const exact = hist.find(item => item.month === monthStr);
-        if (exact) {
-          closePrice = exact.close;
-        } else if (hist.length > 0) {
-          const prior = hist.filter(item => item.month <= monthStr);
-          closePrice = prior.length > 0 ? prior[prior.length - 1].close : hist[0].close;
+        const refBar = resolveBarForMonth(h.ticker, monthStr);
+        if (refBar) {
+          closePrice = refBar.close;
         }
         monthMarketVal += Fin.convertCurrency(h.shares * closePrice, h.currency, baseCurr);
         monthCostBasis += h.costBasisBase;
       });
-      sortedDiv.filter(d => (d.payDate || '').slice(0, 7) <= monthStr).forEach(d => {
+      while (divNoTxPtr < sortedDiv.length && (sortedDiv[divNoTxPtr].payDate || '').slice(0, 7) <= monthStr) {
+        const d = sortedDiv[divNoTxPtr++];
         const dCurr = d.currency || state.prices[d.ticker]?.currency || MarketAPI.getStaticProfile(d.ticker).currency || baseCurr;
-        cumDividends = Fin.round(cumDividends + Fin.convertCurrency(d.totalAmount || 0, dCurr, baseCurr), 2);
-      });
+        runningDividendsNoTx = Fin.round(runningDividendsNoTx + Fin.convertCurrency(d.totalAmount || 0, dCurr, baseCurr), 2);
+      }
+      cumDividends = runningDividendsNoTx;
       cumRealized = portfolio.totalRealizedPnL || 0;
     }
 

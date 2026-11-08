@@ -286,3 +286,44 @@ ightarrow$ `Actions`.
 ### 11.21 Privacy Toggle Single-Binding & Debounce Guard (v3.3.2 - Build 20261107_2310)
 - **Root Cause of Immediate On/Off Double-Toggle**: Having both an inline `onclick` attribute on `<button id="privacy-toggle-btn">` and a `click` event listener attached via `on('privacy-toggle-btn', 'click', ...)` in `setupEventListeners()` caused `togglePrivacyMode()` to fire twice on a single click—turning Privacy Mode on and then immediately off.
 - **Single Listener + 200ms Click-Debounce Guard**: Removed the inline `onclick` attribute from `#privacy-toggle-btn` so it is bound once via `setupEventListeners()`, and added a 200ms timestamp debounce guard (`window._lastPrivacyToggleTs`) inside `togglePrivacyMode()` alongside `window._appTogglePrivacyMode` linkage so any duplicate invocation within the same click event is ignored.
+
+### 11.22 Performance & Architecture Optimizations P1–P6 (v3.3.3 - Build 20261108_1420)
+- **P1 — Active-Tab Lazy Rendering (`app.js`, `charts.js`)**:
+  - Replaced unconditional 7-tab rebuilds in `renderAll()` with active-tab lazy rendering (`renderSingleTabContent`, `_dirtyTabs`, `markTabDirty`, `getActiveTabName`). Only the currently visible tab and global header badges are updated immediately on state mutations, while background tabs are marked dirty and rendered on demand inside `switchTab()`.
+  - Guarded the 4 Dashboard Chart.js canvases in `renderCharts()` (`charts.js`) so they only rebuild when `#tab-content-dashboard` is visible.
+- **P2 — Quantitative Engine & Formatter Memoization (`portfolio.js`, `utils.js`)**:
+  - Added `_stockMetricsCache` and `invalidateStockMetricsCache()` to memoize `computeStockPriceMetrics()` outputs by `(epoch, ticker, price, histLen, latestMonth, latestClose, posWeightPct, avgCost, customTargets, fundamentals, divLen)`, eliminating redundant 562-line recalculations across UI and chart renderers.
+  - Cached `Intl.NumberFormat` instances in `Fin._currFormatters` and `Fin._sharesFormatter` (`utils.js`).
+- **P3 — Instant DOM Sector Collapse/Expand & XIRR Cache (`app.js`, `utils.js`)**:
+  - Added `Fin._xirrCache` in `utils.js` to memoize Newton-Raphson / Bisection XIRR solutions by cash-flow fingerprint.
+  - Updated `renderHoldingsTable()` and `renderWatchlistAndFundamentals()` to render collapsed sector rows with `.hidden` and upgraded `toggleHoldingsSector()`, `setAllHoldingsSectorsCollapsed()`, `toggleWatchlistSector()`, and `setAllWatchlistSectorsCollapsed()` to toggle `.hidden` on existing DOM rows in <2ms without rebuilding the table.
+- **P4 — Single-Pass $O(M + T)$ Historical Balance Curve (`charts.js`)**:
+  - Refactored `computeMonthlyPortfolioSeries()` from an $O(M \times T)$ nested filter/replay loop into a single-pass $O(M + T)$ incremental state machine with pre-indexed `YYYY-MM` price maps and monotonic cursor lookup.
+- **P5 — Debounced `localStorage` Persistence (`portfolio.js`)**:
+  - Upgraded `saveState(immediate)` with a 150ms debounce timer (`_saveStateTimer`) and `flushSaveState()` listeners on `beforeunload`, `pagehide`, and `visibilitychange` so rapid UI interactions never block the main thread with synchronous 500 KB JSON serialization.
+- **P6 — Service Worker Timeout & Automated Bundle Synchronizer (`sw.js`, `sync_bundle.py`)**:
+  - Added `fetchWithTimeout()` (2,500ms `AbortController` race) in `sw.js` (`myportfolio-cache-v3.3.3-20261108_1420`) so spotty mobile connections fall back to cached assets after 2.5 seconds.
+  - Added `sync_bundle.py` to automatically synchronize all 7 standalone JS modules into `index.html` and run `node --check` syntax verification across all standalone and inline scripts.
+
+### 11.23 Usability & UX Enhancements U1–U6 (v3.3.4 - Build 20261108_1435)
+- **U1 — Real-Time Quick Search & Clickable Column Sorting (`index.html`, `app.js`, `styles.css`)**:
+  - Added dedicated quick search inputs (`#holdings-search-input`, `#watchlist-search-input`) above the tables filtering by ticker symbol, company name, or sector in real time.
+  - Enabled clickable column sorting on table headers (`th[data-sort-col]`, `th[data-wl-sort-col]`) with dynamic `fa-sort-up` and `fa-sort-down` indicators, allowing sorting by Ticker, Price, Day P&L, Market Value, Unrealized P&L, Realized P&L, Total Return, Net Yield, Shares, Avg Cost, Total Cost, Buy/Sell/Stop Targets, XIRR, Yield on Cost, 52W Position, MoM, QoQ, YoY, and Signal Score within sector groups.
+- **U2 — Target Buy, Sell & Stop-Loss Proximity Badges (`app.js`)**:
+  - `formatTargetLevelCell()` dynamically generates color-coded proximity indicators:
+    - `BUY ZONE` badge (current price <= Buy Target) and `+X.X% away` amber distance pill (within 2.5%).
+    - `TARGET HIT` badge (current price >= Sell Target) and `X.X% away` pink distance pill (within 2.5%).
+    - `STOP BREACHED` blinking red alert badge (current price <= Stop Loss) and `Near Stop` warning pill (within 2.5%).
+- **U3 — 1-Click "Log Dividend" from Holdings & "Buy" from Watchlist (`app.js`)**:
+  - Added a `$ Div` action button on every Holdings row opening `#modal-dividend` pre-filled with the ticker and held shares (`openDividendModalForTicker`).
+  - Added a prominent `+ Buy` action button on every Watchlist row pre-filling the Trade modal with ticker and current price.
+- **U4 — Live GitHub Actions Status Pill & Auto-Refresh (`index.html`, `app.js`, `api.js`)**:
+  - Added an animated live status pill (`#gh-sync-live-pill`) in the top navigation bar displaying real-time Python sync status (`Python Prices Syncing...` / `Python News Syncing...`).
+  - Automatically polls workflow runs via `pollGitHubWorkflowCompletion()` and upon completion reloads `historical_prices.json` and updates all charts and tables via `renderAll(true)`.
+- **U5 — Keyboard Shortcuts & Modal Backdrop Ergonomics (`app.js`)**:
+  - Clicking the dark blurred backdrop (`.modal-backdrop`) or pressing `Escape` closes any active modal dialog.
+  - Pressing `/` outside of input fields immediately focuses and selects the active table search bar.
+  - `openModal(id)` automatically focuses the primary input field upon opening.
+- **U6 — Compact / Essential View Column Toggle (`index.html`, `app.js`, `styles.css`)**:
+  - Added `#btn-toggle-holdings-compact` and `#btn-toggle-watchlist-compact` toggle buttons persisting to `state.settings.holdingsCompactView` / `state.settings.watchlistCompactView`.
+  - In Compact View (`.compact-view-active`), secondary quantitative columns (`.col-quant-extra`: 52W Low/High, 52W Pos %, MoM, QoQ, YoY, Trend & RSI) are cleanly hidden, fitting all essential financial, return, and target data on laptop screens without horizontal scrolling.

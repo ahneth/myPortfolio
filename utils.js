@@ -43,12 +43,17 @@ var Fin = {
     }
     let formatted;
     try {
-      formatted = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: activeCurr || 'USD',
-        minimumFractionDigits: minDec,
-        maximumFractionDigits: maxDec
-      }).format(Math.abs(n));
+      if (!Fin._currFormatters) Fin._currFormatters = {};
+      const fmtKey = `${activeCurr || 'USD'}_${minDec}_${maxDec}`;
+      if (!Fin._currFormatters[fmtKey]) {
+        Fin._currFormatters[fmtKey] = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: activeCurr || 'USD',
+          minimumFractionDigits: minDec,
+          maximumFractionDigits: maxDec
+        });
+      }
+      formatted = Fin._currFormatters[fmtKey].format(Math.abs(n));
     } catch (_) {
       formatted = '$' + Math.abs(n).toFixed(maxDec);
     }
@@ -59,10 +64,13 @@ var Fin = {
 
   shares: (val) => {
     const n = Fin.round(val, 4);
-    return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 4
-    }).format(n);
+    if (!Fin._sharesFormatter) {
+      Fin._sharesFormatter = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 4
+      });
+    }
+    return Fin._sharesFormatter.format(n);
   },
 
   percent: (val, showPlus = true) => {
@@ -127,8 +135,30 @@ var Fin = {
    * @param {Array<{amount: number, date: string|Date}>} cashFlows - Negative for outflows (buys/deposits), positive for inflows (sells/dividends/terminal value)
    * @returns {number|null} Annualized percentage XIRR (e.g. 11.42 for +11.42%), or null if cash flows lack sign change
    */
+  _xirrCache: new Map(),
+
   xirr: (cashFlows, guess = 0.08) => {
     if (!Array.isArray(cashFlows) || cashFlows.length < 2) return null;
+    let wPos = 0;
+    let wNeg = 0;
+    for (let i = 0; i < cashFlows.length; i++) {
+      const a = Number(cashFlows[i]?.amount || 0);
+      if (a > 0) wPos += a * (i + 1);
+      else if (a < 0) wNeg += a * (i + 1);
+    }
+    const firstCf = cashFlows[0];
+    const lastCf = cashFlows[cashFlows.length - 1];
+    const xirrKey = `${cashFlows.length}|${firstCf?.date}:${Number(firstCf?.amount || 0).toFixed(2)}|${lastCf?.date}:${Number(lastCf?.amount || 0).toFixed(2)}|${wPos.toFixed(2)}|${wNeg.toFixed(2)}|${guess}`;
+    if (Fin._xirrCache && Fin._xirrCache.has(xirrKey)) {
+      return Fin._xirrCache.get(xirrKey);
+    }
+    const cacheAndReturn = (val) => {
+      if (Fin._xirrCache) {
+        if (Fin._xirrCache.size > 600) Fin._xirrCache.clear();
+        Fin._xirrCache.set(xirrKey, val);
+      }
+      return val;
+    };
     const valid = cashFlows
       .map(cf => ({
         amount: Number(cf.amount || 0),
@@ -175,7 +205,7 @@ var Fin = {
     for (let iter = 0; iter < 60; iter++) {
       const fVal = npv(rate);
       if (Math.abs(fVal) < 1e-5) {
-        return Fin.round(rate * 100, 2);
+        return cacheAndReturn(Fin.round(rate * 100, 2));
       }
       const deriv = dNpv(rate);
       if (Math.abs(deriv) < 1e-10) break;
@@ -196,7 +226,7 @@ var Fin = {
       const mid = (low + high) / 2;
       const fMid = npv(mid);
       if (Math.abs(fMid) < 1e-4 || (high - low) < 1e-6) {
-        return Fin.round(mid * 100, 2);
+        return cacheAndReturn(Fin.round(mid * 100, 2));
       }
       if (fLow * fMid <= 0) {
         high = mid;
@@ -206,7 +236,7 @@ var Fin = {
         fLow = fMid;
       }
     }
-    return Fin.round(((low + high) / 2) * 100, 2);
+    return cacheAndReturn(Fin.round(((low + high) / 2) * 100, 2));
   },
 
   /**

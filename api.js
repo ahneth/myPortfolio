@@ -710,7 +710,8 @@ var MarketAPI = {
 
   async pollGitHubWorkflowCompletion(repo, branch, token, workflowFile, dispatchTime = 0) {
     const isNews = workflowFile.includes('news');
-    const maxPolls = 24; // ~120 seconds max
+    const maxPolls = 24;
+    if (typeof setGhSyncStatus === 'function') setGhSyncStatus(true, isNews ? 'Syncing News...' : 'Syncing Prices...');
     for (let i = 0; i < maxPolls; i++) {
       await new Promise(r => setTimeout(r, 5000));
       try {
@@ -737,14 +738,17 @@ var MarketAPI = {
         }
 
         if (latestRun.status === 'completed') {
+          if (typeof setGhSyncStatus === 'function') setGhSyncStatus(false);
           if (latestRun.conclusion === 'success') {
             if (isNews && typeof loadCompanyNewsFromJson === 'function') {
               await loadCompanyNewsFromJson(false);
+              if (typeof renderAll === 'function') renderAll(true);
               if (typeof showToast === 'function') {
                 showToast('GitHub Python News workflow completed! Refreshed company_news.json on page.', 'success');
               }
             } else if (typeof loadHistoricalPricesFromJson === 'function') {
               await loadHistoricalPricesFromJson(false);
+              if (typeof renderAll === 'function') renderAll(true);
               if (typeof showToast === 'function') {
                 showToast('GitHub Python Price workflow completed! Refreshed historical_prices.json on page.', 'success');
               }

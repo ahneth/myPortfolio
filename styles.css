@@ -536,3 +536,18 @@ tr.portfolio-total-row > td.sticky-col-mobile {
 .dark tr.portfolio-total-row > td.sticky-col-mobile {
   background-color: #0f172a !important;
 }
+
+/* U1: Sortable table headers */
+th[data-sort-col] {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+th[data-sort-col]:hover {
+  color: #10b981 !important;
+}
+
+/* U6: Compact / Essential View for Holdings & Watchlist */
+table.compact-view-active .col-quant-extra {
+  display: none !important;
+}
