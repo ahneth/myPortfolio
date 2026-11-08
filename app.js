@@ -448,12 +448,13 @@ function renderKPIs() {
   const dayIsPos = dayPnL >= 0;
 
   if (dayValEl) {
-    dayValEl.textContent = hideMoney ? '1D P&L' : Fin.currency(dayPnL, true, baseCurr);
+    dayValEl.textContent = hideMoney ? 'Today 1D P&L:' : `Today 1D P&L: ${Fin.currency(dayPnL, true, baseCurr)}`;
   }
   if (dayPctEl) {
     dayPctEl.textContent = `(${Fin.percent(dayPnLPct, true)})`;
   }
   if (dayBadgeEl) {
+    dayBadgeEl.title = "Today's 1-Day Market Value Fluctuation vs. Previous Market Close";
     dayBadgeEl.className = `px-2.5 py-0.5 rounded-full text-[11px] font-bold num-font inline-flex items-center gap-1 border ${
       dayIsPos
         ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
@@ -4132,7 +4133,7 @@ function setupEventListeners() {
 
   document.querySelectorAll('.port-history-mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      portfolioHistoryMode = btn.getAttribute('data-port-mode') || 'balance';
+      portfolioHistoryMode = btn.getAttribute('data-port-mode') || 'return';
       document.querySelectorAll('.port-history-mode-btn').forEach(b => {
         b.className = 'port-history-mode-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition';
       });

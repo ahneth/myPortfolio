@@ -331,7 +331,7 @@ var AppLogger = (function() {
       name: 'Chart Canvases & Contexts',
       status: chartsOk ? 'PASS' : 'FAIL',
       detail: chartsOk
-        ? `Dashboard canvases ready (Portfolio HistoryMode: ${typeof portfolioHistoryMode !== 'undefined' ? portfolioHistoryMode : 'balance'})`
+        ? `Dashboard canvases ready (Portfolio HistoryMode: ${typeof portfolioHistoryMode !== 'undefined' ? portfolioHistoryMode : 'return'})`
         : 'Missing chart canvas elements'
     });
 

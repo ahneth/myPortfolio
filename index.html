@@ -866,9 +866,9 @@ tr.portfolio-total-row > td.sticky-col-mobile {
               <i class="fa-solid fa-vault text-brand-500"></i> Total Net Worth
             </span>
             <!-- Live 1D P&L Badge -->
-            <span id="kpi-day-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold num-font inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-              <span id="kpi-day-val">$0.00</span>
-              <span id="kpi-day-pct">(1D 0.00%)</span>
+            <span id="kpi-day-badge" title="Today's 1-Day Market Value Fluctuation vs. Previous Market Close" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold num-font inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              <span id="kpi-day-val">Today 1D P&amp;L: $0.00</span>
+              <span id="kpi-day-pct">(0.00%)</span>
             </span>
           </div>
           <div class="mt-2 text-2xl sm:text-3xl font-extrabold num-font text-slate-900 dark:text-white tracking-tight" id="kpi-portfolio-value">$0.00</div>
@@ -962,10 +962,10 @@ tr.portfolio-total-row > td.sticky-col-mobile {
                 <i class="fa-solid fa-chart-area text-brand-500"></i>
                 <span>Portfolio Historical Balance &amp; Return</span>
               </h2>
-              <span id="portfolio-history-metric-badge" class="text-xs font-mono font-bold px-2.5 py-1 rounded-lg border bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-500/30">Balance: $0.00</span>
+              <span id="portfolio-history-metric-badge" class="text-xs font-mono font-bold px-2.5 py-1 rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">Total Return: +$0.00 (+0.00%)</span>
             </div>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5" id="historical-chart-subtitle">
-              Track monthly portfolio balance vs. invested capital or switch to monthly accumulative total return
+              Monthly Accumulative Total Return including Unrealized Gains, Realized P&amp;L &amp; Dividends
             </p>
           </div>
 
@@ -973,8 +973,8 @@ tr.portfolio-total-row > td.sticky-col-mobile {
           <div class="flex flex-wrap items-center gap-2">
             <!-- Mode Switch: Monthly Portfolio Balance vs. Monthly Accumulative Total Return -->
             <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
-              <button type="button" id="btn-port-mode-balance" data-port-mode="balance" class="port-history-mode-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">Monthly Balance</button>
-              <button type="button" id="btn-port-mode-return" data-port-mode="return" class="port-history-mode-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">Accumulative Total Return</button>
+              <button type="button" id="btn-port-mode-balance" data-port-mode="balance" class="port-history-mode-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">Monthly Balance</button>
+              <button type="button" id="btn-port-mode-return" data-port-mode="return" class="port-history-mode-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">Accumulative Total Return</button>
             </div>
 
             <!-- Timeframe Selector (1-Y / 2-Y / 3-Y / ALL) -->
@@ -1018,8 +1018,8 @@ tr.portfolio-total-row > td.sticky-col-mobile {
               <p class="text-xs text-slate-500 dark:text-slate-400">Holdings breakdown by market weight</p>
             </div>
             <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
-              <button id="toggle-alloc-ticker" class="px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">By Ticker</button>
-              <button id="toggle-alloc-sector" class="px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">By Sector</button>
+              <button id="toggle-alloc-ticker" class="px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">By Ticker</button>
+              <button id="toggle-alloc-sector" class="px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">By Sector</button>
             </div>
           </div>
           <div class="flex-1 flex items-center justify-center pt-4 relative chart-container">
@@ -3012,10 +3012,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.5',
-  buildId: '20261108_1710',
-  releaseDate: '2026-11-08 17:10 HKT',
-  driveFolder: '/myPortfolio/20261108_1710/',
+  appVersion: '3.3.6',
+  buildId: '20261108_1735',
+  releaseDate: '2026-11-08 17:35 HKT',
+  driveFolder: '/myPortfolio/20261108_1735/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -3028,6 +3028,17 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.3.6',
+      buildId: '20261108_1735',
+      date: '2026-11-08 17:35 HKT',
+      summary: 'Explicitly labeled the Hero Card daily fluctuation badge as "Today 1D P&L:" and updated Home Dashboard default chart views to "Accumulative Total Return" (for Portfolio Historical Balance & Return) and "By Sector" (for Asset Allocation).',
+      changes: [
+        'Explicitly prefixed the Hero Net-Worth Card daily badge (#kpi-day-val) with "Today 1D P&L: " and added a descriptive hover tooltip so daily market fluctuation is immediately distinguished from Total Net Worth.',
+        'Changed the Home Dashboard "Portfolio Historical Balance & Return" chart default mode (portfolioHistoryMode) from "Monthly Balance" to "Accumulative Total Return" and highlighted the Accumulative Total Return toggle button by default.',
+        'Changed the Home Dashboard "Asset Allocation" doughnut chart default mode (allocationViewMode) from "By Ticker" to "By Sector" and highlighted the By Sector toggle button by default.'
+      ]
+    },
     {
       version: '3.3.5',
       buildId: '20261108_1710',
@@ -3684,7 +3695,7 @@ var AppLogger = (function() {
       name: 'Chart Canvases & Contexts',
       status: chartsOk ? 'PASS' : 'FAIL',
       detail: chartsOk
-        ? `Dashboard canvases ready (Portfolio HistoryMode: ${typeof portfolioHistoryMode !== 'undefined' ? portfolioHistoryMode : 'balance'})`
+        ? `Dashboard canvases ready (Portfolio HistoryMode: ${typeof portfolioHistoryMode !== 'undefined' ? portfolioHistoryMode : 'return'})`
         : 'Missing chart canvas elements'
     });
 
@@ -5951,9 +5962,9 @@ function createEmptyState() {
 
 var state = null;
 var portfolio = null;
-var allocationViewMode = 'ticker';
+var allocationViewMode = 'sector';
 var historyRangeMonths = 24;
-var portfolioHistoryMode = 'balance';
+var portfolioHistoryMode = 'return';
 
 var selectedHoldingsTicker = null;
 var holdingsStockRangeMonths = 24;
@@ -10435,12 +10446,13 @@ function renderKPIs() {
   const dayIsPos = dayPnL >= 0;
 
   if (dayValEl) {
-    dayValEl.textContent = hideMoney ? '1D P&L' : Fin.currency(dayPnL, true, baseCurr);
+    dayValEl.textContent = hideMoney ? 'Today 1D P&L:' : `Today 1D P&L: ${Fin.currency(dayPnL, true, baseCurr)}`;
   }
   if (dayPctEl) {
     dayPctEl.textContent = `(${Fin.percent(dayPnLPct, true)})`;
   }
   if (dayBadgeEl) {
+    dayBadgeEl.title = "Today's 1-Day Market Value Fluctuation vs. Previous Market Close";
     dayBadgeEl.className = `px-2.5 py-0.5 rounded-full text-[11px] font-bold num-font inline-flex items-center gap-1 border ${
       dayIsPos
         ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
@@ -14119,7 +14131,7 @@ function setupEventListeners() {
 
   document.querySelectorAll('.port-history-mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      portfolioHistoryMode = btn.getAttribute('data-port-mode') || 'balance';
+      portfolioHistoryMode = btn.getAttribute('data-port-mode') || 'return';
       document.querySelectorAll('.port-history-mode-btn').forEach(b => {
         b.className = 'port-history-mode-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition';
       });

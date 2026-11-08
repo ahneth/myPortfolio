@@ -397,9 +397,9 @@ function createEmptyState() {
 
 var state = null;
 var portfolio = null;
-var allocationViewMode = 'ticker';
+var allocationViewMode = 'sector';
 var historyRangeMonths = 24;
-var portfolioHistoryMode = 'balance';
+var portfolioHistoryMode = 'return';
 
 var selectedHoldingsTicker = null;
 var holdingsStockRangeMonths = 24;

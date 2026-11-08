@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.5',
-  buildId: '20261108_1710',
-  releaseDate: '2026-11-08 17:10 HKT',
-  driveFolder: '/myPortfolio/20261108_1710/',
+  appVersion: '3.3.6',
+  buildId: '20261108_1735',
+  releaseDate: '2026-11-08 17:35 HKT',
+  driveFolder: '/myPortfolio/20261108_1735/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,17 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.3.6',
+      buildId: '20261108_1735',
+      date: '2026-11-08 17:35 HKT',
+      summary: 'Explicitly labeled the Hero Card daily fluctuation badge as "Today 1D P&L:" and updated Home Dashboard default chart views to "Accumulative Total Return" (for Portfolio Historical Balance & Return) and "By Sector" (for Asset Allocation).',
+      changes: [
+        'Explicitly prefixed the Hero Net-Worth Card daily badge (#kpi-day-val) with "Today 1D P&L: " and added a descriptive hover tooltip so daily market fluctuation is immediately distinguished from Total Net Worth.',
+        'Changed the Home Dashboard "Portfolio Historical Balance & Return" chart default mode (portfolioHistoryMode) from "Monthly Balance" to "Accumulative Total Return" and highlighted the Accumulative Total Return toggle button by default.',
+        'Changed the Home Dashboard "Asset Allocation" doughnut chart default mode (allocationViewMode) from "By Ticker" to "By Sector" and highlighted the By Sector toggle button by default.'
+      ]
+    },
     {
       version: '3.3.5',
       buildId: '20261108_1710',
