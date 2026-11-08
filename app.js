@@ -434,10 +434,42 @@ function renderKPIs() {
   document.getElementById('kpi-portfolio-value').textContent = hideMoney
     ? Fin.percent(totReturnPct, true)
     : Fin.currency(portfolio.totalPortfolioValue, false, baseCurr);
-  const portSubEl = document.getElementById('kpi-portfolio-value')?.nextElementSibling;
+  const portSubEl = document.getElementById('kpi-portfolio-sublabel');
   if (portSubEl) {
-    portSubEl.innerHTML = hideMoney ? '<span>Total Return % ($ Hidden)</span>' : '<span>Total Net Worth</span>';
+    portSubEl.textContent = hideMoney ? 'Total Return % (Dollar Amounts Hidden)' : 'Total Portfolio Net Worth';
   }
+
+  // A2: Live 1D P&L Badge on Hero Card
+  const dayValEl = document.getElementById('kpi-day-val');
+  const dayPctEl = document.getElementById('kpi-day-pct');
+  const dayBadgeEl = document.getElementById('kpi-day-badge');
+  const dayPnL = Number(portfolio.totalDayPnL || 0);
+  const dayPnLPct = Number(portfolio.totalDayPnLPct || 0);
+  const dayIsPos = dayPnL >= 0;
+
+  if (dayValEl) {
+    dayValEl.textContent = hideMoney ? '1D P&L' : Fin.currency(dayPnL, true, baseCurr);
+  }
+  if (dayPctEl) {
+    dayPctEl.textContent = `(${Fin.percent(dayPnLPct, true)})`;
+  }
+  if (dayBadgeEl) {
+    dayBadgeEl.className = `px-2.5 py-0.5 rounded-full text-[11px] font-bold num-font inline-flex items-center gap-1 border ${
+      dayIsPos
+        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+        : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+    }`;
+  }
+
+  // A2: Micro Allocation Bar (Invested vs Cash)
+  const heroBarInv = document.getElementById('hero-bar-invested');
+  const heroBarCash = document.getElementById('hero-bar-cash');
+  const heroTxtInv = document.getElementById('hero-invested-pct');
+  const heroTxtCash = document.getElementById('hero-cash-pct');
+  if (heroBarInv) heroBarInv.style.width = `${investedPct}%`;
+  if (heroBarCash) heroBarCash.style.width = `${cashPct}%`;
+  if (heroTxtInv) heroTxtInv.textContent = `${investedPct}%`;
+  if (heroTxtCash) heroTxtCash.textContent = `${cashPct}%`;
 
   document.getElementById('kpi-cash-balance').textContent = hideMoney
     ? `${cashPct}%`
@@ -1721,7 +1753,7 @@ function renderHoldingsTable() {
             ${formatSignalBadgeCell(h.ticker, h)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-center">
-            <div class="flex items-center justify-center gap-1">
+            <div class="table-action-capsule">
               <button onclick="event.stopPropagation(); selectStockForInlineChart('holdings', '${h.ticker}', true)" class="p-1.5 text-xs ${isSelected ? 'bg-brand-500 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Price & Trend Chart Below">
                 <i class="fa-solid fa-chart-line"></i>
               </button>
@@ -2368,7 +2400,7 @@ function renderWatchlistAndFundamentals() {
                   : '<span class="px-2 py-0.5 rounded font-medium bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px]">WATCHING</span>'}
               </td>
               <td class="py-3 px-3 text-center">
-                <div class="flex items-center justify-center gap-1.5">
+                <div class="table-action-capsule">
                   <button onclick="event.stopPropagation(); selectStockForInlineChart('watchlist', '${w.ticker}', true)" class="p-1.5 ${isSelected ? 'bg-purple-600 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Monthly Price Chart Below">
                     <i class="fa-solid fa-chart-line"></i>
                   </button>
@@ -4013,6 +4045,14 @@ function setupEventListeners() {
     state.settings.watchlistCompactView = !Boolean(state.settings.watchlistCompactView);
     saveState();
     renderWatchlistAndFundamentals();
+  });
+
+  // A1: Mobile More Drawer Trigger
+  on('btn-mobile-more', 'click', () => {
+    openModal('mobile-more-drawer');
+  });
+  on('btn-close-mobile-more', 'click', () => {
+    closeModal('mobile-more-drawer');
   });
 
   document.querySelectorAll('.nav-tab').forEach(tab => {

@@ -551,3 +551,96 @@ th[data-sort-col]:hover {
 table.compact-view-active .col-quant-extra {
   display: none !important;
 }
+
+/* ==========================================================================
+   A6: Obsidian FinTech Depth, Glassmorphism & Micro-Animations
+   ========================================================================== */
+
+.dark body {
+  background-color: #080c14;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.04) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.04) 0px, transparent 50%);
+}
+
+.dark .bg-dark-card {
+  background-color: #0f172a;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-pane:not(.hidden) {
+  animation: tabFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-backdrop:not(.hidden) .modal-card {
+  animation: modalScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ==========================================================================
+   A4: Sticky Glass Headers & Table Action Capsule
+   ========================================================================== */
+
+.scrollable-portfolio-table-box {
+  max-height: 72vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.scrollable-portfolio-table-box table thead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: rgba(248, 250, 252, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dark .scrollable-portfolio-table-box table thead {
+  background-color: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.table-action-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border-radius: 8px;
+  background-color: rgba(241, 245, 249, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  transition: all 0.15s ease;
+}
+
+.dark .table-action-capsule {
+  background-color: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(51, 65, 85, 0.85);
+}
+
+tr:hover .table-action-capsule {
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}

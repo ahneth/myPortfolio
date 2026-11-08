@@ -856,78 +856,99 @@ tr.portfolio-total-row > td.sticky-col-mobile {
     <div id="tab-content-dashboard" class="tab-pane space-y-6">
 
 
-    <!-- KPI STATS SUMMARY ROW -->
-    <section id="kpi-summary-section" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-3.5 sm:mb-6">
-      <!-- Total Portfolio Value -->
-      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-2.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
-        <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
-          <span>Portfolio Value</span>
-          <i class="fa-solid fa-vault text-brand-500 opacity-80"></i>
+    <!-- A2: HERO NET-WORTH COMMAND CARD & COMPANION METRICS -->
+    <section id="kpi-summary-section" class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 mb-3.5 sm:mb-6">
+      <!-- 1. Hero Net-Worth Command Card (Spans 4 columns on desktop) -->
+      <div class="lg:col-span-4 bg-gradient-to-br from-white via-slate-50 to-slate-100/90 dark:from-slate-900 dark:via-dark-card dark:to-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-vault text-brand-500"></i> Total Net Worth
+            </span>
+            <!-- Live 1D P&L Badge -->
+            <span id="kpi-day-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold num-font inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              <span id="kpi-day-val">$0.00</span>
+              <span id="kpi-day-pct">(1D 0.00%)</span>
+            </span>
+          </div>
+          <div class="mt-2 text-2xl sm:text-3xl font-extrabold num-font text-slate-900 dark:text-white tracking-tight" id="kpi-portfolio-value">$0.00</div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5" id="kpi-portfolio-sublabel">Total Portfolio Net Worth</div>
         </div>
-        <div class="mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font text-slate-900 dark:text-white tracking-tight" id="kpi-portfolio-value">$0.00</div>
-        <div class="mt-1 flex items-center text-[11px] text-slate-500 dark:text-slate-400">
-          <span>Total Net Worth</span>
+
+        <!-- Micro Allocation Bar (Invested vs Cash) -->
+        <div class="mt-4 pt-3 border-t border-slate-200/80 dark:border-slate-800/80">
+          <div class="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 font-medium mb-1.5">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-brand-500 inline-block"></span> Invested: <strong class="num-font text-slate-800 dark:text-slate-200" id="hero-invested-pct">0%</strong></span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-indigo-500 inline-block"></span> Cash: <strong class="num-font text-slate-800 dark:text-slate-200" id="hero-cash-pct">0%</strong></span>
+          </div>
+          <div class="w-full bg-slate-200/80 dark:bg-slate-800 h-2 rounded-full overflow-hidden flex">
+            <div id="hero-bar-invested" class="bg-brand-500 h-full transition-all duration-500" style="width: 0%;"></div>
+            <div id="hero-bar-cash" class="bg-indigo-500 h-full transition-all duration-500" style="width: 0%;"></div>
+          </div>
         </div>
       </div>
 
-      <!-- Cash Balance -->
-      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-2.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
-        <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
-          <span>Available Cash</span>
-          <button id="btn-quick-cash" class="text-xs text-brand-600 dark:text-brand-400 hover:underline" title="Deposit / Withdraw Cash">
-            <i class="fa-solid fa-money-bill-transfer"></i>
-          </button>
+      <!-- 2. Companion KPI Cards (Spans 8 columns on desktop, 5 grid columns) -->
+      <div class="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+        <!-- Available Cash -->
+        <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border border-t-2 border-t-indigo-500 p-3 sm:p-4 rounded-xl shadow-sm flex flex-col justify-between">
+          <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+            <span>Available Cash</span>
+            <button id="btn-quick-cash" class="text-xs text-brand-600 dark:text-brand-400 hover:underline" title="Deposit / Withdraw Cash">
+              <i class="fa-solid fa-money-bill-transfer"></i>
+            </button>
+          </div>
+          <div class="mt-1.5 text-base sm:text-lg font-bold num-font text-slate-900 dark:text-white tracking-tight" id="kpi-cash-balance">$0.00</div>
+          <div class="mt-1 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+            <span id="kpi-cash-pct">0% of total</span>
+            <button id="btn-deposit-quick" class="text-[10px] text-brand-500 hover:underline font-semibold">+ Cash</button>
+          </div>
         </div>
-        <div class="mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font text-slate-900 dark:text-white tracking-tight" id="kpi-cash-balance">$0.00</div>
-        <div class="mt-1 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-          <span id="kpi-cash-pct">0% of total</span>
-          <button id="btn-deposit-quick" class="text-[11px] text-brand-500 hover:underline font-semibold">+ Cash</button>
-        </div>
-      </div>
 
-      <!-- Invested Cost Basis -->
-      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-2.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
-        <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
-          <span>Invested Capital</span>
-          <i class="fa-solid fa-coins text-amber-500 opacity-80"></i>
+        <!-- Invested Cost Basis -->
+        <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border border-t-2 border-t-amber-500 p-3 sm:p-4 rounded-xl shadow-sm flex flex-col justify-between">
+          <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+            <span>Invested Capital</span>
+            <i class="fa-solid fa-coins text-amber-500 opacity-80"></i>
+          </div>
+          <div class="mt-1.5 text-base sm:text-lg font-bold num-font text-slate-900 dark:text-white tracking-tight" id="kpi-cost-basis">$0.00</div>
+          <div class="mt-1 text-[10px] text-slate-500 dark:text-slate-400" id="kpi-cost-sublabel">
+            <span>Active Cost Basis</span>
+          </div>
         </div>
-        <div class="mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font text-slate-900 dark:text-white tracking-tight" id="kpi-cost-basis">$0.00</div>
-        <div class="mt-1 flex items-center text-[11px] text-slate-500 dark:text-slate-400">
-          <span>Active Cost Basis</span>
-        </div>
-      </div>
 
-      <!-- Unrealized P&L -->
-      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-2.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
-        <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
-          <span>Unrealized P&amp;L</span>
-          <i class="fa-solid fa-chart-line text-emerald-500 opacity-80"></i>
+        <!-- Unrealized P&L -->
+        <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border border-t-2 border-t-emerald-500 p-3 sm:p-4 rounded-xl shadow-sm flex flex-col justify-between">
+          <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+            <span>Unrealized P&amp;L</span>
+            <i class="fa-solid fa-chart-line text-emerald-500 opacity-80"></i>
+          </div>
+          <div class="mt-1.5 text-base sm:text-lg font-bold num-font tracking-tight" id="kpi-unrealized-val">$0.00</div>
+          <div class="mt-1 text-[10px] font-semibold num-font" id="kpi-unrealized-pct">+0.00%</div>
         </div>
-        <div class="mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font tracking-tight" id="kpi-unrealized-val">$0.00</div>
-        <div class="mt-1 flex items-center text-[11px] font-semibold num-font" id="kpi-unrealized-pct">+0.00%</div>
-      </div>
 
-      <!-- Realized P&L -->
-      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-2.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
-        <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
-          <span>Realized P&amp;L</span>
-          <i class="fa-solid fa-scale-balanced text-indigo-500 opacity-80"></i>
+        <!-- Realized P&L -->
+        <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border border-t-2 border-t-purple-500 p-3 sm:p-4 rounded-xl shadow-sm flex flex-col justify-between">
+          <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+            <span>Realized P&amp;L</span>
+            <i class="fa-solid fa-scale-balanced text-indigo-500 opacity-80"></i>
+          </div>
+          <div class="mt-1.5 text-base sm:text-lg font-bold num-font tracking-tight" id="kpi-realized-val">$0.00</div>
+          <div class="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+            <span>Closed Trades</span>
+          </div>
         </div>
-        <div class="mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font tracking-tight" id="kpi-realized-val">$0.00</div>
-        <div class="mt-1 flex items-center text-[11px] text-slate-500 dark:text-slate-400">
-          <span>Closed Trades</span>
-        </div>
-      </div>
 
-      <!-- Total Dividends -->
-      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-2.5 sm:p-4 rounded-xl shadow-sm relative overflow-hidden">
-        <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
-          <span>Dividends Earned</span>
-          <i class="fa-solid fa-receipt text-cyan-500 opacity-80"></i>
-        </div>
-        <div class="mt-1.5 sm:mt-2 text-lg sm:text-xl font-bold num-font text-cyan-600 dark:text-cyan-400 tracking-tight" id="kpi-dividends-val">$0.00</div>
-        <div class="mt-1 flex items-center text-[11px] text-slate-500 dark:text-slate-400">
-          <span id="kpi-dividends-count">0 payouts</span>
+        <!-- Total Dividends -->
+        <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border border-t-2 border-t-cyan-500 p-3 sm:p-4 rounded-xl shadow-sm flex flex-col justify-between col-span-2 sm:col-span-1">
+          <div class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+            <span>Dividends</span>
+            <i class="fa-solid fa-receipt text-cyan-500 opacity-80"></i>
+          </div>
+          <div class="mt-1.5 text-base sm:text-lg font-bold num-font text-cyan-600 dark:text-cyan-400 tracking-tight" id="kpi-dividends-val">$0.00</div>
+          <div class="mt-1 text-[10px] text-slate-500 dark:text-slate-400" id="kpi-dividends-count">
+            <span>0 payouts</span>
+          </div>
         </div>
       </div>
     </section>
@@ -2333,44 +2354,76 @@ tr.portfolio-total-row > td.sticky-col-mobile {
 
   </main>
 
-  <!-- MOBILE BOTTOM NAVIGATION BAR (Visible on Mobile / Small Screens) -->
-  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-dark-card/95 backdrop-blur border-t border-slate-200 dark:border-dark-border mobile-bottom-nav">
-    <div class="grid grid-cols-8 h-12">
+  <!-- MOBILE BOTTOM NAVIGATION BAR (A1: Streamlined 6-Action Thumb Grid) -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-dark-card/95 backdrop-blur-md border-t border-slate-200 dark:border-dark-border mobile-bottom-nav shadow-lg">
+    <div class="grid grid-cols-6 h-14">
       <button data-tab="dashboard" class="nav-tab active flex flex-col items-center justify-center gap-0.5 text-brand-600 dark:text-brand-400">
-        <i class="fa-solid fa-gauge-high text-sm"></i>
+        <i class="fa-solid fa-gauge-high text-base"></i>
         <span class="text-[10px] font-semibold">Home</span>
       </button>
       <button data-tab="holdings" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
-        <i class="fa-solid fa-briefcase text-sm"></i>
+        <i class="fa-solid fa-briefcase text-base"></i>
         <span class="text-[10px] font-semibold">Holdings</span>
       </button>
-      <button data-tab="transactions" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
-        <i class="fa-solid fa-list-check text-sm"></i>
-        <span class="text-[10px] font-semibold">Trades</span>
-      </button>
-      <button data-tab="dividends" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
-        <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
-        <span class="text-[10px] font-semibold">Dividends</span>
-      </button>
       <button data-tab="watchlist" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
-        <i class="fa-solid fa-binoculars text-sm"></i>
+        <i class="fa-solid fa-binoculars text-base"></i>
         <span class="text-[10px] font-semibold">Watchlist</span>
       </button>
-      <button data-tab="news" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
-        <i class="fa-solid fa-newspaper text-sm"></i>
-        <span class="text-[10px] font-semibold">News</span>
+      <button data-tab="dividends" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
+        <i class="fa-solid fa-hand-holding-dollar text-base"></i>
+        <span class="text-[10px] font-semibold">Dividends</span>
       </button>
-      <button data-tab="settings" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
-        <i class="fa-solid fa-sliders text-sm"></i>
-        <span class="text-[10px] font-semibold">Settings</span>
+      <button data-tab="transactions" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400">
+        <i class="fa-solid fa-list-check text-base"></i>
+        <span class="text-[10px] font-semibold">Trades</span>
       </button>
-      <button data-tab="logs" class="nav-tab flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400 relative">
-        <i class="fa-solid fa-terminal text-sm"></i>
-        <span class="text-[10px] font-semibold">Log</span>
-        <span id="mobile-log-badge" class="hidden">0</span>
+      <button type="button" id="btn-mobile-more" class="flex flex-col items-center justify-center gap-0.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+        <i class="fa-solid fa-ellipsis text-base"></i>
+        <span class="text-[10px] font-semibold">More</span>
       </button>
     </div>
   </nav>
+
+  <!-- MOBILE MORE DRAWER (A1) -->
+  <div id="mobile-more-drawer" class="modal-backdrop fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-sm flex items-end justify-center">
+    <div class="modal-card bg-white dark:bg-dark-card border-t border-slate-200 dark:border-dark-border rounded-t-3xl w-full max-w-lg p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-brand-500/10 text-brand-500 flex items-center justify-center text-sm font-bold">
+            <i class="fa-solid fa-layer-group"></i>
+          </div>
+          <span class="font-bold text-slate-900 dark:text-white text-sm">More Features &amp; Tools</span>
+        </div>
+        <button type="button" id="btn-close-mobile-more" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2.5">
+        <button type="button" onclick="switchTab('news'); closeModal('mobile-more-drawer');" class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center gap-1.5 text-center transition hover:border-brand-500/40">
+          <i class="fa-solid fa-newspaper text-indigo-500 text-lg"></i>
+          <span class="text-xs font-semibold text-slate-800 dark:text-slate-200">News &amp; Catalysts</span>
+        </button>
+        <button type="button" onclick="switchTab('settings'); closeModal('mobile-more-drawer');" class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center gap-1.5 text-center transition hover:border-brand-500/40">
+          <i class="fa-solid fa-sliders text-purple-500 text-lg"></i>
+          <span class="text-xs font-semibold text-slate-800 dark:text-slate-200">API &amp; Settings</span>
+        </button>
+        <button type="button" onclick="switchTab('logs'); closeModal('mobile-more-drawer');" class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center gap-1.5 text-center transition hover:border-brand-500/40">
+          <i class="fa-solid fa-terminal text-emerald-500 text-lg"></i>
+          <span class="text-xs font-semibold text-slate-800 dark:text-slate-200">Runtime Logs</span>
+        </button>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+        <button type="button" onclick="togglePrivacyMode(); closeModal('mobile-more-drawer');" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 font-semibold text-slate-700 dark:text-slate-300">
+          <i class="fa-solid fa-eye-slash text-brand-500"></i> Toggle Privacy ($)
+        </button>
+        <button type="button" onclick="openRebalanceModal(); closeModal('mobile-more-drawer');" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600/15 text-purple-600 dark:text-purple-400 font-semibold border border-purple-500/30">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Rebalance
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- ==================== FOOTER ==================== -->
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
@@ -2959,10 +3012,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.4',
-  buildId: '20261108_1435',
-  releaseDate: '2026-11-08 14:35 HKT',
-  driveFolder: '/myPortfolio/20261108_1435/',
+  appVersion: '3.3.5',
+  buildId: '20261108_1710',
+  releaseDate: '2026-11-08 17:10 HKT',
+  driveFolder: '/myPortfolio/20261108_1710/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -2975,6 +3028,19 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.3.5',
+      buildId: '20261108_1710',
+      date: '2026-11-08 17:10 HKT',
+      summary: 'Implemented aesthetic, navigation, and high-tech UI optimizations (A1, A2, A4, A5, A6): Streamlined 6-Button Mobile Navigation with More Drawer, Hero Net-Worth Command Card with Live 1D P&L and Micro Allocation Bar, Sticky Frosted-Glass Table Headers with Action Capsules, HUD Crosshair Plugin, and Obsidian FinTech Depth with Specular Highlights and Micro-Animations.',
+      changes: [
+        'A1 (Navigation & Mobile Ergonomics): Upgraded mobile bottom bar to 6 comfortable thumb targets (Home, Holdings, Watchlist, Dividends, Trades, More) and added #mobile-more-drawer bottom sheet with quick tools.',
+        'A2 (Hero Net-Worth Command Card): Redesigned Dashboard KPI strip with a 4-column Hero Card featuring display typography, live Today 1D P&L badge, and Invested vs Cash allocation micro-bar.',
+        'A4 (Table Visual Hierarchy & Sticky Glass Headers): Pinned table headers with backdrop-blur-md and styled table row action buttons as sleek unified capsules (.table-action-capsule).',
+        'A5 (HUD Crosshair Plugin): Registered custom Chart.js hudCrosshair plugin drawing vertical hover guidelines across price history charts.',
+        'A6 (Obsidian FinTech Depth & Animations): Added atmospheric radial mesh lighting, specular top card borders (inset 0 1px 0 rgba(255,255,255,0.06)), smooth tabFadeIn animations (0.22s), and modal scale-in micro-transitions.'
+      ]
+    },
     {
       version: '3.3.4',
       buildId: '20261108_1435',
@@ -8449,6 +8515,35 @@ window.normalizeNewsArticleSchema = normalizeNewsArticleSchema;
 </script>
   <!-- Module: charts.js -->
   <script data-module="charts.js">
+
+// A5: Custom Chart.js HUD Vertical Crosshair Plugin
+var hudCrosshairPlugin = {
+  id: 'hudCrosshair',
+  afterDraw: (chart) => {
+    if (chart.tooltip?._active && chart.tooltip._active.length) {
+      const activePoint = chart.tooltip._active[0];
+      const ctx = chart.ctx;
+      const x = activePoint.element.x;
+      const topY = chart.chartArea.top;
+      const bottomY = chart.chartArea.bottom;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, topY);
+      ctx.lineTo(x, bottomY);
+      ctx.lineWidth = 1;
+      const isDark = document.documentElement.classList.contains('dark');
+      ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(15, 23, 42, 0.18)';
+      ctx.setLineDash([3, 3]);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+};
+if (typeof Chart !== 'undefined' && !Chart.registry?.plugins?.get('hudCrosshair')) {
+  Chart.register(hudCrosshairPlugin);
+}
+
 /**
  * @file charts.js
  * @module PortfolioChartsModule
@@ -10326,10 +10421,42 @@ function renderKPIs() {
   document.getElementById('kpi-portfolio-value').textContent = hideMoney
     ? Fin.percent(totReturnPct, true)
     : Fin.currency(portfolio.totalPortfolioValue, false, baseCurr);
-  const portSubEl = document.getElementById('kpi-portfolio-value')?.nextElementSibling;
+  const portSubEl = document.getElementById('kpi-portfolio-sublabel');
   if (portSubEl) {
-    portSubEl.innerHTML = hideMoney ? '<span>Total Return % ($ Hidden)</span>' : '<span>Total Net Worth</span>';
+    portSubEl.textContent = hideMoney ? 'Total Return % (Dollar Amounts Hidden)' : 'Total Portfolio Net Worth';
   }
+
+  // A2: Live 1D P&L Badge on Hero Card
+  const dayValEl = document.getElementById('kpi-day-val');
+  const dayPctEl = document.getElementById('kpi-day-pct');
+  const dayBadgeEl = document.getElementById('kpi-day-badge');
+  const dayPnL = Number(portfolio.totalDayPnL || 0);
+  const dayPnLPct = Number(portfolio.totalDayPnLPct || 0);
+  const dayIsPos = dayPnL >= 0;
+
+  if (dayValEl) {
+    dayValEl.textContent = hideMoney ? '1D P&L' : Fin.currency(dayPnL, true, baseCurr);
+  }
+  if (dayPctEl) {
+    dayPctEl.textContent = `(${Fin.percent(dayPnLPct, true)})`;
+  }
+  if (dayBadgeEl) {
+    dayBadgeEl.className = `px-2.5 py-0.5 rounded-full text-[11px] font-bold num-font inline-flex items-center gap-1 border ${
+      dayIsPos
+        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+        : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+    }`;
+  }
+
+  // A2: Micro Allocation Bar (Invested vs Cash)
+  const heroBarInv = document.getElementById('hero-bar-invested');
+  const heroBarCash = document.getElementById('hero-bar-cash');
+  const heroTxtInv = document.getElementById('hero-invested-pct');
+  const heroTxtCash = document.getElementById('hero-cash-pct');
+  if (heroBarInv) heroBarInv.style.width = `${investedPct}%`;
+  if (heroBarCash) heroBarCash.style.width = `${cashPct}%`;
+  if (heroTxtInv) heroTxtInv.textContent = `${investedPct}%`;
+  if (heroTxtCash) heroTxtCash.textContent = `${cashPct}%`;
 
   document.getElementById('kpi-cash-balance').textContent = hideMoney
     ? `${cashPct}%`
@@ -11613,7 +11740,7 @@ function renderHoldingsTable() {
             ${formatSignalBadgeCell(h.ticker, h)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-center">
-            <div class="flex items-center justify-center gap-1">
+            <div class="table-action-capsule">
               <button onclick="event.stopPropagation(); selectStockForInlineChart('holdings', '${h.ticker}', true)" class="p-1.5 text-xs ${isSelected ? 'bg-brand-500 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Price & Trend Chart Below">
                 <i class="fa-solid fa-chart-line"></i>
               </button>
@@ -12260,7 +12387,7 @@ function renderWatchlistAndFundamentals() {
                   : '<span class="px-2 py-0.5 rounded font-medium bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px]">WATCHING</span>'}
               </td>
               <td class="py-3 px-3 text-center">
-                <div class="flex items-center justify-center gap-1.5">
+                <div class="table-action-capsule">
                   <button onclick="event.stopPropagation(); selectStockForInlineChart('watchlist', '${w.ticker}', true)" class="p-1.5 ${isSelected ? 'bg-purple-600 text-white' : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40'} rounded" title="Show Monthly Price Chart Below">
                     <i class="fa-solid fa-chart-line"></i>
                   </button>
@@ -13905,6 +14032,14 @@ function setupEventListeners() {
     state.settings.watchlistCompactView = !Boolean(state.settings.watchlistCompactView);
     saveState();
     renderWatchlistAndFundamentals();
+  });
+
+  // A1: Mobile More Drawer Trigger
+  on('btn-mobile-more', 'click', () => {
+    openModal('mobile-more-drawer');
+  });
+  on('btn-close-mobile-more', 'click', () => {
+    closeModal('mobile-more-drawer');
   });
 
   document.querySelectorAll('.nav-tab').forEach(tab => {

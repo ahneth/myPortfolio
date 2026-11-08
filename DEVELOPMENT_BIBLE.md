@@ -327,3 +327,20 @@ ightarrow$ `Actions`.
 - **U6 — Compact / Essential View Column Toggle (`index.html`, `app.js`, `styles.css`)**:
   - Added `#btn-toggle-holdings-compact` and `#btn-toggle-watchlist-compact` toggle buttons persisting to `state.settings.holdingsCompactView` / `state.settings.watchlistCompactView`.
   - In Compact View (`.compact-view-active`), secondary quantitative columns (`.col-quant-extra`: 52W Low/High, 52W Pos %, MoM, QoQ, YoY, Trend & RSI) are cleanly hidden, fitting all essential financial, return, and target data on laptop screens without horizontal scrolling.
+
+### 11.24 Aesthetic, Navigation & High-Tech UI Optimizations (v3.3.5 - Build 20261108_1710)
+- **A1 — Streamlined Mobile Navigation & "More" Drawer (`index.html`, `app.js`, `styles.css`)**:
+  - Replaced the crowded 8-column mobile bottom navigation with a streamlined 6-button thumb grid (*Home*, *Holdings*, *Watchlist*, *Dividends*, *Trades*, *More*).
+  - Tapping **More** opens a sleek glassmorphic slide-up bottom sheet (`#mobile-more-drawer`) providing quick access to *News & Catalysts*, *API & Settings*, *Runtime Logs*, Privacy toggle, and Rebalance Simulator.
+- **A2 — Hero Net-Worth Command Card & Live 1D P&L (`index.html`, `app.js`)**:
+  - Redesigned the Dashboard KPI row with a prominent 4-column Hero Card featuring tabular display typography, an automatic live Today 1D P&L badge (`+$X,XXX / +0.84% 1D`), and an Invested vs Cash allocation micro-bar.
+  - Added subtle top-edge accent borders (`border-t-2`) to companion KPI cards for visual hierarchy.
+- **A4 — Sticky Glass Table Headers & Action Capsules (`index.html`, `app.js`, `styles.css`)**:
+  - Pinned table headers with frosted-glass blur (`backdrop-blur-md`) so column headers remain visible while scrolling through long holding and watchlist lists.
+  - Unified table row action buttons into cohesive glass capsules (`.table-action-capsule`) that stay discreet at rest and illuminate cleanly on row hover.
+- **A5 — Interactive HUD Crosshair Plugin (`charts.js`)**:
+  - Registered a custom Chart.js plugin (`hudCrosshair`) that draws a vertical dashed alignment guide at the hovered data point across monthly price charts.
+- **A6 — Obsidian FinTech Depth & Micro-Animations (`styles.css`)**:
+  - Introduced atmospheric dark-mode radial mesh lighting (`radial-gradient` emerald and indigo accents).
+  - Added specular top-border card highlights (`inset 0 1px 0 0 rgba(255, 255, 255, 0.06)`).
+  - Implemented smooth cubic-bezier micro-transitions (`tabFadeIn`, `modalScaleIn`) for seamless visual continuity.

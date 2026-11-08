@@ -317,3 +317,15 @@ Copy and append the block below for every subsequent release (`v3.1.8+`):
   - Added `/` shortcut to focus table search and auto-focus on modal open.
 - **U6 — Compact / Essential View Column Toggle (`index.html`, `app.js`, `styles.css`)**:
   - Added `#btn-toggle-holdings-compact` and `#btn-toggle-watchlist-compact` toggle buttons and `.col-quant-extra` class rules for zero-scroll laptop viewing.
+
+## 2026-11-08 17:10 — v3.3.5 (Build 20261108_1710) — Aesthetic, Navigation & High-Tech UI Optimizations (A1, A2, A4, A5, A6)
+- **A1 — Mobile Navigation & More Drawer (`index.html`, `app.js`)**:
+  - Replaced crowded 8-button mobile bar with a 6-action thumb grid and added `#mobile-more-drawer` slide-up sheet.
+- **A2 — Hero Net-Worth Command Card (`index.html`, `app.js`)**:
+  - Created a 4-column Hero Net-Worth card on the Dashboard with display typography, live Today 1D P&L badge, and Invested vs Cash allocation micro-bar.
+- **A4 — Sticky Glass Headers & Action Capsules (`index.html`, `app.js`, `styles.css`)**:
+  - Pinned table headers with `backdrop-blur-md` and styled row action buttons into `.table-action-capsule`.
+- **A5 — HUD Crosshair Plugin (`charts.js`)**:
+  - Added custom `hudCrosshair` Chart.js plugin for vertical hover crosshairs on price charts.
+- **A6 — Obsidian FinTech Depth & Animations (`styles.css`)**:
+  - Added radial gradient lighting in dark mode, specular card highlights, and `tabFadeIn` / `modalScaleIn` transitions.

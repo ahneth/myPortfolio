@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.4',
-  buildId: '20261108_1435',
-  releaseDate: '2026-11-08 14:35 HKT',
-  driveFolder: '/myPortfolio/20261108_1435/',
+  appVersion: '3.3.5',
+  buildId: '20261108_1710',
+  releaseDate: '2026-11-08 17:10 HKT',
+  driveFolder: '/myPortfolio/20261108_1710/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,19 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.3.5',
+      buildId: '20261108_1710',
+      date: '2026-11-08 17:10 HKT',
+      summary: 'Implemented aesthetic, navigation, and high-tech UI optimizations (A1, A2, A4, A5, A6): Streamlined 6-Button Mobile Navigation with More Drawer, Hero Net-Worth Command Card with Live 1D P&L and Micro Allocation Bar, Sticky Frosted-Glass Table Headers with Action Capsules, HUD Crosshair Plugin, and Obsidian FinTech Depth with Specular Highlights and Micro-Animations.',
+      changes: [
+        'A1 (Navigation & Mobile Ergonomics): Upgraded mobile bottom bar to 6 comfortable thumb targets (Home, Holdings, Watchlist, Dividends, Trades, More) and added #mobile-more-drawer bottom sheet with quick tools.',
+        'A2 (Hero Net-Worth Command Card): Redesigned Dashboard KPI strip with a 4-column Hero Card featuring display typography, live Today 1D P&L badge, and Invested vs Cash allocation micro-bar.',
+        'A4 (Table Visual Hierarchy & Sticky Glass Headers): Pinned table headers with backdrop-blur-md and styled table row action buttons as sleek unified capsules (.table-action-capsule).',
+        'A5 (HUD Crosshair Plugin): Registered custom Chart.js hudCrosshair plugin drawing vertical hover guidelines across price history charts.',
+        'A6 (Obsidian FinTech Depth & Animations): Added atmospheric radial mesh lighting, specular top card borders (inset 0 1px 0 rgba(255,255,255,0.06)), smooth tabFadeIn animations (0.22s), and modal scale-in micro-transitions.'
+      ]
+    },
     {
       version: '3.3.4',
       buildId: '20261108_1435',

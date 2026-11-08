@@ -1,3 +1,32 @@
+
+// A5: Custom Chart.js HUD Vertical Crosshair Plugin
+var hudCrosshairPlugin = {
+  id: 'hudCrosshair',
+  afterDraw: (chart) => {
+    if (chart.tooltip?._active && chart.tooltip._active.length) {
+      const activePoint = chart.tooltip._active[0];
+      const ctx = chart.ctx;
+      const x = activePoint.element.x;
+      const topY = chart.chartArea.top;
+      const bottomY = chart.chartArea.bottom;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, topY);
+      ctx.lineTo(x, bottomY);
+      ctx.lineWidth = 1;
+      const isDark = document.documentElement.classList.contains('dark');
+      ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(15, 23, 42, 0.18)';
+      ctx.setLineDash([3, 3]);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+};
+if (typeof Chart !== 'undefined' && !Chart.registry?.plugins?.get('hudCrosshair')) {
+  Chart.register(hudCrosshairPlugin);
+}
+
 /**
  * @file charts.js
  * @module PortfolioChartsModule
