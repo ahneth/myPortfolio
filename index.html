@@ -473,14 +473,14 @@ tr.selected-table-row > td.sticky-col-mobile {
    v3.1.8 Tall Stock Historical Chart & External Legend Styling
    ========================================================================== */
 .stock-history-chart-box {
-  height: 350px !important;
-  min-height: 350px !important;
+  height: 280px !important;
+  min-height: 280px !important;
 }
 
 @media (min-width: 641px) {
   .stock-history-chart-box {
-    height: 430px !important;
-    min-height: 430px !important;
+    height: 390px !important;
+    min-height: 390px !important;
   }
 }
 
@@ -730,6 +730,112 @@ tr.portfolio-total-row > td.sticky-col-mobile {
   background-color: #0f172a !important;
 }
 
+/* U1: Sortable table headers */
+th[data-sort-col] {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+th[data-sort-col]:hover {
+  color: #10b981 !important;
+}
+
+/* U6: Compact / Essential View for Holdings & Watchlist */
+table.compact-view-active .col-quant-extra {
+  display: none !important;
+}
+
+/* ==========================================================================
+   A6: Obsidian FinTech Depth, Glassmorphism & Micro-Animations
+   ========================================================================== */
+
+.dark body {
+  background-color: #080c14;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.04) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.04) 0px, transparent 50%);
+}
+
+.dark .bg-dark-card {
+  background-color: #0f172a;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-pane:not(.hidden) {
+  animation: tabFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-backdrop:not(.hidden) .modal-card {
+  animation: modalScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ==========================================================================
+   A4: Sticky Glass Headers & Table Action Capsule
+   ========================================================================== */
+
+.scrollable-portfolio-table-box {
+  position: relative;
+}
+
+.scrollable-portfolio-table-box table thead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: rgba(248, 250, 252, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.dark .scrollable-portfolio-table-box table thead {
+  background-color: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.table-action-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border-radius: 8px;
+  background-color: rgba(241, 245, 249, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  transition: all 0.15s ease;
+}
+
+.dark .table-action-capsule {
+  background-color: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(51, 65, 85, 0.85);
+}
+
+tr:hover .table-action-capsule {
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
   </style>
 </head>
 <body data-device="desktop" class="bg-slate-50 dark:bg-dark-bg text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
@@ -752,7 +858,7 @@ tr.portfolio-total-row > td.sticky-col-mobile {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.3.0 (20261107_2225)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.3.7 (20261108_1915)</span>
             </div>
           </div>
         </div>
@@ -861,14 +967,14 @@ tr.portfolio-total-row > td.sticky-col-mobile {
       <!-- 1. Hero Net-Worth Command Card (Spans 4 columns on desktop) -->
       <div class="lg:col-span-4 bg-gradient-to-br from-white via-slate-50 to-slate-100/90 dark:from-slate-900 dark:via-dark-card dark:to-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-between">
         <div>
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+          <div class="flex items-center justify-between gap-1.5 flex-nowrap">
+            <span class="text-[10.5px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1 whitespace-nowrap shrink-0">
               <i class="fa-solid fa-vault text-brand-500"></i> Total Net Worth
             </span>
             <!-- Live 1D P&L Badge -->
-            <span id="kpi-day-badge" title="Today's 1-Day Market Value Fluctuation vs. Previous Market Close" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold num-font inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-              <span id="kpi-day-val">Today 1D P&amp;L: $0.00</span>
-              <span id="kpi-day-pct">(0.00%)</span>
+            <span id="kpi-day-badge" title="Today's 1-Day Market Value Fluctuation vs. Previous Market Close" class="px-2 sm:px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-bold num-font inline-flex items-center gap-1 whitespace-nowrap shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              <span id="kpi-day-val" class="whitespace-nowrap">1D: $0.00</span>
+              <span id="kpi-day-pct" class="whitespace-nowrap">(0.00%)</span>
             </span>
           </div>
           <div class="mt-2 text-2xl sm:text-3xl font-extrabold num-font text-slate-900 dark:text-white tracking-tight" id="kpi-portfolio-value">$0.00</div>
@@ -1233,41 +1339,42 @@ tr.portfolio-total-row > td.sticky-col-mobile {
         </div>
       </div>
 
-      <!-- Inline Stock Monthly Historical Price Chart (Shown below Holdings table when clicking a stock) -->
-      <div id="holdings-stock-chart-card" class="hidden bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-3 sm:p-4 rounded-2xl shadow-sm">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
-          <div>
-            <div class="flex items-center gap-2">
-              <i class="fa-solid fa-chart-line text-brand-500"></i>
-              <h3 id="holdings-chart-stock-title" class="font-bold text-base sm:text-lg text-slate-900 dark:text-white">Select a Stock</h3>
-            </div>
-            <p id="holdings-chart-stock-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Click any stock row in Holdings above to inspect its monthly closing price trend</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <button type="button" onclick="toggleChartOverlay('sma', 'holdings')" class="btn-toggle-chart-sma px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40 transition" title="Toggle SMA 20/50/200 Moving Average Overlays">SMA Overlays</button>
-            <button type="button" onclick="toggleChartOverlay('reg', 'holdings')" class="btn-toggle-chart-reg px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/40 transition" title="Toggle 12M Log-Linear Regression Trend Channel">12M Reg Channel</button>
-            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
-              <button type="button" data-stock-tab="holdings" data-stock-range="12" class="holdings-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1-Y</button>
-              <button type="button" data-stock-tab="holdings" data-stock-range="24" class="holdings-stock-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">2-Y</button>
-              <button type="button" data-stock-tab="holdings" data-stock-range="36" class="holdings-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">3-Y</button>
-              <button type="button" data-stock-tab="holdings" data-stock-range="60" class="holdings-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">5-Y</button>
-              <button type="button" data-stock-tab="holdings" data-stock-range="120" class="holdings-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">ALL</button>
-            </div>
-            <button type="button" id="btn-close-holdings-chart" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Hide Chart">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-        </div>
-        <div id="holdings-chart-trade-marker-box" class="hidden mt-2 space-y-1.5"></div>
-        <div class="pt-2 relative chart-container stock-history-chart-box h-[350px] sm:h-[430px] min-h-[350px] sm:min-h-[430px]">
+      <!-- Inline Stock Monthly Historical Price Chart (Shown immediately below Holdings table so table & chart are visible together) -->
+      <div id="holdings-stock-chart-card" class="hidden bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-2.5 sm:p-4 rounded-2xl shadow-sm">
+        <div id="holdings-chart-trade-marker-box" class="hidden mb-2 space-y-1.5"></div>
+        <div class="relative chart-container stock-history-chart-box h-[280px] sm:h-[390px] min-h-[280px] sm:min-h-[390px]">
           <canvas id="chart-holdings-stock-history"></canvas>
           <div id="holdings-chart-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 text-slate-400 text-sm bg-white/80 dark:bg-dark-card/80">
             <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-brand-500"></i>
             <span>Loading monthly historical price series...</span>
           </div>
         </div>
-        <div id="holdings-chart-period-stats" class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-1.5"></div>
-        <div id="holdings-chart-legend" class="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs"></div>
+        <!-- Stock Title, Regime/RSI Subtitle & Overlay/Range Controls moved BELOW the chart canvas -->
+        <div class="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-brand-500"></i>
+              <h3 id="holdings-chart-stock-title" class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Select a Stock</h3>
+            </div>
+            <p id="holdings-chart-stock-subtitle" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Click any stock row in Holdings above to inspect its monthly closing price trend</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <button type="button" onclick="toggleChartOverlay('sma', 'holdings')" class="btn-toggle-chart-sma px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40 transition" title="Toggle SMA 20/50/200 Moving Average Overlays">SMA Overlays</button>
+            <button type="button" onclick="toggleChartOverlay('reg', 'holdings')" class="btn-toggle-chart-reg px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/40 transition" title="Toggle 12M Log-Linear Regression Trend Channel">12M Reg Channel</button>
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
+              <button type="button" data-stock-tab="holdings" data-stock-range="12" class="holdings-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1-Y</button>
+              <button type="button" data-stock-tab="holdings" data-stock-range="24" class="holdings-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">2-Y</button>
+              <button type="button" data-stock-tab="holdings" data-stock-range="36" class="holdings-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">3-Y</button>
+              <button type="button" data-stock-tab="holdings" data-stock-range="60" class="holdings-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">5-Y</button>
+              <button type="button" data-stock-tab="holdings" data-stock-range="120" class="holdings-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">ALL</button>
+            </div>
+            <button type="button" id="btn-close-holdings-chart" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Hide Chart">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+        <div id="holdings-chart-period-stats" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 text-[11px] font-mono"></div>
+        <div id="holdings-chart-legend" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 text-[10.5px]"></div>
       </div>
     </div>
 
@@ -1554,40 +1661,41 @@ tr.portfolio-total-row > td.sticky-col-mobile {
         </div>
       </div>
 
-      <!-- Inline Stock Monthly Historical Price Chart (Shown below Watchlist table when clicking a stock) -->
-      <div id="watchlist-stock-chart-card" class="hidden bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-3 sm:p-4 rounded-2xl shadow-sm">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
-          <div>
-            <div class="flex items-center gap-2">
-              <i class="fa-solid fa-chart-line text-purple-500"></i>
-              <h3 id="watchlist-chart-stock-title" class="font-bold text-base sm:text-lg text-slate-900 dark:text-white">Select a Watchlist Stock</h3>
-            </div>
-            <p id="watchlist-chart-stock-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Click any stock row in Watchlist above to inspect its monthly closing price trend</p>
-          </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <button type="button" onclick="toggleChartOverlay('sma', 'watchlist')" class="btn-toggle-chart-sma px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40 transition" title="Toggle SMA 20/50/200 Moving Average Overlays">SMA Overlays</button>
-            <button type="button" onclick="toggleChartOverlay('reg', 'watchlist')" class="btn-toggle-chart-reg px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/40 transition" title="Toggle 12M Log-Linear Regression Trend Channel">12M Reg Channel</button>
-            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
-              <button type="button" data-stock-tab="watchlist" data-stock-range="12" class="watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1-Y</button>
-              <button type="button" data-stock-tab="watchlist" data-stock-range="24" class="watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">2-Y</button>
-              <button type="button" data-stock-tab="watchlist" data-stock-range="36" class="watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">3-Y</button>
-              <button type="button" data-stock-tab="watchlist" data-stock-range="60" class="watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">5-Y</button>
-              <button type="button" data-stock-tab="watchlist" data-stock-range="120" class="watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">ALL</button>
-            </div>
-            <button type="button" id="btn-close-watchlist-chart" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Hide Chart">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-        </div>
-        <div class="pt-2 relative chart-container stock-history-chart-box h-[350px] sm:h-[430px] min-h-[350px] sm:min-h-[430px]">
+      <!-- Inline Stock Monthly Historical Price Chart (Shown immediately below Watchlist table so table & chart are visible together) -->
+      <div id="watchlist-stock-chart-card" class="hidden bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-2.5 sm:p-4 rounded-2xl shadow-sm">
+        <div class="relative chart-container stock-history-chart-box h-[280px] sm:h-[390px] min-h-[280px] sm:min-h-[390px]">
           <canvas id="chart-watchlist-stock-history"></canvas>
           <div id="watchlist-chart-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 text-slate-400 text-sm bg-white/80 dark:bg-dark-card/80">
             <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-purple-500"></i>
             <span>Loading monthly historical price series...</span>
           </div>
         </div>
-        <div id="watchlist-chart-period-stats" class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-1.5"></div>
-        <div id="watchlist-chart-legend" class="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs"></div>
+        <!-- Stock Title, Regime/RSI Subtitle & Overlay/Range Controls moved BELOW the chart canvas -->
+        <div class="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-purple-500"></i>
+              <h3 id="watchlist-chart-stock-title" class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Select a Watchlist Stock</h3>
+            </div>
+            <p id="watchlist-chart-stock-subtitle" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Click any stock row in Watchlist above to inspect its monthly closing price trend</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <button type="button" onclick="toggleChartOverlay('sma', 'watchlist')" class="btn-toggle-chart-sma px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40 transition" title="Toggle SMA 20/50/200 Moving Average Overlays">SMA Overlays</button>
+            <button type="button" onclick="toggleChartOverlay('reg', 'watchlist')" class="btn-toggle-chart-reg px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/40 transition" title="Toggle 12M Log-Linear Regression Trend Channel">12M Reg Channel</button>
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
+              <button type="button" data-stock-tab="watchlist" data-stock-range="12" class="watchlist-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1-Y</button>
+              <button type="button" data-stock-tab="watchlist" data-stock-range="24" class="watchlist-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">2-Y</button>
+              <button type="button" data-stock-tab="watchlist" data-stock-range="36" class="watchlist-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">3-Y</button>
+              <button type="button" data-stock-tab="watchlist" data-stock-range="60" class="watchlist-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">5-Y</button>
+              <button type="button" data-stock-tab="watchlist" data-stock-range="120" class="watchlist-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">ALL</button>
+            </div>
+            <button type="button" id="btn-close-watchlist-chart" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Hide Chart">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+        <div id="watchlist-chart-period-stats" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 text-[11px] font-mono"></div>
+        <div id="watchlist-chart-legend" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 text-[10.5px]"></div>
       </div>
 
       <!-- Fundamental Analysis & Intrinsic Fair-Value Matrix -->
@@ -3012,10 +3120,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.6',
-  buildId: '20261108_1735',
-  releaseDate: '2026-11-08 17:35 HKT',
-  driveFolder: '/myPortfolio/20261108_1735/',
+  appVersion: '3.3.7',
+  buildId: '20261108_1915',
+  releaseDate: '2026-11-08 19:15 HKT',
+  driveFolder: '/myPortfolio/20261108_1915/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -3028,6 +3136,18 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.3.7',
+      buildId: '20261108_1915',
+      date: '2026-11-08 19:15 HKT',
+      summary: 'Fixed Home Hero Card 1D P&L negative sign line-break on mobile, moved Holdings & Watchlist chart title/stage/overlay controls below the chart canvas with automatic table-header-aligned page scrolling for concurrent table+chart viewing, and redesigned the chart stats & legend into a tidy multi-column grid.',
+      changes: [
+        'Fixed Home Hero Card 1D P&L badge wrapping (#kpi-day-badge) by enforcing whitespace-nowrap, non-breaking Unicode minus (−), and concise "1D: −HK$10,276.63 (−0.50%)" formatting so the negative sign never splits across lines on mobile.',
+        'Moved Ticker, Company Name, Trend Stage/RSI subtitle, SMA/12M Reg Channel toggles, and timeframe buttons below the chart canvas in both Holdings and Watchlist so the chart sits directly beneath the table.',
+        'Updated selectStockForInlineChart() to smoothly scroll the page so the Holdings/Watchlist table header aligns right at the top below the sticky navbar, allowing users to click through different tickers and view the chart concurrently without scrolling up and down.',
+        'Restructured the Holdings & Watchlist chart summary badges and interactive legend into a clean, aligned 2-column (mobile) / 5-column (desktop) grid and hidden duplicate Rec. Pin legend buttons when Custom target equals Recommended target.'
+      ]
+    },
     {
       version: '3.3.6',
       buildId: '20261108_1735',
@@ -9209,19 +9329,7 @@ function renderInlineStockChart(tabType) {
   }
 
   if (statsEl) {
-    const chgClass = periodChange >= 0 ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 'text-rose-500 bg-rose-500/10 border-rose-500/20';
-    const range52Badge = (pm && pm.low52w !== null && pm.high52w !== null)
-      ? `<span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-           52W: <strong>${Fin.currency(pm.low52w, false, currency)}</strong> &ndash; <strong>${Fin.currency(pm.high52w, false, currency)}</strong>${pm.pos52wPct !== null ? ` (<strong class="text-brand-500">${pm.pos52wPct.toFixed(1)}%</strong>)` : ''}
-         </span>`
-      : '';
-    const deltasBadge = (pm && (pm.momPct !== null || pm.qoqPct !== null || pm.yoyPct !== null))
-      ? `<span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-           MoM: <strong class="${(pm.momPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm.momPct !== null ? Fin.percent(pm.momPct, true) : '-'}</strong> &bull;
-           QoQ: <strong class="${(pm.qoqPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm.qoqPct !== null ? Fin.percent(pm.qoqPct, true) : '-'}</strong> &bull;
-           YoY: <strong class="${(pm.yoyPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm.yoyPct !== null ? Fin.percent(pm.yoyPct, true) : '-'}</strong>
-         </span>`
-      : '';
+    const chgColor = periodChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
     const cBuy = pm?.customBuyPrice || null;
     const cSell = pm?.customSellPrice || null;
     const cStop = pm?.customStopLoss || null;
@@ -9230,31 +9338,34 @@ function renderInlineStockChart(tabType) {
     const rStop = pm?.recommendedStopLoss || null;
 
     const fmtPair = (cVal, rVal, colorCls) => {
-      if (cVal && rVal) {
+      if (cVal && rVal && Math.abs(cVal - rVal) >= 0.005) {
         return `<strong class="${colorCls}" title="Custom Pinned Target"><i class="fa-solid fa-thumbtack text-[9px] mr-0.5"></i>${Fin.currency(cVal, false, currency)}</strong> <span class="text-[10px] text-slate-400">(Rec ${Fin.currency(rVal, false, currency)})</span>`;
       }
-      const v = cVal || rVal;
-      return `<strong class="${colorCls}">${v ? Fin.currency(v, false, currency) : '-'}</strong>`;
+      if (cVal) {
+        return `<strong class="${colorCls}" title="Custom & Recommended Target"><i class="fa-solid fa-thumbtack text-[9px] mr-0.5"></i>${Fin.currency(cVal, false, currency)}</strong>`;
+      }
+      return `<strong class="${colorCls}">${rVal ? Fin.currency(rVal, false, currency) : '-'}</strong>`;
     };
 
-    const recLevelsBadge = (pm && (rBuy || rSell || rStop || cBuy || cSell || cStop))
-      ? `<span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-           Buy: ${fmtPair(cBuy, rBuy, 'text-sky-500')} &bull;
-           Sell: ${fmtPair(cSell, rSell, 'text-pink-500')} &bull;
-           Stop: ${fmtPair(cStop, rStop, 'text-red-700 dark:text-red-500')}
-         </span>`
-      : '';
+    statsEl.className = 'mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 text-[11px] font-mono';
     statsEl.innerHTML = `
-      ${sigPill}
-      ${recLevelsBadge}
-      <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${chgClass}">
-        ${periodTag} Change: ${Fin.percent(periodChangePct, true)} (${Fin.currency(periodChange, true, currency)})
-      </span>
-      <span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-        ${periodTag} High: <strong>${Fin.currency(periodHigh, false, currency)}</strong> &bull; Low: <strong>${Fin.currency(periodLow, false, currency)}</strong>
-      </span>
-      ${range52Badge}
-      ${deltasBadge}
+      <div class="col-span-2 sm:col-span-3 lg:col-span-2 flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+        <div class="flex items-center gap-1.5">${sigPill}</div>
+        <div class="font-bold ${chgColor} whitespace-nowrap">${periodTag}: ${Fin.percent(periodChangePct, true)} (${Fin.currency(periodChange, true, currency)})</div>
+      </div>
+      <div class="col-span-2 sm:col-span-3 lg:col-span-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300">
+        <span class="whitespace-nowrap">Buy: ${fmtPair(cBuy, rBuy, 'text-sky-500')}</span>
+        <span class="whitespace-nowrap">Sell: ${fmtPair(cSell, rSell, 'text-pink-500')}</span>
+        <span class="whitespace-nowrap">Stop: ${fmtPair(cStop, rStop, 'text-rose-500')}</span>
+      </div>
+      <div class="col-span-1 sm:col-span-1 lg:col-span-1 flex flex-col justify-center px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 text-[10px]">
+        <div class="truncate"><span class="text-slate-400">${periodTag} H/L:</span> <strong>${Fin.currency(periodHigh, false, currency)}</strong> / <strong>${Fin.currency(periodLow, false, currency)}</strong></div>
+        ${(pm && pm.low52w !== null && pm.high52w !== null) ? `<div class="truncate"><span class="text-slate-400">52W:</span> <strong>${Fin.currency(pm.low52w, false, currency)}</strong>&ndash;<strong>${Fin.currency(pm.high52w, false, currency)}</strong> (${pm.pos52wPct !== null ? `<strong class="text-brand-500">${pm.pos52wPct.toFixed(0)}%</strong>` : '-'})</div>` : ''}
+      </div>
+      <div class="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col justify-center px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 text-[10px]">
+        <div class="flex items-center justify-between gap-1"><span>MoM: <strong class="${(pm?.momPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm?.momPct !== null && pm?.momPct !== undefined ? Fin.percent(pm.momPct, true) : '-'}</strong></span><span>QoQ: <strong class="${(pm?.qoqPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm?.qoqPct !== null && pm?.qoqPct !== undefined ? Fin.percent(pm.qoqPct, true) : '-'}</strong></span></div>
+        <div>YoY: <strong class="${(pm?.yoyPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm?.yoyPct !== null && pm?.yoyPct !== undefined ? Fin.percent(pm.yoyPct, true) : '-'}</strong></div>
+      </div>
     `;
   }
 
@@ -9376,7 +9487,7 @@ function renderInlineStockChart(tabType) {
       _hideFromExternalLegend: true
     },
     {
-      label: `${ticker} Monthly Close (${currency})`,
+      label: `Close (${currency})`,
       data: closeData,
       borderColor: mainColor,
       backgroundColor: mainColor,
@@ -9397,7 +9508,7 @@ function renderInlineStockChart(tabType) {
       return Fin.round(sub.reduce((a, b) => a + b, 0) / sub.length, 3);
     });
     datasets.push({
-      label: '3M Moving Avg (Short Trend)',
+      label: '3M SMA',
       data: smaShortSeries,
       borderColor: '#38bdf8',
       borderWidth: 1.9,
@@ -9432,7 +9543,7 @@ function renderInlineStockChart(tabType) {
     const regColor = isDark ? '#c084fc' : '#9333ea';
 
     datasets.push({
-      label: 'Reg Trend Upper (+1σ)',
+      label: 'Reg Upper (+1σ)',
       data: regUpper,
       borderColor: regColor,
       borderDash: [6, 4],
@@ -9443,7 +9554,7 @@ function renderInlineStockChart(tabType) {
       _legendStyle: 'dashed'
     });
     datasets.push({
-      label: 'Reg Trend Lower (-1σ)',
+      label: 'Reg Lower (-1σ)',
       data: regLower,
       borderColor: regColor,
       borderDash: [6, 4],
@@ -9457,7 +9568,7 @@ function renderInlineStockChart(tabType) {
 
   if (avgCostValue && avgCostValue > 0) {
     datasets.push({
-      label: `Your Avg Cost (${Fin.currency(avgCostValue, false, currency)})`,
+      label: `Avg Cost (${Fin.currency(avgCostValue, false, currency)})`,
       data: labels.map(() => avgCostValue),
       borderColor: '#f59e0b',
       borderDash: [6, 4],
@@ -9515,7 +9626,7 @@ function renderInlineStockChart(tabType) {
       fill: false,
       order: 1,
       _legendStyle: 'dashed',
-      _hideFromExternalLegend: !fullBuyIsCustom
+      _hideFromExternalLegend: !fullBuyIsCustom || Math.abs((customBuyVal || 0) - (recBuyVal || 0)) < 0.005
     });
   }
 
@@ -9553,7 +9664,7 @@ function renderInlineStockChart(tabType) {
       fill: false,
       order: 1,
       _legendStyle: 'dashed',
-      _hideFromExternalLegend: !fullSellIsCustom
+      _hideFromExternalLegend: !fullSellIsCustom || Math.abs((customSellVal || 0) - (recSellVal || 0)) < 0.005
     });
   }
 
@@ -9591,7 +9702,7 @@ function renderInlineStockChart(tabType) {
       fill: false,
       order: 1,
       _legendStyle: 'dashed',
-      _hideFromExternalLegend: !fullStopIsCustom
+      _hideFromExternalLegend: !fullStopIsCustom || Math.abs((customStopVal || 0) - (recStopVal || 0)) < 0.005
     });
   }
 
@@ -9739,8 +9850,9 @@ function renderInlineStockChart(tabType) {
   });
   charts[chartKey] = chartInstance;
 
-  // Render external HTML legend below the chart, separated from the canvas
+  // Render external HTML legend below the chart in a tidy multi-column grid
   if (legendEl) {
+    legendEl.className = 'mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 text-[10.5px]';
     const buildExternalLegend = () => {
       legendEl.innerHTML = '';
       datasets.forEach((ds, idx) => {
@@ -9748,7 +9860,7 @@ function renderInlineStockChart(tabType) {
         const isVisible = chartInstance.isDatasetVisible(idx);
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = `inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition ${
+        btn.className = `inline-flex items-center justify-start gap-1.5 px-2 py-1 rounded-md border text-[10.5px] font-medium transition truncate ${
           isVisible
             ? 'bg-slate-50/80 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80'
             : 'bg-slate-100/40 dark:bg-slate-900/40 border-slate-200/50 dark:border-slate-800 text-slate-400 dark:text-slate-500 line-through opacity-60'
@@ -9756,18 +9868,18 @@ function renderInlineStockChart(tabType) {
 
         let swatchHtml = '';
         if (ds._legendStyle === 'band') {
-          swatchHtml = `<span class="inline-block w-5 h-2.5 rounded-sm border" style="background: rgba(16, 185, 129, 0.28); border-color: rgba(52, 211, 153, 0.75);"></span>`;
+          swatchHtml = `<span class="inline-block w-3.5 h-2 rounded-sm border shrink-0" style="background: rgba(16, 185, 129, 0.28); border-color: rgba(52, 211, 153, 0.75);"></span>`;
         } else if (ds._legendStyle === 'cross-blue') {
-          swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-sm leading-none" style="color: #2563eb;">✕</span>`;
+          swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-xs leading-none shrink-0" style="color: #2563eb;">✕</span>`;
         } else if (ds._legendStyle === 'cross-red') {
-          swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-sm leading-none" style="color: #ef4444;">✕</span>`;
+          swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-xs leading-none shrink-0" style="color: #ef4444;">✕</span>`;
         } else if (ds._legendStyle === 'dashed') {
-          swatchHtml = `<span class="inline-block w-5 h-0 border-t-2 border-dashed" style="border-color: ${ds.borderColor};"></span>`;
+          swatchHtml = `<span class="inline-block w-3.5 h-0 border-t-2 border-dashed shrink-0" style="border-color: ${ds.borderColor};"></span>`;
         } else {
-          swatchHtml = `<span class="inline-block w-5 h-0.5 rounded-full" style="background-color: ${ds.borderColor}; height: 3px;"></span>`;
+          swatchHtml = `<span class="inline-block w-3.5 h-0.5 rounded-full shrink-0" style="background-color: ${ds.borderColor}; height: 2.5px;"></span>`;
         }
 
-        btn.innerHTML = `${swatchHtml}<span>${ds.label}</span>`;
+        btn.innerHTML = `${swatchHtml}<span class="truncate">${ds.label}</span>`;
         btn.addEventListener('click', () => {
           const nextVis = !chartInstance.isDatasetVisible(idx);
           chartInstance.setDatasetVisibility(idx, nextVis);
@@ -10313,8 +10425,16 @@ async function selectStockForInlineChart(tabType, rawTicker, scrollIntoView = fa
   const cardEl = document.getElementById(cardId);
   if (scrollIntoView && cardEl) {
     setTimeout(() => {
-      cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 50);
+      const tableId = tabType === 'holdings' ? 'holdings-main-table' : 'watchlist-main-table';
+      const tableEl = document.getElementById(tableId);
+      const scrollBox = tableEl ? tableEl.closest('.scrollable-portfolio-table-box') : null;
+      const anchorEl = scrollBox || tableEl || cardEl;
+      const topHeader = document.getElementById('app-top-header');
+      const headerOffset = (topHeader ? topHeader.offsetHeight : 56) + 4;
+      const rect = anchorEl.getBoundingClientRect();
+      const targetScrollY = Math.max(0, window.scrollY + rect.top - headerOffset);
+      window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+    }, 40);
   }
 
   if ((!state.historicalPrices[ticker] || state.historicalPrices[ticker].length === 0) && MarketAPI.hasKey()) {
@@ -10445,15 +10565,17 @@ function renderKPIs() {
   const dayPnLPct = Number(portfolio.totalDayPnLPct || 0);
   const dayIsPos = dayPnL >= 0;
 
+  const formattedDayAmt = Fin.currency(dayPnL, true, baseCurr).replace(/-/g, '−');
+  const formattedDayPct = Fin.percent(dayPnLPct, true).replace(/-/g, '−');
   if (dayValEl) {
-    dayValEl.textContent = hideMoney ? 'Today 1D P&L:' : `Today 1D P&L: ${Fin.currency(dayPnL, true, baseCurr)}`;
+    dayValEl.textContent = hideMoney ? '1D P&L:' : `1D: ${formattedDayAmt}`;
   }
   if (dayPctEl) {
-    dayPctEl.textContent = `(${Fin.percent(dayPnLPct, true)})`;
+    dayPctEl.textContent = `(${formattedDayPct})`;
   }
   if (dayBadgeEl) {
     dayBadgeEl.title = "Today's 1-Day Market Value Fluctuation vs. Previous Market Close";
-    dayBadgeEl.className = `px-2.5 py-0.5 rounded-full text-[11px] font-bold num-font inline-flex items-center gap-1 border ${
+    dayBadgeEl.className = `px-2 sm:px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-bold num-font inline-flex items-center gap-1 whitespace-nowrap shrink-0 border ${
       dayIsPos
         ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
         : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'

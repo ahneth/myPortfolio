@@ -280,14 +280,14 @@ tr.selected-table-row > td.sticky-col-mobile {
    v3.1.8 Tall Stock Historical Chart & External Legend Styling
    ========================================================================== */
 .stock-history-chart-box {
-  height: 350px !important;
-  min-height: 350px !important;
+  height: 280px !important;
+  min-height: 280px !important;
 }
 
 @media (min-width: 641px) {
   .stock-history-chart-box {
-    height: 430px !important;
-    min-height: 430px !important;
+    height: 390px !important;
+    min-height: 390px !important;
   }
 }
 
@@ -604,8 +604,6 @@ table.compact-view-active .col-quant-extra {
    ========================================================================== */
 
 .scrollable-portfolio-table-box {
-  max-height: 72vh;
-  overflow-y: auto;
   position: relative;
 }
 

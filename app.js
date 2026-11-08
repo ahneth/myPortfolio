@@ -315,8 +315,16 @@ async function selectStockForInlineChart(tabType, rawTicker, scrollIntoView = fa
   const cardEl = document.getElementById(cardId);
   if (scrollIntoView && cardEl) {
     setTimeout(() => {
-      cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 50);
+      const tableId = tabType === 'holdings' ? 'holdings-main-table' : 'watchlist-main-table';
+      const tableEl = document.getElementById(tableId);
+      const scrollBox = tableEl ? tableEl.closest('.scrollable-portfolio-table-box') : null;
+      const anchorEl = scrollBox || tableEl || cardEl;
+      const topHeader = document.getElementById('app-top-header');
+      const headerOffset = (topHeader ? topHeader.offsetHeight : 56) + 4;
+      const rect = anchorEl.getBoundingClientRect();
+      const targetScrollY = Math.max(0, window.scrollY + rect.top - headerOffset);
+      window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+    }, 40);
   }
 
   if ((!state.historicalPrices[ticker] || state.historicalPrices[ticker].length === 0) && MarketAPI.hasKey()) {
@@ -447,15 +455,17 @@ function renderKPIs() {
   const dayPnLPct = Number(portfolio.totalDayPnLPct || 0);
   const dayIsPos = dayPnL >= 0;
 
+  const formattedDayAmt = Fin.currency(dayPnL, true, baseCurr).replace(/-/g, '−');
+  const formattedDayPct = Fin.percent(dayPnLPct, true).replace(/-/g, '−');
   if (dayValEl) {
-    dayValEl.textContent = hideMoney ? 'Today 1D P&L:' : `Today 1D P&L: ${Fin.currency(dayPnL, true, baseCurr)}`;
+    dayValEl.textContent = hideMoney ? '1D P&L:' : `1D: ${formattedDayAmt}`;
   }
   if (dayPctEl) {
-    dayPctEl.textContent = `(${Fin.percent(dayPnLPct, true)})`;
+    dayPctEl.textContent = `(${formattedDayPct})`;
   }
   if (dayBadgeEl) {
     dayBadgeEl.title = "Today's 1-Day Market Value Fluctuation vs. Previous Market Close";
-    dayBadgeEl.className = `px-2.5 py-0.5 rounded-full text-[11px] font-bold num-font inline-flex items-center gap-1 border ${
+    dayBadgeEl.className = `px-2 sm:px-2.5 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-bold num-font inline-flex items-center gap-1 whitespace-nowrap shrink-0 border ${
       dayIsPos
         ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
         : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'

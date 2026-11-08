@@ -681,19 +681,7 @@ function renderInlineStockChart(tabType) {
   }
 
   if (statsEl) {
-    const chgClass = periodChange >= 0 ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' : 'text-rose-500 bg-rose-500/10 border-rose-500/20';
-    const range52Badge = (pm && pm.low52w !== null && pm.high52w !== null)
-      ? `<span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-           52W: <strong>${Fin.currency(pm.low52w, false, currency)}</strong> &ndash; <strong>${Fin.currency(pm.high52w, false, currency)}</strong>${pm.pos52wPct !== null ? ` (<strong class="text-brand-500">${pm.pos52wPct.toFixed(1)}%</strong>)` : ''}
-         </span>`
-      : '';
-    const deltasBadge = (pm && (pm.momPct !== null || pm.qoqPct !== null || pm.yoyPct !== null))
-      ? `<span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-           MoM: <strong class="${(pm.momPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm.momPct !== null ? Fin.percent(pm.momPct, true) : '-'}</strong> &bull;
-           QoQ: <strong class="${(pm.qoqPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm.qoqPct !== null ? Fin.percent(pm.qoqPct, true) : '-'}</strong> &bull;
-           YoY: <strong class="${(pm.yoyPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm.yoyPct !== null ? Fin.percent(pm.yoyPct, true) : '-'}</strong>
-         </span>`
-      : '';
+    const chgColor = periodChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
     const cBuy = pm?.customBuyPrice || null;
     const cSell = pm?.customSellPrice || null;
     const cStop = pm?.customStopLoss || null;
@@ -702,31 +690,34 @@ function renderInlineStockChart(tabType) {
     const rStop = pm?.recommendedStopLoss || null;
 
     const fmtPair = (cVal, rVal, colorCls) => {
-      if (cVal && rVal) {
+      if (cVal && rVal && Math.abs(cVal - rVal) >= 0.005) {
         return `<strong class="${colorCls}" title="Custom Pinned Target"><i class="fa-solid fa-thumbtack text-[9px] mr-0.5"></i>${Fin.currency(cVal, false, currency)}</strong> <span class="text-[10px] text-slate-400">(Rec ${Fin.currency(rVal, false, currency)})</span>`;
       }
-      const v = cVal || rVal;
-      return `<strong class="${colorCls}">${v ? Fin.currency(v, false, currency) : '-'}</strong>`;
+      if (cVal) {
+        return `<strong class="${colorCls}" title="Custom & Recommended Target"><i class="fa-solid fa-thumbtack text-[9px] mr-0.5"></i>${Fin.currency(cVal, false, currency)}</strong>`;
+      }
+      return `<strong class="${colorCls}">${rVal ? Fin.currency(rVal, false, currency) : '-'}</strong>`;
     };
 
-    const recLevelsBadge = (pm && (rBuy || rSell || rStop || cBuy || cSell || cStop))
-      ? `<span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-           Buy: ${fmtPair(cBuy, rBuy, 'text-sky-500')} &bull;
-           Sell: ${fmtPair(cSell, rSell, 'text-pink-500')} &bull;
-           Stop: ${fmtPair(cStop, rStop, 'text-red-700 dark:text-red-500')}
-         </span>`
-      : '';
+    statsEl.className = 'mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 text-[11px] font-mono';
     statsEl.innerHTML = `
-      ${sigPill}
-      ${recLevelsBadge}
-      <span class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${chgClass}">
-        ${periodTag} Change: ${Fin.percent(periodChangePct, true)} (${Fin.currency(periodChange, true, currency)})
-      </span>
-      <span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-        ${periodTag} High: <strong>${Fin.currency(periodHigh, false, currency)}</strong> &bull; Low: <strong>${Fin.currency(periodLow, false, currency)}</strong>
-      </span>
-      ${range52Badge}
-      ${deltasBadge}
+      <div class="col-span-2 sm:col-span-3 lg:col-span-2 flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+        <div class="flex items-center gap-1.5">${sigPill}</div>
+        <div class="font-bold ${chgColor} whitespace-nowrap">${periodTag}: ${Fin.percent(periodChangePct, true)} (${Fin.currency(periodChange, true, currency)})</div>
+      </div>
+      <div class="col-span-2 sm:col-span-3 lg:col-span-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300">
+        <span class="whitespace-nowrap">Buy: ${fmtPair(cBuy, rBuy, 'text-sky-500')}</span>
+        <span class="whitespace-nowrap">Sell: ${fmtPair(cSell, rSell, 'text-pink-500')}</span>
+        <span class="whitespace-nowrap">Stop: ${fmtPair(cStop, rStop, 'text-rose-500')}</span>
+      </div>
+      <div class="col-span-1 sm:col-span-1 lg:col-span-1 flex flex-col justify-center px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 text-[10px]">
+        <div class="truncate"><span class="text-slate-400">${periodTag} H/L:</span> <strong>${Fin.currency(periodHigh, false, currency)}</strong> / <strong>${Fin.currency(periodLow, false, currency)}</strong></div>
+        ${(pm && pm.low52w !== null && pm.high52w !== null) ? `<div class="truncate"><span class="text-slate-400">52W:</span> <strong>${Fin.currency(pm.low52w, false, currency)}</strong>&ndash;<strong>${Fin.currency(pm.high52w, false, currency)}</strong> (${pm.pos52wPct !== null ? `<strong class="text-brand-500">${pm.pos52wPct.toFixed(0)}%</strong>` : '-'})</div>` : ''}
+      </div>
+      <div class="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col justify-center px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 text-[10px]">
+        <div class="flex items-center justify-between gap-1"><span>MoM: <strong class="${(pm?.momPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm?.momPct !== null && pm?.momPct !== undefined ? Fin.percent(pm.momPct, true) : '-'}</strong></span><span>QoQ: <strong class="${(pm?.qoqPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm?.qoqPct !== null && pm?.qoqPct !== undefined ? Fin.percent(pm.qoqPct, true) : '-'}</strong></span></div>
+        <div>YoY: <strong class="${(pm?.yoyPct || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'}">${pm?.yoyPct !== null && pm?.yoyPct !== undefined ? Fin.percent(pm.yoyPct, true) : '-'}</strong></div>
+      </div>
     `;
   }
 
@@ -848,7 +839,7 @@ function renderInlineStockChart(tabType) {
       _hideFromExternalLegend: true
     },
     {
-      label: `${ticker} Monthly Close (${currency})`,
+      label: `Close (${currency})`,
       data: closeData,
       borderColor: mainColor,
       backgroundColor: mainColor,
@@ -869,7 +860,7 @@ function renderInlineStockChart(tabType) {
       return Fin.round(sub.reduce((a, b) => a + b, 0) / sub.length, 3);
     });
     datasets.push({
-      label: '3M Moving Avg (Short Trend)',
+      label: '3M SMA',
       data: smaShortSeries,
       borderColor: '#38bdf8',
       borderWidth: 1.9,
@@ -904,7 +895,7 @@ function renderInlineStockChart(tabType) {
     const regColor = isDark ? '#c084fc' : '#9333ea';
 
     datasets.push({
-      label: 'Reg Trend Upper (+1σ)',
+      label: 'Reg Upper (+1σ)',
       data: regUpper,
       borderColor: regColor,
       borderDash: [6, 4],
@@ -915,7 +906,7 @@ function renderInlineStockChart(tabType) {
       _legendStyle: 'dashed'
     });
     datasets.push({
-      label: 'Reg Trend Lower (-1σ)',
+      label: 'Reg Lower (-1σ)',
       data: regLower,
       borderColor: regColor,
       borderDash: [6, 4],
@@ -929,7 +920,7 @@ function renderInlineStockChart(tabType) {
 
   if (avgCostValue && avgCostValue > 0) {
     datasets.push({
-      label: `Your Avg Cost (${Fin.currency(avgCostValue, false, currency)})`,
+      label: `Avg Cost (${Fin.currency(avgCostValue, false, currency)})`,
       data: labels.map(() => avgCostValue),
       borderColor: '#f59e0b',
       borderDash: [6, 4],
@@ -987,7 +978,7 @@ function renderInlineStockChart(tabType) {
       fill: false,
       order: 1,
       _legendStyle: 'dashed',
-      _hideFromExternalLegend: !fullBuyIsCustom
+      _hideFromExternalLegend: !fullBuyIsCustom || Math.abs((customBuyVal || 0) - (recBuyVal || 0)) < 0.005
     });
   }
 
@@ -1025,7 +1016,7 @@ function renderInlineStockChart(tabType) {
       fill: false,
       order: 1,
       _legendStyle: 'dashed',
-      _hideFromExternalLegend: !fullSellIsCustom
+      _hideFromExternalLegend: !fullSellIsCustom || Math.abs((customSellVal || 0) - (recSellVal || 0)) < 0.005
     });
   }
 
@@ -1063,7 +1054,7 @@ function renderInlineStockChart(tabType) {
       fill: false,
       order: 1,
       _legendStyle: 'dashed',
-      _hideFromExternalLegend: !fullStopIsCustom
+      _hideFromExternalLegend: !fullStopIsCustom || Math.abs((customStopVal || 0) - (recStopVal || 0)) < 0.005
     });
   }
 
@@ -1211,8 +1202,9 @@ function renderInlineStockChart(tabType) {
   });
   charts[chartKey] = chartInstance;
 
-  // Render external HTML legend below the chart, separated from the canvas
+  // Render external HTML legend below the chart in a tidy multi-column grid
   if (legendEl) {
+    legendEl.className = 'mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 text-[10.5px]';
     const buildExternalLegend = () => {
       legendEl.innerHTML = '';
       datasets.forEach((ds, idx) => {
@@ -1220,7 +1212,7 @@ function renderInlineStockChart(tabType) {
         const isVisible = chartInstance.isDatasetVisible(idx);
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = `inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition ${
+        btn.className = `inline-flex items-center justify-start gap-1.5 px-2 py-1 rounded-md border text-[10.5px] font-medium transition truncate ${
           isVisible
             ? 'bg-slate-50/80 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80'
             : 'bg-slate-100/40 dark:bg-slate-900/40 border-slate-200/50 dark:border-slate-800 text-slate-400 dark:text-slate-500 line-through opacity-60'
@@ -1228,18 +1220,18 @@ function renderInlineStockChart(tabType) {
 
         let swatchHtml = '';
         if (ds._legendStyle === 'band') {
-          swatchHtml = `<span class="inline-block w-5 h-2.5 rounded-sm border" style="background: rgba(16, 185, 129, 0.28); border-color: rgba(52, 211, 153, 0.75);"></span>`;
+          swatchHtml = `<span class="inline-block w-3.5 h-2 rounded-sm border shrink-0" style="background: rgba(16, 185, 129, 0.28); border-color: rgba(52, 211, 153, 0.75);"></span>`;
         } else if (ds._legendStyle === 'cross-blue') {
-          swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-sm leading-none" style="color: #2563eb;">✕</span>`;
+          swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-xs leading-none shrink-0" style="color: #2563eb;">✕</span>`;
         } else if (ds._legendStyle === 'cross-red') {
-          swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-sm leading-none" style="color: #ef4444;">✕</span>`;
+          swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-xs leading-none shrink-0" style="color: #ef4444;">✕</span>`;
         } else if (ds._legendStyle === 'dashed') {
-          swatchHtml = `<span class="inline-block w-5 h-0 border-t-2 border-dashed" style="border-color: ${ds.borderColor};"></span>`;
+          swatchHtml = `<span class="inline-block w-3.5 h-0 border-t-2 border-dashed shrink-0" style="border-color: ${ds.borderColor};"></span>`;
         } else {
-          swatchHtml = `<span class="inline-block w-5 h-0.5 rounded-full" style="background-color: ${ds.borderColor}; height: 3px;"></span>`;
+          swatchHtml = `<span class="inline-block w-3.5 h-0.5 rounded-full shrink-0" style="background-color: ${ds.borderColor}; height: 2.5px;"></span>`;
         }
 
-        btn.innerHTML = `${swatchHtml}<span>${ds.label}</span>`;
+        btn.innerHTML = `${swatchHtml}<span class="truncate">${ds.label}</span>`;
         btn.addEventListener('click', () => {
           const nextVis = !chartInstance.isDatasetVisible(idx);
           chartInstance.setDatasetVisibility(idx, nextVis);

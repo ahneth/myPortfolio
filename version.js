@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.6',
-  buildId: '20261108_1735',
-  releaseDate: '2026-11-08 17:35 HKT',
-  driveFolder: '/myPortfolio/20261108_1735/',
+  appVersion: '3.3.7',
+  buildId: '20261108_1915',
+  releaseDate: '2026-11-08 19:15 HKT',
+  driveFolder: '/myPortfolio/20261108_1915/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,18 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.3.7',
+      buildId: '20261108_1915',
+      date: '2026-11-08 19:15 HKT',
+      summary: 'Fixed Home Hero Card 1D P&L negative sign line-break on mobile, moved Holdings & Watchlist chart title/stage/overlay controls below the chart canvas with automatic table-header-aligned page scrolling for concurrent table+chart viewing, and redesigned the chart stats & legend into a tidy multi-column grid.',
+      changes: [
+        'Fixed Home Hero Card 1D P&L badge wrapping (#kpi-day-badge) by enforcing whitespace-nowrap, non-breaking Unicode minus (−), and concise "1D: −HK$10,276.63 (−0.50%)" formatting so the negative sign never splits across lines on mobile.',
+        'Moved Ticker, Company Name, Trend Stage/RSI subtitle, SMA/12M Reg Channel toggles, and timeframe buttons below the chart canvas in both Holdings and Watchlist so the chart sits directly beneath the table.',
+        'Updated selectStockForInlineChart() to smoothly scroll the page so the Holdings/Watchlist table header aligns right at the top below the sticky navbar, allowing users to click through different tickers and view the chart concurrently without scrolling up and down.',
+        'Restructured the Holdings & Watchlist chart summary badges and interactive legend into a clean, aligned 2-column (mobile) / 5-column (desktop) grid and hidden duplicate Rec. Pin legend buttons when Custom target equals Recommended target.'
+      ]
+    },
     {
       version: '3.3.6',
       buildId: '20261108_1735',

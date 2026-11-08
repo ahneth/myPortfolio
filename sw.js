@@ -1,4 +1,4 @@
-const CACHE_NAME = "myportfolio-cache-v3.3.6-20261108_1735";
+const CACHE_NAME = "myportfolio-cache-v3.3.7-20261108_1915";
 const FETCH_TIMEOUT_MS = 2500;
 const APP_SHELL = [
   "./",
