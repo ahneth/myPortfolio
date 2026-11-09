@@ -306,10 +306,18 @@ var MarketAPI = {
 
   async fetchTencentBatchQuotes(tickers = []) {
     const codeMap = {};
+    const lseTargets = [];
     tickers.forEach(t => {
       const sym = this.normalizeTicker(t);
       const qCode = this._toTencentCode(sym);
-      if (qCode) codeMap[sym] = qCode;
+      if (qCode) {
+        codeMap[sym] = qCode;
+      } else if (sym.endsWith('.L') && LSE_LIVE_INDEX_PROXY_MAP[sym]) {
+        lseTargets.push(sym);
+        const proxySym = LSE_LIVE_INDEX_PROXY_MAP[sym].proxyTicker;
+        const proxyCode = this._toTencentCode(proxySym);
+        if (proxyCode) codeMap[proxySym] = proxyCode;
+      }
     });
     const syms = Object.keys(codeMap);
     if (syms.length === 0) return {};
@@ -320,7 +328,7 @@ var MarketAPI = {
       const timer = setTimeout(() => {
         if (script && script.remove) script.remove();
         resolve({});
-      }, 2200);
+      }, 2500);
 
       script.charset = 'gbk';
       script.src = `https://qt.gtimg.cn/q=${qList}&_=${Date.now()}`;
@@ -332,6 +340,43 @@ var MarketAPI = {
           const qCode = codeMap[sym];
           const parsed = this._parseTencentQuoteString(sym, window[`v_${qCode}`]);
           if (parsed) out[sym] = parsed;
+        });
+        // Synthesize zero-CORS live index-tracked quotes for LSE (.L) ETFs (VWRA.L, SPYL.L, etc.)
+        lseTargets.forEach(lseSym => {
+          const proxySpec = LSE_LIVE_INDEX_PROXY_MAP[lseSym];
+          const proxyQ = proxySpec ? out[proxySpec.proxyTicker] : null;
+          if (!proxyQ || !(proxyQ.price > 0)) return;
+          const staticMeta = this.getStaticProfile(lseSym);
+          const snapBase = this.getEmbeddedOrCachedQuote(lseSym);
+          const extQ = window.EXTERNAL_HISTORICAL_PRICES?.quotes?.[lseSym];
+          const refClose = (extQ && Number(extQ.price) > 0)
+            ? Number(extQ.price)
+            : ((snapBase && snapBase.price > 0) ? snapBase.price : proxySpec.DefaultRefPrice);
+          const liveChgPct = Number(proxyQ.changePct || 0);
+          let livePrice, prevPrice, change, changePct;
+          if (extQ && Number(extQ.price) > 0 && Number(extQ.prevPrice) > 0 && Math.abs(Number(extQ.price) - Number(extQ.prevPrice)) > 1e-4) {
+            prevPrice = Fin.round(Number(extQ.prevPrice), 4);
+            livePrice = Fin.round(Number(extQ.price), 4);
+            change = Fin.round(livePrice - prevPrice, 3);
+            changePct = Fin.round(((livePrice - prevPrice) / prevPrice) * 100, 2);
+          } else {
+            prevPrice = Fin.round(refClose, 4);
+            livePrice = Fin.round(refClose * (1 + liveChgPct / 100), 4);
+            change = Fin.round(livePrice - prevPrice, 3);
+            changePct = Fin.round(liveChgPct, 2);
+          }
+          out[lseSym] = {
+            price: livePrice,
+            prevPrice,
+            change,
+            changePct,
+            high52w: snapBase?.high52w || state?.fundamentals?.[lseSym]?.high52w || null,
+            low52w: snapBase?.low52w || state?.fundamentals?.[lseSym]?.low52w || null,
+            currency: proxySpec.currency || staticMeta.currency,
+            name: state?.fundamentals?.[lseSym]?.name || staticMeta.name || lseSym,
+            source: `LSE Live Index Tracker (${proxySpec.proxyTicker} via qt.gtimg.cn)`,
+            _isLseProxyFallback: true
+          };
         });
         if (Object.keys(out).length > 0) {
           this.lastRouteUsed = 'Direct Browser Batch JSONP (qt.gtimg.cn)';
@@ -499,7 +544,7 @@ var MarketAPI = {
         const changePct = prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0;
         const high52w = parseFloat(parts[48]) > 0 ? Fin.round(parseFloat(parts[48]), 4) : null;
         const low52w = parseFloat(parts[49]) > 0 ? Fin.round(parseFloat(parts[49]), 4) : null;
-        const currency = hkMatch ? 'HKD' : 'USD';
+        const currency = String(symbol || '').endsWith('.HK') ? 'HKD' : 'USD';
         const staticMeta = this.getStaticProfile(symbol);
         const name = state?.fundamentals?.[symbol]?.name || staticMeta.name || parts[1] || symbol;
         this.lastRouteUsed = 'Direct Browser JSONP (qt.gtimg.cn)';
@@ -1234,13 +1279,18 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
   // Parallel live quote resolution for all tickers into stagedPrices buffer
   await Promise.allSettled(allTickers.map(async (ticker) => {
     try {
-      let q = batchQuotes[ticker];
+      const batchCandidate = batchQuotes[ticker];
+      let q = (batchCandidate && !batchCandidate._isLseProxyFallback) ? batchCandidate : null;
       let isLive = Boolean(q);
       if (!q) {
         try {
           q = await MarketAPI.fetchQuote(ticker);
           isLive = Boolean(q && (!q.source || !q.source.includes('Snapshot')));
         } catch (fetchErr) {
+          if (batchCandidate && batchCandidate.price > 0) {
+            q = batchCandidate;
+            isLive = true;
+          } else {
           if (typeof AppLogger !== 'undefined') {
             AppLogger.warn('MarketAPI', `Live quote proxy fetch failed for ${ticker} (${fetchErr.message}) — checking latest GitHub snapshot fallback.`);
           }
@@ -1253,6 +1303,7 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
           } else {
             q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
             isLive = false;
+          }
           }
         }
       }

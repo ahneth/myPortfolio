@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.4.1',
-  buildId: '20261109_2100',
-  releaseDate: '2026-11-09 21:00 HKT',
-  driveFolder: '/myPortfolio/20261109_2100/',
+  appVersion: '3.4.2',
+  buildId: '20261109_2118',
+  releaseDate: '2026-11-09 21:18 HKT',
+  driveFolder: '/myPortfolio/20261109_2118/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,16 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.4.2',
+      buildId: '20261109_2118',
+      date: '2026-11-09 21:18 HKT',
+      summary: 'Fixed ReferenceError: hkMatch is not defined inside fetchTencentJsonpQuote() script.onload callback and integrated London (.L) ETF live index proxy quotes directly into the primary fetchTencentBatchQuotes() request.',
+      changes: [
+        'Fixed ReferenceError: hkMatch is not defined at line 502 of api.js inside fetchTencentJsonpQuote() by replacing undeclared hkMatch with String(symbol || "").endsWith(".HK").',
+        'Integrated LSE_LIVE_INDEX_PROXY_MAP directly into fetchTencentBatchQuotes() so VWRA.L and SPYL.L automatically receive zero-CORS live quotes in the single initial batch JSONP call alongside all HK and US tickers.'
+      ]
+    },
     {
       version: '3.4.1',
       buildId: '20261109_2100',
