@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.4.0',
-  buildId: '20261109_2045',
-  releaseDate: '2026-11-09 20:45 HKT',
-  driveFolder: '/myPortfolio/20261109_2045/',
+  appVersion: '3.4.1',
+  buildId: '20261109_2100',
+  releaseDate: '2026-11-09 21:00 HKT',
+  driveFolder: '/myPortfolio/20261109_2100/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,18 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.4.1',
+      buildId: '20261109_2100',
+      date: '2026-11-09 21:00 HKT',
+      summary: 'Fixed the root cause blocking VWRA.L and SPYL.L live price updates: Service Worker (sw.js) was intercepting cross-origin CORS proxy fetches with a 2.5s abort timeout, and added a zero-CORS LSE Live Index Proxy fallback (VT / VOO via qt.gtimg.cn) + verified LSE quotes in historical_prices.json.',
+      changes: [
+        'Fixed critical Service Worker bug in sw.js where the global fetch listener intercepted cross-origin CORS proxy requests (corsproxy.io, allorigins.win, codetabs.com) and aborted them at 2500ms before they could return Yahoo Finance LSE quotes for VWRA.L and SPYL.L.',
+        'Restricted sw.js fetch interception strictly to same-origin App Shell files and excluded historical_prices.json / company_news.json from Service Worker cache.',
+        'Added LSE_LIVE_INDEX_PROXY_MAP in api.js so if public CORS proxies are blocked on a network, VWRA.L and SPYL.L automatically compute live 1-day price changes from their exact underlying index ETFs (VT and VOO) via zero-CORS Tencent JSONP + the latest LSE reference close.',
+        'Pre-populated verified November 2026 quotes for VWRA.L ($189.42, prev $188.54) and SPYL.L ($19.05, prev $18.83) in historical_prices.json and window.EMBEDDED_HISTORICAL_PRICES.'
+      ]
+    },
     {
       version: '3.4.0',
       buildId: '20261109_2045',

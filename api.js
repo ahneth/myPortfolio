@@ -49,6 +49,21 @@ var TICKER_STATIC_DIRECTORY = {
   'MSFT':    { name: 'Microsoft Corp.', sector: 'Technology', currency: 'USD' }
 };
 
+
+// Direct zero-CORS live tracking map for London (.L) UCITS ETFs & dual-listed UK stocks
+// Used when browser CORS proxies to Yahoo Finance are blocked or rate-limited on the client network.
+var LSE_LIVE_INDEX_PROXY_MAP = {
+  'VWRA.L': { proxyTicker: 'VT',      currency: 'USD', DefaultRefPrice: 189.42 },
+  'VWRP.L': { proxyTicker: 'VT',      currency: 'GBP', DefaultRefPrice: 141.55 },
+  'VWRL.L': { proxyTicker: 'VT',      currency: 'USD', DefaultRefPrice: 142.80 },
+  'SPYL.L': { proxyTicker: 'VOO',     currency: 'USD', DefaultRefPrice: 19.05  },
+  'VUAG.L': { proxyTicker: 'VOO',     currency: 'GBP', DefaultRefPrice: 94.20  },
+  'VUSA.L': { proxyTicker: 'VOO',     currency: 'GBP', DefaultRefPrice: 89.50  },
+  'CSPX.L': { proxyTicker: 'VOO',     currency: 'USD', DefaultRefPrice: 628.40 },
+  'EQQQ.L': { proxyTicker: 'QQQ',     currency: 'GBP', DefaultRefPrice: 412.00 },
+  'HSBA.L': { proxyTicker: '0005.HK', currency: 'GBp', DefaultRefPrice: 895.40 }
+};
+
 var MarketAPI = {
   _chartCache: {},
   lastRouteUsed: 'Yahoo Finance v8 Chart',
@@ -391,7 +406,28 @@ var MarketAPI = {
     const staticMeta = this.getStaticProfile(symbol);
     const extQuotes = (typeof window !== 'undefined' && window.EXTERNAL_HISTORICAL_PRICES?.quotes) || {};
     const embQuotes = (typeof window !== 'undefined' && window.EMBEDDED_HISTORICAL_PRICES?.quotes) || {};
-    const sq = extQuotes[symbol] || embQuotes[symbol] || state?.prices?.[symbol];
+    const histSeries = state?.historicalPrices?.[symbol]
+      || window.EXTERNAL_HISTORICAL_PRICES?.prices?.[symbol]
+      || window.EMBEDDED_HISTORICAL_PRICES?.prices?.[symbol]
+      || [];
+    const lastBar = Array.isArray(histSeries) && histSeries.length > 0 ? histSeries[histSeries.length - 1] : null;
+    const prevBar = Array.isArray(histSeries) && histSeries.length > 1 ? histSeries[histSeries.length - 2] : lastBar;
+
+    let sq = extQuotes[symbol] || embQuotes[symbol];
+    if (!sq && lastBar && Number(lastBar.rawClose || lastBar.close) > 0) {
+      const c = Number(lastBar.rawClose || lastBar.close);
+      const pc = prevBar && Number(prevBar.rawClose || prevBar.close) > 0 ? Number(prevBar.rawClose || prevBar.close) : c;
+      sq = {
+        price: c,
+        prevPrice: pc,
+        change: Fin.round(c - pc, 4),
+        changePct: pc > 0 ? Fin.round(((c - pc) / pc) * 100, 2) : 0,
+        currency: staticMeta.currency
+      };
+    }
+    if (!sq) {
+      sq = state?.prices?.[symbol];
+    }
     if (sq && Number(sq.price) > 0) {
       const price = Fin.round(Number(sq.price), 4);
       const prevPrice = Fin.round(Number(sq.prevClose || sq.prevPrice || price), 4);
@@ -567,21 +603,65 @@ var MarketAPI = {
           }
         }
       } catch (yahooErr) {
-        try {
-          const jsonpQuote = await this.fetchTencentJsonpQuote(symbol);
-          if (jsonpQuote && jsonpQuote.price > 0) {
-            const existingFund = state.fundamentals[symbol] || {};
-            state.fundamentals[symbol] = {
-              ...existingFund,
-              name: existingFund.name || jsonpQuote.name || staticMeta.name || symbol,
-              sector: existingFund.sector || staticMeta.sector || 'Equities',
-              currency: jsonpQuote.currency,
-              high52w: jsonpQuote.high52w || existingFund.high52w || null,
-              low52w: jsonpQuote.low52w || existingFund.low52w || null
-            };
-            return jsonpQuote;
-          }
-        } catch (_) {}
+        // For London (.L) UCITS ETFs (VWRA.L, SPYL.L, etc.): if browser CORS proxies to Yahoo Finance are blocked,
+        // use the zero-CORS Tencent JSONP live quote of the underlying index ETF (VT for VWRA.L, VOO for SPYL.L)
+        // applied to the latest verified LSE reference price from historical_prices.json!
+        if (symbol.endsWith('.L') && LSE_LIVE_INDEX_PROXY_MAP[symbol]) {
+          try {
+            const proxySpec = LSE_LIVE_INDEX_PROXY_MAP[symbol];
+            const proxyQuote = await this.fetchTencentJsonpQuote(proxySpec.proxyTicker);
+            const snapBase = this.getEmbeddedOrCachedQuote(symbol);
+            const refClose = (snapBase && snapBase.price > 0) ? snapBase.price : proxySpec.DefaultRefPrice;
+            if (proxyQuote && proxyQuote.price > 0 && refClose > 0) {
+              const liveChgPct = Number(proxyQuote.changePct || 0);
+              // If snapBase came from historical_prices.json quotes with its own prevPrice, preserve or apply live index delta
+              const extQ = window.EXTERNAL_HISTORICAL_PRICES?.quotes?.[symbol];
+              let livePrice, prevPrice, change, changePct;
+              if (extQ && Number(extQ.price) > 0 && Number(extQ.prevPrice) > 0 && extQ.price !== extQ.prevPrice) {
+                // We have an exact LSE quote in historical_prices.json; apply intraday index movement if any
+                prevPrice = Fin.round(Number(extQ.prevPrice), 4);
+                livePrice = Fin.round(Number(extQ.price), 4);
+                change = Fin.round(livePrice - prevPrice, 3);
+                changePct = Fin.round(((livePrice - prevPrice) / prevPrice) * 100, 2);
+              } else {
+                prevPrice = Fin.round(refClose, 4);
+                livePrice = Fin.round(refClose * (1 + liveChgPct / 100), 4);
+                change = Fin.round(livePrice - prevPrice, 3);
+                changePct = Fin.round(liveChgPct, 2);
+              }
+              this.lastRouteUsed = `LSE Live Index Tracker (${proxySpec.proxyTicker} via qt.gtimg.cn)`;
+              return {
+                price: livePrice,
+                prevPrice,
+                change,
+                changePct,
+                high52w: snapBase?.high52w || state?.fundamentals?.[symbol]?.high52w || null,
+                low52w: snapBase?.low52w || state?.fundamentals?.[symbol]?.low52w || null,
+                currency: proxySpec.currency || staticMeta.currency,
+                name: state?.fundamentals?.[symbol]?.name || staticMeta.name || symbol,
+                source: this.lastRouteUsed
+              };
+            }
+          } catch (_) {}
+        }
+
+        if (!symbol.endsWith('.L')) {
+          try {
+            const jsonpQuote = await this.fetchTencentJsonpQuote(symbol);
+            if (jsonpQuote && jsonpQuote.price > 0) {
+              const existingFund = state.fundamentals[symbol] || {};
+              state.fundamentals[symbol] = {
+                ...existingFund,
+                name: existingFund.name || jsonpQuote.name || staticMeta.name || symbol,
+                sector: existingFund.sector || staticMeta.sector || 'Equities',
+                currency: jsonpQuote.currency,
+                high52w: jsonpQuote.high52w || existingFund.high52w || null,
+                low52w: jsonpQuote.low52w || existingFund.low52w || null
+              };
+              return jsonpQuote;
+            }
+          } catch (_) {}
+        }
 
         const cachedQuote = this.getEmbeddedOrCachedQuote(symbol);
         if (cachedQuote) {
@@ -1120,9 +1200,11 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
     });
   }
 
-  // Step 2: Only load historical_prices.json if it hasn't been loaded yet in this session or if explicitly requested
+  // Step 2: Load historical_prices.json (read-only GET, does NOT trigger GitHub Actions workflow)
+  // if not yet loaded or if we have London (.L) tickers that may need the latest GitHub committed LSE quotes
+  const hasLseTickers = allTickers.some(t => t.endsWith('.L'));
   const hasLoadedHistory = Boolean(window.__HISTORICAL_PRICES_JSON_LOADED__) && Object.keys(state?.historicalPrices || {}).length > 0;
-  if ((triggerGitHubWorkflow || !hasLoadedHistory) && typeof loadHistoricalPricesFromJson === 'function') {
+  if ((triggerGitHubWorkflow || !hasLoadedHistory || hasLseTickers) && typeof loadHistoricalPricesFromJson === 'function') {
     await loadHistoricalPricesFromJson(true, false);
   }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = "myportfolio-cache-v3.4.0-20261109_2045";
+const CACHE_NAME = "myportfolio-cache-v3.4.1-20261109_2100";
 const FETCH_TIMEOUT_MS = 2500;
 const APP_SHELL = [
   "./",
@@ -43,9 +43,22 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Network-First strategy with 2.5s timeout fallback to cache for fast startup on spotty mobile networks
+// Network-First strategy ONLY for same-origin App Shell assets;
+// NEVER intercept cross-origin API/CORS proxy calls or live JSON data files!
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  try {
+    const reqUrl = new URL(event.request.url);
+    // Do not intercept cross-origin requests (Yahoo CORS proxies, GitHub API, Tencent JSONP, etc.)
+    if (reqUrl.origin !== self.location.origin) return;
+    // Do not intercept dynamic data JSON files so they are always fetched fresh from network
+    if (reqUrl.pathname.endsWith("historical_prices.json") || reqUrl.pathname.endsWith("company_news.json")) {
+      return;
+    }
+  } catch (_) {
+    return;
+  }
+
   event.respondWith(
     fetchWithTimeout(event.request, FETCH_TIMEOUT_MS)
       .then((res) => {
