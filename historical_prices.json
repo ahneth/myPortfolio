@@ -2,7 +2,7 @@
   "_meta": {
     "version": "3.2.6",
     "buildId": "20261106_1855",
-    "generatedAt": "2026-11-09T01:43:45Z",
+    "generatedAt": "2026-11-09T01:57:12Z",
     "source": "Yahoo Finance v8/v10 API (15y/1mo + 2y/1d technicals + events=div)",
     "range": "15y",
     "interval": "1mo",
@@ -44,15 +44,15 @@
       "VWRA.L"
     ],
     "tickerCount": 35,
-    "lastRunSuccessCount": 35,
+    "lastRunSuccessCount": 29,
     "lastRunFailureCount": 0
   },
   "fxRates": {
     "base": "USD",
-    "USDHKD": 7.8393,
-    "GBPUSD": 1.3371,
-    "GBPHKD": 10.479,
-    "updatedAt": "2026-11-09T01:42:39Z"
+    "USDHKD": 7.8399,
+    "GBPUSD": 1.3372,
+    "GBPHKD": 10.481,
+    "updatedAt": "2026-11-09T01:56:19Z"
   },
   "prices": {
     "0002.HK": [
@@ -191,7 +191,7 @@
         "date": "2013-01-01",
         "close": 65.95,
         "rawClose": 65.95,
-        "adjClose": 37.2167,
+        "adjClose": 37.2168,
         "high": 66.3,
         "low": 64.8,
         "volume": 81648718
@@ -321,7 +321,7 @@
         "date": "2014-02-01",
         "close": 60.55,
         "rawClose": 60.55,
-        "adjClose": 35.5416,
+        "adjClose": 35.5415,
         "high": 61.2,
         "low": 57.55,
         "volume": 50159026
@@ -351,7 +351,7 @@
         "date": "2014-05-01",
         "close": 63.8,
         "rawClose": 63.8,
-        "adjClose": 38.3876,
+        "adjClose": 38.3877,
         "high": 64.0,
         "low": 60.6,
         "volume": 59953489
@@ -511,7 +511,7 @@
         "date": "2015-09-01",
         "close": 66.15,
         "rawClose": 66.15,
-        "adjClose": 41.7707,
+        "adjClose": 41.7708,
         "high": 66.55,
         "low": 62.0,
         "volume": 63564975
@@ -651,7 +651,7 @@
         "date": "2016-11-01",
         "close": 75.85,
         "rawClose": 75.85,
-        "adjClose": 49.7826,
+        "adjClose": 49.7825,
         "high": 80.2,
         "low": 73.05,
         "volume": 75360433
@@ -691,7 +691,7 @@
         "date": "2017-03-01",
         "close": 81.25,
         "rawClose": 81.25,
-        "adjClose": 54.4872,
+        "adjClose": 54.4871,
         "high": 81.95,
         "low": 76.55,
         "volume": 75407133
@@ -751,7 +751,7 @@
         "date": "2017-09-01",
         "close": 80.05,
         "rawClose": 80.05,
-        "adjClose": 54.4441,
+        "adjClose": 54.444,
         "high": 82.85,
         "low": 79.6,
         "volume": 44729046
@@ -861,7 +861,7 @@
         "date": "2018-08-01",
         "close": 92.25,
         "rawClose": 92.25,
-        "adjClose": 64.616,
+        "adjClose": 64.6159,
         "high": 94.65,
         "low": 86.55,
         "volume": 71027839
@@ -931,7 +931,7 @@
         "date": "2019-03-01",
         "close": 91.0,
         "rawClose": 91.0,
-        "adjClose": 65.4597,
+        "adjClose": 65.4598,
         "high": 94.15,
         "low": 90.0,
         "volume": 59071179
@@ -961,7 +961,7 @@
         "date": "2019-06-01",
         "close": 86.2,
         "rawClose": 86.2,
-        "adjClose": 62.4435,
+        "adjClose": 62.4436,
         "high": 90.8,
         "low": 85.3,
         "volume": 67022934
@@ -1271,7 +1271,7 @@
         "date": "2022-01-01",
         "close": 78.25,
         "rawClose": 78.25,
-        "adjClose": 62.3774,
+        "adjClose": 62.3773,
         "high": 80.1,
         "low": 77.05,
         "volume": 48110180
@@ -1441,7 +1441,7 @@
         "date": "2023-06-01",
         "close": 60.9,
         "rawClose": 60.9,
-        "adjClose": 52.3988,
+        "adjClose": 52.3989,
         "high": 62.05,
         "low": 56.1,
         "volume": 59440271
@@ -1591,7 +1591,7 @@
         "date": "2024-09-01",
         "close": 68.85,
         "rawClose": 68.85,
-        "adjClose": 62.8279,
+        "adjClose": 62.8278,
         "high": 73.2,
         "low": 67.45,
         "volume": 80930907
@@ -1849,12 +1849,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 80.9,
-        "rawClose": 80.9,
-        "adjClose": 80.9,
-        "high": 80.95,
+        "close": 80.7,
+        "rawClose": 80.7,
+        "adjClose": 80.7,
+        "high": 81.0,
         "low": 76.7,
-        "volume": 27933
+        "volume": 365820
       }
     ],
     "0003.HK": [
@@ -3651,12 +3651,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 7.42,
-        "rawClose": 7.42,
-        "adjClose": 7.42,
+        "close": 7.385,
+        "rawClose": 7.385,
+        "adjClose": 7.385,
         "high": 7.42,
         "low": 7.185,
-        "volume": 90217
+        "volume": 949712
       }
     ],
     "0005.HK": [
@@ -5517,7 +5517,7 @@
         "date": "2012-05-01",
         "close": 54.25,
         "rawClose": 54.25,
-        "adjClose": 21.0973,
+        "adjClose": 21.0972,
         "high": 59.05,
         "low": 53.4,
         "volume": 68203449
@@ -5537,7 +5537,7 @@
         "date": "2012-07-01",
         "close": 61.0,
         "rawClose": 61.0,
-        "adjClose": 23.7223,
+        "adjClose": 23.7222,
         "high": 61.5,
         "low": 57.7,
         "volume": 54303195
@@ -5747,7 +5747,7 @@
         "date": "2014-04-01",
         "close": 67.0,
         "rawClose": 67.0,
-        "adjClose": 27.1949,
+        "adjClose": 27.195,
         "high": 70.9,
         "low": 65.65,
         "volume": 59223216
@@ -5937,7 +5937,7 @@
         "date": "2015-11-01",
         "close": 69.25,
         "rawClose": 69.25,
-        "adjClose": 30.2133,
+        "adjClose": 30.2132,
         "high": 77.75,
         "low": 68.7,
         "volume": 74386835
@@ -6347,7 +6347,7 @@
         "date": "2019-04-01",
         "close": 54.7,
         "rawClose": 54.7,
-        "adjClose": 34.9826,
+        "adjClose": 34.9825,
         "high": 55.0,
         "low": 54.0,
         "volume": 60719126
@@ -6597,7 +6597,7 @@
         "date": "2021-05-01",
         "close": 47.45,
         "rawClose": 47.45,
-        "adjClose": 35.3263,
+        "adjClose": 35.3262,
         "high": 50.55,
         "low": 46.5,
         "volume": 65850492
@@ -7255,12 +7255,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 65.4,
-        "rawClose": 65.4,
-        "adjClose": 65.4,
+        "close": 65.35,
+        "rawClose": 65.35,
+        "adjClose": 65.35,
         "high": 65.85,
         "low": 63.0,
-        "volume": 23627
+        "volume": 80219
       }
     ],
     "0012.HK": [
@@ -7549,7 +7549,7 @@
         "date": "2014-04-01",
         "close": 26.0787,
         "rawClose": 26.0787,
-        "adjClose": 14.0506,
+        "adjClose": 14.0505,
         "high": 26.8125,
         "low": 25.1191,
         "volume": 91666116
@@ -7899,7 +7899,7 @@
         "date": "2017-03-01",
         "close": 36.1758,
         "rawClose": 36.1758,
-        "adjClose": 20.9258,
+        "adjClose": 20.9259,
         "high": 37.0398,
         "low": 33.4711,
         "volume": 91615087
@@ -8149,7 +8149,7 @@
         "date": "2019-04-01",
         "close": 43.9091,
         "rawClose": 43.9091,
-        "adjClose": 27.2323,
+        "adjClose": 27.2324,
         "high": 46.4091,
         "low": 43.7727,
         "volume": 148412721
@@ -8709,7 +8709,7 @@
         "date": "2023-12-01",
         "close": 24.05,
         "rawClose": 24.05,
-        "adjClose": 19.8347,
+        "adjClose": 19.8346,
         "high": 24.2,
         "low": 20.65,
         "volume": 52563710
@@ -8849,7 +8849,7 @@
         "date": "2025-02-01",
         "close": 21.25,
         "rawClose": 21.25,
-        "adjClose": 18.8868,
+        "adjClose": 18.8867,
         "high": 22.85,
         "low": 20.4,
         "volume": 129750799
@@ -9057,12 +9057,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 29.8,
-        "rawClose": 29.8,
-        "adjClose": 29.8,
+        "close": 29.76,
+        "rawClose": 29.76,
+        "adjClose": 29.76,
         "high": 30.02,
         "low": 27.9,
-        "volume": 9000
+        "volume": 265800
       }
     ],
     "0016.HK": [
@@ -9111,7 +9111,7 @@
         "date": "2012-04-01",
         "close": 93.6,
         "rawClose": 93.6,
-        "adjClose": 52.8053,
+        "adjClose": 52.8054,
         "high": 97.4,
         "low": 92.35,
         "volume": 173995510
@@ -9161,7 +9161,7 @@
         "date": "2012-09-01",
         "close": 113.6,
         "rawClose": 113.6,
-        "adjClose": 64.0886,
+        "adjClose": 64.0885,
         "high": 114.5,
         "low": 99.3,
         "volume": 122173417
@@ -9251,7 +9251,7 @@
         "date": "2013-06-01",
         "close": 100.1,
         "rawClose": 100.1,
-        "adjClose": 58.168,
+        "adjClose": 58.1679,
         "high": 103.7,
         "low": 93.05,
         "volume": 141737869
@@ -9361,7 +9361,7 @@
         "date": "2014-05-01",
         "close": 106.0,
         "rawClose": 106.0,
-        "adjClose": 63.7379,
+        "adjClose": 63.7378,
         "high": 106.3,
         "low": 93.65,
         "volume": 82854713
@@ -9391,7 +9391,7 @@
         "date": "2014-08-01",
         "close": 117.6,
         "rawClose": 117.6,
-        "adjClose": 70.713,
+        "adjClose": 70.7129,
         "high": 119.1,
         "low": 113.2,
         "volume": 88287266
@@ -9411,7 +9411,7 @@
         "date": "2014-10-01",
         "close": 115.6,
         "rawClose": 115.6,
-        "adjClose": 69.5104,
+        "adjClose": 69.5103,
         "high": 115.9,
         "low": 106.3,
         "volume": 107848750
@@ -9481,7 +9481,7 @@
         "date": "2015-05-01",
         "close": 131.4,
         "rawClose": 131.4,
-        "adjClose": 81.344,
+        "adjClose": 81.3439,
         "high": 137.6,
         "low": 128.1,
         "volume": 84469633
@@ -9601,7 +9601,7 @@
         "date": "2016-05-01",
         "close": 91.4,
         "rawClose": 91.4,
-        "adjClose": 58.6472,
+        "adjClose": 58.6471,
         "high": 99.0,
         "low": 85.75,
         "volume": 117600913
@@ -9791,7 +9791,7 @@
         "date": "2017-12-01",
         "close": 130.4,
         "rawClose": 130.4,
-        "adjClose": 88.8652,
+        "adjClose": 88.8651,
         "high": 130.5,
         "low": 120.1,
         "volume": 85957569
@@ -10011,7 +10011,7 @@
         "date": "2019-10-01",
         "close": 118.9,
         "rawClose": 118.9,
-        "adjClose": 85.3603,
+        "adjClose": 85.3602,
         "high": 120.2,
         "low": 107.4,
         "volume": 127770143
@@ -10051,7 +10051,7 @@
         "date": "2020-02-01",
         "close": 110.8,
         "rawClose": 110.8,
-        "adjClose": 82.0606,
+        "adjClose": 82.0607,
         "high": 116.4,
         "low": 107.5,
         "volume": 66066684
@@ -10071,7 +10071,7 @@
         "date": "2020-04-01",
         "close": 106.4,
         "rawClose": 106.4,
-        "adjClose": 79.723,
+        "adjClose": 79.7229,
         "high": 109.9,
         "low": 99.25,
         "volume": 78777061
@@ -10121,7 +10121,7 @@
         "date": "2020-09-01",
         "close": 98.8,
         "rawClose": 98.8,
-        "adjClose": 74.0285,
+        "adjClose": 74.0284,
         "high": 103.5,
         "low": 96.65,
         "volume": 80329900
@@ -10291,7 +10291,7 @@
         "date": "2022-02-01",
         "close": 90.9,
         "rawClose": 90.9,
-        "adjClose": 74.0168,
+        "adjClose": 74.0169,
         "high": 99.55,
         "low": 90.3,
         "volume": 81170289
@@ -10859,12 +10859,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 118.1,
-        "rawClose": 118.1,
-        "adjClose": 118.1,
+        "close": 117.8,
+        "rawClose": 117.8,
+        "adjClose": 117.8,
         "high": 119.6,
         "low": 107.9,
-        "volume": 74689
+        "volume": 331846
       }
     ],
     "0066.HK": [
@@ -11003,7 +11003,7 @@
         "date": "2013-01-01",
         "close": 32.0,
         "rawClose": 32.0,
-        "adjClose": 18.4119,
+        "adjClose": 18.4118,
         "high": 32.1,
         "low": 30.5,
         "volume": 48924393
@@ -11013,7 +11013,7 @@
         "date": "2013-02-01",
         "close": 32.0,
         "rawClose": 32.0,
-        "adjClose": 18.4119,
+        "adjClose": 18.4118,
         "high": 32.7,
         "low": 31.05,
         "volume": 43494272
@@ -11033,7 +11033,7 @@
         "date": "2013-04-01",
         "close": 32.0,
         "rawClose": 32.0,
-        "adjClose": 18.4119,
+        "adjClose": 18.4118,
         "high": 32.0,
         "low": 30.0,
         "volume": 44550127
@@ -11413,7 +11413,7 @@
         "date": "2016-06-01",
         "close": 39.2,
         "rawClose": 39.2,
-        "adjClose": 26.5935,
+        "adjClose": 26.5934,
         "high": 39.5,
         "low": 36.45,
         "volume": 74240062
@@ -11423,7 +11423,7 @@
         "date": "2016-07-01",
         "close": 43.9,
         "rawClose": 43.9,
-        "adjClose": 29.7819,
+        "adjClose": 29.782,
         "high": 44.5,
         "low": 38.75,
         "volume": 77014331
@@ -11763,7 +11763,7 @@
         "date": "2019-05-01",
         "close": 47.95,
         "rawClose": 47.95,
-        "adjClose": 36.6512,
+        "adjClose": 36.6511,
         "high": 49.0,
         "low": 45.7,
         "volume": 74140668
@@ -12383,7 +12383,7 @@
         "date": "2024-07-01",
         "close": 25.3,
         "rawClose": 25.3,
-        "adjClose": 22.8106,
+        "adjClose": 22.8105,
         "high": 25.95,
         "low": 24.4,
         "volume": 70597604
@@ -12661,12 +12661,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 34.28,
-        "rawClose": 34.28,
-        "adjClose": 34.28,
-        "high": 34.4,
+        "close": 34.46,
+        "rawClose": 34.46,
+        "adjClose": 34.46,
+        "high": 34.6,
         "low": 32.74,
-        "volume": 852
+        "volume": 421566
       }
     ],
     "0101.HK": [
@@ -13655,7 +13655,7 @@
         "date": "2020-02-01",
         "close": 17.02,
         "rawClose": 17.02,
-        "adjClose": 11.1009,
+        "adjClose": 11.1008,
         "high": 18.44,
         "low": 16.08,
         "volume": 127366558
@@ -14468,7 +14468,7 @@
         "adjClose": 6.635,
         "high": 6.88,
         "low": 6.16,
-        "volume": 3000
+        "volume": 292029
       }
     ],
     "0386.HK": [
@@ -14637,7 +14637,7 @@
         "date": "2013-04-01",
         "close": 6.5308,
         "rawClose": 6.5308,
-        "adjClose": 2.4635,
+        "adjClose": 2.4636,
         "high": 7.0769,
         "low": 6.3077,
         "volume": 2171250808
@@ -16265,12 +16265,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 4.8,
-        "rawClose": 4.8,
-        "adjClose": 4.8,
+        "close": 4.795,
+        "rawClose": 4.795,
+        "adjClose": 4.795,
         "high": 4.935,
         "low": 4.65,
-        "volume": 228000
+        "volume": 3943717
       }
     ],
     "0700.HK": [
@@ -16519,7 +16519,7 @@
         "date": "2013-12-01",
         "close": 91.19,
         "rawClose": 91.19,
-        "adjClose": 85.6428,
+        "adjClose": 85.6427,
         "high": 92.5544,
         "low": 81.1234,
         "volume": 372931352
@@ -16589,7 +16589,7 @@
         "date": "2014-07-01",
         "close": 118.3664,
         "rawClose": 118.3664,
-        "adjClose": 111.4326,
+        "adjClose": 111.4325,
         "high": 120.671,
         "low": 108.9634,
         "volume": 440301499
@@ -16639,7 +16639,7 @@
         "date": "2014-12-01",
         "close": 103.7088,
         "rawClose": 103.7088,
-        "adjClose": 97.6336,
+        "adjClose": 97.6337,
         "high": 112.9274,
         "low": 96.334,
         "volume": 588949833
@@ -16709,7 +16709,7 @@
         "date": "2015-07-01",
         "close": 133.3926,
         "rawClose": 133.3926,
-        "adjClose": 125.8834,
+        "adjClose": 125.8833,
         "high": 145.5611,
         "low": 121.1319,
         "volume": 546143710
@@ -16729,7 +16729,7 @@
         "date": "2015-09-01",
         "close": 119.196,
         "rawClose": 119.196,
-        "adjClose": 112.4859,
+        "adjClose": 112.486,
         "high": 126.9396,
         "low": 115.3242,
         "volume": 458473503
@@ -16759,7 +16759,7 @@
         "date": "2015-12-01",
         "close": 140.5831,
         "rawClose": 140.5831,
-        "adjClose": 132.669,
+        "adjClose": 132.6691,
         "high": 145.1924,
         "low": 131.8255,
         "volume": 383464061
@@ -16769,7 +16769,7 @@
         "date": "2016-01-01",
         "close": 133.577,
         "rawClose": 133.577,
-        "adjClose": 126.0573,
+        "adjClose": 126.0574,
         "high": 140.5831,
         "low": 122.6991,
         "volume": 511146629
@@ -16839,7 +16839,7 @@
         "date": "2016-08-01",
         "close": 186.0306,
         "rawClose": 186.0306,
-        "adjClose": 176.1294,
+        "adjClose": 176.1293,
         "high": 189.3493,
         "low": 167.3169,
         "volume": 342778976
@@ -16949,7 +16949,7 @@
         "date": "2017-07-01",
         "close": 288.9098,
         "rawClose": 288.9098,
-        "adjClose": 274.2203,
+        "adjClose": 274.2202,
         "high": 289.8317,
         "low": 240.0514,
         "volume": 435715824
@@ -16989,7 +16989,7 @@
         "date": "2017-11-01",
         "close": 366.8989,
         "rawClose": 366.8989,
-        "adjClose": 348.2439,
+        "adjClose": 348.244,
         "high": 405.2481,
         "low": 324.1247,
         "volume": 715468429
@@ -17039,7 +17039,7 @@
         "date": "2018-04-01",
         "close": 360.4459,
         "rawClose": 360.4459,
-        "adjClose": 342.1191,
+        "adjClose": 342.119,
         "high": 392.3421,
         "low": 347.7242,
         "volume": 510417420
@@ -17089,7 +17089,7 @@
         "date": "2018-09-01",
         "close": 297.944,
         "rawClose": 297.944,
-        "adjClose": 283.4534,
+        "adjClose": 283.4535,
         "high": 314.3531,
         "low": 281.3506,
         "volume": 530171757
@@ -17119,7 +17119,7 @@
         "date": "2018-12-01",
         "close": 289.4629,
         "rawClose": 289.4629,
-        "adjClose": 275.3848,
+        "adjClose": 275.3849,
         "high": 302.7377,
         "low": 273.7914,
         "volume": 422378911
@@ -17159,7 +17159,7 @@
         "date": "2019-04-01",
         "close": 357.6803,
         "rawClose": 357.6803,
-        "adjClose": 340.2845,
+        "adjClose": 340.2844,
         "high": 369.1113,
         "low": 336.2932,
         "volume": 320401632
@@ -17189,7 +17189,7 @@
         "date": "2019-07-01",
         "close": 339.4276,
         "rawClose": 339.4276,
-        "adjClose": 323.8804,
+        "adjClose": 323.8803,
         "high": 348.2774,
         "low": 319.8842,
         "volume": 258256581
@@ -17199,7 +17199,7 @@
         "date": "2019-08-01",
         "close": 299.419,
         "rawClose": 299.419,
-        "adjClose": 285.7043,
+        "adjClose": 285.7044,
         "high": 344.5899,
         "low": 287.8036,
         "volume": 453851342
@@ -17219,7 +17219,7 @@
         "date": "2019-10-01",
         "close": 295.7315,
         "rawClose": 295.7315,
-        "adjClose": 282.1859,
+        "adjClose": 282.1858,
         "high": 308.0844,
         "low": 290.0161,
         "volume": 360735605
@@ -17249,7 +17249,7 @@
         "date": "2020-01-01",
         "close": 343.8524,
         "rawClose": 343.8524,
-        "adjClose": 328.1026,
+        "adjClose": 328.1027,
         "high": 380.7267,
         "low": 341.2713,
         "volume": 405134725
@@ -17289,7 +17289,7 @@
         "date": "2020-05-01",
         "close": 378.3299,
         "rawClose": 378.3299,
-        "adjClose": 362.0955,
+        "adjClose": 362.0954,
         "high": 412.0698,
         "low": 368.7426,
         "volume": 501105622
@@ -17319,7 +17319,7 @@
         "date": "2020-08-01",
         "close": 489.0449,
         "rawClose": 489.0449,
-        "adjClose": 468.0595,
+        "adjClose": 468.0596,
         "high": 519.9271,
         "low": 460.3751,
         "volume": 509004020
@@ -17379,7 +17379,7 @@
         "date": "2021-02-01",
         "close": 610.7299,
         "rawClose": 610.7299,
-        "adjClose": 584.523,
+        "adjClose": 584.5231,
         "high": 714.8997,
         "low": 610.7299,
         "volume": 433905638
@@ -17389,7 +17389,7 @@
         "date": "2021-03-01",
         "close": 562.3325,
         "rawClose": 562.3325,
-        "adjClose": 538.2023,
+        "adjClose": 538.2024,
         "high": 666.5022,
         "low": 542.5125,
         "volume": 612723800
@@ -17409,7 +17409,7 @@
         "date": "2021-05-01",
         "close": 570.6292,
         "rawClose": 570.6292,
-        "adjClose": 547.7585,
+        "adjClose": 547.7584,
         "high": 576.1603,
         "low": 522.2317,
         "volume": 415441199
@@ -17439,7 +17439,7 @@
         "date": "2021-08-01",
         "close": 443.5973,
         "rawClose": 443.5973,
-        "adjClose": 425.8181,
+        "adjClose": 425.818,
         "high": 454.4752,
         "low": 379.9892,
         "volume": 963783341
@@ -17469,7 +17469,7 @@
         "date": "2021-11-01",
         "close": 423.5009,
         "rawClose": 423.5009,
-        "adjClose": 406.5271,
+        "adjClose": 406.527,
         "high": 469.2249,
         "low": 413.9135,
         "volume": 548785374
@@ -18067,12 +18067,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 425.2,
-        "rawClose": 425.2,
-        "adjClose": 425.2,
+        "close": 426.0,
+        "rawClose": 426.0,
+        "adjClose": 426.0,
         "high": 431.2,
         "low": 384.6,
-        "volume": 1296140
+        "volume": 2926681
       }
     ],
     "0857.HK": [
@@ -18521,7 +18521,7 @@
         "date": "2015-08-01",
         "close": 6.44,
         "rawClose": 6.44,
-        "adjClose": 3.3752,
+        "adjClose": 3.3753,
         "high": 7.6,
         "low": 5.9,
         "volume": 2025948007
@@ -18731,7 +18731,7 @@
         "date": "2017-05-01",
         "close": 5.19,
         "rawClose": 5.19,
-        "adjClose": 2.7822,
+        "adjClose": 2.7821,
         "high": 5.5,
         "low": 5.16,
         "volume": 2157265374
@@ -19869,12 +19869,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 10.41,
-        "rawClose": 10.41,
-        "adjClose": 10.41,
+        "close": 10.4,
+        "rawClose": 10.4,
+        "adjClose": 10.4,
         "high": 11.29,
         "low": 10.03,
-        "volume": 782000
+        "volume": 4329316
       }
     ],
     "0939.HK": [
@@ -21671,12 +21671,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 10.53,
-        "rawClose": 10.53,
-        "adjClose": 10.53,
+        "close": 10.54,
+        "rawClose": 10.54,
+        "adjClose": 10.54,
         "high": 10.58,
         "low": 9.87,
-        "volume": 1992524
+        "volume": 9085556
       }
     ],
     "1088.HK": [
@@ -23473,12 +23473,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 42.66,
-        "rawClose": 42.66,
-        "adjClose": 42.66,
+        "close": 43.34,
+        "rawClose": 43.34,
+        "adjClose": 43.34,
         "high": 44.16,
         "low": 41.9,
-        "volume": 23000
+        "volume": 446400
       }
     ],
     "1093.HK": [
@@ -25275,12 +25275,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 8.45,
-        "rawClose": 8.45,
-        "adjClose": 8.45,
+        "close": 8.555,
+        "rawClose": 8.555,
+        "adjClose": 8.555,
         "high": 8.71,
         "low": 7.6,
-        "volume": 2322000
+        "volume": 6508000
       }
     ],
     "1288.HK": [
@@ -25549,7 +25549,7 @@
         "date": "2014-02-01",
         "close": 3.29,
         "rawClose": 3.29,
-        "adjClose": 1.3903,
+        "adjClose": 1.3902,
         "high": 3.52,
         "low": 3.25,
         "volume": 2560934112
@@ -27077,12 +27077,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 6.87,
-        "rawClose": 6.87,
-        "adjClose": 6.87,
+        "close": 6.88,
+        "rawClose": 6.88,
+        "adjClose": 6.88,
         "high": 7.075,
         "low": 6.505,
-        "volume": 240000
+        "volume": 2900663
       }
     ],
     "1299.HK": [
@@ -27161,7 +27161,7 @@
         "date": "2012-07-01",
         "close": 27.25,
         "rawClose": 27.25,
-        "adjClose": 21.1921,
+        "adjClose": 21.1922,
         "high": 27.95,
         "low": 26.3,
         "volume": 380903356
@@ -27531,7 +27531,7 @@
         "date": "2015-08-01",
         "close": 42.85,
         "rawClose": 42.85,
-        "adjClose": 34.59,
+        "adjClose": 34.5899,
         "high": 50.5,
         "low": 40.4,
         "volume": 730936387
@@ -27581,7 +27581,7 @@
         "date": "2016-01-01",
         "close": 42.85,
         "rawClose": 42.85,
-        "adjClose": 34.59,
+        "adjClose": 34.5899,
         "high": 46.9,
         "low": 40.05,
         "volume": 568210771
@@ -27901,7 +27901,7 @@
         "date": "2018-09-01",
         "close": 69.9,
         "rawClose": 69.9,
-        "adjClose": 59.1093,
+        "adjClose": 59.1094,
         "high": 70.1,
         "low": 61.5,
         "volume": 422121378
@@ -27951,7 +27951,7 @@
         "date": "2019-02-01",
         "close": 78.5,
         "rawClose": 78.5,
-        "adjClose": 66.3818,
+        "adjClose": 66.3817,
         "high": 78.75,
         "low": 68.8,
         "volume": 406953734
@@ -28161,7 +28161,7 @@
         "date": "2020-11-01",
         "close": 84.95,
         "rawClose": 84.95,
-        "adjClose": 74.3815,
+        "adjClose": 74.3816,
         "high": 90.9,
         "low": 73.1,
         "volume": 627482249
@@ -28231,7 +28231,7 @@
         "date": "2021-06-01",
         "close": 96.5,
         "rawClose": 96.5,
-        "adjClose": 85.3379,
+        "adjClose": 85.338,
         "high": 100.8,
         "low": 92.1,
         "volume": 470175488
@@ -28311,7 +28311,7 @@
         "date": "2022-02-01",
         "close": 81.25,
         "rawClose": 81.25,
-        "adjClose": 72.1441,
+        "adjClose": 72.1442,
         "high": 91.0,
         "low": 80.3,
         "volume": 398265594
@@ -28811,7 +28811,7 @@
         "date": "2026-04-01",
         "close": 85.05,
         "rawClose": 85.05,
-        "adjClose": 83.0178,
+        "adjClose": 83.0177,
         "high": 92.15,
         "low": 81.0,
         "volume": 501742720
@@ -28879,12 +28879,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 79.0,
-        "rawClose": 79.0,
-        "adjClose": 79.0,
+        "close": 78.55,
+        "rawClose": 78.55,
+        "adjClose": 78.55,
         "high": 79.9,
         "low": 74.7,
-        "volume": 2752592
+        "volume": 4454807
       }
     ],
     "1378.HK": [
@@ -29643,7 +29643,7 @@
         "date": "2018-03-01",
         "close": 8.57,
         "rawClose": 8.57,
-        "adjClose": 4.3806,
+        "adjClose": 4.3805,
         "high": 10.44,
         "low": 8.44,
         "volume": 165270448
@@ -30681,12 +30681,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 20.6,
-        "rawClose": 20.6,
-        "adjClose": 20.6,
+        "close": 20.9,
+        "rawClose": 20.9,
+        "adjClose": 20.9,
         "high": 21.24,
         "low": 19.51,
-        "volume": 502500
+        "volume": 2225675
       }
     ],
     "1398.HK": [
@@ -30985,7 +30985,7 @@
         "date": "2014-05-01",
         "close": 5.04,
         "rawClose": 5.04,
-        "adjClose": 2.2085,
+        "adjClose": 2.2084,
         "high": 5.09,
         "low": 4.56,
         "volume": 4541611626
@@ -32483,12 +32483,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 7.95,
-        "rawClose": 7.95,
-        "adjClose": 7.95,
+        "close": 7.94,
+        "rawClose": 7.94,
+        "adjClose": 7.94,
         "high": 8.18,
         "low": 7.545,
-        "volume": 1823000
+        "volume": 7718311
       }
     ],
     "2318.HK": [
@@ -32817,7 +32817,7 @@
         "date": "2014-08-01",
         "close": 31.55,
         "rawClose": 31.55,
-        "adjClose": 19.7458,
+        "adjClose": 19.7459,
         "high": 33.575,
         "low": 31.4,
         "volume": 527149136
@@ -32827,7 +32827,7 @@
         "date": "2014-09-01",
         "close": 29.15,
         "rawClose": 29.15,
-        "adjClose": 18.3315,
+        "adjClose": 18.3314,
         "high": 33.3,
         "low": 29.125,
         "volume": 567839296
@@ -32927,7 +32927,7 @@
         "date": "2015-07-01",
         "close": 44.6,
         "rawClose": 44.6,
-        "adjClose": 28.2317,
+        "adjClose": 28.2318,
         "high": 52.35,
         "low": 41.25,
         "volume": 1588484822
@@ -33147,7 +33147,7 @@
         "date": "2017-05-01",
         "close": 49.95,
         "rawClose": 49.95,
-        "adjClose": 32.3783,
+        "adjClose": 32.3784,
         "high": 51.8,
         "low": 42.65,
         "volume": 830712937
@@ -33557,7 +33557,7 @@
         "date": "2020-10-01",
         "close": 79.55,
         "rawClose": 79.55,
-        "adjClose": 57.1462,
+        "adjClose": 57.1461,
         "high": 86.75,
         "low": 79.1,
         "volume": 571703907
@@ -33567,7 +33567,7 @@
         "date": "2020-11-01",
         "close": 91.0,
         "rawClose": 91.0,
-        "adjClose": 65.3714,
+        "adjClose": 65.3715,
         "high": 94.2,
         "low": 78.3,
         "volume": 817064714
@@ -33817,7 +33817,7 @@
         "date": "2022-12-01",
         "close": 51.65,
         "rawClose": 51.65,
-        "adjClose": 40.9573,
+        "adjClose": 40.9572,
         "high": 53.1,
         "low": 46.3,
         "volume": 811284236
@@ -33947,7 +33947,7 @@
         "date": "2024-01-01",
         "close": 32.7,
         "rawClose": 32.7,
-        "adjClose": 27.3552,
+        "adjClose": 27.3551,
         "high": 35.35,
         "low": 29.55,
         "volume": 945641142
@@ -34285,12 +34285,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 53.4,
-        "rawClose": 53.4,
-        "adjClose": 53.4,
-        "high": 53.55,
+        "close": 53.45,
+        "rawClose": 53.45,
+        "adjClose": 53.45,
+        "high": 53.6,
         "low": 49.8,
-        "volume": 3293963
+        "volume": 4910623
       }
     ],
     "2388.HK": [
@@ -34359,7 +34359,7 @@
         "date": "2012-06-01",
         "close": 23.6,
         "rawClose": 23.6,
-        "adjClose": 11.3792,
+        "adjClose": 11.3793,
         "high": 24.0,
         "low": 20.85,
         "volume": 265121671
@@ -34429,7 +34429,7 @@
         "date": "2013-01-01",
         "close": 26.75,
         "rawClose": 26.75,
-        "adjClose": 13.1922,
+        "adjClose": 13.1921,
         "high": 27.0,
         "low": 24.1,
         "volume": 371911034
@@ -34539,7 +34539,7 @@
         "date": "2013-12-01",
         "close": 24.85,
         "rawClose": 24.85,
-        "adjClose": 12.8478,
+        "adjClose": 12.8479,
         "high": 26.55,
         "low": 24.4,
         "volume": 157325586
@@ -35079,7 +35079,7 @@
         "date": "2018-06-01",
         "close": 36.95,
         "rawClose": 36.95,
-        "adjClose": 23.4658,
+        "adjClose": 23.4657,
         "high": 40.4,
         "low": 36.95,
         "volume": 181995571
@@ -35339,7 +35339,7 @@
         "date": "2020-08-01",
         "close": 22.0,
         "rawClose": 22.0,
-        "adjClose": 15.5068,
+        "adjClose": 15.5069,
         "high": 22.95,
         "low": 21.1,
         "volume": 259306489
@@ -35719,7 +35719,7 @@
         "date": "2023-10-01",
         "close": 20.7,
         "rawClose": 20.7,
-        "adjClose": 17.2628,
+        "adjClose": 17.2627,
         "high": 22.15,
         "low": 20.45,
         "volume": 114631849
@@ -36087,12 +36087,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 50.05,
-        "rawClose": 50.05,
-        "adjClose": 50.05,
-        "high": 50.3,
+        "close": 50.2,
+        "rawClose": 50.2,
+        "adjClose": 50.2,
+        "high": 50.4,
         "low": 47.24,
-        "volume": 61000
+        "volume": 517286
       }
     ],
     "2800.HK": [
@@ -36651,7 +36651,7 @@
         "date": "2016-07-01",
         "close": 22.45,
         "rawClose": 22.45,
-        "adjClose": 15.6549,
+        "adjClose": 15.6548,
         "high": 22.9,
         "low": 20.85,
         "volume": 1320769801
@@ -37591,7 +37591,7 @@
         "date": "2024-05-01",
         "close": 18.3,
         "rawClose": 18.3,
-        "adjClose": 16.6978,
+        "adjClose": 16.6979,
         "high": 19.89,
         "low": 17.84,
         "volume": 9277231738
@@ -37889,12 +37889,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 24.72,
-        "rawClose": 24.72,
-        "adjClose": 24.72,
+        "close": 24.82,
+        "rawClose": 24.82,
+        "adjClose": 24.82,
         "high": 25.02,
         "low": 23.38,
-        "volume": 25500
+        "volume": 50392251
       }
     ],
     "2840.HK": [
@@ -39691,12 +39691,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 2950.0,
-        "rawClose": 2950.0,
-        "adjClose": 2950.0,
+        "close": 2957.0,
+        "rawClose": 2957.0,
+        "adjClose": 2957.0,
         "high": 2980.0,
         "low": 2799.0,
-        "volume": 65
+        "volume": 2444
       }
     ],
     "2899.HK": [
@@ -41493,12 +41493,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 29.2,
-        "rawClose": 29.2,
-        "adjClose": 29.2,
+        "close": 29.48,
+        "rawClose": 29.48,
+        "adjClose": 29.48,
         "high": 30.98,
         "low": 26.76,
-        "volume": 620000
+        "volume": 4020937
       }
     ],
     "3077.HK": [
@@ -41527,7 +41527,7 @@
         "date": "2019-10-01",
         "close": 3940.1499,
         "rawClose": 3940.1499,
-        "adjClose": 3212.9087,
+        "adjClose": 3212.9092,
         "high": 3941.0,
         "low": 3935.3999,
         "volume": 155
@@ -41537,7 +41537,7 @@
         "date": "2019-11-01",
         "close": 3925.2,
         "rawClose": 3925.2,
-        "adjClose": 3215.0427,
+        "adjClose": 3215.0425,
         "high": 3940.05,
         "low": 3918.3,
         "volume": 660
@@ -41547,7 +41547,7 @@
         "date": "2019-12-01",
         "close": 3908.75,
         "rawClose": 3908.75,
-        "adjClose": 3201.5696,
+        "adjClose": 3201.5693,
         "high": 3926.3501,
         "low": 3906.3,
         "volume": 755
@@ -41557,7 +41557,7 @@
         "date": "2020-01-01",
         "close": 3908.1499,
         "rawClose": 3908.1499,
-        "adjClose": 3201.0769,
+        "adjClose": 3201.0774,
         "high": 3912.0,
         "low": 3902.8,
         "volume": 895
@@ -41577,7 +41577,7 @@
         "date": "2020-03-01",
         "close": 3888.05,
         "rawClose": 3888.05,
-        "adjClose": 3198.6003,
+        "adjClose": 3198.6001,
         "high": 3914.3999,
         "low": 3887.25,
         "volume": 50
@@ -41587,7 +41587,7 @@
         "date": "2020-04-01",
         "close": 3888.2,
         "rawClose": 3888.2,
-        "adjClose": 3198.7234,
+        "adjClose": 3198.7241,
         "high": 3895.45,
         "low": 3885.2,
         "volume": 1310
@@ -41607,7 +41607,7 @@
         "date": "2020-06-01",
         "close": 3880.6499,
         "rawClose": 3880.6499,
-        "adjClose": 3199.5903,
+        "adjClose": 3199.5906,
         "high": 3883.45,
         "low": 3880.05,
         "volume": 0
@@ -41617,7 +41617,7 @@
         "date": "2020-07-01",
         "close": 3880.6499,
         "rawClose": 3880.6499,
-        "adjClose": 3199.5903,
+        "adjClose": 3199.5906,
         "high": 3881.8999,
         "low": 3880.1001,
         "volume": 0
@@ -41647,7 +41647,7 @@
         "date": "2020-10-01",
         "close": 3881.3999,
         "rawClose": 3881.3999,
-        "adjClose": 3201.8718,
+        "adjClose": 3201.8711,
         "high": 3883.75,
         "low": 3879.3501,
         "volume": 30
@@ -41657,7 +41657,7 @@
         "date": "2020-11-01",
         "close": 3881.7,
         "rawClose": 3881.7,
-        "adjClose": 3203.9106,
+        "adjClose": 3203.9102,
         "high": 3881.7,
         "low": 3879.4661,
         "volume": 0
@@ -41667,7 +41667,7 @@
         "date": "2020-12-01",
         "close": 3881.7,
         "rawClose": 3881.7,
-        "adjClose": 3203.9106,
+        "adjClose": 3203.9102,
         "high": 3881.7,
         "low": 3881.7,
         "volume": 0
@@ -41677,7 +41677,7 @@
         "date": "2021-01-01",
         "close": 3881.7,
         "rawClose": 3881.7,
-        "adjClose": 3203.9106,
+        "adjClose": 3203.9102,
         "high": 3881.7,
         "low": 3881.7,
         "volume": 0
@@ -41687,7 +41687,7 @@
         "date": "2021-02-01",
         "close": 3881.75,
         "rawClose": 3881.75,
-        "adjClose": 3205.5527,
+        "adjClose": 3205.553,
         "high": 3882.0,
         "low": 3878.3501,
         "volume": 10
@@ -41697,7 +41697,7 @@
         "date": "2021-03-01",
         "close": 3889.1499,
         "rawClose": 3889.1499,
-        "adjClose": 3211.6643,
+        "adjClose": 3211.6641,
         "high": 3889.1499,
         "low": 3881.75,
         "volume": 0
@@ -41707,7 +41707,7 @@
         "date": "2021-04-01",
         "close": 3884.7,
         "rawClose": 3884.7,
-        "adjClose": 3207.989,
+        "adjClose": 3207.9893,
         "high": 3894.6001,
         "low": 3883.3999,
         "volume": 0
@@ -41717,7 +41717,7 @@
         "date": "2021-05-01",
         "close": 3884.3999,
         "rawClose": 3884.3999,
-        "adjClose": 3208.6389,
+        "adjClose": 3208.6392,
         "high": 3886.25,
         "low": 3884.3999,
         "volume": 140
@@ -41767,7 +41767,7 @@
         "date": "2021-10-01",
         "close": 3889.95,
         "rawClose": 3889.95,
-        "adjClose": 3214.2517,
+        "adjClose": 3214.2522,
         "high": 3894.25,
         "low": 3889.95,
         "volume": 0
@@ -41777,7 +41777,7 @@
         "date": "2021-11-01",
         "close": 3899.55,
         "rawClose": 3899.55,
-        "adjClose": 3222.7644,
+        "adjClose": 3222.7642,
         "high": 3899.55,
         "low": 3890.6001,
         "volume": 0
@@ -41797,7 +41797,7 @@
         "date": "2022-01-01",
         "close": 3900.0,
         "rawClose": 3900.0,
-        "adjClose": 3223.1365,
+        "adjClose": 3223.136,
         "high": 3902.75,
         "low": 3895.8,
         "volume": 5
@@ -41807,7 +41807,7 @@
         "date": "2022-02-01",
         "close": 3910.7,
         "rawClose": 3910.7,
-        "adjClose": 3231.9797,
+        "adjClose": 3231.979,
         "high": 3910.7,
         "low": 3899.3999,
         "volume": 0
@@ -41817,7 +41817,7 @@
         "date": "2022-03-01",
         "close": 3919.3999,
         "rawClose": 3919.3999,
-        "adjClose": 3239.1697,
+        "adjClose": 3239.1694,
         "high": 3919.3999,
         "low": 3910.7,
         "volume": 10
@@ -41827,7 +41827,7 @@
         "date": "2022-04-01",
         "close": 3935.7,
         "rawClose": 3935.7,
-        "adjClose": 3252.6406,
+        "adjClose": 3252.6404,
         "high": 3936.0,
         "low": 3922.1499,
         "volume": 55
@@ -41837,7 +41837,7 @@
         "date": "2022-05-01",
         "close": 3932.7,
         "rawClose": 3932.7,
-        "adjClose": 3251.7817,
+        "adjClose": 3251.7822,
         "high": 3937.25,
         "low": 3932.7,
         "volume": 0
@@ -41847,7 +41847,7 @@
         "date": "2022-06-01",
         "close": 3935.1001,
         "rawClose": 3935.1001,
-        "adjClose": 3253.7668,
+        "adjClose": 3253.7666,
         "high": 3937.0,
         "low": 3931.8999,
         "volume": 1405
@@ -41857,7 +41857,7 @@
         "date": "2022-07-01",
         "close": 3943.7,
         "rawClose": 3943.7,
-        "adjClose": 3260.8774,
+        "adjClose": 3260.877,
         "high": 3943.7,
         "low": 3935.1001,
         "volume": 0
@@ -41867,7 +41867,7 @@
         "date": "2022-08-01",
         "close": 3943.6001,
         "rawClose": 3943.6001,
-        "adjClose": 3266.9695,
+        "adjClose": 3266.969,
         "high": 3945.8999,
         "low": 3935.75,
         "volume": 150
@@ -41877,7 +41877,7 @@
         "date": "2022-09-01",
         "close": 3959.3,
         "rawClose": 3959.3,
-        "adjClose": 3279.9751,
+        "adjClose": 3279.9753,
         "high": 3959.3,
         "low": 3944.5,
         "volume": 20
@@ -41887,7 +41887,7 @@
         "date": "2022-10-01",
         "close": 3965.3501,
         "rawClose": 3965.3501,
-        "adjClose": 3284.9871,
+        "adjClose": 3284.9875,
         "high": 3965.3501,
         "low": 3958.8999,
         "volume": 5
@@ -41897,7 +41897,7 @@
         "date": "2022-11-01",
         "close": 3933.25,
         "rawClose": 3933.25,
-        "adjClose": 3278.2417,
+        "adjClose": 3278.2415,
         "high": 3967.7,
         "low": 3933.25,
         "volume": 0
@@ -41927,7 +41927,7 @@
         "date": "2023-02-01",
         "close": 3967.6499,
         "rawClose": 3967.6499,
-        "adjClose": 3329.7419,
+        "adjClose": 3329.7422,
         "high": 3984.3,
         "low": 3959.05,
         "volume": 0
@@ -41937,7 +41937,7 @@
         "date": "2023-03-01",
         "close": 3981.45,
         "rawClose": 3981.45,
-        "adjClose": 3341.3235,
+        "adjClose": 3341.3232,
         "high": 3981.45,
         "low": 3970.45,
         "volume": 100
@@ -41947,7 +41947,7 @@
         "date": "2023-04-01",
         "close": 3998.5,
         "rawClose": 3998.5,
-        "adjClose": 3355.6323,
+        "adjClose": 3355.6318,
         "high": 3998.5,
         "low": 3982.75,
         "volume": 340
@@ -41957,7 +41957,7 @@
         "date": "2023-05-01",
         "close": 3960.45,
         "rawClose": 3960.45,
-        "adjClose": 3363.7585,
+        "adjClose": 3363.759,
         "high": 4003.3999,
         "low": 3951.6499,
         "volume": 0
@@ -41967,7 +41967,7 @@
         "date": "2023-06-01",
         "close": 3980.5,
         "rawClose": 3980.5,
-        "adjClose": 3380.7881,
+        "adjClose": 3380.7876,
         "high": 3980.5,
         "low": 3960.55,
         "volume": 0
@@ -41977,7 +41977,7 @@
         "date": "2023-07-01",
         "close": 3984.3999,
         "rawClose": 3984.3999,
-        "adjClose": 3384.0999,
+        "adjClose": 3384.1001,
         "high": 3993.5,
         "low": 3980.5,
         "volume": 90
@@ -41987,7 +41987,7 @@
         "date": "2023-08-01",
         "close": 3964.0,
         "rawClose": 3964.0,
-        "adjClose": 3413.8677,
+        "adjClose": 3413.8679,
         "high": 3995.6001,
         "low": 3942.0,
         "volume": 0
@@ -41997,7 +41997,7 @@
         "date": "2023-09-01",
         "close": 3972.3999,
         "rawClose": 3972.3999,
-        "adjClose": 3421.1018,
+        "adjClose": 3421.1023,
         "high": 3972.3999,
         "low": 3964.0,
         "volume": 0
@@ -42007,7 +42007,7 @@
         "date": "2023-10-01",
         "close": 3989.3501,
         "rawClose": 3989.3501,
-        "adjClose": 3435.7,
+        "adjClose": 3435.6992,
         "high": 3989.3501,
         "low": 3972.3999,
         "volume": 0
@@ -42017,7 +42017,7 @@
         "date": "2023-11-01",
         "close": 3941.1499,
         "rawClose": 3941.1499,
-        "adjClose": 3442.8767,
+        "adjClose": 3442.8765,
         "high": 3991.8,
         "low": 3935.3359,
         "volume": 110
@@ -42027,7 +42027,7 @@
         "date": "2023-12-01",
         "close": 3957.55,
         "rawClose": 3957.55,
-        "adjClose": 3457.2039,
+        "adjClose": 3457.2031,
         "high": 3957.55,
         "low": 3952.7,
         "volume": 115
@@ -42047,7 +42047,7 @@
         "date": "2024-02-01",
         "close": 3957.3501,
         "rawClose": 3957.3501,
-        "adjClose": 3506.0791,
+        "adjClose": 3506.0796,
         "high": 3996.3,
         "low": 3940.4031,
         "volume": 25
@@ -42077,7 +42077,7 @@
         "date": "2024-05-01",
         "close": 3948.95,
         "rawClose": 3948.95,
-        "adjClose": 3551.137,
+        "adjClose": 3551.1372,
         "high": 3995.3,
         "low": 3935.25,
         "volume": 185
@@ -42097,7 +42097,7 @@
         "date": "2024-07-01",
         "close": 3976.7,
         "rawClose": 3976.7,
-        "adjClose": 3576.0916,
+        "adjClose": 3576.0911,
         "high": 3976.7,
         "low": 3955.6499,
         "volume": 464
@@ -42107,7 +42107,7 @@
         "date": "2024-08-01",
         "close": 3933.45,
         "rawClose": 3933.45,
-        "adjClose": 3584.1379,
+        "adjClose": 3584.1377,
         "high": 3976.7,
         "low": 3918.3999,
         "volume": 535
@@ -42137,7 +42137,7 @@
         "date": "2024-11-01",
         "close": 3920.1001,
         "rawClose": 3920.1001,
-        "adjClose": 3619.1797,
+        "adjClose": 3619.1794,
         "high": 3952.0,
         "low": 3898.5,
         "volume": 95
@@ -42147,7 +42147,7 @@
         "date": "2024-12-01",
         "close": 3924.5,
         "rawClose": 3924.5,
-        "adjClose": 3623.2412,
+        "adjClose": 3623.2415,
         "high": 3927.45,
         "low": 3920.1001,
         "volume": 145
@@ -42157,7 +42157,7 @@
         "date": "2025-01-01",
         "close": 3946.3501,
         "rawClose": 3946.3501,
-        "adjClose": 3643.4141,
+        "adjClose": 3643.4143,
         "high": 3946.3501,
         "low": 3924.5,
         "volume": 75
@@ -42187,7 +42187,7 @@
         "date": "2025-04-01",
         "close": 3933.55,
         "rawClose": 3933.55,
-        "adjClose": 3674.062,
+        "adjClose": 3674.0625,
         "high": 3933.55,
         "low": 3921.1001,
         "volume": 490
@@ -42217,7 +42217,7 @@
         "date": "2025-07-01",
         "close": 3979.1001,
         "rawClose": 3979.1001,
-        "adjClose": 3758.7485,
+        "adjClose": 3758.7488,
         "high": 3979.1499,
         "low": 3959.0,
         "volume": 845
@@ -42247,7 +42247,7 @@
         "date": "2025-10-01",
         "close": 3933.1499,
         "rawClose": 3933.1499,
-        "adjClose": 3750.7576,
+        "adjClose": 3750.7573,
         "high": 3933.1499,
         "low": 3923.5,
         "volume": 470
@@ -42257,7 +42257,7 @@
         "date": "2025-11-01",
         "close": 3910.6499,
         "rawClose": 3910.6499,
-        "adjClose": 3769.1272,
+        "adjClose": 3769.1274,
         "high": 3937.25,
         "low": 3896.8999,
         "volume": 130
@@ -42267,7 +42267,7 @@
         "date": "2025-12-01",
         "close": 3924.6001,
         "rawClose": 3924.6001,
-        "adjClose": 3782.5728,
+        "adjClose": 3782.573,
         "high": 3924.6001,
         "low": 3912.25,
         "volume": 390
@@ -42297,7 +42297,7 @@
         "date": "2026-03-01",
         "close": 3953.1001,
         "rawClose": 3953.1001,
-        "adjClose": 3846.5195,
+        "adjClose": 3846.5198,
         "high": 3997.75,
         "low": 3926.75,
         "volume": 1070
@@ -42307,7 +42307,7 @@
         "date": "2026-04-01",
         "close": 3961.8,
         "rawClose": 3961.8,
-        "adjClose": 3854.9849,
+        "adjClose": 3854.9851,
         "high": 3961.8,
         "low": 3937.3,
         "volume": 335
@@ -42687,12 +42687,12 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 11.75,
-        "rawClose": 11.75,
-        "adjClose": 11.75,
+        "close": 11.7,
+        "rawClose": 11.7,
+        "adjClose": 11.7,
         "high": 12.33,
-        "low": 11.61,
-        "volume": 1000
+        "low": 11.51,
+        "volume": 383000
       }
     ],
     "3433.HK": [
@@ -42751,7 +42751,7 @@
         "date": "2024-07-01",
         "close": 73.8,
         "rawClose": 73.8,
-        "adjClose": 33.5661,
+        "adjClose": 33.5662,
         "high": 75.5,
         "low": 72.08,
         "volume": 1004920
@@ -43029,9 +43029,9 @@
       {
         "month": "2026-11",
         "date": "2026-11-01",
-        "close": 63.86,
-        "rawClose": 63.86,
-        "adjClose": 63.86,
+        "close": 63.84,
+        "rawClose": 63.84,
+        "adjClose": 63.84,
         "high": 64.16,
         "low": 63.16,
         "volume": 226980
@@ -52607,7 +52607,7 @@
         "date": "2012-02-01",
         "close": 125.18,
         "rawClose": 125.18,
-        "adjClose": 96.9906,
+        "adjClose": 96.9905,
         "high": 126.4,
         "low": 120.86,
         "volume": 5166000
@@ -52647,7 +52647,7 @@
         "date": "2012-06-01",
         "close": 124.56,
         "rawClose": 124.56,
-        "adjClose": 97.4487,
+        "adjClose": 97.4488,
         "high": 125.3,
         "low": 116.34,
         "volume": 7559800
@@ -52717,7 +52717,7 @@
         "date": "2013-01-01",
         "close": 137.12,
         "rawClose": 137.12,
-        "adjClose": 108.6013,
+        "adjClose": 108.6014,
         "high": 138.2,
         "low": 132.56,
         "volume": 18929050
@@ -52737,7 +52737,7 @@
         "date": "2013-03-01",
         "close": 143.28,
         "rawClose": 143.28,
-        "adjClose": 114.0181,
+        "adjClose": 114.018,
         "high": 143.62,
         "low": 137.74,
         "volume": 14609500
@@ -52787,7 +52787,7 @@
         "date": "2013-08-01",
         "close": 149.7,
         "rawClose": 149.7,
-        "adjClose": 119.7305,
+        "adjClose": 119.7304,
         "high": 156.62,
         "low": 149.34,
         "volume": 14860050
@@ -52857,7 +52857,7 @@
         "date": "2014-03-01",
         "close": 171.35,
         "rawClose": 171.35,
-        "adjClose": 139.1168,
+        "adjClose": 139.1167,
         "high": 173.19,
         "low": 168.38,
         "volume": 24621000
@@ -52927,7 +52927,7 @@
         "date": "2014-10-01",
         "close": 184.93,
         "rawClose": 184.93,
-        "adjClose": 151.5363,
+        "adjClose": 151.5364,
         "high": 185.05,
         "low": 166.85,
         "volume": 47152300
@@ -52947,7 +52947,7 @@
         "date": "2014-12-01",
         "close": 188.4,
         "rawClose": 188.4,
-        "adjClose": 154.3797,
+        "adjClose": 154.3798,
         "high": 191.63,
         "low": 181.44,
         "volume": 49040300
@@ -53057,7 +53057,7 @@
         "date": "2015-11-01",
         "close": 191.37,
         "rawClose": 191.37,
-        "adjClose": 159.1925,
+        "adjClose": 159.1926,
         "high": 194.06,
         "low": 185.36,
         "volume": 38629500
@@ -53067,7 +53067,7 @@
         "date": "2015-12-01",
         "close": 186.93,
         "rawClose": 186.93,
-        "adjClose": 156.4254,
+        "adjClose": 156.4255,
         "high": 193.45,
         "low": 183.31,
         "volume": 62486000
@@ -53077,7 +53077,7 @@
         "date": "2016-01-01",
         "close": 177.75,
         "rawClose": 177.75,
-        "adjClose": 148.7435,
+        "adjClose": 148.7436,
         "high": 185.12,
         "low": 165.96,
         "volume": 82617200
@@ -53097,7 +53097,7 @@
         "date": "2016-03-01",
         "close": 188.56,
         "rawClose": 188.56,
-        "adjClose": 158.6364,
+        "adjClose": 158.6363,
         "high": 189.72,
         "low": 178.33,
         "volume": 50007300
@@ -53167,7 +53167,7 @@
         "date": "2016-10-01",
         "close": 195.13,
         "rawClose": 195.13,
-        "adjClose": 165.7214,
+        "adjClose": 165.7213,
         "high": 198.95,
         "low": 193.92,
         "volume": 33929400
@@ -53177,7 +53177,7 @@
         "date": "2016-11-01",
         "close": 202.4,
         "rawClose": 202.4,
-        "adjClose": 171.8956,
+        "adjClose": 171.8957,
         "high": 203.69,
         "low": 191.32,
         "volume": 52732400
@@ -53197,7 +53197,7 @@
         "date": "2017-01-01",
         "close": 208.97,
         "rawClose": 208.97,
-        "adjClose": 178.5851,
+        "adjClose": 178.5852,
         "high": 210.9,
         "low": 205.56,
         "volume": 57281100
@@ -53237,7 +53237,7 @@
         "date": "2017-05-01",
         "close": 221.67,
         "rawClose": 221.67,
-        "adjClose": 190.3196,
+        "adjClose": 190.3195,
         "high": 222.24,
         "low": 216.13,
         "volume": 40652300
@@ -53277,7 +53277,7 @@
         "date": "2017-09-01",
         "close": 230.76,
         "rawClose": 230.76,
-        "adjClose": 200.0408,
+        "adjClose": 200.0407,
         "high": 230.9,
         "low": 224.98,
         "volume": 33381500
@@ -53387,7 +53387,7 @@
         "date": "2018-08-01",
         "close": 266.72,
         "rawClose": 266.72,
-        "adjClose": 234.4816,
+        "adjClose": 234.4815,
         "high": 268.05,
         "low": 256.48,
         "volume": 49555700
@@ -53437,7 +53437,7 @@
         "date": "2019-01-01",
         "close": 248.01,
         "rawClose": 248.01,
-        "adjClose": 220.204,
+        "adjClose": 220.2039,
         "high": 248.53,
         "low": 223.97,
         "volume": 81247700
@@ -53457,7 +53457,7 @@
         "date": "2019-03-01",
         "close": 259.54,
         "rawClose": 259.54,
-        "adjClose": 231.7384,
+        "adjClose": 231.7385,
         "high": 262.59,
         "low": 250.34,
         "volume": 62970600
@@ -53477,7 +53477,7 @@
         "date": "2019-05-01",
         "close": 252.87,
         "rawClose": 252.87,
-        "adjClose": 225.7829,
+        "adjClose": 225.783,
         "high": 270.87,
         "low": 252.77,
         "volume": 72318000
@@ -53517,7 +53517,7 @@
         "date": "2019-09-01",
         "close": 272.6,
         "rawClose": 272.6,
-        "adjClose": 245.8287,
+        "adjClose": 245.8288,
         "high": 277.98,
         "low": 265.68,
         "volume": 45894200
@@ -53527,7 +53527,7 @@
         "date": "2019-10-01",
         "close": 278.55,
         "rawClose": 278.55,
-        "adjClose": 251.1944,
+        "adjClose": 251.1945,
         "high": 279.69,
         "low": 261.59,
         "volume": 52876500
@@ -53537,7 +53537,7 @@
         "date": "2019-11-01",
         "close": 288.65,
         "rawClose": 288.65,
-        "adjClose": 260.3025,
+        "adjClose": 260.3026,
         "high": 289.78,
         "low": 279.91,
         "volume": 43686600
@@ -53557,7 +53557,7 @@
         "date": "2020-01-01",
         "close": 295.69,
         "rawClose": 295.69,
-        "adjClose": 267.9434,
+        "adjClose": 267.9435,
         "high": 305.92,
         "low": 294.35,
         "volume": 66810800
@@ -53597,7 +53597,7 @@
         "date": "2020-05-01",
         "close": 279.75,
         "rawClose": 279.75,
-        "adjClose": 254.6892,
+        "adjClose": 254.6893,
         "high": 282.04,
         "low": 253.97,
         "volume": 92558000
@@ -53607,7 +53607,7 @@
         "date": "2020-06-01",
         "close": 283.43,
         "rawClose": 283.43,
-        "adjClose": 259.3808,
+        "adjClose": 259.3809,
         "high": 297.32,
         "low": 272.77,
         "volume": 98699000
@@ -53627,7 +53627,7 @@
         "date": "2020-08-01",
         "close": 321.02,
         "rawClose": 321.02,
-        "adjClose": 293.7814,
+        "adjClose": 293.7813,
         "high": 322.83,
         "low": 301.13,
         "volume": 61300400
@@ -53667,7 +53667,7 @@
         "date": "2020-12-01",
         "close": 343.69,
         "rawClose": 343.69,
-        "adjClose": 317.1603,
+        "adjClose": 317.1604,
         "high": 344.37,
         "low": 333.77,
         "volume": 62114200
@@ -53677,7 +53677,7 @@
         "date": "2021-01-01",
         "close": 340.18,
         "rawClose": 340.18,
-        "adjClose": 313.9214,
+        "adjClose": 313.9213,
         "high": 354.65,
         "low": 335.37,
         "volume": 67310300
@@ -53697,7 +53697,7 @@
         "date": "2021-03-01",
         "close": 364.3,
         "rawClose": 364.3,
-        "adjClose": 337.3648,
+        "adjClose": 337.3649,
         "high": 366.05,
         "low": 341.92,
         "volume": 115891100
@@ -53717,7 +53717,7 @@
         "date": "2021-05-01",
         "close": 386.13,
         "rawClose": 386.13,
-        "adjClose": 357.5808,
+        "adjClose": 357.5809,
         "high": 388.68,
         "low": 372.13,
         "volume": 91773000
@@ -53747,7 +53747,7 @@
         "date": "2021-08-01",
         "close": 415.05,
         "rawClose": 415.05,
-        "adjClose": 385.6664,
+        "adjClose": 385.6663,
         "high": 416.56,
         "low": 400.92,
         "volume": 81081600
@@ -53787,7 +53787,7 @@
         "date": "2021-12-01",
         "close": 436.57,
         "rawClose": 436.57,
-        "adjClose": 408.4849,
+        "adjClose": 408.485,
         "high": 440.36,
         "low": 412.77,
         "volume": 142346700
@@ -53807,7 +53807,7 @@
         "date": "2022-02-01",
         "close": 401.36,
         "rawClose": 401.36,
-        "adjClose": 375.54,
+        "adjClose": 375.5399,
         "high": 421.18,
         "low": 377.5,
         "volume": 178146000
@@ -53837,7 +53837,7 @@
         "date": "2022-05-01",
         "close": 379.68,
         "rawClose": 379.68,
-        "adjClose": 356.4512,
+        "adjClose": 356.4511,
         "high": 394.93,
         "low": 349.76,
         "volume": 142832100
@@ -53847,7 +53847,7 @@
         "date": "2022-06-01",
         "close": 346.88,
         "rawClose": 346.88,
-        "adjClose": 326.9924,
+        "adjClose": 326.9923,
         "high": 383.74,
         "low": 334.24,
         "volume": 118457600
@@ -53867,7 +53867,7 @@
         "date": "2022-08-01",
         "close": 363.15,
         "rawClose": 363.15,
-        "adjClose": 342.3295,
+        "adjClose": 342.3296,
         "high": 396.89,
         "low": 363.11,
         "volume": 82930500
@@ -53937,7 +53937,7 @@
         "date": "2023-03-01",
         "close": 376.07,
         "rawClose": 376.07,
-        "adjClose": 359.2466,
+        "adjClose": 359.2467,
         "high": 376.34,
         "low": 349.76,
         "volume": 98871600
@@ -54027,7 +54027,7 @@
         "date": "2023-12-01",
         "close": 436.8,
         "rawClose": 436.8,
-        "adjClose": 422.2335,
+        "adjClose": 422.2334,
         "high": 438.84,
         "low": 417.46,
         "volume": 100310300
@@ -54037,7 +54037,7 @@
         "date": "2024-01-01",
         "close": 443.82,
         "rawClose": 443.82,
-        "adjClose": 429.0194,
+        "adjClose": 429.0193,
         "high": 451.81,
         "low": 428.64,
         "volume": 113237100
@@ -54047,7 +54047,7 @@
         "date": "2024-02-01",
         "close": 466.93,
         "rawClose": 466.93,
-        "adjClose": 451.3587,
+        "adjClose": 451.3586,
         "high": 468.87,
         "low": 444.65,
         "volume": 103457700
@@ -54057,7 +54057,7 @@
         "date": "2024-03-01",
         "close": 480.7,
         "rawClose": 480.7,
-        "adjClose": 466.1637,
+        "adjClose": 466.1638,
         "high": 483.24,
         "low": 464.06,
         "volume": 106592200
@@ -54117,7 +54117,7 @@
         "date": "2024-09-01",
         "close": 527.67,
         "rawClose": 527.67,
-        "adjClose": 515.1317,
+        "adjClose": 515.1316,
         "high": 529.92,
         "low": 495.8,
         "volume": 160145400
@@ -54207,7 +54207,7 @@
         "date": "2025-06-01",
         "close": 568.03,
         "rawClose": 568.03,
-        "adjClose": 559.9597,
+        "adjClose": 559.9598,
         "high": 569.15,
         "low": 537.8,
         "volume": 151109600
@@ -55268,34 +55268,34 @@
   },
   "quotes": {
     "0002.HK": {
-      "price": 80.9,
-      "prevPrice": 80.0,
-      "change": 0.9,
-      "changePct": 1.13,
+      "price": 80.7,
+      "prevPrice": 80.95,
+      "change": -0.25,
+      "changePct": -0.31,
       "currency": "HKD",
       "name": "CLP Holdings Limited",
-      "lastUpdated": "2026-11-09T01:42:51Z",
+      "lastUpdated": "2026-11-09T01:57:01Z",
       "low52w": 66.6,
-      "high52w": 80.95,
-      "pos52wPct": 99.7,
-      "momPct": 4.52,
-      "qoqPct": 2.8,
-      "yoyPct": 18.97
+      "high52w": 81.0,
+      "pos52wPct": 97.9,
+      "momPct": 4.26,
+      "qoqPct": 2.54,
+      "yoyPct": 18.68
     },
     "0003.HK": {
-      "price": 7.42,
-      "prevPrice": 7.365,
-      "change": 0.055,
-      "changePct": 0.75,
+      "price": 7.385,
+      "prevPrice": 7.395,
+      "change": -0.01,
+      "changePct": -0.14,
       "currency": "HKD",
       "name": "The Hong Kong and China Gas Company Limited",
-      "lastUpdated": "2026-11-09T01:42:53Z",
+      "lastUpdated": "2026-11-09T01:57:03Z",
       "low52w": 6.4,
       "high52w": 7.76,
-      "pos52wPct": 75.0,
-      "momPct": 2.06,
-      "qoqPct": 2.91,
-      "yoyPct": 2.49
+      "pos52wPct": 72.4,
+      "momPct": 1.58,
+      "qoqPct": 2.43,
+      "yoyPct": 2.0
     },
     "0005.HK": {
       "price": 137.5,
@@ -55313,73 +55313,73 @@
       "yoyPct": 25.8
     },
     "0006.HK": {
-      "price": 65.4,
-      "prevPrice": 64.5,
-      "change": 0.9,
-      "changePct": 1.4,
+      "price": 65.35,
+      "prevPrice": 65.4,
+      "change": -0.05,
+      "changePct": -0.08,
       "currency": "HKD",
       "name": "Power Assets Holdings Limited",
-      "lastUpdated": "2026-11-09T01:42:57Z",
+      "lastUpdated": "2026-11-09T01:57:05Z",
       "low52w": 50.35,
       "high52w": 67.05,
-      "pos52wPct": 90.1,
-      "momPct": 2.35,
-      "qoqPct": 8.64,
-      "yoyPct": 25.65
+      "pos52wPct": 89.8,
+      "momPct": 2.27,
+      "qoqPct": 8.55,
+      "yoyPct": 25.55
     },
     "0012.HK": {
-      "price": 29.8,
-      "prevPrice": 29.8,
-      "change": 0.0,
-      "changePct": 0.0,
+      "price": 29.76,
+      "prevPrice": 29.7,
+      "change": 0.06,
+      "changePct": 0.2,
       "currency": "HKD",
       "name": "Henderson Land Development Company Limited",
-      "lastUpdated": "2026-11-09T01:42:59Z",
+      "lastUpdated": "2026-11-09T01:56:57Z",
       "low52w": 24.58,
       "high52w": 35.66,
-      "pos52wPct": 47.1,
-      "momPct": 6.28,
-      "qoqPct": 10.95,
-      "yoyPct": 1.57
+      "pos52wPct": 46.8,
+      "momPct": 6.13,
+      "qoqPct": 10.8,
+      "yoyPct": 1.43
     },
     "0016.HK": {
-      "price": 118.1,
-      "prevPrice": 119.0,
-      "change": -0.9,
-      "changePct": -0.76,
+      "price": 117.8,
+      "prevPrice": 117.7,
+      "change": 0.1,
+      "changePct": 0.08,
       "currency": "HKD",
       "name": "Sun Hung Kai Properties Limited",
-      "lastUpdated": "2026-11-09T01:43:43Z",
+      "lastUpdated": "2026-11-09T01:57:11Z",
       "low52w": 92.65,
       "high52w": 148.8,
-      "pos52wPct": 45.3,
-      "momPct": 8.45,
-      "qoqPct": 1.64,
-      "yoyPct": 19.78
+      "pos52wPct": 44.8,
+      "momPct": 8.17,
+      "qoqPct": 1.38,
+      "yoyPct": 19.47
     },
     "0066.HK": {
-      "price": 34.28,
-      "prevPrice": 34.1,
-      "change": 0.18,
-      "changePct": 0.53,
+      "price": 34.46,
+      "prevPrice": 34.3,
+      "change": 0.16,
+      "changePct": 0.47,
       "currency": "HKD",
       "name": "MTR Corporation Limited",
-      "lastUpdated": "2026-11-09T01:43:01Z",
+      "lastUpdated": "2026-11-09T01:56:49Z",
       "low52w": 29.58,
       "high52w": 37.88,
-      "pos52wPct": 56.6,
-      "momPct": 2.88,
-      "qoqPct": 6.0,
-      "yoyPct": 11.01
+      "pos52wPct": 58.8,
+      "momPct": 3.42,
+      "qoqPct": 6.56,
+      "yoyPct": 11.59
     },
     "0101.HK": {
       "price": 6.635,
-      "prevPrice": 6.76,
-      "change": -0.125,
-      "changePct": -1.85,
+      "prevPrice": 6.625,
+      "change": 0.01,
+      "changePct": 0.15,
       "currency": "HKD",
       "name": "Hang Lung Properties Limited",
-      "lastUpdated": "2026-11-09T01:43:03Z",
+      "lastUpdated": "2026-11-09T01:56:59Z",
       "low52w": 6.11,
       "high52w": 10.3,
       "pos52wPct": 12.5,
@@ -55388,229 +55388,229 @@
       "yoyPct": -26.28
     },
     "0386.HK": {
-      "price": 4.8,
-      "prevPrice": 4.835,
-      "change": -0.035,
-      "changePct": -0.72,
+      "price": 4.795,
+      "prevPrice": 4.805,
+      "change": -0.01,
+      "changePct": -0.21,
       "currency": "HKD",
       "name": "China Petroleum & Chemical Corporation",
-      "lastUpdated": "2026-11-09T01:43:05Z",
+      "lastUpdated": "2026-11-09T01:56:41Z",
       "low52w": 3.98,
       "high52w": 5.7,
-      "pos52wPct": 47.7,
-      "momPct": -1.34,
-      "qoqPct": 0.31,
-      "yoyPct": 8.84
+      "pos52wPct": 47.4,
+      "momPct": -1.44,
+      "qoqPct": 0.21,
+      "yoyPct": 8.73
     },
     "0700.HK": {
-      "price": 425.2,
-      "prevPrice": 430.4,
-      "change": -5.2,
-      "changePct": -1.21,
+      "price": 426.0,
+      "prevPrice": 419.8,
+      "change": 6.2,
+      "changePct": 1.48,
       "currency": "HKD",
       "name": "Tencent Holdings Limited",
-      "lastUpdated": "2026-11-09T01:43:07Z",
+      "lastUpdated": "2026-11-09T01:57:12Z",
       "low52w": 375.2,
       "high52w": 662.0,
-      "pos52wPct": 17.4,
-      "momPct": 10.84,
-      "qoqPct": -6.14,
-      "yoyPct": -30.47
+      "pos52wPct": 17.7,
+      "momPct": 11.05,
+      "qoqPct": -5.96,
+      "yoyPct": -30.34
     },
     "0857.HK": {
-      "price": 10.41,
-      "prevPrice": 10.36,
-      "change": 0.05,
-      "changePct": 0.48,
+      "price": 10.4,
+      "prevPrice": 10.38,
+      "change": 0.02,
+      "changePct": 0.19,
       "currency": "HKD",
       "name": "PetroChina Company Limited",
-      "lastUpdated": "2026-11-09T01:43:09Z",
+      "lastUpdated": "2026-11-09T01:56:43Z",
       "low52w": 7.86,
       "high52w": 12.22,
-      "pos52wPct": 58.5,
-      "momPct": -3.79,
-      "qoqPct": 2.36,
-      "yoyPct": 19.93
+      "pos52wPct": 58.3,
+      "momPct": -3.88,
+      "qoqPct": 2.26,
+      "yoyPct": 19.82
     },
     "0939.HK": {
-      "price": 10.53,
-      "prevPrice": 10.48,
-      "change": 0.05,
-      "changePct": 0.48,
+      "price": 10.54,
+      "prevPrice": 10.53,
+      "change": 0.01,
+      "changePct": 0.09,
       "currency": "HKD",
       "name": "China Construction Bank Corporation",
-      "lastUpdated": "2026-11-09T01:43:11Z",
+      "lastUpdated": "2026-11-09T01:56:33Z",
       "low52w": 7.37,
       "high52w": 10.58,
-      "pos52wPct": 98.4,
-      "momPct": 2.63,
-      "qoqPct": 10.84,
-      "yoyPct": 28.89
+      "pos52wPct": 98.8,
+      "momPct": 2.73,
+      "qoqPct": 10.95,
+      "yoyPct": 29.01
     },
     "1088.HK": {
-      "price": 42.66,
-      "prevPrice": 42.46,
-      "change": 0.2,
-      "changePct": 0.47,
+      "price": 43.34,
+      "prevPrice": 42.66,
+      "change": 0.68,
+      "changePct": 1.59,
       "currency": "HKD",
       "name": "China Shenhua Energy Company Limited",
-      "lastUpdated": "2026-11-09T01:43:12Z",
+      "lastUpdated": "2026-11-09T01:56:45Z",
       "low52w": 38.2,
       "high52w": 49.62,
-      "pos52wPct": 39.1,
-      "momPct": 0.23,
-      "qoqPct": -7.98,
-      "yoyPct": 7.13
+      "pos52wPct": 45.0,
+      "momPct": 1.83,
+      "qoqPct": -6.51,
+      "yoyPct": 8.84
     },
     "1093.HK": {
-      "price": 8.45,
-      "prevPrice": 8.58,
-      "change": -0.13,
-      "changePct": -1.52,
+      "price": 8.555,
+      "prevPrice": 8.45,
+      "change": 0.105,
+      "changePct": 1.24,
       "currency": "HKD",
       "name": "CSPC Pharmaceutical Group Limited",
-      "lastUpdated": "2026-11-09T01:43:14Z",
+      "lastUpdated": "2026-11-09T01:56:47Z",
       "low52w": 6.53,
       "high52w": 10.96,
-      "pos52wPct": 43.3,
-      "momPct": 7.44,
-      "qoqPct": -8.55,
-      "yoyPct": 6.83
+      "pos52wPct": 45.7,
+      "momPct": 8.77,
+      "qoqPct": -7.41,
+      "yoyPct": 8.15
     },
     "1288.HK": {
-      "price": 6.87,
-      "prevPrice": 6.875,
-      "change": -0.005,
-      "changePct": -0.07,
+      "price": 6.88,
+      "prevPrice": 6.87,
+      "change": 0.01,
+      "changePct": 0.15,
       "currency": "HKD",
       "name": "Agricultural Bank of China Limited",
-      "lastUpdated": "2026-11-09T01:43:16Z",
+      "lastUpdated": "2026-11-09T01:56:35Z",
       "low52w": 5.08,
       "high52w": 7.075,
-      "pos52wPct": 89.7,
-      "momPct": -1.01,
-      "qoqPct": 8.27,
-      "yoyPct": 17.84
+      "pos52wPct": 90.2,
+      "momPct": -0.86,
+      "qoqPct": 8.43,
+      "yoyPct": 18.01
     },
     "1299.HK": {
-      "price": 79.0,
-      "prevPrice": 78.85,
-      "change": 0.15,
-      "changePct": 0.19,
+      "price": 78.55,
+      "prevPrice": 78.45,
+      "change": 0.1,
+      "changePct": 0.13,
       "currency": "HKD",
       "name": "AIA Group Limited",
-      "lastUpdated": "2026-11-09T01:43:18Z",
+      "lastUpdated": "2026-11-09T01:56:51Z",
       "low52w": 68.0,
       "high52w": 92.15,
-      "pos52wPct": 45.5,
-      "momPct": 4.77,
-      "qoqPct": 3.61,
-      "yoyPct": -1.99
+      "pos52wPct": 43.7,
+      "momPct": 4.18,
+      "qoqPct": 3.02,
+      "yoyPct": -2.54
     },
     "1378.HK": {
-      "price": 20.6,
-      "prevPrice": 21.02,
-      "change": -0.42,
-      "changePct": -2.0,
+      "price": 20.9,
+      "prevPrice": 20.4,
+      "change": 0.5,
+      "changePct": 2.45,
       "currency": "HKD",
       "name": "China Hongqiao Group Limited",
-      "lastUpdated": "2026-11-09T01:43:20Z",
+      "lastUpdated": "2026-11-09T01:56:54Z",
       "low52w": 17.75,
       "high52w": 41.36,
-      "pos52wPct": 12.1,
-      "momPct": 1.88,
-      "qoqPct": -9.73,
-      "yoyPct": -33.25
+      "pos52wPct": 13.3,
+      "momPct": 3.36,
+      "qoqPct": -8.41,
+      "yoyPct": -32.27
     },
     "1398.HK": {
-      "price": 7.95,
-      "prevPrice": 7.935,
-      "change": 0.015,
-      "changePct": 0.19,
+      "price": 7.94,
+      "prevPrice": 7.95,
+      "change": -0.01,
+      "changePct": -0.13,
       "currency": "HKD",
       "name": "Industrial and Commercial Bank of China Limited",
-      "lastUpdated": "2026-11-09T01:43:22Z",
+      "lastUpdated": "2026-11-09T01:56:37Z",
       "low52w": 5.96,
       "high52w": 8.18,
-      "pos52wPct": 89.6,
-      "momPct": 0.7,
-      "qoqPct": 5.02,
-      "yoyPct": 23.45
+      "pos52wPct": 89.2,
+      "momPct": 0.57,
+      "qoqPct": 4.89,
+      "yoyPct": 23.29
     },
     "2318.HK": {
-      "price": 53.4,
-      "prevPrice": 53.45,
-      "change": -0.05,
-      "changePct": -0.09,
+      "price": 53.45,
+      "prevPrice": 53.15,
+      "change": 0.3,
+      "changePct": 0.56,
       "currency": "HKD",
       "name": "Ping An Insurance (Group) Company of China, Ltd.",
-      "lastUpdated": "2026-11-09T01:43:24Z",
+      "lastUpdated": "2026-11-09T01:56:52Z",
       "low52w": 47.68,
       "high52w": 74.7,
-      "pos52wPct": 21.2,
-      "momPct": 7.36,
-      "qoqPct": -5.57,
-      "yoyPct": -5.82
+      "pos52wPct": 21.4,
+      "momPct": 7.46,
+      "qoqPct": -5.48,
+      "yoyPct": -5.73
     },
     "2388.HK": {
-      "price": 50.05,
-      "prevPrice": 49.7,
-      "change": 0.35,
-      "changePct": 0.7,
+      "price": 50.2,
+      "prevPrice": 50.0,
+      "change": 0.2,
+      "changePct": 0.4,
       "currency": "HKD",
       "name": "BOC Hong Kong (Holdings) Limited",
-      "lastUpdated": "2026-11-09T01:43:25Z",
+      "lastUpdated": "2026-11-09T01:56:39Z",
       "low52w": 36.36,
       "high52w": 53.85,
-      "pos52wPct": 78.3,
-      "momPct": -0.89,
-      "qoqPct": -5.03,
-      "yoyPct": 33.61
+      "pos52wPct": 79.1,
+      "momPct": -0.59,
+      "qoqPct": -4.74,
+      "yoyPct": 34.01
     },
     "2800.HK": {
-      "price": 24.72,
-      "prevPrice": 24.94,
-      "change": -0.22,
-      "changePct": -0.88,
+      "price": 24.82,
+      "prevPrice": 24.6,
+      "change": 0.22,
+      "changePct": 0.89,
       "currency": "HKD",
-      "name": "Tracker Fund of Hong Kong",
-      "lastUpdated": "2026-11-09T01:42:39Z",
+      "name": "Tracker Fund Of Hong Kong",
+      "lastUpdated": "2026-11-09T01:56:19Z",
       "low52w": 22.92,
       "high52w": 28.32,
-      "pos52wPct": 33.3,
-      "momPct": 5.55,
-      "qoqPct": -5.21,
-      "yoyPct": -5.07
+      "pos52wPct": 35.2,
+      "momPct": 5.98,
+      "qoqPct": -4.83,
+      "yoyPct": -4.69
     },
     "2840.HK": {
-      "price": 2950.0,
-      "prevPrice": 2962.0,
-      "change": -12.0,
-      "changePct": -0.41,
+      "price": 2957.0,
+      "prevPrice": 2918.0,
+      "change": 39.0,
+      "changePct": 1.34,
       "currency": "HKD",
       "name": "SPDR Gold Shares",
-      "lastUpdated": "2026-11-09T01:42:41Z",
+      "lastUpdated": "2026-11-09T01:56:20Z",
       "low52w": 2799.0,
       "high52w": 4015.0,
-      "pos52wPct": 12.4,
-      "momPct": 3.18,
-      "qoqPct": -8.21,
-      "yoyPct": -0.81
+      "pos52wPct": 13.0,
+      "momPct": 3.43,
+      "qoqPct": -8.0,
+      "yoyPct": -0.57
     },
     "2899.HK": {
-      "price": 29.2,
-      "prevPrice": 30.28,
-      "change": -1.08,
-      "changePct": -3.57,
+      "price": 29.48,
+      "prevPrice": 28.9,
+      "change": 0.58,
+      "changePct": 2.01,
       "currency": "HKD",
       "name": "Zijin Mining Group Company Limited",
-      "lastUpdated": "2026-11-09T01:43:44Z",
+      "lastUpdated": "2026-11-09T01:57:08Z",
       "low52w": 26.58,
       "high52w": 46.98,
-      "pos52wPct": 12.8,
-      "momPct": 4.81,
-      "qoqPct": -20.26,
-      "yoyPct": -4.89
+      "pos52wPct": 14.2,
+      "momPct": 5.81,
+      "qoqPct": -19.5,
+      "yoyPct": -3.97
     },
     "3077.HK": {
       "price": 3942.75,
@@ -55618,8 +55618,8 @@
       "change": 2.532,
       "changePct": 0.06,
       "currency": "HKD",
-      "name": "Premia US Treasury Floating Rate ETF Dist",
-      "lastUpdated": "2026-11-09T01:42:43Z",
+      "name": "Premia ETF Series - US Treasury Floating Rate ETF",
+      "lastUpdated": "2026-11-09T01:56:22Z",
       "low52w": 3897.5,
       "high52w": 3997.75,
       "pos52wPct": 45.1,
@@ -55628,34 +55628,34 @@
       "yoyPct": 0.82
     },
     "3195.HK": {
-      "price": 11.75,
-      "prevPrice": 12.16,
-      "change": -0.41,
-      "changePct": -3.37,
+      "price": 11.7,
+      "prevPrice": 11.66,
+      "change": 0.04,
+      "changePct": 0.34,
       "currency": "HKD",
-      "name": "Hang Seng S&P 500 Index ETF",
-      "lastUpdated": "2026-11-09T01:42:45Z",
+      "name": "Hang Seng S&P 500 Index Etf",
+      "lastUpdated": "2026-11-09T01:56:24Z",
       "low52w": 10.01,
       "high52w": 12.5,
-      "pos52wPct": 69.9,
-      "momPct": -2.97,
-      "qoqPct": -3.45,
-      "yoyPct": 9.2
+      "pos52wPct": 67.9,
+      "momPct": -3.39,
+      "qoqPct": -3.86,
+      "yoyPct": 8.74
     },
     "3433.HK": {
-      "price": 63.86,
+      "price": 63.84,
       "prevPrice": 64.1,
-      "change": -0.24,
-      "changePct": -0.37,
+      "change": -0.26,
+      "changePct": -0.41,
       "currency": "HKD",
-      "name": "CSOP FTSE US Treasury 20+ Years Index ETF",
-      "lastUpdated": "2026-11-09T01:42:47Z",
+      "name": "CSOP ETF Series II - CSOP FTSE US Treasury 20+ Years Index ETF",
+      "lastUpdated": "2026-11-09T01:56:26Z",
       "low52w": 60.34,
       "high52w": 70.76,
-      "pos52wPct": 33.8,
-      "momPct": 0.76,
-      "qoqPct": -1.45,
-      "yoyPct": -9.16
+      "pos52wPct": 33.6,
+      "momPct": 0.73,
+      "qoqPct": -1.48,
+      "yoyPct": -9.19
     },
     "3476.HK": {
       "price": 14.91,
@@ -55663,8 +55663,8 @@
       "change": -0.17,
       "changePct": -1.13,
       "currency": "HKD",
-      "name": "Hang Seng JPMorgan US Equity Premium Income Active ETF (Listed Class) \u2013 HKD",
-      "lastUpdated": "2026-11-09T01:42:49Z",
+      "name": "Hang Seng Jpmorgan Us Equity Premium Income Active Etf",
+      "lastUpdated": "2026-11-09T01:56:28Z",
       "low52w": 14.59,
       "high52w": 15.38,
       "pos52wPct": 40.5,
@@ -55754,7 +55754,7 @@
       "changePct": -0.54,
       "currency": "USD",
       "name": "State Street SPDR S&P 500 UCITS ETF USD Accumulation UnHedged",
-      "lastUpdated": "2026-11-09T01:43:36Z",
+      "lastUpdated": "2026-11-09T01:56:30Z",
       "low52w": 15.71,
       "high52w": 19.486,
       "pos52wPct": 71.8,
@@ -55769,7 +55769,7 @@
       "changePct": 0.3,
       "currency": "USD",
       "name": "Vanguard S&P 500 ETF",
-      "lastUpdated": "2026-11-09T01:43:38Z",
+      "lastUpdated": "2026-11-09T01:57:07Z",
       "low52w": 578.46,
       "high52w": 718.47,
       "pos52wPct": 69.7,
@@ -55784,7 +55784,7 @@
       "changePct": -0.7,
       "currency": "USD",
       "name": "Vanguard FTSE All-World UCITS ETF USD Accumulation",
-      "lastUpdated": "2026-11-09T01:43:40Z",
+      "lastUpdated": "2026-11-09T01:56:31Z",
       "low52w": 140.22,
       "high52w": 202.3,
       "pos52wPct": 72.1,
@@ -55798,14 +55798,14 @@
       "name": "CLP Holdings Limited",
       "currency": "HKD",
       "low52w": 66.6,
-      "high52w": 80.95,
-      "pos52wPct": 99.7,
-      "momPct": 4.52,
-      "qoqPct": 2.8,
-      "yoyPct": 18.97,
-      "divYield": 3.96,
-      "forwardDivYield": 3.11,
-      "netDivYield": 3.96,
+      "high52w": 81.0,
+      "pos52wPct": 97.9,
+      "momPct": 4.26,
+      "qoqPct": 2.54,
+      "yoyPct": 18.68,
+      "divYield": 3.97,
+      "forwardDivYield": 3.12,
+      "netDivYield": 3.97,
       "nextExDate": "2026-12-02",
       "nextPayDate": "2026-12-27",
       "divFrequency": "Quarterly"
@@ -55815,13 +55815,13 @@
       "currency": "HKD",
       "low52w": 6.4,
       "high52w": 7.76,
-      "pos52wPct": 75.0,
-      "momPct": 2.06,
-      "qoqPct": 2.91,
-      "yoyPct": 2.49,
-      "divYield": 4.72,
-      "forwardDivYield": 4.72,
-      "netDivYield": 4.72,
+      "pos52wPct": 72.4,
+      "momPct": 1.58,
+      "qoqPct": 2.43,
+      "yoyPct": 2.0,
+      "divYield": 4.74,
+      "forwardDivYield": 4.74,
+      "netDivYield": 4.74,
       "nextExDate": "2027-06-03",
       "nextPayDate": "2027-06-28",
       "divFrequency": "Semi-Annual"
@@ -55847,13 +55847,13 @@
       "currency": "HKD",
       "low52w": 50.35,
       "high52w": 67.05,
-      "pos52wPct": 90.1,
-      "momPct": 2.35,
-      "qoqPct": 8.64,
-      "yoyPct": 25.65,
-      "divYield": 4.31,
-      "forwardDivYield": 4.31,
-      "netDivYield": 4.31,
+      "pos52wPct": 89.8,
+      "momPct": 2.27,
+      "qoqPct": 8.55,
+      "yoyPct": 25.55,
+      "divYield": 4.32,
+      "forwardDivYield": 4.32,
+      "netDivYield": 4.32,
       "nextExDate": "2027-05-26",
       "nextPayDate": "2027-06-20",
       "divFrequency": "Semi-Annual"
@@ -55863,10 +55863,10 @@
       "currency": "HKD",
       "low52w": 24.58,
       "high52w": 35.66,
-      "pos52wPct": 47.1,
-      "momPct": 6.28,
-      "qoqPct": 10.95,
-      "yoyPct": 1.57,
+      "pos52wPct": 46.8,
+      "momPct": 6.13,
+      "qoqPct": 10.8,
+      "yoyPct": 1.43,
       "divYield": 4.23,
       "forwardDivYield": 4.23,
       "netDivYield": 4.23,
@@ -55879,13 +55879,13 @@
       "currency": "HKD",
       "low52w": 92.65,
       "high52w": 148.8,
-      "pos52wPct": 45.3,
-      "momPct": 8.45,
-      "qoqPct": 1.64,
-      "yoyPct": 19.78,
-      "divYield": 3.2,
-      "forwardDivYield": 3.2,
-      "netDivYield": 3.2,
+      "pos52wPct": 44.8,
+      "momPct": 8.17,
+      "qoqPct": 1.38,
+      "yoyPct": 19.47,
+      "divYield": 3.21,
+      "forwardDivYield": 3.21,
+      "netDivYield": 3.21,
       "nextExDate": "2026-11-10",
       "nextPayDate": "2026-12-05",
       "divFrequency": "Semi-Annual"
@@ -55895,13 +55895,13 @@
       "currency": "HKD",
       "low52w": 29.58,
       "high52w": 37.88,
-      "pos52wPct": 56.6,
-      "momPct": 2.88,
-      "qoqPct": 6.0,
-      "yoyPct": 11.01,
-      "divYield": 3.82,
-      "forwardDivYield": 3.82,
-      "netDivYield": 3.82,
+      "pos52wPct": 58.8,
+      "momPct": 3.42,
+      "qoqPct": 6.56,
+      "yoyPct": 11.59,
+      "divYield": 3.8,
+      "forwardDivYield": 3.8,
+      "netDivYield": 3.8,
       "nextExDate": "2027-05-29",
       "nextPayDate": "2027-06-23",
       "divFrequency": "Semi-Annual"
@@ -55927,13 +55927,13 @@
       "currency": "HKD",
       "low52w": 3.98,
       "high52w": 5.7,
-      "pos52wPct": 47.7,
-      "momPct": -1.34,
-      "qoqPct": 0.31,
-      "yoyPct": 8.84,
-      "divYield": 5.23,
-      "forwardDivYield": 5.0,
-      "netDivYield": 5.23,
+      "pos52wPct": 47.4,
+      "momPct": -1.44,
+      "qoqPct": 0.21,
+      "yoyPct": 8.73,
+      "divYield": 5.24,
+      "forwardDivYield": 5.01,
+      "netDivYield": 5.24,
       "nextExDate": "2027-06-08",
       "nextPayDate": "2027-07-03",
       "divFrequency": "Semi-Annual"
@@ -55943,13 +55943,13 @@
       "currency": "HKD",
       "low52w": 375.2,
       "high52w": 662.0,
-      "pos52wPct": 17.4,
-      "momPct": 10.84,
-      "qoqPct": -6.14,
-      "yoyPct": -30.47,
-      "divYield": 1.25,
-      "forwardDivYield": 1.25,
-      "netDivYield": 1.25,
+      "pos52wPct": 17.7,
+      "momPct": 11.05,
+      "qoqPct": -5.96,
+      "yoyPct": -30.34,
+      "divYield": 1.24,
+      "forwardDivYield": 1.24,
+      "netDivYield": 1.24,
       "nextExDate": "2027-05-15",
       "nextPayDate": "2027-06-09",
       "divFrequency": "Annual"
@@ -55959,12 +55959,12 @@
       "currency": "HKD",
       "low52w": 7.86,
       "high52w": 12.22,
-      "pos52wPct": 58.5,
-      "momPct": -3.79,
-      "qoqPct": 2.36,
-      "yoyPct": 19.93,
+      "pos52wPct": 58.3,
+      "momPct": -3.88,
+      "qoqPct": 2.26,
+      "yoyPct": 19.82,
       "divYield": 5.65,
-      "forwardDivYield": 5.76,
+      "forwardDivYield": 5.77,
       "netDivYield": 5.65,
       "nextExDate": "2027-06-18",
       "nextPayDate": "2027-07-13",
@@ -55975,13 +55975,13 @@
       "currency": "HKD",
       "low52w": 7.37,
       "high52w": 10.58,
-      "pos52wPct": 98.4,
-      "momPct": 2.63,
-      "qoqPct": 10.84,
-      "yoyPct": 28.89,
-      "divYield": 2.23,
-      "forwardDivYield": 4.18,
-      "netDivYield": 2.23,
+      "pos52wPct": 98.8,
+      "momPct": 2.73,
+      "qoqPct": 10.95,
+      "yoyPct": 29.01,
+      "divYield": 2.22,
+      "forwardDivYield": 4.17,
+      "netDivYield": 2.22,
       "nextExDate": "2026-12-03",
       "nextPayDate": "2026-12-28",
       "divFrequency": "Annual"
@@ -55991,13 +55991,13 @@
       "currency": "HKD",
       "low52w": 38.2,
       "high52w": 49.62,
-      "pos52wPct": 39.1,
-      "momPct": 0.23,
-      "qoqPct": -7.98,
-      "yoyPct": 7.13,
-      "divYield": 2.67,
-      "forwardDivYield": 5.44,
-      "netDivYield": 2.67,
+      "pos52wPct": 45.0,
+      "momPct": 1.83,
+      "qoqPct": -6.51,
+      "yoyPct": 8.84,
+      "divYield": 2.63,
+      "forwardDivYield": 5.35,
+      "netDivYield": 2.63,
       "nextExDate": "2027-07-02",
       "nextPayDate": "2027-07-27",
       "divFrequency": "Annual"
@@ -56007,13 +56007,13 @@
       "currency": "HKD",
       "low52w": 6.53,
       "high52w": 10.96,
-      "pos52wPct": 43.3,
-      "momPct": 7.44,
-      "qoqPct": -8.55,
-      "yoyPct": 6.83,
-      "divYield": 3.91,
-      "forwardDivYield": 4.26,
-      "netDivYield": 3.91,
+      "pos52wPct": 45.7,
+      "momPct": 8.77,
+      "qoqPct": -7.41,
+      "yoyPct": 8.15,
+      "divYield": 3.86,
+      "forwardDivYield": 4.21,
+      "netDivYield": 3.86,
       "nextExDate": "2027-06-24",
       "nextPayDate": "2027-07-19",
       "divFrequency": "Semi-Annual"
@@ -56023,12 +56023,12 @@
       "currency": "HKD",
       "low52w": 5.08,
       "high52w": 7.075,
-      "pos52wPct": 89.7,
-      "momPct": -1.01,
-      "qoqPct": 8.27,
-      "yoyPct": 17.84,
+      "pos52wPct": 90.2,
+      "momPct": -0.86,
+      "qoqPct": 8.43,
+      "yoyPct": 18.01,
       "divYield": 4.39,
-      "forwardDivYield": 4.37,
+      "forwardDivYield": 4.36,
       "netDivYield": 4.39,
       "nextExDate": "2026-12-05",
       "nextPayDate": "2026-12-30",
@@ -56039,13 +56039,13 @@
       "currency": "HKD",
       "low52w": 68.0,
       "high52w": 92.15,
-      "pos52wPct": 45.5,
-      "momPct": 4.77,
-      "qoqPct": 3.61,
-      "yoyPct": -1.99,
-      "divYield": 2.51,
-      "forwardDivYield": 2.51,
-      "netDivYield": 2.51,
+      "pos52wPct": 43.7,
+      "momPct": 4.18,
+      "qoqPct": 3.02,
+      "yoyPct": -2.54,
+      "divYield": 2.52,
+      "forwardDivYield": 2.52,
+      "netDivYield": 2.52,
       "nextExDate": "2027-05-28",
       "nextPayDate": "2027-06-22",
       "divFrequency": "Semi-Annual"
@@ -56055,13 +56055,13 @@
       "currency": "HKD",
       "low52w": 17.75,
       "high52w": 41.36,
-      "pos52wPct": 12.1,
-      "momPct": 1.88,
-      "qoqPct": -9.73,
-      "yoyPct": -33.25,
-      "divYield": 8.01,
-      "forwardDivYield": 8.01,
-      "netDivYield": 8.01,
+      "pos52wPct": 13.3,
+      "momPct": 3.36,
+      "qoqPct": -8.41,
+      "yoyPct": -32.27,
+      "divYield": 7.89,
+      "forwardDivYield": 7.89,
+      "netDivYield": 7.89,
       "nextExDate": "2027-05-22",
       "nextPayDate": "2027-06-16",
       "divFrequency": "Semi-Annual"
@@ -56071,12 +56071,12 @@
       "currency": "HKD",
       "low52w": 5.96,
       "high52w": 8.18,
-      "pos52wPct": 89.6,
-      "momPct": 0.7,
-      "qoqPct": 5.02,
-      "yoyPct": 23.45,
+      "pos52wPct": 89.2,
+      "momPct": 0.57,
+      "qoqPct": 4.89,
+      "yoyPct": 23.29,
       "divYield": 4.68,
-      "forwardDivYield": 4.65,
+      "forwardDivYield": 4.66,
       "netDivYield": 4.68,
       "nextExDate": "2026-12-04",
       "nextPayDate": "2026-12-29",
@@ -56087,13 +56087,13 @@
       "currency": "HKD",
       "low52w": 47.68,
       "high52w": 74.7,
-      "pos52wPct": 21.2,
-      "momPct": 7.36,
-      "qoqPct": -5.57,
-      "yoyPct": -5.82,
-      "divYield": 5.89,
-      "forwardDivYield": 5.88,
-      "netDivYield": 5.89,
+      "pos52wPct": 21.4,
+      "momPct": 7.46,
+      "qoqPct": -5.48,
+      "yoyPct": -5.73,
+      "divYield": 5.88,
+      "forwardDivYield": 5.87,
+      "netDivYield": 5.88,
       "nextExDate": "2027-06-02",
       "nextPayDate": "2027-06-27",
       "divFrequency": "Semi-Annual"
@@ -56103,29 +56103,29 @@
       "currency": "HKD",
       "low52w": 36.36,
       "high52w": 53.85,
-      "pos52wPct": 78.3,
-      "momPct": -0.89,
-      "qoqPct": -5.03,
-      "yoyPct": 33.61,
-      "divYield": 4.72,
-      "forwardDivYield": 4.26,
-      "netDivYield": 4.72,
+      "pos52wPct": 79.1,
+      "momPct": -0.59,
+      "qoqPct": -4.74,
+      "yoyPct": 34.01,
+      "divYield": 4.71,
+      "forwardDivYield": 4.24,
+      "netDivYield": 4.71,
       "nextExDate": "2026-11-12",
       "nextPayDate": "2026-12-07",
       "divFrequency": "Quarterly"
     },
     "2800.HK": {
-      "name": "Tracker Fund of Hong Kong",
+      "name": "Tracker Fund Of Hong Kong",
       "currency": "HKD",
       "low52w": 22.92,
       "high52w": 28.32,
-      "pos52wPct": 33.3,
-      "momPct": 5.55,
-      "qoqPct": -5.21,
-      "yoyPct": -5.07,
-      "divYield": 3.07,
-      "forwardDivYield": 3.07,
-      "netDivYield": 3.07,
+      "pos52wPct": 35.2,
+      "momPct": 5.98,
+      "qoqPct": -4.83,
+      "yoyPct": -4.69,
+      "divYield": 3.06,
+      "forwardDivYield": 3.06,
+      "netDivYield": 3.06,
       "nextExDate": "2027-04-29",
       "nextPayDate": "2027-05-24",
       "divFrequency": "Semi-Annual",
@@ -56136,10 +56136,10 @@
       "currency": "HKD",
       "low52w": 2799.0,
       "high52w": 4015.0,
-      "pos52wPct": 12.4,
-      "momPct": 3.18,
-      "qoqPct": -8.21,
-      "yoyPct": -0.81,
+      "pos52wPct": 13.0,
+      "momPct": 3.43,
+      "qoqPct": -8.0,
+      "yoyPct": -0.57,
       "divYield": 0.0,
       "forwardDivYield": 0.0,
       "netDivYield": 0.0,
@@ -56151,19 +56151,19 @@
       "currency": "HKD",
       "low52w": 26.58,
       "high52w": 46.98,
-      "pos52wPct": 12.8,
-      "momPct": 4.81,
-      "qoqPct": -20.26,
-      "yoyPct": -4.89,
-      "divYield": 3.15,
-      "forwardDivYield": 3.15,
-      "netDivYield": 3.15,
+      "pos52wPct": 14.2,
+      "momPct": 5.81,
+      "qoqPct": -19.5,
+      "yoyPct": -3.97,
+      "divYield": 3.12,
+      "forwardDivYield": 3.12,
+      "netDivYield": 3.12,
       "nextExDate": "2027-06-09",
       "nextPayDate": "2027-07-04",
       "divFrequency": "Semi-Annual"
     },
     "3077.HK": {
-      "name": "Premia US Treasury Floating Rate ETF Dist",
+      "name": "Premia ETF Series - US Treasury Floating Rate ETF",
       "currency": "HKD",
       "low52w": 3897.5,
       "high52w": 3997.75,
@@ -56180,14 +56180,14 @@
       "sector": "Index ETF"
     },
     "3195.HK": {
-      "name": "Hang Seng S&P 500 Index ETF",
+      "name": "Hang Seng S&P 500 Index Etf",
       "currency": "HKD",
       "low52w": 10.01,
       "high52w": 12.5,
-      "pos52wPct": 69.9,
-      "momPct": -2.97,
-      "qoqPct": -3.45,
-      "yoyPct": 9.2,
+      "pos52wPct": 67.9,
+      "momPct": -3.39,
+      "qoqPct": -3.86,
+      "yoyPct": 8.74,
       "divYield": 0.0,
       "forwardDivYield": 0.0,
       "netDivYield": 0.0,
@@ -56195,14 +56195,14 @@
       "sector": "Index ETF"
     },
     "3433.HK": {
-      "name": "CSOP FTSE US Treasury 20+ Years Index ETF",
+      "name": "CSOP ETF Series II - CSOP FTSE US Treasury 20+ Years Index ETF",
       "currency": "HKD",
       "low52w": 60.34,
       "high52w": 70.76,
-      "pos52wPct": 33.8,
-      "momPct": 0.76,
-      "qoqPct": -1.45,
-      "yoyPct": -9.16,
+      "pos52wPct": 33.6,
+      "momPct": 0.73,
+      "qoqPct": -1.48,
+      "yoyPct": -9.19,
       "divYield": 5.25,
       "forwardDivYield": 5.25,
       "netDivYield": 5.25,
@@ -56212,7 +56212,7 @@
       "sector": "Index ETF"
     },
     "3476.HK": {
-      "name": "Hang Seng JPMorgan US Equity Premium Income Active ETF (Listed Class) \u2013 HKD",
+      "name": "Hang Seng Jpmorgan Us Equity Premium Income Active Etf",
       "currency": "HKD",
       "low52w": 14.59,
       "high52w": 15.38,
@@ -56364,10 +56364,10 @@
       "paymentsPerYear": 4,
       "ttmDivPerShare": 3.2,
       "forwardDivPerShare": 2.52,
-      "trailingYieldPct": 3.96,
-      "forwardYieldPct": 3.11,
+      "trailingYieldPct": 3.97,
+      "forwardYieldPct": 3.12,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 3.96,
+      "netYieldPct": 3.97,
       "divCagr3Y": 0.53,
       "nextExDate": "2026-12-02",
       "nextPayDate": "2026-12-27",
@@ -56809,10 +56809,10 @@
       "paymentsPerYear": 2,
       "ttmDivPerShare": 0.35,
       "forwardDivPerShare": 0.35,
-      "trailingYieldPct": 4.72,
-      "forwardYieldPct": 4.72,
+      "trailingYieldPct": 4.74,
+      "forwardYieldPct": 4.74,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 4.72,
+      "netYieldPct": 4.74,
       "divCagr3Y": 0.0,
       "nextExDate": "2027-06-03",
       "nextPayDate": "2027-06-28",
@@ -57426,10 +57426,10 @@
       "paymentsPerYear": 2,
       "ttmDivPerShare": 2.82,
       "forwardDivPerShare": 2.82,
-      "trailingYieldPct": 4.31,
-      "forwardYieldPct": 4.31,
+      "trailingYieldPct": 4.32,
+      "forwardYieldPct": 4.32,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 4.31,
+      "netYieldPct": 4.32,
       "divCagr3Y": 0.0,
       "nextExDate": "2027-05-26",
       "nextPayDate": "2027-06-20",
@@ -57896,10 +57896,10 @@
       "paymentsPerYear": 2,
       "ttmDivPerShare": 3.78,
       "forwardDivPerShare": 3.78,
-      "trailingYieldPct": 3.2,
-      "forwardYieldPct": 3.2,
+      "trailingYieldPct": 3.21,
+      "forwardYieldPct": 3.21,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 3.2,
+      "netYieldPct": 3.21,
       "divCagr3Y": -8.84,
       "nextExDate": "2026-11-10",
       "nextPayDate": "2026-12-05",
@@ -58124,10 +58124,10 @@
       "paymentsPerYear": 2,
       "ttmDivPerShare": 1.31,
       "forwardDivPerShare": 1.31,
-      "trailingYieldPct": 3.82,
-      "forwardYieldPct": 3.82,
+      "trailingYieldPct": 3.8,
+      "forwardYieldPct": 3.8,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 3.82,
+      "netYieldPct": 3.8,
       "divCagr3Y": -3.1,
       "nextExDate": "2027-05-29",
       "nextPayDate": "2027-06-23",
@@ -58580,10 +58580,10 @@
       "paymentsPerYear": 2,
       "ttmDivPerShare": 0.2512,
       "forwardDivPerShare": 0.24,
-      "trailingYieldPct": 5.23,
-      "forwardYieldPct": 5.0,
+      "trailingYieldPct": 5.24,
+      "forwardYieldPct": 5.01,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 5.23,
+      "netYieldPct": 5.24,
       "divCagr3Y": -23.06,
       "nextExDate": "2027-06-08",
       "nextPayDate": "2027-07-03",
@@ -58808,10 +58808,10 @@
       "paymentsPerYear": 1,
       "ttmDivPerShare": 5.3,
       "forwardDivPerShare": 5.3,
-      "trailingYieldPct": 1.25,
-      "forwardYieldPct": 1.25,
+      "trailingYieldPct": 1.24,
+      "forwardYieldPct": 1.24,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 1.25,
+      "netYieldPct": 1.24,
       "divCagr3Y": 41.16,
       "nextExDate": "2027-05-15",
       "nextPayDate": "2027-06-09",
@@ -58932,7 +58932,7 @@
       "ttmDivPerShare": 0.5878,
       "forwardDivPerShare": 0.6,
       "trailingYieldPct": 5.65,
-      "forwardYieldPct": 5.76,
+      "forwardYieldPct": 5.77,
       "withholdingTaxPct": 0.0,
       "netYieldPct": 5.65,
       "divCagr3Y": 14.03,
@@ -58952,21 +58952,21 @@
           "exDate": "2012-09-05",
           "payDate": "2012-09-30",
           "payDateEstimated": true,
-          "amount": 0.17902,
+          "amount": 0.17905,
           "currency": "HKD"
         },
         {
           "exDate": "2013-05-29",
           "payDate": "2013-06-23",
           "payDateEstimated": true,
-          "amount": 0.153851,
+          "amount": 0.153878,
           "currency": "HKD"
         },
         {
           "exDate": "2013-09-04",
           "payDate": "2013-09-29",
           "payDateEstimated": true,
-          "amount": 0.189115,
+          "amount": 0.189148,
           "currency": "HKD"
         },
         {
@@ -59159,10 +59159,10 @@
       "paymentsPerYear": 1,
       "ttmDivPerShare": 0.2343,
       "forwardDivPerShare": 0.44,
-      "trailingYieldPct": 2.23,
-      "forwardYieldPct": 4.18,
+      "trailingYieldPct": 2.22,
+      "forwardYieldPct": 4.17,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 2.23,
+      "netYieldPct": 2.22,
       "divCagr3Y": 14.51,
       "nextExDate": "2026-12-03",
       "nextPayDate": "2026-12-28",
@@ -59180,7 +59180,7 @@
           "exDate": "2013-06-13",
           "payDate": "2013-07-08",
           "payDateEstimated": true,
-          "amount": 0.314605,
+          "amount": 0.314632,
           "currency": "HKD"
         },
         {
@@ -59201,7 +59201,7 @@
           "exDate": "2016-06-22",
           "payDate": "2016-07-17",
           "payDateEstimated": true,
-          "amount": 0.321649,
+          "amount": 0.321676,
           "currency": "HKD"
         },
         {
@@ -59296,10 +59296,10 @@
       "paymentsPerYear": 1,
       "ttmDivPerShare": 1.139,
       "forwardDivPerShare": 2.32,
-      "trailingYieldPct": 2.67,
-      "forwardYieldPct": 5.44,
+      "trailingYieldPct": 2.63,
+      "forwardYieldPct": 5.35,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 2.67,
+      "netYieldPct": 2.63,
       "divCagr3Y": 4.07,
       "nextExDate": "2027-07-02",
       "nextPayDate": "2027-07-27",
@@ -59310,14 +59310,14 @@
           "exDate": "2012-05-31",
           "payDate": "2012-06-25",
           "payDateEstimated": true,
-          "amount": 1.05651,
+          "amount": 1.05669,
           "currency": "HKD"
         },
         {
           "exDate": "2013-06-27",
           "payDate": "2013-07-22",
           "payDateEstimated": true,
-          "amount": 1.126944,
+          "amount": 1.127136,
           "currency": "HKD"
         },
         {
@@ -59338,7 +59338,7 @@
           "exDate": "2016-06-23",
           "payDate": "2016-07-18",
           "payDateEstimated": true,
-          "amount": 0.375648,
+          "amount": 0.375712,
           "currency": "HKD"
         },
         {
@@ -59433,10 +59433,10 @@
       "paymentsPerYear": 2,
       "ttmDivPerShare": 0.33,
       "forwardDivPerShare": 0.36,
-      "trailingYieldPct": 3.91,
-      "forwardYieldPct": 4.26,
+      "trailingYieldPct": 3.86,
+      "forwardYieldPct": 4.21,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 3.91,
+      "netYieldPct": 3.86,
       "divCagr3Y": 6.27,
       "nextExDate": "2027-06-24",
       "nextPayDate": "2027-07-19",
@@ -59599,7 +59599,7 @@
       "ttmDivPerShare": 0.3019,
       "forwardDivPerShare": 0.3,
       "trailingYieldPct": 4.39,
-      "forwardYieldPct": 4.37,
+      "forwardYieldPct": 4.36,
       "withholdingTaxPct": 0.0,
       "netYieldPct": 4.39,
       "divCagr3Y": 17.76,
@@ -59742,10 +59742,10 @@
       "paymentsPerYear": 2,
       "ttmDivPerShare": 1.9798,
       "forwardDivPerShare": 1.98,
-      "trailingYieldPct": 2.51,
-      "forwardYieldPct": 2.51,
+      "trailingYieldPct": 2.52,
+      "forwardYieldPct": 2.52,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 2.51,
+      "netYieldPct": 2.52,
       "divCagr3Y": 6.67,
       "nextExDate": "2027-05-28",
       "nextPayDate": "2027-06-22",
@@ -59970,10 +59970,10 @@
       "paymentsPerYear": 2,
       "ttmDivPerShare": 1.65,
       "forwardDivPerShare": 1.65,
-      "trailingYieldPct": 8.01,
-      "forwardYieldPct": 8.01,
+      "trailingYieldPct": 7.89,
+      "forwardYieldPct": 7.89,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 8.01,
+      "netYieldPct": 7.89,
       "divCagr3Y": 0.33,
       "nextExDate": "2027-05-22",
       "nextPayDate": "2027-06-16",
@@ -60129,7 +60129,7 @@
       "ttmDivPerShare": 0.3717,
       "forwardDivPerShare": 0.37,
       "trailingYieldPct": 4.68,
-      "forwardYieldPct": 4.65,
+      "forwardYieldPct": 4.66,
       "withholdingTaxPct": 0.0,
       "netYieldPct": 4.68,
       "divCagr3Y": 12.71,
@@ -60142,14 +60142,14 @@
           "exDate": "2012-06-06",
           "payDate": "2012-07-01",
           "payDateEstimated": true,
-          "amount": 0.238302,
+          "amount": 0.238342,
           "currency": "HKD"
         },
         {
           "exDate": "2013-06-17",
           "payDate": "2013-07-12",
           "payDateEstimated": true,
-          "amount": 0.280562,
+          "amount": 0.28061,
           "currency": "HKD"
         },
         {
@@ -60272,10 +60272,10 @@
       "paymentsPerYear": 2,
       "ttmDivPerShare": 3.1448,
       "forwardDivPerShare": 3.14,
-      "trailingYieldPct": 5.89,
-      "forwardYieldPct": 5.88,
+      "trailingYieldPct": 5.88,
+      "forwardYieldPct": 5.87,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 5.89,
+      "netYieldPct": 5.88,
       "divCagr3Y": -0.73,
       "nextExDate": "2027-06-02",
       "nextPayDate": "2027-06-27",
@@ -60286,14 +60286,14 @@
           "exDate": "2012-07-04",
           "payDate": "2012-07-29",
           "payDateEstimated": true,
-          "amount": 0.146737,
+          "amount": 0.146762,
           "currency": "HKD"
         },
         {
           "exDate": "2012-09-21",
           "payDate": "2012-10-16",
           "payDateEstimated": true,
-          "amount": 0.088043,
+          "amount": 0.088057,
           "currency": "HKD"
         },
         {
@@ -60307,7 +60307,7 @@
           "exDate": "2013-09-11",
           "payDate": "2013-10-06",
           "payDateEstimated": true,
-          "amount": 0.11739,
+          "amount": 0.11741,
           "currency": "HKD"
         },
         {
@@ -60500,10 +60500,10 @@
       "paymentsPerYear": 4,
       "ttmDivPerShare": 2.3638,
       "forwardDivPerShare": 2.13,
-      "trailingYieldPct": 4.72,
-      "forwardYieldPct": 4.26,
+      "trailingYieldPct": 4.71,
+      "forwardYieldPct": 4.24,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 4.72,
+      "netYieldPct": 4.71,
       "divCagr3Y": 26.53,
       "nextExDate": "2026-11-12",
       "nextPayDate": "2026-12-07",
@@ -60756,10 +60756,10 @@
       "paymentsPerYear": 2,
       "ttmDivPerShare": 0.76,
       "forwardDivPerShare": 0.76,
-      "trailingYieldPct": 3.07,
-      "forwardYieldPct": 3.07,
+      "trailingYieldPct": 3.06,
+      "forwardYieldPct": 3.06,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 3.07,
+      "netYieldPct": 3.06,
       "divCagr3Y": 6.36,
       "nextExDate": "2027-04-29",
       "nextPayDate": "2027-05-24",
@@ -60987,10 +60987,10 @@
       "paymentsPerYear": 2,
       "ttmDivPerShare": 0.9207,
       "forwardDivPerShare": 0.92,
-      "trailingYieldPct": 3.15,
-      "forwardYieldPct": 3.15,
+      "trailingYieldPct": 3.12,
+      "forwardYieldPct": 3.12,
       "withholdingTaxPct": 0.0,
-      "netYieldPct": 3.15,
+      "netYieldPct": 3.12,
       "divCagr3Y": 32.76,
       "nextExDate": "2027-06-09",
       "nextPayDate": "2027-07-04",
@@ -61001,14 +61001,14 @@
           "exDate": "2012-06-08",
           "payDate": "2012-07-03",
           "payDateEstimated": true,
-          "amount": 0.11739,
+          "amount": 0.11741,
           "currency": "HKD"
         },
         {
           "exDate": "2013-06-10",
           "payDate": "2013-07-05",
           "payDateEstimated": true,
-          "amount": 0.11739,
+          "amount": 0.11741,
           "currency": "HKD"
         },
         {
@@ -64148,29 +64148,29 @@
   },
   "technicals": {
     "0002.HK": {
-      "computedAt": "2026-11-09T01:42:51Z",
-      "sma20": 77.4525,
-      "sma50": 77.358,
-      "sma200": 75.8162,
-      "rsi14": 69.16,
+      "computedAt": "2026-11-09T01:57:01Z",
+      "sma20": 77.6375,
+      "sma50": 77.395,
+      "sma200": 75.8572,
+      "rsi14": 67.21,
       "macd": {
-        "line": 0.6965,
-        "signal": 0.2011,
-        "histogram": 0.4954
+        "line": 0.8313,
+        "signal": 0.3272,
+        "histogram": 0.5041
       },
       "bollinger": {
-        "upper": 80.2663,
-        "lower": 74.6387,
-        "pctB": 1.113,
-        "widthPct": 7.27
+        "upper": 80.7758,
+        "lower": 74.4992,
+        "pctB": 0.988,
+        "widthPct": 8.08
       },
-      "atr14": 1.2286,
-      "suggestedStopLoss": 78.44,
-      "volRatio20d": 1.55,
+      "atr14": 1.2107,
+      "suggestedStopLoss": 78.28,
+      "volRatio20d": 0.09,
       "regime": "Stage 4 Confirmed Downtrend",
-      "regTrendAnnualPct": 12.2,
-      "regR2": 0.723,
-      "alpha12mPct": 24.04,
+      "regTrendAnnualPct": 12.07,
+      "regR2": 0.722,
+      "alpha12mPct": 23.37,
       "benchmark": "2800.HK",
       "signalScore": 58,
       "signalLabel": "HOLD",
@@ -64186,41 +64186,40 @@
       ]
     },
     "0003.HK": {
-      "computedAt": "2026-11-09T01:42:53Z",
-      "sma20": 7.2313,
-      "sma50": 7.1764,
-      "sma200": 7.1578,
-      "rsi14": 63.14,
+      "computedAt": "2026-11-09T01:57:03Z",
+      "sma20": 7.2438,
+      "sma50": 7.178,
+      "sma200": 7.1587,
+      "rsi14": 62.2,
       "macd": {
-        "line": 0.0554,
-        "signal": 0.0369,
-        "histogram": 0.0185
+        "line": 0.0598,
+        "signal": 0.0415,
+        "histogram": 0.0183
       },
       "bollinger": {
-        "upper": 7.3873,
-        "lower": 7.0752,
-        "pctB": 1.105,
-        "widthPct": 4.32
+        "upper": 7.4068,
+        "lower": 7.0807,
+        "pctB": 0.933,
+        "widthPct": 4.5
       },
-      "atr14": 0.1093,
-      "suggestedStopLoss": 7.2,
-      "volRatio20d": 1.02,
+      "atr14": 0.1057,
+      "suggestedStopLoss": 7.17,
+      "volRatio20d": 0.05,
       "regime": "Stage 2 Strong Uptrend",
-      "regTrendAnnualPct": -0.35,
-      "regR2": 0.001,
-      "alpha12mPct": 7.56,
+      "regTrendAnnualPct": -0.57,
+      "regR2": 0.002,
+      "alpha12mPct": 6.69,
       "benchmark": "2800.HK",
-      "signalScore": 62,
+      "signalScore": 58,
       "signalLabel": "HOLD",
       "pillarBreakdown": {
         "momentum30": 12.0,
-        "trend25": 25.0,
+        "trend25": 20.5,
         "valuation25": 12.5,
         "quality20": 13.0
       },
       "signalReasons": [
-        "Golden Cross intact (Price > SMA50 > SMA200)",
-        "Positive expanding MACD histogram"
+        "Golden Cross intact (Price > SMA50 > SMA200)"
       ]
     },
     "0005.HK": {
@@ -64263,68 +64262,67 @@
       ]
     },
     "0006.HK": {
-      "computedAt": "2026-11-09T01:42:57Z",
-      "sma20": 62.03,
-      "sma50": 60.822,
-      "sma200": 60.7095,
-      "rsi14": 74.21,
+      "computedAt": "2026-11-09T01:57:05Z",
+      "sma20": 62.2775,
+      "sma50": 60.924,
+      "sma200": 60.7572,
+      "rsi14": 73.68,
       "macd": {
-        "line": 1.2227,
-        "signal": 0.8578,
-        "histogram": 0.3649
+        "line": 1.2938,
+        "signal": 0.945,
+        "histogram": 0.3488
       },
       "bollinger": {
-        "upper": 65.4882,
-        "lower": 58.5718,
-        "pctB": 0.987,
-        "widthPct": 11.15
+        "upper": 65.9364,
+        "lower": 58.6186,
+        "pctB": 0.92,
+        "widthPct": 11.75
       },
-      "atr14": 1.225,
-      "suggestedStopLoss": 62.95,
-      "volRatio20d": 1.15,
+      "atr14": 1.1607,
+      "suggestedStopLoss": 63.03,
+      "volRatio20d": 0.02,
       "regime": "Stage 2 Strong Uptrend",
-      "regTrendAnnualPct": 6.51,
-      "regR2": 0.142,
-      "alpha12mPct": 30.72,
+      "regTrendAnnualPct": 6.48,
+      "regR2": 0.141,
+      "alpha12mPct": 30.24,
       "benchmark": "2800.HK",
       "signalScore": 48,
       "signalLabel": "HOLD",
       "pillarBreakdown": {
         "momentum30": 2.0,
-        "trend25": 25.0,
-        "valuation25": 8.5,
+        "trend25": 20.5,
+        "valuation25": 12.5,
         "quality20": 13.0
       },
       "signalReasons": [
-        "RSI(14) overbought at 74.21",
-        "Golden Cross intact (Price > SMA50 > SMA200)",
-        "Positive expanding MACD histogram"
+        "RSI(14) overbought at 73.68",
+        "Golden Cross intact (Price > SMA50 > SMA200)"
       ]
     },
     "0012.HK": {
-      "computedAt": "2026-11-09T01:42:59Z",
-      "sma20": 27.702,
-      "sma50": 26.9296,
-      "sma200": 29.2014,
-      "rsi14": 73.44,
+      "computedAt": "2026-11-09T01:56:57Z",
+      "sma20": 27.845,
+      "sma50": 26.9408,
+      "sma200": 29.1918,
+      "rsi14": 73.8,
       "macd": {
-        "line": 0.6651,
-        "signal": 0.4224,
-        "histogram": 0.2427
+        "line": 0.7275,
+        "signal": 0.4835,
+        "histogram": 0.244
       },
       "bollinger": {
-        "upper": 29.4377,
-        "lower": 25.9663,
-        "pctB": 1.104,
-        "widthPct": 12.53
+        "upper": 29.7553,
+        "lower": 25.9347,
+        "pctB": 1.001,
+        "widthPct": 13.72
       },
-      "atr14": 0.5929,
-      "suggestedStopLoss": 28.61,
-      "volRatio20d": 0.8,
+      "atr14": 0.5686,
+      "suggestedStopLoss": 28.62,
+      "volRatio20d": 0.04,
       "regime": "Stage 1 Bullish Inflection",
-      "regTrendAnnualPct": -12.24,
-      "regR2": 0.182,
-      "alpha12mPct": 6.64,
+      "regTrendAnnualPct": -12.3,
+      "regR2": 0.184,
+      "alpha12mPct": 6.12,
       "benchmark": "2800.HK",
       "signalScore": 48,
       "signalLabel": "HOLD",
@@ -64335,34 +64333,34 @@
         "quality20": 13.0
       },
       "signalReasons": [
-        "RSI(14) overbought at 73.44",
+        "RSI(14) overbought at 73.8",
         "Positive expanding MACD histogram"
       ]
     },
     "0016.HK": {
-      "computedAt": "2026-11-09T01:43:43Z",
-      "sma20": 108.995,
-      "sma50": 110.586,
-      "sma200": 123.1595,
-      "rsi14": 66.92,
+      "computedAt": "2026-11-09T01:57:11Z",
+      "sma20": 109.44,
+      "sma50": 110.472,
+      "sma200": 123.193,
+      "rsi14": 67.07,
       "macd": {
-        "line": 1.4314,
-        "signal": -0.0782,
-        "histogram": 1.5096
+        "line": 1.818,
+        "signal": 0.3011,
+        "histogram": 1.5169
       },
       "bollinger": {
-        "upper": 116.3824,
-        "lower": 101.6076,
-        "pctB": 1.116,
-        "widthPct": 13.56
+        "upper": 117.7638,
+        "lower": 101.1162,
+        "pctB": 1.002,
+        "widthPct": 15.21
       },
-      "atr14": 2.7571,
-      "suggestedStopLoss": 112.59,
-      "volRatio20d": 1.36,
+      "atr14": 2.6857,
+      "suggestedStopLoss": 112.43,
+      "volRatio20d": 0.08,
       "regime": "Stage 1 Bullish Inflection",
-      "regTrendAnnualPct": -7.59,
-      "regR2": 0.04,
-      "alpha12mPct": 24.85,
+      "regTrendAnnualPct": -7.7,
+      "regR2": 0.041,
+      "alpha12mPct": 24.16,
       "benchmark": "2800.HK",
       "signalScore": 46,
       "signalLabel": "HOLD",
@@ -64378,29 +64376,29 @@
       ]
     },
     "0066.HK": {
-      "computedAt": "2026-11-09T01:43:01Z",
-      "sma20": 32.789,
-      "sma50": 32.5764,
-      "sma200": 33.1039,
-      "rsi14": 66.57,
+      "computedAt": "2026-11-09T01:56:49Z",
+      "sma20": 32.926,
+      "sma50": 32.6144,
+      "sma200": 33.1211,
+      "rsi14": 67.77,
       "macd": {
-        "line": 0.416,
-        "signal": 0.2336,
-        "histogram": 0.1824
+        "line": 0.4771,
+        "signal": 0.2823,
+        "histogram": 0.1948
       },
       "bollinger": {
-        "upper": 34.193,
-        "lower": 31.385,
-        "pctB": 1.031,
-        "widthPct": 8.56
+        "upper": 34.418,
+        "lower": 31.434,
+        "pctB": 1.014,
+        "widthPct": 9.06
       },
-      "atr14": 0.5571,
-      "suggestedStopLoss": 33.17,
-      "volRatio20d": 1.26,
+      "atr14": 0.5557,
+      "suggestedStopLoss": 33.35,
+      "volRatio20d": 0.1,
       "regime": "Stage 1 Bullish Inflection",
-      "regTrendAnnualPct": 1.03,
-      "regR2": 0.003,
-      "alpha12mPct": 16.08,
+      "regTrendAnnualPct": 1.27,
+      "regR2": 0.004,
+      "alpha12mPct": 16.28,
       "benchmark": "2800.HK",
       "signalScore": 58,
       "signalLabel": "HOLD",
@@ -64415,29 +64413,29 @@
       ]
     },
     "0101.HK": {
-      "computedAt": "2026-11-09T01:43:03Z",
-      "sma20": 6.3798,
-      "sma50": 6.6159,
-      "sma200": 7.9928,
-      "rsi14": 57.14,
+      "computedAt": "2026-11-09T01:56:59Z",
+      "sma20": 6.3808,
+      "sma50": 6.6035,
+      "sma200": 7.9793,
+      "rsi14": 57.52,
       "macd": {
-        "line": -0.0265,
-        "signal": -0.0938,
-        "histogram": 0.0673
+        "line": -0.0084,
+        "signal": -0.0767,
+        "histogram": 0.0683
       },
       "bollinger": {
-        "upper": 6.723,
-        "lower": 6.0365,
-        "pctB": 0.872,
-        "widthPct": 10.76
+        "upper": 6.7269,
+        "lower": 6.0346,
+        "pctB": 0.867,
+        "widthPct": 10.85
       },
-      "atr14": 0.1461,
+      "atr14": 0.1486,
       "suggestedStopLoss": 6.34,
-      "volRatio20d": 1.16,
+      "volRatio20d": 0.03,
       "regime": "Stage 1 Bullish Inflection",
       "regTrendAnnualPct": -38.58,
       "regR2": 0.791,
-      "alpha12mPct": -21.21,
+      "alpha12mPct": -21.59,
       "benchmark": "2800.HK",
       "signalScore": 61,
       "signalLabel": "HOLD",
@@ -64454,29 +64452,29 @@
       ]
     },
     "0386.HK": {
-      "computedAt": "2026-11-09T01:43:05Z",
-      "sma20": 4.6227,
-      "sma50": 4.612,
-      "sma200": 4.6227,
-      "rsi14": 60.77,
+      "computedAt": "2026-11-09T01:56:41Z",
+      "sma20": 4.6358,
+      "sma50": 4.6143,
+      "sma200": 4.6225,
+      "rsi14": 60.0,
       "macd": {
-        "line": 0.0852,
-        "signal": 0.054,
-        "histogram": 0.0312
+        "line": 0.0844,
+        "signal": 0.0601,
+        "histogram": 0.0243
       },
       "bollinger": {
-        "upper": 4.9272,
-        "lower": 4.3183,
-        "pctB": 0.791,
-        "widthPct": 13.17
+        "upper": 4.9462,
+        "lower": 4.3253,
+        "pctB": 0.756,
+        "widthPct": 13.39
       },
-      "atr14": 0.1289,
+      "atr14": 0.1261,
       "suggestedStopLoss": 4.54,
-      "volRatio20d": 0.57,
+      "volRatio20d": 0.03,
       "regime": "Stage 4 Confirmed Downtrend",
-      "regTrendAnnualPct": -7.76,
-      "regR2": 0.077,
-      "alpha12mPct": 13.91,
+      "regTrendAnnualPct": -7.8,
+      "regR2": 0.078,
+      "alpha12mPct": 13.42,
       "benchmark": "2800.HK",
       "signalScore": 60,
       "signalLabel": "HOLD",
@@ -64487,33 +64485,33 @@
         "quality20": 16.0
       },
       "signalReasons": [
-        "High Net Dividend Yield (5.23%)"
+        "High Net Dividend Yield (5.24%)"
       ]
     },
     "0700.HK": {
-      "computedAt": "2026-11-09T01:43:07Z",
-      "sma20": 403.45,
-      "sma50": 421.896,
-      "sma200": 474.2615,
-      "rsi14": 55.45,
+      "computedAt": "2026-11-09T01:57:12Z",
+      "sma20": 403.51,
+      "sma50": 421.46,
+      "sma200": 473.2815,
+      "rsi14": 58.06,
       "macd": {
-        "line": -4.646,
-        "signal": -9.262,
-        "histogram": 4.616
+        "line": -2.5284,
+        "signal": -7.9153,
+        "histogram": 5.3869
       },
       "bollinger": {
-        "upper": 438.7408,
-        "lower": 368.1592,
-        "pctB": 0.808,
-        "widthPct": 17.49
+        "upper": 438.9495,
+        "lower": 368.0705,
+        "pctB": 0.817,
+        "widthPct": 17.57
       },
-      "atr14": 12.8,
-      "suggestedStopLoss": 399.6,
-      "volRatio20d": 1.19,
+      "atr14": 12.5429,
+      "suggestedStopLoss": 400.91,
+      "volRatio20d": 0.12,
       "regime": "Stage 1 Bullish Inflection",
-      "regTrendAnnualPct": -32.73,
-      "regR2": 0.74,
-      "alpha12mPct": -25.4,
+      "regTrendAnnualPct": -32.68,
+      "regR2": 0.738,
+      "alpha12mPct": -25.65,
       "benchmark": "2800.HK",
       "signalScore": 55,
       "signalLabel": "HOLD",
@@ -64526,33 +64524,33 @@
       "signalReasons": [
         "Trading below 200-day SMA",
         "Positive expanding MACD histogram",
-        "In bottom quartile of 52W range (17.4%)"
+        "In bottom quartile of 52W range (17.7%)"
       ]
     },
     "0857.HK": {
-      "computedAt": "2026-11-09T01:43:09Z",
-      "sma20": 10.1847,
-      "sma50": 9.9721,
-      "sma200": 10.0098,
-      "rsi14": 54.92,
+      "computedAt": "2026-11-09T01:56:43Z",
+      "sma20": 10.2133,
+      "sma50": 9.9807,
+      "sma200": 10.0203,
+      "rsi14": 55.32,
       "macd": {
-        "line": 0.2012,
-        "signal": 0.1606,
-        "histogram": 0.0406
+        "line": 0.1889,
+        "signal": 0.1663,
+        "histogram": 0.0226
       },
       "bollinger": {
-        "upper": 10.9194,
-        "lower": 9.4501,
-        "pctB": 0.653,
-        "widthPct": 14.43
+        "upper": 10.9348,
+        "lower": 9.4917,
+        "pctB": 0.629,
+        "widthPct": 14.13
       },
-      "atr14": 0.4257,
-      "suggestedStopLoss": 9.56,
-      "volRatio20d": 1.08,
+      "atr14": 0.4164,
+      "suggestedStopLoss": 9.57,
+      "volRatio20d": 0.04,
       "regime": "Stage 4 Confirmed Downtrend",
-      "regTrendAnnualPct": 12.27,
-      "regR2": 0.109,
-      "alpha12mPct": 25.0,
+      "regTrendAnnualPct": 12.22,
+      "regR2": 0.108,
+      "alpha12mPct": 24.51,
       "benchmark": "2800.HK",
       "signalScore": 60,
       "signalLabel": "HOLD",
@@ -64567,29 +64565,29 @@
       ]
     },
     "0939.HK": {
-      "computedAt": "2026-11-09T01:43:11Z",
-      "sma20": 10.0042,
-      "sma50": 9.7729,
-      "sma200": 8.7686,
-      "rsi14": 70.6,
+      "computedAt": "2026-11-09T01:56:33Z",
+      "sma20": 10.0445,
+      "sma50": 9.801,
+      "sma200": 8.7821,
+      "rsi14": 70.81,
       "macd": {
-        "line": 0.19,
-        "signal": 0.1402,
-        "histogram": 0.0498
+        "line": 0.2055,
+        "signal": 0.1533,
+        "histogram": 0.0522
       },
       "bollinger": {
-        "upper": 10.4631,
-        "lower": 9.5454,
-        "pctB": 1.073,
-        "widthPct": 9.17
+        "upper": 10.5414,
+        "lower": 9.5476,
+        "pctB": 0.999,
+        "widthPct": 9.89
       },
-      "atr14": 0.2554,
-      "suggestedStopLoss": 10.02,
-      "volRatio20d": 0.73,
+      "atr14": 0.2496,
+      "suggestedStopLoss": 10.04,
+      "volRatio20d": 0.04,
       "regime": "Stage 2 Strong Uptrend",
-      "regTrendAnnualPct": 39.8,
+      "regTrendAnnualPct": 39.86,
       "regR2": 0.883,
-      "alpha12mPct": 33.96,
+      "alpha12mPct": 33.7,
       "benchmark": "2800.HK",
       "signalScore": 56,
       "signalLabel": "HOLD",
@@ -64605,66 +64603,67 @@
       ]
     },
     "1088.HK": {
-      "computedAt": "2026-11-09T01:43:12Z",
-      "sma20": 42.229,
-      "sma50": 43.88,
-      "sma200": 44.2229,
-      "rsi14": 49.76,
+      "computedAt": "2026-11-09T01:56:45Z",
+      "sma20": 42.185,
+      "sma50": 43.8324,
+      "sma200": 44.2334,
+      "rsi14": 53.78,
       "macd": {
-        "line": -0.2724,
-        "signal": -0.5402,
-        "histogram": 0.2678
+        "line": -0.1771,
+        "signal": -0.4675,
+        "histogram": 0.2904
       },
       "bollinger": {
-        "upper": 45.1294,
-        "lower": 39.3286,
-        "pctB": 0.574,
-        "widthPct": 13.74
+        "upper": 44.9884,
+        "lower": 39.3816,
+        "pctB": 0.706,
+        "widthPct": 13.29
       },
-      "atr14": 1.39,
-      "suggestedStopLoss": 39.88,
-      "volRatio20d": 0.92,
-      "regime": "Stage 4 Confirmed Downtrend",
-      "regTrendAnnualPct": 2.0,
-      "regR2": 0.009,
-      "alpha12mPct": 12.2,
+      "atr14": 1.3614,
+      "suggestedStopLoss": 40.62,
+      "volRatio20d": 0.03,
+      "regime": "Range-Bound Consolidation",
+      "regTrendAnnualPct": 2.75,
+      "regR2": 0.018,
+      "alpha12mPct": 13.53,
       "benchmark": "2800.HK",
-      "signalScore": 44,
+      "signalScore": 48,
       "signalLabel": "HOLD",
       "pillarBreakdown": {
         "momentum30": 15.0,
-        "trend25": 6.5,
+        "trend25": 11.0,
         "valuation25": 12.5,
         "quality20": 10.0
       },
       "signalReasons": [
-        "Trading below 200-day SMA"
+        "Trading below 200-day SMA",
+        "Positive expanding MACD histogram"
       ]
     },
     "1093.HK": {
-      "computedAt": "2026-11-09T01:43:14Z",
-      "sma20": 8.46,
-      "sma50": 9.0126,
-      "sma200": 8.7296,
-      "rsi14": 46.89,
+      "computedAt": "2026-11-09T01:56:47Z",
+      "sma20": 8.4335,
+      "sma50": 8.9901,
+      "sma200": 8.7234,
+      "rsi14": 49.32,
       "macd": {
-        "line": -0.2515,
-        "signal": -0.2846,
-        "histogram": 0.0331
+        "line": -0.2143,
+        "signal": -0.2705,
+        "histogram": 0.0562
       },
       "bollinger": {
-        "upper": 9.3172,
-        "lower": 7.6028,
-        "pctB": 0.494,
-        "widthPct": 20.26
+        "upper": 9.2432,
+        "lower": 7.6238,
+        "pctB": 0.575,
+        "widthPct": 19.2
       },
-      "atr14": 0.3721,
-      "suggestedStopLoss": 7.71,
-      "volRatio20d": 1.13,
+      "atr14": 0.3589,
+      "suggestedStopLoss": 7.84,
+      "volRatio20d": 0.08,
       "regime": "Stage 3 Topping / Distribution",
-      "regTrendAnnualPct": -6.49,
-      "regR2": 0.033,
-      "alpha12mPct": 11.9,
+      "regTrendAnnualPct": -5.95,
+      "regR2": 0.027,
+      "alpha12mPct": 12.84,
       "benchmark": "2800.HK",
       "signalScore": 52,
       "signalLabel": "HOLD",
@@ -64680,29 +64679,143 @@
       ]
     },
     "1288.HK": {
-      "computedAt": "2026-11-09T01:43:16Z",
-      "sma20": 6.724,
-      "sma50": 6.5559,
-      "sma200": 5.9221,
-      "rsi14": 58.38,
+      "computedAt": "2026-11-09T01:56:35Z",
+      "sma20": 6.7438,
+      "sma50": 6.5687,
+      "sma200": 5.9285,
+      "rsi14": 58.74,
       "macd": {
-        "line": 0.0802,
-        "signal": 0.0803,
-        "histogram": -0.0001
+        "line": 0.0834,
+        "signal": 0.081,
+        "histogram": 0.0024
       },
       "bollinger": {
-        "upper": 6.9395,
-        "lower": 6.5085,
-        "pctB": 0.839,
-        "widthPct": 6.41
+        "upper": 6.9396,
+        "lower": 6.5479,
+        "pctB": 0.848,
+        "widthPct": 5.81
       },
-      "atr14": 0.1975,
-      "suggestedStopLoss": 6.47,
-      "volRatio20d": 0.69,
+      "atr14": 0.1893,
+      "suggestedStopLoss": 6.5,
+      "volRatio20d": 0.03,
       "regime": "Stage 2 Strong Uptrend",
-      "regTrendAnnualPct": 29.95,
-      "regR2": 0.678,
-      "alpha12mPct": 22.91,
+      "regTrendAnnualPct": 30.04,
+      "regR2": 0.679,
+      "alpha12mPct": 22.7,
+      "benchmark": "2800.HK",
+      "signalScore": 62,
+      "signalLabel": "HOLD",
+      "pillarBreakdown": {
+        "momentum30": 15.0,
+        "trend25": 25.0,
+        "valuation25": 8.5,
+        "quality20": 13.0
+      },
+      "signalReasons": [
+        "Golden Cross intact (Price > SMA50 > SMA200)",
+        "Positive expanding MACD histogram"
+      ]
+    },
+    "1299.HK": {
+      "computedAt": "2026-11-09T01:56:51Z",
+      "sma20": 73.785,
+      "sma50": 74.288,
+      "sma200": 79.2367,
+      "rsi14": 68.01,
+      "macd": {
+        "line": 1.2896,
+        "signal": 0.4347,
+        "histogram": 0.8549
+      },
+      "bollinger": {
+        "upper": 79.0383,
+        "lower": 68.5317,
+        "pctB": 0.954,
+        "widthPct": 14.24
+      },
+      "atr14": 1.8607,
+      "suggestedStopLoss": 74.83,
+      "volRatio20d": 0.17,
+      "regime": "Stage 4 Confirmed Downtrend",
+      "regTrendAnnualPct": -15.04,
+      "regR2": 0.476,
+      "alpha12mPct": 2.15,
+      "benchmark": "2800.HK",
+      "signalScore": 41,
+      "signalLabel": "TRIM / OVERBOUGHT",
+      "pillarBreakdown": {
+        "momentum30": 12.0,
+        "trend25": 6.5,
+        "valuation25": 12.5,
+        "quality20": 10.0
+      },
+      "signalReasons": [
+        "Trading below 200-day SMA"
+      ]
+    },
+    "1378.HK": {
+      "computedAt": "2026-11-09T01:56:54Z",
+      "sma20": 19.944,
+      "sma50": 21.2052,
+      "sma200": 28.2072,
+      "rsi14": 54.24,
+      "macd": {
+        "line": -0.1542,
+        "signal": -0.3934,
+        "histogram": 0.2392
+      },
+      "bollinger": {
+        "upper": 21.6261,
+        "lower": 18.2619,
+        "pctB": 0.784,
+        "widthPct": 16.87
+      },
+      "atr14": 0.6836,
+      "suggestedStopLoss": 19.53,
+      "volRatio20d": 0.06,
+      "regime": "Range-Bound Consolidation",
+      "regTrendAnnualPct": -50.75,
+      "regR2": 0.803,
+      "alpha12mPct": -27.58,
+      "benchmark": "2800.HK",
+      "signalScore": 61,
+      "signalLabel": "HOLD",
+      "pillarBreakdown": {
+        "momentum30": 15.0,
+        "trend25": 11.0,
+        "valuation25": 19.0,
+        "quality20": 16.0
+      },
+      "signalReasons": [
+        "Trading below 200-day SMA",
+        "Positive expanding MACD histogram",
+        "In bottom quartile of 52W range (13.3%)"
+      ]
+    },
+    "1398.HK": {
+      "computedAt": "2026-11-09T01:56:37Z",
+      "sma20": 7.656,
+      "sma50": 7.6052,
+      "sma200": 7.0161,
+      "rsi14": 62.39,
+      "macd": {
+        "line": 0.1006,
+        "signal": 0.0606,
+        "histogram": 0.04
+      },
+      "bollinger": {
+        "upper": 8.0483,
+        "lower": 7.2637,
+        "pctB": 0.862,
+        "widthPct": 10.25
+      },
+      "atr14": 0.2196,
+      "suggestedStopLoss": 7.5,
+      "volRatio20d": 0.04,
+      "regime": "Stage 2 Strong Uptrend",
+      "regTrendAnnualPct": 30.37,
+      "regR2": 0.808,
+      "alpha12mPct": 27.98,
       "benchmark": "2800.HK",
       "signalScore": 61,
       "signalLabel": "HOLD",
@@ -64716,145 +64829,30 @@
         "Golden Cross intact (Price > SMA50 > SMA200)"
       ]
     },
-    "1299.HK": {
-      "computedAt": "2026-11-09T01:43:18Z",
-      "sma20": 73.42,
-      "sma50": 74.21,
-      "sma200": 79.2682,
-      "rsi14": 67.75,
-      "macd": {
-        "line": 1.1017,
-        "signal": 0.221,
-        "histogram": 0.8807
-      },
-      "bollinger": {
-        "upper": 78.2994,
-        "lower": 68.5406,
-        "pctB": 1.072,
-        "widthPct": 13.29
-      },
-      "atr14": 1.8821,
-      "suggestedStopLoss": 75.24,
-      "volRatio20d": 0.92,
-      "regime": "Stage 1 Bullish Inflection",
-      "regTrendAnnualPct": -14.82,
-      "regR2": 0.463,
-      "alpha12mPct": 3.08,
-      "benchmark": "2800.HK",
-      "signalScore": 46,
-      "signalLabel": "HOLD",
-      "pillarBreakdown": {
-        "momentum30": 12.0,
-        "trend25": 11.0,
-        "valuation25": 12.5,
-        "quality20": 10.0
-      },
-      "signalReasons": [
-        "Trading below 200-day SMA",
-        "Positive expanding MACD histogram"
-      ]
-    },
-    "1378.HK": {
-      "computedAt": "2026-11-09T01:43:20Z",
-      "sma20": 19.956,
-      "sma50": 21.25,
-      "sma200": 28.2811,
-      "rsi14": 50.17,
-      "macd": {
-        "line": -0.2338,
-        "signal": -0.4532,
-        "histogram": 0.2194
-      },
-      "bollinger": {
-        "upper": 21.6684,
-        "lower": 18.2436,
-        "pctB": 0.688,
-        "widthPct": 17.16
-      },
-      "atr14": 0.7093,
-      "suggestedStopLoss": 19.18,
-      "volRatio20d": 0.59,
-      "regime": "Stage 4 Confirmed Downtrend",
-      "regTrendAnnualPct": -51.07,
-      "regR2": 0.808,
-      "alpha12mPct": -28.18,
-      "benchmark": "2800.HK",
-      "signalScore": 56,
-      "signalLabel": "HOLD",
-      "pillarBreakdown": {
-        "momentum30": 15.0,
-        "trend25": 6.5,
-        "valuation25": 19.0,
-        "quality20": 16.0
-      },
-      "signalReasons": [
-        "Trading below 200-day SMA",
-        "In bottom quartile of 52W range (12.1%)",
-        "High Net Dividend Yield (8.01%)"
-      ]
-    },
-    "1398.HK": {
-      "computedAt": "2026-11-09T01:43:22Z",
-      "sma20": 7.634,
-      "sma50": 7.5955,
-      "sma200": 7.0081,
-      "rsi14": 62.94,
-      "macd": {
-        "line": 0.0924,
-        "signal": 0.0506,
-        "histogram": 0.0418
-      },
-      "bollinger": {
-        "upper": 8.0091,
-        "lower": 7.2589,
-        "pctB": 0.921,
-        "widthPct": 9.83
-      },
-      "atr14": 0.2311,
-      "suggestedStopLoss": 7.49,
-      "volRatio20d": 1.01,
-      "regime": "Stage 2 Strong Uptrend",
-      "regTrendAnnualPct": 30.45,
-      "regR2": 0.809,
-      "alpha12mPct": 28.52,
-      "benchmark": "2800.HK",
-      "signalScore": 62,
-      "signalLabel": "HOLD",
-      "pillarBreakdown": {
-        "momentum30": 12.0,
-        "trend25": 25.0,
-        "valuation25": 12.5,
-        "quality20": 13.0
-      },
-      "signalReasons": [
-        "Golden Cross intact (Price > SMA50 > SMA200)",
-        "Positive expanding MACD histogram"
-      ]
-    },
     "2318.HK": {
-      "computedAt": "2026-11-09T01:43:24Z",
-      "sma20": 50.358,
-      "sma50": 52.5752,
-      "sma200": 58.922,
-      "rsi14": 63.4,
+      "computedAt": "2026-11-09T01:56:52Z",
+      "sma20": 50.438,
+      "sma50": 52.5002,
+      "sma200": 58.8415,
+      "rsi14": 64.87,
       "macd": {
-        "line": -0.0545,
-        "signal": -0.6883,
-        "histogram": 0.6338
+        "line": 0.1339,
+        "signal": -0.5239,
+        "histogram": 0.6578
       },
       "bollinger": {
-        "upper": 53.3879,
-        "lower": 47.3281,
-        "pctB": 1.002,
-        "widthPct": 12.03
+        "upper": 53.697,
+        "lower": 47.179,
+        "pctB": 0.962,
+        "widthPct": 12.92
       },
-      "atr14": 1.1507,
-      "suggestedStopLoss": 51.1,
-      "volRatio20d": 1.07,
+      "atr14": 1.1043,
+      "suggestedStopLoss": 51.24,
+      "volRatio20d": 0.13,
       "regime": "Stage 1 Bullish Inflection",
-      "regTrendAnnualPct": -28.61,
-      "regR2": 0.737,
-      "alpha12mPct": -0.75,
+      "regTrendAnnualPct": -28.58,
+      "regR2": 0.736,
+      "alpha12mPct": -1.04,
       "benchmark": "2800.HK",
       "signalScore": 58,
       "signalLabel": "HOLD",
@@ -64867,33 +64865,33 @@
       "signalReasons": [
         "Trading below 200-day SMA",
         "Positive expanding MACD histogram",
-        "In bottom quartile of 52W range (21.2%)"
+        "In bottom quartile of 52W range (21.4%)"
       ]
     },
     "2388.HK": {
-      "computedAt": "2026-11-09T01:43:25Z",
-      "sma20": 49.6425,
-      "sma50": 50.872,
-      "sma200": 46.6466,
-      "rsi14": 50.91,
+      "computedAt": "2026-11-09T01:56:39Z",
+      "sma20": 49.6685,
+      "sma50": 50.8796,
+      "sma200": 46.6956,
+      "rsi14": 51.79,
       "macd": {
-        "line": -0.5014,
-        "signal": -0.5688,
-        "histogram": 0.0674
+        "line": -0.3903,
+        "signal": -0.5331,
+        "histogram": 0.1428
       },
       "bollinger": {
-        "upper": 51.9463,
-        "lower": 47.3387,
-        "pctB": 0.588,
-        "widthPct": 9.28
+        "upper": 51.9851,
+        "lower": 47.3519,
+        "pctB": 0.615,
+        "widthPct": 9.33
       },
-      "atr14": 1.4086,
-      "suggestedStopLoss": 47.23,
-      "volRatio20d": 0.83,
+      "atr14": 1.3836,
+      "suggestedStopLoss": 47.43,
+      "volRatio20d": 0.04,
       "regime": "Range-Bound Consolidation",
-      "regTrendAnnualPct": 33.78,
-      "regR2": 0.719,
-      "alpha12mPct": 38.68,
+      "regTrendAnnualPct": 33.97,
+      "regR2": 0.723,
+      "alpha12mPct": 38.7,
       "benchmark": "2800.HK",
       "signalScore": 62,
       "signalLabel": "HOLD",
@@ -64908,28 +64906,28 @@
       ]
     },
     "2800.HK": {
-      "computedAt": "2026-11-09T01:42:39Z",
-      "sma20": 24.231,
-      "sma50": 24.9708,
-      "sma200": 25.6548,
-      "rsi14": 53.02,
+      "computedAt": "2026-11-09T01:56:19Z",
+      "sma20": 24.23,
+      "sma50": 24.9452,
+      "sma200": 25.6433,
+      "rsi14": 55.84,
       "macd": {
-        "line": -0.2297,
-        "signal": -0.3531,
-        "histogram": 0.1234
+        "line": -0.1587,
+        "signal": -0.3142,
+        "histogram": 0.1555
       },
       "bollinger": {
-        "upper": 25.3772,
-        "lower": 23.0848,
-        "pctB": 0.713,
-        "widthPct": 9.46
+        "upper": 25.3741,
+        "lower": 23.0859,
+        "pctB": 0.758,
+        "widthPct": 9.44
       },
-      "atr14": 0.4386,
-      "suggestedStopLoss": 23.84,
-      "volRatio20d": 1.0,
+      "atr14": 0.4343,
+      "suggestedStopLoss": 23.95,
+      "volRatio20d": 0.08,
       "regime": "Range-Bound Consolidation",
-      "regTrendAnnualPct": -8.94,
-      "regR2": 0.31,
+      "regTrendAnnualPct": -8.77,
+      "regR2": 0.3,
       "alpha12mPct": 0.0,
       "benchmark": "2800.HK",
       "signalScore": 48,
@@ -64946,29 +64944,29 @@
       ]
     },
     "2840.HK": {
-      "computedAt": "2026-11-09T01:42:41Z",
-      "sma20": 2928.3,
-      "sma50": 3038.68,
-      "sma200": 3228.14,
-      "rsi14": 46.53,
+      "computedAt": "2026-11-09T01:56:21Z",
+      "sma20": 2925.5,
+      "sma50": 3031.48,
+      "sma200": 3226.32,
+      "rsi14": 51.11,
       "macd": {
-        "line": -40.4135,
-        "signal": -48.2656,
-        "histogram": 7.8521
+        "line": -33.1688,
+        "signal": -45.2463,
+        "histogram": 12.0775
       },
       "bollinger": {
-        "upper": 3054.9556,
-        "lower": 2801.6444,
-        "pctB": 0.586,
-        "widthPct": 8.65
+        "upper": 3046.9092,
+        "lower": 2804.0908,
+        "pctB": 0.63,
+        "widthPct": 8.3
       },
-      "atr14": 48.6429,
-      "suggestedStopLoss": 2852.71,
-      "volRatio20d": 0.9,
-      "regime": "Stage 4 Confirmed Downtrend",
-      "regTrendAnnualPct": -18.94,
-      "regR2": 0.502,
-      "alpha12mPct": 4.26,
+      "atr14": 47.9286,
+      "suggestedStopLoss": 2861.14,
+      "volRatio20d": 0.12,
+      "regime": "Range-Bound Consolidation",
+      "regTrendAnnualPct": -18.85,
+      "regR2": 0.498,
+      "alpha12mPct": 4.12,
       "benchmark": "2800.HK",
       "signalScore": 55,
       "signalLabel": "HOLD",
@@ -64981,33 +64979,33 @@
       "signalReasons": [
         "Trading below 200-day SMA",
         "Positive expanding MACD histogram",
-        "In bottom quartile of 52W range (12.4%)"
+        "In bottom quartile of 52W range (13.0%)"
       ]
     },
     "2899.HK": {
-      "computedAt": "2026-11-09T01:43:45Z",
-      "sma20": 29.839,
-      "sma50": 32.6084,
-      "sma200": 35.1982,
-      "rsi14": 43.51,
+      "computedAt": "2026-11-09T01:57:09Z",
+      "sma20": 29.666,
+      "sma50": 32.4448,
+      "sma200": 35.1456,
+      "rsi14": 46.5,
       "macd": {
-        "line": -1.1245,
-        "signal": -1.2992,
-        "histogram": 0.1747
+        "line": -1.0068,
+        "signal": -1.2408,
+        "histogram": 0.234
       },
       "bollinger": {
-        "upper": 33.6524,
-        "lower": 26.0256,
-        "pctB": 0.416,
-        "widthPct": 25.56
+        "upper": 33.205,
+        "lower": 26.127,
+        "pctB": 0.474,
+        "widthPct": 23.86
       },
-      "atr14": 1.3829,
-      "suggestedStopLoss": 26.43,
-      "volRatio20d": 1.36,
+      "atr14": 1.3271,
+      "suggestedStopLoss": 26.83,
+      "volRatio20d": 0.08,
       "regime": "Stage 4 Confirmed Downtrend",
-      "regTrendAnnualPct": -29.34,
-      "regR2": 0.486,
-      "alpha12mPct": 0.18,
+      "regTrendAnnualPct": -29.03,
+      "regR2": 0.479,
+      "alpha12mPct": 0.72,
       "benchmark": "2800.HK",
       "signalScore": 55,
       "signalLabel": "HOLD",
@@ -65020,11 +65018,11 @@
       "signalReasons": [
         "Trading below 200-day SMA",
         "Positive expanding MACD histogram",
-        "In bottom quartile of 52W range (12.8%)"
+        "In bottom quartile of 52W range (14.2%)"
       ]
     },
     "3077.HK": {
-      "computedAt": "2026-11-09T01:42:43Z",
+      "computedAt": "2026-11-09T01:56:22Z",
       "sma20": 3973.1609,
       "sma50": 3963.7373,
       "sma200": 3950.3072,
@@ -65046,7 +65044,7 @@
       "regime": "Bullish Pullback (Buy-the-Dip)",
       "regTrendAnnualPct": 0.78,
       "regR2": 0.336,
-      "alpha12mPct": 5.89,
+      "alpha12mPct": 5.51,
       "benchmark": "2800.HK",
       "signalScore": 58,
       "signalLabel": "HOLD",
@@ -65063,29 +65061,29 @@
       ]
     },
     "3195.HK": {
-      "computedAt": "2026-11-09T01:42:45Z",
-      "sma20": 12.1745,
-      "sma50": 12.185,
-      "sma200": 11.5835,
-      "rsi14": 32.93,
+      "computedAt": "2026-11-09T01:56:24Z",
+      "sma20": 12.141,
+      "sma50": 12.1748,
+      "sma200": 11.5874,
+      "rsi14": 34.8,
       "macd": {
-        "line": -0.0784,
-        "signal": -0.0347,
-        "histogram": -0.0437
+        "line": -0.1009,
+        "signal": -0.0479,
+        "histogram": -0.053
       },
       "bollinger": {
-        "upper": 12.5248,
-        "lower": 11.8242,
-        "pctB": -0.106,
-        "widthPct": 5.75
+        "upper": 12.5355,
+        "lower": 11.7465,
+        "pctB": -0.059,
+        "widthPct": 6.5
       },
-      "atr14": 0.1843,
-      "suggestedStopLoss": 11.38,
-      "volRatio20d": 4.84,
+      "atr14": 0.1936,
+      "suggestedStopLoss": 11.31,
+      "volRatio20d": 0.42,
       "regime": "Bullish Pullback (Buy-the-Dip)",
-      "regTrendAnnualPct": 16.97,
-      "regR2": 0.615,
-      "alpha12mPct": 14.27,
+      "regTrendAnnualPct": 16.74,
+      "regR2": 0.602,
+      "alpha12mPct": 13.43,
       "benchmark": "2800.HK",
       "signalScore": 59,
       "signalLabel": "HOLD",
@@ -65096,12 +65094,12 @@
         "quality20": 10.0
       },
       "signalReasons": [
-        "RSI(14) accumulation zone (32.93)",
-        "Near lower Bollinger Band (%B=-0.106)"
+        "RSI(14) accumulation zone (34.8)",
+        "Near lower Bollinger Band (%B=-0.059)"
       ]
     },
     "3433.HK": {
-      "computedAt": "2026-11-09T01:42:47Z",
+      "computedAt": "2026-11-09T01:56:26Z",
       "sma20": 62.819,
       "sma50": 63.09,
       "sma200": 66.1523,
@@ -65114,16 +65112,16 @@
       "bollinger": {
         "upper": 64.42,
         "lower": 61.218,
-        "pctB": 0.825,
+        "pctB": 0.819,
         "widthPct": 5.1
       },
       "atr14": 0.4943,
-      "suggestedStopLoss": 62.87,
+      "suggestedStopLoss": 62.85,
       "volRatio20d": 1.58,
       "regime": "Range-Bound Consolidation",
-      "regTrendAnnualPct": -10.38,
-      "regR2": 0.71,
-      "alpha12mPct": -4.09,
+      "regTrendAnnualPct": -10.39,
+      "regR2": 0.711,
+      "alpha12mPct": -4.5,
       "benchmark": "2800.HK",
       "signalScore": 50,
       "signalLabel": "HOLD",
@@ -65139,7 +65137,7 @@
       ]
     },
     "3476.HK": {
-      "computedAt": "2026-11-09T01:42:49Z",
+      "computedAt": "2026-11-09T01:56:28Z",
       "sma20": 14.9615,
       "sma50": 15.0168,
       "sma200": 14.9912,
@@ -65161,7 +65159,7 @@
       "regime": "Bullish Pullback (Buy-the-Dip)",
       "regTrendAnnualPct": -0.8,
       "regR2": 0.045,
-      "alpha12mPct": 4.14,
+      "alpha12mPct": 3.76,
       "benchmark": "2800.HK",
       "signalScore": 50,
       "signalLabel": "HOLD",
@@ -65367,7 +65365,7 @@
       ]
     },
     "SPYL.L": {
-      "computedAt": "2026-11-09T01:43:36Z",
+      "computedAt": "2026-11-09T01:56:30Z",
       "sma20": 19.0197,
       "sma50": 19.0412,
       "sma200": 18.1154,
@@ -65405,7 +65403,7 @@
       ]
     },
     "VOO": {
-      "computedAt": "2026-11-09T01:43:38Z",
+      "computedAt": "2026-11-09T01:57:07Z",
       "sma20": 701.718,
       "sma50": 704.042,
       "sma200": 671.6003,
@@ -65443,7 +65441,7 @@
       ]
     },
     "VWRA.L": {
-      "computedAt": "2026-11-09T01:43:41Z",
+      "computedAt": "2026-11-09T01:56:31Z",
       "sma20": 190.44,
       "sma50": 192.13,
       "sma200": 184.6358,
