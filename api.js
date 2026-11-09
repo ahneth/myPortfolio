@@ -1090,16 +1090,19 @@ async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
     });
   }
 
-  // Step 2: Pull latest committed historical_prices.json from GitHub repository / same-origin (for 15y monthly history, dividends & technicals)
+  // Step 2: Pull latest committed historical_prices.json from GitHub repository / same-origin
+  // Pass renderWhenDone = false so intermediate snapshot data never triggers a premature UI re-render before live quotes finish!
   if (typeof loadHistoricalPricesFromJson === 'function') {
-    await loadHistoricalPricesFromJson(false);
+    await loadHistoricalPricesFromJson(false, false);
   }
 
-  // Step 3: Fetch LIVE PRICES ONLY via MarketAPI (Batch JSONP + Parallel Live Quote Worker Pool)
+  // Step 3: Fetch LIVE PRICES ONLY via MarketAPI into a staging buffer so display prices never bounce or flicker mid-sync
   let updatedQuotes = 0;
   let liveJsonpCount = 0;
   let snapshotQuoteCount = 0;
   const errors = [];
+  const stagedPrices = {};
+  const flashDirections = {};
 
   if (typeof AppLogger !== 'undefined') {
     AppLogger.api('MarketAPI', `Fetching live quotes for ${allTickers.length} tickers (${allTickers.slice(0, 6).join(', ')}${allTickers.length > 6 ? '...' : ''})...`);
@@ -1116,20 +1119,27 @@ async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
     } catch (_) {}
   }
 
-  // Parallel live quote resolution for all tickers (no sequential waiting)
+  // Parallel live quote resolution for all tickers into stagedPrices buffer
   await Promise.allSettled(allTickers.map(async (ticker) => {
     try {
       let q = batchQuotes[ticker];
+      let isLive = Boolean(q);
       if (!q) {
         try {
           q = await MarketAPI.fetchQuote(ticker);
+          isLive = Boolean(q && (!q.source || !q.source.includes('Snapshot')));
         } catch (_) {
+          // Keep existing live price if we already have one; only fall back to snapshot if state.prices[ticker] is missing
+          if (state.prices[ticker] && Number(state.prices[ticker].price) > 0) {
+            return;
+          }
           q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
+          isLive = false;
         }
       }
       if (q && q.price > 0) {
-        const prev = state.prices[ticker]?.price || q.prevPrice;
-        state.prices[ticker] = {
+        const prevDisplayed = state.prices[ticker]?.price || q.prevPrice;
+        stagedPrices[ticker] = {
           price: q.price,
           prevPrice: q.prevPrice,
           change: q.change,
@@ -1137,11 +1147,14 @@ async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
           high52w: q.high52w || state.fundamentals[ticker]?.high52w || null,
           low52w: q.low52w || state.fundamentals[ticker]?.low52w || null,
           currency: q.currency || 'HKD',
-          lastUpdated: new Date().toISOString()
+          lastUpdated: new Date().toISOString(),
+          _isLiveQuote: isLive
         };
+        if (Math.abs(q.price - prevDisplayed) > 1e-5) {
+          flashDirections[ticker] = q.price >= prevDisplayed;
+        }
         updatedQuotes++;
         if (q.source && q.source.includes('Snapshot')) snapshotQuoteCount++;
-        triggerRowPriceFlash(ticker, q.price >= prev);
       }
     } catch (err) {
       if (typeof AppLogger !== 'undefined') {
@@ -1151,10 +1164,19 @@ async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
     }
   }));
 
+  // Atomically commit all fetched live quotes at once, recalculate, and render a single time
+  Object.entries(stagedPrices).forEach(([ticker, quoteObj]) => {
+    state.prices[ticker] = quoteObj;
+  });
+
   state.settings.lastApiSync = new Date().toISOString();
   recalculatePortfolio();
   saveState();
   renderAll();
+
+  Object.entries(flashDirections).forEach(([ticker, isUp]) => {
+    triggerRowPriceFlash(ticker, isUp);
+  });
 
   syncIcons.forEach(ic => ic.classList.remove('fa-spin'));
   const elapsed = Math.round(performance.now() - tStart);

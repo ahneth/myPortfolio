@@ -1470,22 +1470,24 @@ function renderHoldingsTable() {
 
   sortedGroups.forEach(group => {
     const getHoldingsSortVal = (h, col) => {
+      const hCurr = h.currency || baseCurr;
+      const toBase = (v) => (v !== null && v !== undefined && Number(v) !== 0) ? Fin.convertCurrency(Number(v), hCurr, baseCurr) : 0;
       switch (col) {
         case 'ticker': return h.ticker || '';
-        case 'price': return Number(h.currentPrice || 0);
-        case 'dayPnL': return Number(h.dayPnL || 0);
-        case 'marketValue': return Number(h.marketValueBase ?? h.marketValue ?? 0);
-        case 'unrealizedGain': return Number(h.unrealizedGain || 0);
-        case 'realizedGain': return Number(h.realizedGain || 0);
-        case 'totalDividends': return Number(h.totalDividends || 0);
-        case 'totalReturn': return Number((h.unrealizedGain || 0) + Number(h.realizedGain || 0) + Number(h.totalDividends || 0));
+        case 'price': return toBase(h.currentPrice || 0);
+        case 'dayPnL': return Number(h.dayPnLBase ?? toBase(h.dayPnL || 0));
+        case 'marketValue': return Number(h.marketValueBase ?? toBase(h.marketValue || 0));
+        case 'unrealizedGain': return toBase(h.unrealizedGain || 0);
+        case 'realizedGain': return Number(h.realizedGainBase ?? toBase(h.realizedGain || 0));
+        case 'totalDividends': return Number(h.totalDividendsBase ?? toBase(h.totalDividends || 0));
+        case 'totalReturn': return Number(h.totalReturnBase ?? (toBase(h.unrealizedGain || 0) + toBase(h.realizedGain || 0) + toBase(h.totalDividends || 0)));
         case 'netYield': return Number(h.divInfo?.netYieldPct || h.divInfo?.trailingYieldPct || 0);
         case 'shares': return Number(h.shares || 0);
-        case 'avgCost': return Number(h.avgCost || 0);
-        case 'totalCost': return Number(h.totalCostBasis || 0);
-        case 'buyTarget': return Number(h.customBuyPrice || h.recommendedBuyPrice || 0);
-        case 'sellTarget': return Number(h.customSellPrice || h.recommendedSellPrice || 0);
-        case 'stopLoss': return Number(h.customStopLoss || h.recommendedStopLoss || 0);
+        case 'avgCost': return toBase(h.avgCost || 0);
+        case 'totalCost': return Number(h.costBasisBase ?? toBase(h.totalCostBasis || 0));
+        case 'buyTarget': return toBase(h.customBuyPrice || h.recommendedBuyPrice || 0);
+        case 'sellTarget': return toBase(h.customSellPrice || h.recommendedSellPrice || 0);
+        case 'stopLoss': return toBase(h.customStopLoss || h.recommendedStopLoss || 0);
         case 'xirr': return Number(h.xirrPct ?? -999);
         case 'yoc': return Number(h.yieldOnCost || 0);
         case '52wPos': return Number(h.pos52wPct || 0);
@@ -1634,23 +1636,37 @@ function renderHoldingsTable() {
           selectStockForInlineChart('holdings', h.ticker, true);
         });
 
-        const dayPnlVal = Number(h.dayPnL || 0);
-        const dayPnlColor = dayPnlVal >= 0 ? 'text-emerald-500' : 'text-rose-500';
-        const pnlColor = h.unrealizedGain >= 0 ? 'text-emerald-500' : 'text-rose-500';
-        const realPnlVal = Number(h.realizedGain || 0);
-        const realPnlColor = realPnlVal >= 0 ? 'text-emerald-500' : 'text-rose-500';
-        const totalRetVal = Fin.round((h.unrealizedGain || 0) + realPnlVal + Number(h.totalDividends || 0), 2);
+        const hCurr = h.currency || baseCurr;
+        const toBase = (v) => (v !== null && v !== undefined && Number(v) !== 0) ? Fin.convertCurrency(Number(v), hCurr, baseCurr) : 0;
+        const toBaseNullable = (v) => (v !== null && v !== undefined && Number(v) > 0) ? Fin.convertCurrency(Number(v), hCurr, baseCurr) : null;
+
+        const curPriceBase = h.currentPrice > 0 ? toBase(h.currentPrice) : 0;
+        const avgCostBase = h.avgCost > 0 ? toBase(h.avgCost) : 0;
+        const totalCostBase = Number(h.costBasisBase ?? toBase(h.totalCostBasis || 0));
+        const marketValBase = Number(h.marketValueBase ?? toBase(h.marketValue || 0));
+        const dayPnlValBase = Number(h.dayPnLBase ?? toBase(h.dayPnL || 0));
+        const unrealizedValBase = Fin.round(toBase(h.unrealizedGain || 0), 2);
+        const realPnlValBase = Number(h.realizedGainBase ?? toBase(h.realizedGain || 0));
+        const totalDivValBase = Number(h.totalDividendsBase ?? toBase(h.totalDividends || 0));
+        const totalRetValBase = Number(h.totalReturnBase ?? Fin.round(unrealizedValBase + realPnlValBase + totalDivValBase, 2));
+
+        const dayPnlColor = dayPnlValBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        const pnlColor = unrealizedValBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        const realPnlColor = realPnlValBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
         const refCostBasis = isAct && h.totalCostBasis > 0 ? h.totalCostBasis : (h.historicalCostBasis || h.cumulativeBuyCostBasis || 0);
-        const totalRetPct = refCostBasis > 0 ? Fin.round((totalRetVal / refCostBasis) * 100, 2) : 0;
-        const totalRetColor = totalRetVal >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        const refCostBasisBase = isAct && totalCostBase > 0 ? totalCostBase : Number(h.historicalCostBasisBase ?? toBase(refCostBasis));
+        const totalRetPct = refCostBasis > 0 ? Fin.round((((h.unrealizedGain || 0) + Number(h.realizedGain || 0) + Number(h.totalDividends || 0)) / refCostBasis) * 100, 2) : 0;
+        const totalRetColor = totalRetValBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
         const priceChangeColor = h.priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
 
-        const recBuy = h.recommendedBuyPrice || null;
-        const recSell = h.recommendedSellPrice || null;
-        const recStop = h.recommendedStopLoss || h.suggestedStopLoss || null;
-        const custBuy = h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice || null;
-        const custSell = h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice || null;
-        const custStop = h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss || null;
+        const recBuyBase = toBaseNullable(h.recommendedBuyPrice);
+        const recSellBase = toBaseNullable(h.recommendedSellPrice);
+        const recStopBase = toBaseNullable(h.recommendedStopLoss || h.suggestedStopLoss);
+        const custBuyBase = toBaseNullable(h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice);
+        const custSellBase = toBaseNullable(h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice);
+        const custStopBase = toBaseNullable(h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss);
+        const low52wBase = toBaseNullable(h.low52w);
+        const high52wBase = toBaseNullable(h.high52w);
 
         tr.innerHTML = `
           <td class="py-1 pl-2.5 pr-2 sm:py-1.5 sm:pl-6 sm:pr-3 sticky-col-mobile max-w-[142px] sm:max-w-none">
@@ -1661,7 +1677,7 @@ function renderHoldingsTable() {
               <div class="min-w-0">
                 <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1">
                   <span class="hover:text-brand-500 underline decoration-dotted underline-offset-2 truncate">${h.ticker}</span>
-                  <span class="text-[9px] sm:text-[10px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium shrink-0">${h.currency}</span>
+                  <span class="text-[9px] sm:text-[10px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium shrink-0" title="Displayed in ${baseCurr}${hCurr !== baseCurr ? ` (Converted from ${hCurr})` : ''}">${baseCurr}</span>
                   ${!isAct ? '<span class="text-[8.5px] px-1 py-0 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold shrink-0">0 SH</span>' : ''}
                 </div>
                 <div class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[96px] sm:max-w-[180px]">${h.companyName}</div>
@@ -1669,7 +1685,7 @@ function renderHoldingsTable() {
             </div>
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
-            <div class="font-bold num-font text-slate-900 dark:text-white">${h.currentPrice > 0 ? Fin.currency(h.currentPrice, false, h.currency) : '-'}</div>
+            <div class="font-bold num-font text-slate-900 dark:text-white" title="${hCurr !== baseCurr && h.currentPrice > 0 ? `Native: ${Fin.currency(h.currentPrice, false, hCurr)}` : ''}">${curPriceBase > 0 ? Fin.currency(curPriceBase, false, baseCurr) : '-'}</div>
             <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
               <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct)}
             </div>
@@ -1678,55 +1694,55 @@ function renderHoldingsTable() {
             ${isAct
               ? (hideMoney
                   ? `<div class="font-bold num-font ${dayPnlColor}">${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct, true)}</div>`
-                  : `<div class="font-bold num-font ${dayPnlColor}">${Fin.currency(dayPnlVal, true, h.currency)}</div>
+                  : `<div class="font-bold num-font ${dayPnlColor}">${Fin.currency(dayPnlValBase, true, baseCurr)}</div>
                      <div class="text-[10px] num-font ${dayPnlColor} font-semibold">${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct, true)}</div>`)
               : '<span class="text-slate-400 text-xs font-mono">-</span>'}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right font-bold num-font text-slate-900 dark:text-white">
             ${isAct
               ? (hideMoney
-                  ? `<span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">${portfolio.totalStockMarketValue > 0 ? Fin.round(((h.marketValueBase || h.marketValue) / portfolio.totalStockMarketValue) * 100, 1) + '% wt' : '••••••'}</span>`
-                  : Fin.currency(h.marketValue, false, h.currency))
+                  ? `<span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">${portfolio.totalStockMarketValue > 0 ? Fin.round((marketValBase / portfolio.totalStockMarketValue) * 100, 1) + '% wt' : '••••••'}</span>`
+                  : Fin.currency(marketValBase, false, baseCurr))
               : '<span class="text-slate-400 font-normal">-</span>'}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             ${isAct
               ? (hideMoney
                   ? `<div class="font-bold num-font ${pnlColor}">${Fin.percent(h.unrealizedGainPct)}</div>`
-                  : `<div class="font-bold num-font ${pnlColor}">${Fin.currency(h.unrealizedGain, true, h.currency)}</div>
+                  : `<div class="font-bold num-font ${pnlColor}">${Fin.currency(unrealizedValBase, true, baseCurr)}</div>
                      <div class="text-[10px] num-font ${pnlColor} font-semibold">${Fin.percent(h.unrealizedGainPct)}</div>`)
               : '<span class="text-slate-400 text-xs font-mono">-</span>'}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${realPnlVal !== 0 ? realPnlColor : 'text-slate-400'}">
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${realPnlValBase !== 0 ? realPnlColor : 'text-slate-400'}">
             ${hideMoney
-              ? (refCostBasis > 0 ? Fin.percent(Fin.round((realPnlVal / refCostBasis) * 100, 2), true) : '-')
-              : (realPnlVal !== 0 ? Fin.currency(realPnlVal, true, h.currency) : Fin.currency(0, false, h.currency))}
+              ? (refCostBasisBase > 0 ? Fin.percent(Fin.round((realPnlValBase / refCostBasisBase) * 100, 2), true) : '-')
+              : (realPnlValBase !== 0 ? Fin.currency(realPnlValBase, true, baseCurr) : Fin.currency(0, false, baseCurr))}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${h.totalDividends > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${totalDivValBase > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
             ${hideMoney
               ? `${h.yieldOnCost.toFixed(2)}% YoC`
-              : (h.totalDividends > 0 ? '+' + Fin.currency(h.totalDividends, false, h.currency) : Fin.currency(0, false, h.currency))}
+              : (totalDivValBase > 0 ? '+' + Fin.currency(totalDivValBase, false, baseCurr) : Fin.currency(0, false, baseCurr))}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right" title="Total Return = Unrealized P&L + Realized P&L + Accumulated Dividends">
             ${hideMoney
-              ? `<div class="font-bold num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.percent(totalRetPct, true)}</div>`
-              : `<div class="font-bold num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.currency(totalRetVal, true, h.currency)}</div>
-                 <div class="text-[10px] num-font ${totalRetVal !== 0 ? totalRetColor : 'text-slate-400'} font-semibold">${Fin.percent(totalRetPct, true)}</div>`}
+              ? `<div class="font-bold num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.percent(totalRetPct, true)}</div>`
+              : `<div class="font-bold num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.currency(totalRetValBase, true, baseCurr)}</div>
+                 <div class="text-[10px] num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'} font-semibold">${Fin.percent(totalRetPct, true)}</div>`}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             ${formatDividendExDateCell(h.divInfo)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium ${isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}">${hideMoney ? '••••' : Fin.shares(h.shares)}</td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? (hideMoney ? '••••••' : Fin.currency(h.avgCost, false, h.currency)) : '<span class="text-slate-400">-</span>'}</td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? (hideMoney ? '••••••' : Fin.currency(h.totalCostBasis, false, h.currency)) : `<span class="text-slate-400 text-[10px]">-</span>`}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300" title="${hCurr !== baseCurr && h.avgCost > 0 ? `Native Avg Cost: ${Fin.currency(h.avgCost, false, hCurr)}` : ''}">${isAct ? (hideMoney ? '••••••' : Fin.currency(avgCostBase, false, baseCurr)) : '<span class="text-slate-400">-</span>'}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? (hideMoney ? '••••••' : Fin.currency(totalCostBase, false, baseCurr)) : `<span class="text-slate-400 text-[10px]">-</span>`}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font">
-            ${formatTargetLevelCell(custBuy, recBuy, h.currentPrice, h.currency, 'text-sky-500', 'Buy Target')}
+            ${formatTargetLevelCell(custBuyBase, recBuyBase, curPriceBase, baseCurr, 'text-sky-500', 'Buy Target')}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font">
-            ${formatTargetLevelCell(custSell, recSell, h.currentPrice, h.currency, 'text-pink-500', 'Sell Target')}
+            ${formatTargetLevelCell(custSellBase, recSellBase, curPriceBase, baseCurr, 'text-pink-500', 'Sell Target')}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font">
-            ${formatTargetLevelCell(custStop, recStop, h.currentPrice, h.currency, 'text-red-700 dark:text-red-500', 'Stop Loss')}
+            ${formatTargetLevelCell(custStopBase, recStopBase, curPriceBase, baseCurr, 'text-red-700 dark:text-red-500', 'Stop Loss')}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font" title="${h.xirrPct !== null && h.xirrPct !== undefined ? `Annualized Money-Weighted Return (XIRR): ${Fin.percent(h.xirrPct, true)} p.a. | Real Inflation-Adjusted: ${Fin.percent(h.realXirrPct, true)} p.a. (includes all BUY/SELL cash flows & dividends)` : 'Insufficient cash flow span'}">
             <div class="font-bold text-xs ${h.xirrPct === null || h.xirrPct !== undefined && h.xirrPct === null ? 'text-slate-400' : (h.xirrPct >= 0 ? 'text-emerald-500' : 'text-rose-500')}">
@@ -1740,13 +1756,13 @@ function renderHoldingsTable() {
             </span>
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300 col-quant-extra">
-            ${h.low52w !== null && h.low52w !== undefined ? Fin.currency(h.low52w, false, h.currency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+            ${low52wBase !== null ? Fin.currency(low52wBase, false, baseCurr) : '<span class="text-slate-400 text-[11px]">-</span>'}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300 col-quant-extra">
-            ${h.high52w !== null && h.high52w !== undefined ? Fin.currency(h.high52w, false, h.currency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+            ${high52wBase !== null ? Fin.currency(high52wBase, false, baseCurr) : '<span class="text-slate-400 text-[11px]">-</span>'}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
-            ${format52wPositionCell(h.low52w, h.high52w, h.pos52wPct, h.currency)}
+            ${format52wPositionCell(low52wBase, high52wBase, h.pos52wPct, baseCurr)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
             ${formatPeriodChangeCell(h.momPct, 'MoM', h.momRefMonth)}

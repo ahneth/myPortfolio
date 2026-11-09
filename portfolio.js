@@ -827,6 +827,15 @@ function ingestHistoricalPricesData(data) {
     Object.entries(data.quotes).forEach(([k, q]) => {
       const sym = MarketAPI.normalizeTicker(k);
       if (sym && q && Number(q.price) > 0) {
+        const existing = state.prices[sym];
+        const incomingTs = Date.parse(q.lastUpdated || data._meta?.generatedAt || '') || 0;
+        const existingTs = Date.parse(existing?.lastUpdated || '') || 0;
+        // Never overwrite an already-loaded live price or newer price with an older snapshot quote
+        if (existing && Number(existing.price) > 0 && (existing._isLiveQuote || (existingTs > 0 && incomingTs > 0 && existingTs >= incomingTs) || !incomingTs)) {
+          if (!existing.high52w && q.high52w) existing.high52w = q.high52w;
+          if (!existing.low52w && q.low52w) existing.low52w = q.low52w;
+          return;
+        }
         const price = Number(q.price);
         let prevPrice = Number(q.prevPrice || price);
         if (!prevPrice || prevPrice <= 0 || Math.abs((price - prevPrice) / prevPrice) > 0.40) {
@@ -835,7 +844,7 @@ function ingestHistoricalPricesData(data) {
         const change = Fin.round(price - prevPrice, 4);
         const changePct = prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0;
         state.prices[sym] = {
-          ...(state.prices[sym] || {}),
+          ...(existing || {}),
           ...q,
           price,
           prevPrice,
@@ -980,7 +989,7 @@ function ingestCompanyNewsData(data) {
   return added;
 }
 
-async function loadHistoricalPricesFromJson(silent = true) {
+async function loadHistoricalPricesFromJson(silent = true, renderWhenDone = true) {
   try {
     let data = null;
     let sourceLabel = 'embedded snapshot';
@@ -1044,10 +1053,12 @@ async function loadHistoricalPricesFromJson(silent = true) {
 
     const loadedSeriesCount = ingestHistoricalPricesData(data);
     window.__HISTORICAL_PRICES_JSON_LOADED__ = true;
-    recalculatePortfolio();
-    saveState();
-    if (typeof renderAll === 'function') {
-      renderAll();
+    if (renderWhenDone) {
+      recalculatePortfolio();
+      saveState();
+      if (typeof renderAll === 'function') {
+        renderAll();
+      }
     }
     if (!silent && typeof AppLogger !== 'undefined') {
       AppLogger.api('GitHubPython', `Loaded historical_prices.json from ${sourceLabel}: ${loadedSeriesCount} historical series (generated ${data?._meta?.generatedAt || 'N/A'})`);

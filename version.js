@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.7',
-  buildId: '20261108_1915',
-  releaseDate: '2026-11-08 19:15 HKT',
-  driveFolder: '/myPortfolio/20261108_1915/',
+  appVersion: '3.3.8',
+  buildId: '20261109_1715',
+  releaseDate: '2026-11-09 17:15 HKT',
+  driveFolder: '/myPortfolio/20261109_1715/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,19 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.3.8',
+      buildId: '20261109_1715',
+      date: '2026-11-09 17:15 HKT',
+      summary: 'Removed verbose grey subtitles and "(Grouped by Sector)" suffixes across Dashboard/Holdings/Watchlist, increased "Portfolio Historical Balance & Return" chart height by 50%, refined the Monthly Close line and point markers on Holdings/Watchlist charts, unified all Holdings table monetary columns to the selected Base Currency, and eliminated price flickering during live quote sync.',
+      changes: [
+        'Removed grey description subtitles under "Portfolio Historical Balance & Return", "Active Stock Holdings", and "Target Price Watchlist & Alerts", and removed "(Grouped by Sector)" from the Holdings and Watchlist headings.',
+        'Increased the height of the Home "Portfolio Historical Balance & Return" chart container by 50% (from 270px/320px to 405px on mobile and 480px on desktop).',
+        'Made the Monthly Close line thinner (borderWidth: 1.5) and reduced data-point dot marker radius (1.5px mobile / 2.0px desktop) on the Holdings and Watchlist stock charts.',
+        'Unified all monetary values in the Holdings table (Live Price, Day P&L, Market Value, Unrealized P&L, Realized P&L, Accumulated Div, Total Return, Avg Cost, Total Cost, Buy/Sell/Stop Targets, and 52W Low/High) to convert into the selected Base Currency (e.g. HK$).',
+        'Eliminated price flickering/bouncing during live price sync by preventing historical_prices.json snapshots from overwriting newer/live quotes and staging all fetched live quotes in memory before committing and rendering once at the end of syncAllMarketData().'
+      ]
+    },
     {
       version: '3.3.7',
       buildId: '20261108_1915',

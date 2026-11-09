@@ -843,10 +843,11 @@ function renderInlineStockChart(tabType) {
       data: closeData,
       borderColor: mainColor,
       backgroundColor: mainColor,
-      borderWidth: 2.6,
+      borderWidth: 1.5,
       fill: false,
       tension: 0.3,
-      pointRadius: isMobile ? 2.5 : 3.5,
+      pointRadius: isMobile ? 1.5 : 2.0,
+      pointHoverRadius: isMobile ? 3.5 : 4.5,
       pointBackgroundColor: mainColor,
       order: 1,
       _legendStyle: 'solid'
