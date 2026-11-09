@@ -858,7 +858,7 @@ tr:hover .table-action-capsule {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.3.8 (20261109_1715)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.3.9 (20261109_1805)</span>
             </div>
           </div>
         </div>
@@ -870,7 +870,7 @@ tr:hover .table-action-capsule {
             <span id="api-status-text" class="text-xs font-medium text-slate-700 dark:text-slate-300">API: Yahoo Finance Ready</span>
           </div>
           <div class="h-3 w-px bg-slate-300 dark:bg-slate-600"></div>
-          <button id="header-sync-api-btn" class="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold flex items-center gap-1.5" title="Fetch current & monthly historical prices via API">
+          <button id="header-sync-api-btn" class="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold flex items-center gap-1.5" title="Fetch latest live market prices">
             <i id="header-sync-icon" class="fa-solid fa-cloud-arrow-down text-[11px]"></i>
             <span>Sync Market Data</span>
           </button>
@@ -882,7 +882,7 @@ tr:hover .table-action-capsule {
         <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           <!-- Mobile API Sync Button + Last Sync Timestamp -->
           <div class="md:hidden flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-2 py-1 rounded-lg border border-slate-200 dark:border-dark-border">
-            <button id="mobile-sync-api-btn" class="text-brand-600 dark:text-brand-400 flex items-center gap-1 text-[11px] font-semibold transition" title="Sync Live Quotes &amp; Trigger GitHub Python Workflow">
+            <button id="mobile-sync-api-btn" class="text-brand-600 dark:text-brand-400 flex items-center gap-1 text-[11px] font-semibold transition" title="Sync latest live market prices">
               <i id="mobile-sync-icon" class="fa-solid fa-cloud-arrow-down text-xs"></i>
               <span>Sync</span>
             </button>
@@ -1088,10 +1088,10 @@ tr:hover .table-action-capsule {
               <button type="button" data-range="120" class="history-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">ALL</button>
             </div>
 
-            <!-- Fetch Monthly History from API Button -->
-            <button type="button" id="btn-fetch-monthly-history" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5 shadow-sm" title="Trigger GitHub Python update_historical_prices.py workflow & reload historical_prices.json + live quotes">
-              <i id="btn-fetch-monthly-icon" class="fa-solid fa-cloud-arrow-down text-[11px]"></i>
-              <span>Sync via GitHub Python</span>
+            <!-- Fetch Live Quotes Button -->
+            <button type="button" id="btn-fetch-monthly-history" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5 shadow-sm" title="Sync latest live market prices">
+              <i id="btn-fetch-monthly-icon" class="fa-solid fa-rotate text-[11px]"></i>
+              <span>Sync Live Prices</span>
             </button>
           </div>
         </div>
@@ -1824,8 +1824,8 @@ tr:hover .table-action-capsule {
             </div>
 
             <div class="flex flex-wrap items-center gap-2 pt-1">
-              <button id="btn-sync-all-api" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5">
-                <i class="fa-solid fa-cloud-arrow-down"></i> Sync Live Quotes &amp; Trigger GitHub Python
+              <button id="btn-sync-all-api" class="px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1.5" title="Fetch latest live market quotes only">
+                <i class="fa-solid fa-rotate"></i> Sync Live Quotes
               </button>
               <span id="last-api-sync-label" class="text-[11px] text-slate-400">Never synced</span>
             </div>
@@ -3115,10 +3115,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.8',
-  buildId: '20261109_1715',
-  releaseDate: '2026-11-09 17:15 HKT',
-  driveFolder: '/myPortfolio/20261109_1715/',
+  appVersion: '3.3.9',
+  buildId: '20261109_1805',
+  releaseDate: '2026-11-09 18:05 HKT',
+  driveFolder: '/myPortfolio/20261109_1805/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -3131,6 +3131,17 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.3.9',
+      buildId: '20261109_1805',
+      date: '2026-11-09 18:05 HKT',
+      summary: 'Decoupled Live Price Sync from the GitHub Actions historical price workflow so page loads and all Sync buttons across the app retrieve Live Prices ONLY, while the GitHub historical price workflow triggers ONLY when adding a new ticker to Holdings/Watchlist or when manually clicked in Settings.',
+      changes: [
+        'Changed syncAllMarketData() default parameter to triggerGitHubWorkflow = false and updated #header-sync-api-btn, #mobile-sync-api-btn, #btn-fetch-monthly-history, #btn-refresh-prices-now, #btn-sync-watchlist-api, and #btn-sync-all-api to fetch Live Quotes ONLY without triggering GitHub Actions.',
+        'Configured handleTradeSubmit() and handleWatchlistSubmit() so the GitHub historical price workflow (update-historical-prices.yml) is automatically triggered ONLY when a brand-new ticker missing historical data is added to Holdings or Watchlist.',
+        'Preserved manual on-demand execution of update-historical-prices.yml exclusively on the dedicated "Run Price Workflow (update_historical_prices.py)" button (#btn-trigger-gh-prices) in the Settings tab.'
+      ]
+    },
     {
       version: '3.3.8',
       buildId: '20261109_1715',
@@ -5354,11 +5365,11 @@ var MarketAPI = {
   }
 };
 
-async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
+async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
   const isAutoStartup = Boolean(options && options.isAutoStartup);
   const tStart = performance.now();
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.action('Sync', `${isAutoStartup ? 'Initial page-load auto live price sync' : 'Sync button pressed'} (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
+    AppLogger.action('Sync', `${isAutoStartup ? 'Initial page-load auto live price sync' : (triggerGitHubWorkflow ? 'Manual GitHub Historical Price Workflow triggered' : 'Live Price Sync button pressed')} (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
   }
 
   if (!MarketAPI.hasKey()) {
@@ -5395,22 +5406,28 @@ async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
   ].filter(Boolean);
   syncIcons.forEach(ic => ic.classList.add('fa-spin'));
 
-  showToast(`Syncing live prices for ${allTickers.length} tickers & refreshing GitHub Python data...`, 'info');
+  if (!isAutoStartup) {
+    showToast(
+      triggerGitHubWorkflow
+        ? `Triggering GitHub Python historical price workflow & syncing live quotes (${allTickers.length} tickers)...`
+        : `Syncing live market prices for ${allTickers.length} tickers...`,
+      'info'
+    );
+  }
 
-  // Step 1: If triggerGitHubWorkflow is true, dispatch update-historical-prices.yml on GitHub Actions with all holdings + watchlist tickers
+  // Step 1: ONLY dispatch update-historical-prices.yml on GitHub Actions when explicitly requested
+  // (e.g. from the manual Settings button #btn-trigger-gh-prices or when adding a brand-new ticker)
   let workflowStatus = null;
   if (triggerGitHubWorkflow) {
-    const missingHistTickers = allTickers.filter(t => !Array.isArray(state?.historicalPrices?.[t]) || state.historicalPrices[t].length === 0);
-    const dispatchTickers = missingHistTickers.length > 0 ? allTickers.join(',') : allTickers.join(',');
     workflowStatus = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
-      tickers: dispatchTickers
+      tickers: allTickers.join(',')
     });
   }
 
-  // Step 2: Pull latest committed historical_prices.json from GitHub repository / same-origin
-  // Pass renderWhenDone = false so intermediate snapshot data never triggers a premature UI re-render before live quotes finish!
-  if (typeof loadHistoricalPricesFromJson === 'function') {
-    await loadHistoricalPricesFromJson(false, false);
+  // Step 2: Only load historical_prices.json if it hasn't been loaded yet in this session or if explicitly requested
+  const hasLoadedHistory = Boolean(window.__HISTORICAL_PRICES_JSON_LOADED__) && Object.keys(state?.historicalPrices || {}).length > 0;
+  if ((triggerGitHubWorkflow || !hasLoadedHistory) && typeof loadHistoricalPricesFromJson === 'function') {
+    await loadHistoricalPricesFromJson(true, false);
   }
 
   // Step 3: Fetch LIVE PRICES ONLY via MarketAPI into a staging buffer so display prices never bounce or flicker mid-sync
@@ -5510,11 +5527,11 @@ async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
   }
 
   if (workflowStatus?.triggered) {
-    showToast(`Live prices synced (${updatedQuotes}/${allTickers.length}) & GitHub Python workflow triggered!`, 'success');
+    showToast(`Live prices synced (${updatedQuotes}/${allTickers.length}) & GitHub historical price workflow triggered!`, 'success');
   } else if (errors.length > 0 && updatedQuotes === 0) {
-    showToast(`Sync error — ${errors[0]}`, 'error');
-  } else {
-    showToast(`Synced ${updatedQuotes} live quotes & refreshed GitHub Python price/dividend snapshot (${elapsed}ms).`, 'success');
+    if (!isAutoStartup) showToast(`Live price sync error — ${errors[0]}`, 'error');
+  } else if (!isAutoStartup) {
+    showToast(`Synced ${updatedQuotes}/${allTickers.length} live market prices (${elapsed}ms).`, 'success');
   }
 }
 
@@ -13503,7 +13520,21 @@ async function handleTradeSubmit(e) {
       if (q?.price) state.prices[ticker] = { ...q, lastUpdated: new Date().toISOString() };
       if (!state.historicalPrices[ticker] || state.historicalPrices[ticker].length === 0) {
         const hist = await MarketAPI.fetchMonthlyHistory(ticker);
-        if (hist?.length) state.historicalPrices[ticker] = hist;
+        if (hist?.length) {
+          state.historicalPrices[ticker] = hist;
+        } else if (!existingTx && typeof MarketAPI.triggerGitHubWorkflow === 'function') {
+          const allTickers = Array.from(new Set([
+            ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
+            ...(state?.watchlist || []).map(w => w.ticker),
+            ticker
+          ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
+          const wfRes = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
+            tickers: allTickers.join(',')
+          });
+          if (wfRes?.triggered) {
+            showToast(`New ticker ${ticker} added — triggered GitHub workflow to fetch historical prices!`, 'info');
+          }
+        }
       }
       if (!state.fundamentals[ticker] || !state.fundamentals[ticker].pe) {
         const fetchedFund = await MarketAPI.fetchFundamentals(ticker);
@@ -13765,7 +13796,7 @@ async function handleWatchlistSubmit(e) {
       const hist = await MarketAPI.fetchMonthlyHistory(ticker);
       if (hist?.length) {
         state.historicalPrices[ticker] = hist;
-      } else if (typeof MarketAPI.triggerGitHubWorkflow === 'function') {
+      } else if (!isEditing && typeof MarketAPI.triggerGitHubWorkflow === 'function') {
         const allTickers = Array.from(new Set([
           ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
           ...(state?.watchlist || []).map(w => w.ticker)
@@ -14256,17 +14287,17 @@ function setupEventListeners() {
     if (provEl) provEl.focus();
   });
 
-  on('header-sync-api-btn', 'click', () => syncAllMarketData(true));
+  on('header-sync-api-btn', 'click', () => syncAllMarketData(false));
   on('header-test-api-btn', 'click', () => {
     switchTab('settings');
     runAndRenderApiDiagnostics();
   });
   on('btn-run-api-diagnostic', 'click', () => runAndRenderApiDiagnostics());
-  on('mobile-sync-api-btn', 'click', () => syncAllMarketData(true));
+  on('mobile-sync-api-btn', 'click', () => syncAllMarketData(false));
   on('btn-refresh-prices-now', 'click', () => syncAllMarketData(false));
   on('btn-sync-watchlist-api', 'click', () => syncAllMarketData(false));
-  on('btn-sync-all-api', 'click', () => syncAllMarketData(true));
-  on('btn-fetch-monthly-history', 'click', () => syncAllMarketData(true));
+  on('btn-sync-all-api', 'click', () => syncAllMarketData(false));
+  on('btn-fetch-monthly-history', 'click', () => syncAllMarketData(false));
   on('btn-fetch-fundamentals-api', 'click', syncFundamentalsViaAPI);
 
   // GitHub Actions Workflow Trigger Controls in Settings

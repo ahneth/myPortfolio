@@ -1037,11 +1037,11 @@ var MarketAPI = {
   }
 };
 
-async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
+async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
   const isAutoStartup = Boolean(options && options.isAutoStartup);
   const tStart = performance.now();
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.action('Sync', `${isAutoStartup ? 'Initial page-load auto live price sync' : 'Sync button pressed'} (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
+    AppLogger.action('Sync', `${isAutoStartup ? 'Initial page-load auto live price sync' : (triggerGitHubWorkflow ? 'Manual GitHub Historical Price Workflow triggered' : 'Live Price Sync button pressed')} (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
   }
 
   if (!MarketAPI.hasKey()) {
@@ -1078,22 +1078,28 @@ async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
   ].filter(Boolean);
   syncIcons.forEach(ic => ic.classList.add('fa-spin'));
 
-  showToast(`Syncing live prices for ${allTickers.length} tickers & refreshing GitHub Python data...`, 'info');
+  if (!isAutoStartup) {
+    showToast(
+      triggerGitHubWorkflow
+        ? `Triggering GitHub Python historical price workflow & syncing live quotes (${allTickers.length} tickers)...`
+        : `Syncing live market prices for ${allTickers.length} tickers...`,
+      'info'
+    );
+  }
 
-  // Step 1: If triggerGitHubWorkflow is true, dispatch update-historical-prices.yml on GitHub Actions with all holdings + watchlist tickers
+  // Step 1: ONLY dispatch update-historical-prices.yml on GitHub Actions when explicitly requested
+  // (e.g. from the manual Settings button #btn-trigger-gh-prices or when adding a brand-new ticker)
   let workflowStatus = null;
   if (triggerGitHubWorkflow) {
-    const missingHistTickers = allTickers.filter(t => !Array.isArray(state?.historicalPrices?.[t]) || state.historicalPrices[t].length === 0);
-    const dispatchTickers = missingHistTickers.length > 0 ? allTickers.join(',') : allTickers.join(',');
     workflowStatus = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
-      tickers: dispatchTickers
+      tickers: allTickers.join(',')
     });
   }
 
-  // Step 2: Pull latest committed historical_prices.json from GitHub repository / same-origin
-  // Pass renderWhenDone = false so intermediate snapshot data never triggers a premature UI re-render before live quotes finish!
-  if (typeof loadHistoricalPricesFromJson === 'function') {
-    await loadHistoricalPricesFromJson(false, false);
+  // Step 2: Only load historical_prices.json if it hasn't been loaded yet in this session or if explicitly requested
+  const hasLoadedHistory = Boolean(window.__HISTORICAL_PRICES_JSON_LOADED__) && Object.keys(state?.historicalPrices || {}).length > 0;
+  if ((triggerGitHubWorkflow || !hasLoadedHistory) && typeof loadHistoricalPricesFromJson === 'function') {
+    await loadHistoricalPricesFromJson(true, false);
   }
 
   // Step 3: Fetch LIVE PRICES ONLY via MarketAPI into a staging buffer so display prices never bounce or flicker mid-sync
@@ -1193,11 +1199,11 @@ async function syncAllMarketData(triggerGitHubWorkflow = true, options = {}) {
   }
 
   if (workflowStatus?.triggered) {
-    showToast(`Live prices synced (${updatedQuotes}/${allTickers.length}) & GitHub Python workflow triggered!`, 'success');
+    showToast(`Live prices synced (${updatedQuotes}/${allTickers.length}) & GitHub historical price workflow triggered!`, 'success');
   } else if (errors.length > 0 && updatedQuotes === 0) {
-    showToast(`Sync error — ${errors[0]}`, 'error');
-  } else {
-    showToast(`Synced ${updatedQuotes} live quotes & refreshed GitHub Python price/dividend snapshot (${elapsed}ms).`, 'success');
+    if (!isAutoStartup) showToast(`Live price sync error — ${errors[0]}`, 'error');
+  } else if (!isAutoStartup) {
+    showToast(`Synced ${updatedQuotes}/${allTickers.length} live market prices (${elapsed}ms).`, 'success');
   }
 }
 

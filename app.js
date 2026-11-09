@@ -3351,7 +3351,21 @@ async function handleTradeSubmit(e) {
       if (q?.price) state.prices[ticker] = { ...q, lastUpdated: new Date().toISOString() };
       if (!state.historicalPrices[ticker] || state.historicalPrices[ticker].length === 0) {
         const hist = await MarketAPI.fetchMonthlyHistory(ticker);
-        if (hist?.length) state.historicalPrices[ticker] = hist;
+        if (hist?.length) {
+          state.historicalPrices[ticker] = hist;
+        } else if (!existingTx && typeof MarketAPI.triggerGitHubWorkflow === 'function') {
+          const allTickers = Array.from(new Set([
+            ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
+            ...(state?.watchlist || []).map(w => w.ticker),
+            ticker
+          ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
+          const wfRes = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
+            tickers: allTickers.join(',')
+          });
+          if (wfRes?.triggered) {
+            showToast(`New ticker ${ticker} added — triggered GitHub workflow to fetch historical prices!`, 'info');
+          }
+        }
       }
       if (!state.fundamentals[ticker] || !state.fundamentals[ticker].pe) {
         const fetchedFund = await MarketAPI.fetchFundamentals(ticker);
@@ -3613,7 +3627,7 @@ async function handleWatchlistSubmit(e) {
       const hist = await MarketAPI.fetchMonthlyHistory(ticker);
       if (hist?.length) {
         state.historicalPrices[ticker] = hist;
-      } else if (typeof MarketAPI.triggerGitHubWorkflow === 'function') {
+      } else if (!isEditing && typeof MarketAPI.triggerGitHubWorkflow === 'function') {
         const allTickers = Array.from(new Set([
           ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
           ...(state?.watchlist || []).map(w => w.ticker)
@@ -4104,17 +4118,17 @@ function setupEventListeners() {
     if (provEl) provEl.focus();
   });
 
-  on('header-sync-api-btn', 'click', () => syncAllMarketData(true));
+  on('header-sync-api-btn', 'click', () => syncAllMarketData(false));
   on('header-test-api-btn', 'click', () => {
     switchTab('settings');
     runAndRenderApiDiagnostics();
   });
   on('btn-run-api-diagnostic', 'click', () => runAndRenderApiDiagnostics());
-  on('mobile-sync-api-btn', 'click', () => syncAllMarketData(true));
+  on('mobile-sync-api-btn', 'click', () => syncAllMarketData(false));
   on('btn-refresh-prices-now', 'click', () => syncAllMarketData(false));
   on('btn-sync-watchlist-api', 'click', () => syncAllMarketData(false));
-  on('btn-sync-all-api', 'click', () => syncAllMarketData(true));
-  on('btn-fetch-monthly-history', 'click', () => syncAllMarketData(true));
+  on('btn-sync-all-api', 'click', () => syncAllMarketData(false));
+  on('btn-fetch-monthly-history', 'click', () => syncAllMarketData(false));
   on('btn-fetch-fundamentals-api', 'click', syncFundamentalsViaAPI);
 
   // GitHub Actions Workflow Trigger Controls in Settings

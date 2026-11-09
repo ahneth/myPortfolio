@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.8',
-  buildId: '20261109_1715',
-  releaseDate: '2026-11-09 17:15 HKT',
-  driveFolder: '/myPortfolio/20261109_1715/',
+  appVersion: '3.3.9',
+  buildId: '20261109_1805',
+  releaseDate: '2026-11-09 18:05 HKT',
+  driveFolder: '/myPortfolio/20261109_1805/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,17 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.3.9',
+      buildId: '20261109_1805',
+      date: '2026-11-09 18:05 HKT',
+      summary: 'Decoupled Live Price Sync from the GitHub Actions historical price workflow so page loads and all Sync buttons across the app retrieve Live Prices ONLY, while the GitHub historical price workflow triggers ONLY when adding a new ticker to Holdings/Watchlist or when manually clicked in Settings.',
+      changes: [
+        'Changed syncAllMarketData() default parameter to triggerGitHubWorkflow = false and updated #header-sync-api-btn, #mobile-sync-api-btn, #btn-fetch-monthly-history, #btn-refresh-prices-now, #btn-sync-watchlist-api, and #btn-sync-all-api to fetch Live Quotes ONLY without triggering GitHub Actions.',
+        'Configured handleTradeSubmit() and handleWatchlistSubmit() so the GitHub historical price workflow (update-historical-prices.yml) is automatically triggered ONLY when a brand-new ticker missing historical data is added to Holdings or Watchlist.',
+        'Preserved manual on-demand execution of update-historical-prices.yml exclusively on the dedicated "Run Price Workflow (update_historical_prices.py)" button (#btn-trigger-gh-prices) in the Settings tab.'
+      ]
+    },
     {
       version: '3.3.8',
       buildId: '20261109_1715',
