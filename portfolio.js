@@ -1188,8 +1188,13 @@ function initAppState() {
   state.dividends.forEach(div => {
     if (div.ticker) div.ticker = MarketAPI.normalizeTicker(div.ticker);
   });
-  state.watchlist.forEach(w => {
-    if (w.ticker) w.ticker = MarketAPI.normalizeTicker(w.ticker);
+  const seenWl = new Set();
+  state.watchlist = (state.watchlist || []).filter(w => {
+    if (!w || !w.ticker) return false;
+    w.ticker = MarketAPI.normalizeTicker(w.ticker);
+    if (seenWl.has(w.ticker)) return false;
+    seenWl.add(w.ticker);
+    return true;
   });
 
   ['prices', 'historicalPrices', 'fundamentals', 'dividendSchedules', 'technicals'].forEach(mapKey => {
@@ -1197,7 +1202,17 @@ function initAppState() {
     const normalizedMap = {};
     Object.keys(mapObj).forEach(k => {
       const normKey = MarketAPI.normalizeTicker(k);
-      normalizedMap[normKey] = mapObj[k];
+      const val = mapObj[k];
+      const existing = normalizedMap[normKey];
+      if (!existing) {
+        normalizedMap[normKey] = val;
+      } else if (Array.isArray(val)) {
+        if (val.length > (Array.isArray(existing) ? existing.length : 0)) {
+          normalizedMap[normKey] = val;
+        }
+      } else if (val && typeof val === 'object') {
+        normalizedMap[normKey] = (k === normKey) ? { ...existing, ...val } : { ...val, ...existing };
+      }
     });
     state[mapKey] = normalizedMap;
   });
@@ -1213,12 +1228,18 @@ function initAppState() {
   allKnownTickers.forEach(sym => {
     const staticProfile = MarketAPI.getStaticProfile(sym);
     const existingFund = state.fundamentals[sym] || {};
+    const canonicalCurr = (typeof TICKER_STATIC_DIRECTORY !== 'undefined' && TICKER_STATIC_DIRECTORY[sym]?.currency)
+      ? TICKER_STATIC_DIRECTORY[sym].currency
+      : (existingFund.currency || staticProfile.currency);
     state.fundamentals[sym] = {
       ...existingFund,
       name: (existingFund.name && existingFund.name !== sym) ? existingFund.name : staticProfile.name,
       sector: (existingFund.sector && existingFund.sector !== 'Equities') ? existingFund.sector : staticProfile.sector,
-      currency: existingFund.currency || staticProfile.currency
+      currency: (existingFund._userCustomCurrency && existingFund.currency) ? existingFund.currency : canonicalCurr
     };
+    if (state.prices[sym] && !existingFund._userCustomCurrency && TICKER_STATIC_DIRECTORY?.[sym]?.currency) {
+      state.prices[sym].currency = TICKER_STATIC_DIRECTORY[sym].currency;
+    }
     const sched = buildDividendScheduleForTicker(sym);
     if (sched) {
       state.dividendSchedules[sym] = sched;

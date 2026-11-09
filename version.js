@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.4.2',
-  buildId: '20261109_2118',
-  releaseDate: '2026-11-09 21:18 HKT',
-  driveFolder: '/myPortfolio/20261109_2118/',
+  appVersion: '3.4.3',
+  buildId: '20261109_2128',
+  releaseDate: '2026-11-09 21:28 HKT',
+  driveFolder: '/myPortfolio/20261109_2128/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,16 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.4.3',
+      buildId: '20261109_2128',
+      date: '2026-11-09 21:28 HKT',
+      summary: 'Fixed static snapshot override in LSE live index tracker so VWRA.L and SPYL.L dynamically update with live intraday index movements (VT / VOO via qt.gtimg.cn) when Yahoo CORS proxies are blocked, and healed canonical USD currency & duplicate key merging in localStorage.',
+      changes: [
+        'Removed the static extQ branch in fetchTencentBatchQuotes() and fetchQuote() that returned the unchanging historical_prices.json snapshot price instead of applying the live 1D % change from VT (for VWRA.L) and VOO (for SPYL.L).',
+        'Updated initAppState() in portfolio.js so normalizing bare keys (e.g. VWRA -> VWRA.L) merges objects without overwriting existing VWRA.L data or creating duplicate Watchlist rows, and self-heals canonical currency (USD for VWRA.L and SPYL.L).'
+      ]
+    },
     {
       version: '3.4.2',
       buildId: '20261109_2118',

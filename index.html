@@ -858,7 +858,7 @@ tr:hover .table-action-capsule {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.4.2 (20261109_2118)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.4.3 (20261109_2128)</span>
             </div>
           </div>
         </div>
@@ -3115,10 +3115,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.4.2',
-  buildId: '20261109_2118',
-  releaseDate: '2026-11-09 21:18 HKT',
-  driveFolder: '/myPortfolio/20261109_2118/',
+  appVersion: '3.4.3',
+  buildId: '20261109_2128',
+  releaseDate: '2026-11-09 21:28 HKT',
+  driveFolder: '/myPortfolio/20261109_2128/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -3131,6 +3131,16 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.4.3',
+      buildId: '20261109_2128',
+      date: '2026-11-09 21:28 HKT',
+      summary: 'Fixed static snapshot override in LSE live index tracker so VWRA.L and SPYL.L dynamically update with live intraday index movements (VT / VOO via qt.gtimg.cn) when Yahoo CORS proxies are blocked, and healed canonical USD currency & duplicate key merging in localStorage.',
+      changes: [
+        'Removed the static extQ branch in fetchTencentBatchQuotes() and fetchQuote() that returned the unchanging historical_prices.json snapshot price instead of applying the live 1D % change from VT (for VWRA.L) and VOO (for SPYL.L).',
+        'Updated initAppState() in portfolio.js so normalizing bare keys (e.g. VWRA -> VWRA.L) merges objects without overwriting existing VWRA.L data or creating duplicate Watchlist rows, and self-heals canonical currency (USD for VWRA.L and SPYL.L).'
+      ]
+    },
     {
       version: '3.4.2',
       buildId: '20261109_2118',
@@ -4710,30 +4720,30 @@ var MarketAPI = {
           const staticMeta = this.getStaticProfile(lseSym);
           const snapBase = this.getEmbeddedOrCachedQuote(lseSym);
           const extQ = window.EXTERNAL_HISTORICAL_PRICES?.quotes?.[lseSym];
+          const histList = state?.historicalPrices?.[lseSym] || window.EXTERNAL_HISTORICAL_PRICES?.prices?.[lseSym] || [];
+          const lastHistClose = (Array.isArray(histList) && histList.length > 0)
+            ? Number(histList[histList.length - 1].rawClose || histList[histList.length - 1].close || 0)
+            : 0;
           const refClose = (extQ && Number(extQ.price) > 0)
             ? Number(extQ.price)
-            : ((snapBase && snapBase.price > 0) ? snapBase.price : proxySpec.DefaultRefPrice);
+            : (lastHistClose > 0 ? lastHistClose : ((snapBase && snapBase.price > 0) ? snapBase.price : proxySpec.DefaultRefPrice));
           const liveChgPct = Number(proxyQ.changePct || 0);
-          let livePrice, prevPrice, change, changePct;
-          if (extQ && Number(extQ.price) > 0 && Number(extQ.prevPrice) > 0 && Math.abs(Number(extQ.price) - Number(extQ.prevPrice)) > 1e-4) {
-            prevPrice = Fin.round(Number(extQ.prevPrice), 4);
-            livePrice = Fin.round(Number(extQ.price), 4);
-            change = Fin.round(livePrice - prevPrice, 3);
-            changePct = Fin.round(((livePrice - prevPrice) / prevPrice) * 100, 2);
-          } else {
-            prevPrice = Fin.round(refClose, 4);
-            livePrice = Fin.round(refClose * (1 + liveChgPct / 100), 4);
-            change = Fin.round(livePrice - prevPrice, 3);
-            changePct = Fin.round(liveChgPct, 2);
+          const prevPrice = Fin.round(refClose, 4);
+          const livePrice = Fin.round(refClose * (1 + liveChgPct / 100), 4);
+          const change = Fin.round(livePrice - prevPrice, 3);
+          const changePct = Fin.round(liveChgPct, 2);
+          const resolvedCurr = proxySpec.currency || staticMeta.currency || 'USD';
+          if (state?.fundamentals?.[lseSym] && !state.fundamentals[lseSym]._userCustomCurrency) {
+            state.fundamentals[lseSym].currency = resolvedCurr;
           }
           out[lseSym] = {
             price: livePrice,
             prevPrice,
             change,
             changePct,
-            high52w: snapBase?.high52w || state?.fundamentals?.[lseSym]?.high52w || null,
-            low52w: snapBase?.low52w || state?.fundamentals?.[lseSym]?.low52w || null,
-            currency: proxySpec.currency || staticMeta.currency,
+            high52w: extQ?.high52w || snapBase?.high52w || state?.fundamentals?.[lseSym]?.high52w || null,
+            low52w: extQ?.low52w || snapBase?.low52w || state?.fundamentals?.[lseSym]?.low52w || null,
+            currency: resolvedCurr,
             name: state?.fundamentals?.[lseSym]?.name || staticMeta.name || lseSym,
             source: `LSE Live Index Tracker (${proxySpec.proxyTicker} via qt.gtimg.cn)`,
             _isLseProxyFallback: true
@@ -5000,7 +5010,7 @@ var MarketAPI = {
               ...existingFund,
               name: resolvedName,
               sector: inferredSector,
-              currency: existingFund.currency || currency,
+              currency: (existingFund._userCustomCurrency && existingFund.currency) ? existingFund.currency : (currency || existingFund.currency),
               high52w,
               low52w
             };
@@ -5020,20 +5030,21 @@ var MarketAPI = {
             const refClose = (snapBase && snapBase.price > 0) ? snapBase.price : proxySpec.DefaultRefPrice;
             if (proxyQuote && proxyQuote.price > 0 && refClose > 0) {
               const liveChgPct = Number(proxyQuote.changePct || 0);
-              // If snapBase came from historical_prices.json quotes with its own prevPrice, preserve or apply live index delta
               const extQ = window.EXTERNAL_HISTORICAL_PRICES?.quotes?.[symbol];
-              let livePrice, prevPrice, change, changePct;
-              if (extQ && Number(extQ.price) > 0 && Number(extQ.prevPrice) > 0 && extQ.price !== extQ.prevPrice) {
-                // We have an exact LSE quote in historical_prices.json; apply intraday index movement if any
-                prevPrice = Fin.round(Number(extQ.prevPrice), 4);
-                livePrice = Fin.round(Number(extQ.price), 4);
-                change = Fin.round(livePrice - prevPrice, 3);
-                changePct = Fin.round(((livePrice - prevPrice) / prevPrice) * 100, 2);
-              } else {
-                prevPrice = Fin.round(refClose, 4);
-                livePrice = Fin.round(refClose * (1 + liveChgPct / 100), 4);
-                change = Fin.round(livePrice - prevPrice, 3);
-                changePct = Fin.round(liveChgPct, 2);
+              const histList = state?.historicalPrices?.[symbol] || window.EXTERNAL_HISTORICAL_PRICES?.prices?.[symbol] || [];
+              const lastHistClose = (Array.isArray(histList) && histList.length > 0)
+                ? Number(histList[histList.length - 1].rawClose || histList[histList.length - 1].close || 0)
+                : 0;
+              const baseRef = (extQ && Number(extQ.price) > 0)
+                ? Number(extQ.price)
+                : (lastHistClose > 0 ? lastHistClose : refClose);
+              const prevPrice = Fin.round(baseRef, 4);
+              const livePrice = Fin.round(baseRef * (1 + liveChgPct / 100), 4);
+              const change = Fin.round(livePrice - prevPrice, 3);
+              const changePct = Fin.round(liveChgPct, 2);
+              const resolvedCurr = proxySpec.currency || staticMeta.currency || 'USD';
+              if (state?.fundamentals?.[symbol] && !state.fundamentals[symbol]._userCustomCurrency) {
+                state.fundamentals[symbol].currency = resolvedCurr;
               }
               this.lastRouteUsed = `LSE Live Index Tracker (${proxySpec.proxyTicker} via qt.gtimg.cn)`;
               return {
@@ -5041,9 +5052,9 @@ var MarketAPI = {
                 prevPrice,
                 change,
                 changePct,
-                high52w: snapBase?.high52w || state?.fundamentals?.[symbol]?.high52w || null,
-                low52w: snapBase?.low52w || state?.fundamentals?.[symbol]?.low52w || null,
-                currency: proxySpec.currency || staticMeta.currency,
+                high52w: extQ?.high52w || snapBase?.high52w || state?.fundamentals?.[symbol]?.high52w || null,
+                low52w: extQ?.low52w || snapBase?.low52w || state?.fundamentals?.[symbol]?.low52w || null,
+                currency: resolvedCurr,
                 name: state?.fundamentals?.[symbol]?.name || staticMeta.name || symbol,
                 source: this.lastRouteUsed
               };
@@ -7117,8 +7128,13 @@ function initAppState() {
   state.dividends.forEach(div => {
     if (div.ticker) div.ticker = MarketAPI.normalizeTicker(div.ticker);
   });
-  state.watchlist.forEach(w => {
-    if (w.ticker) w.ticker = MarketAPI.normalizeTicker(w.ticker);
+  const seenWl = new Set();
+  state.watchlist = (state.watchlist || []).filter(w => {
+    if (!w || !w.ticker) return false;
+    w.ticker = MarketAPI.normalizeTicker(w.ticker);
+    if (seenWl.has(w.ticker)) return false;
+    seenWl.add(w.ticker);
+    return true;
   });
 
   ['prices', 'historicalPrices', 'fundamentals', 'dividendSchedules', 'technicals'].forEach(mapKey => {
@@ -7126,7 +7142,17 @@ function initAppState() {
     const normalizedMap = {};
     Object.keys(mapObj).forEach(k => {
       const normKey = MarketAPI.normalizeTicker(k);
-      normalizedMap[normKey] = mapObj[k];
+      const val = mapObj[k];
+      const existing = normalizedMap[normKey];
+      if (!existing) {
+        normalizedMap[normKey] = val;
+      } else if (Array.isArray(val)) {
+        if (val.length > (Array.isArray(existing) ? existing.length : 0)) {
+          normalizedMap[normKey] = val;
+        }
+      } else if (val && typeof val === 'object') {
+        normalizedMap[normKey] = (k === normKey) ? { ...existing, ...val } : { ...val, ...existing };
+      }
     });
     state[mapKey] = normalizedMap;
   });
@@ -7142,12 +7168,18 @@ function initAppState() {
   allKnownTickers.forEach(sym => {
     const staticProfile = MarketAPI.getStaticProfile(sym);
     const existingFund = state.fundamentals[sym] || {};
+    const canonicalCurr = (typeof TICKER_STATIC_DIRECTORY !== 'undefined' && TICKER_STATIC_DIRECTORY[sym]?.currency)
+      ? TICKER_STATIC_DIRECTORY[sym].currency
+      : (existingFund.currency || staticProfile.currency);
     state.fundamentals[sym] = {
       ...existingFund,
       name: (existingFund.name && existingFund.name !== sym) ? existingFund.name : staticProfile.name,
       sector: (existingFund.sector && existingFund.sector !== 'Equities') ? existingFund.sector : staticProfile.sector,
-      currency: existingFund.currency || staticProfile.currency
+      currency: (existingFund._userCustomCurrency && existingFund.currency) ? existingFund.currency : canonicalCurr
     };
+    if (state.prices[sym] && !existingFund._userCustomCurrency && TICKER_STATIC_DIRECTORY?.[sym]?.currency) {
+      state.prices[sym].currency = TICKER_STATIC_DIRECTORY[sym].currency;
+    }
     const sched = buildDividendScheduleForTicker(sym);
     if (sched) {
       state.dividendSchedules[sym] = sched;

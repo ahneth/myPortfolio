@@ -349,30 +349,30 @@ var MarketAPI = {
           const staticMeta = this.getStaticProfile(lseSym);
           const snapBase = this.getEmbeddedOrCachedQuote(lseSym);
           const extQ = window.EXTERNAL_HISTORICAL_PRICES?.quotes?.[lseSym];
+          const histList = state?.historicalPrices?.[lseSym] || window.EXTERNAL_HISTORICAL_PRICES?.prices?.[lseSym] || [];
+          const lastHistClose = (Array.isArray(histList) && histList.length > 0)
+            ? Number(histList[histList.length - 1].rawClose || histList[histList.length - 1].close || 0)
+            : 0;
           const refClose = (extQ && Number(extQ.price) > 0)
             ? Number(extQ.price)
-            : ((snapBase && snapBase.price > 0) ? snapBase.price : proxySpec.DefaultRefPrice);
+            : (lastHistClose > 0 ? lastHistClose : ((snapBase && snapBase.price > 0) ? snapBase.price : proxySpec.DefaultRefPrice));
           const liveChgPct = Number(proxyQ.changePct || 0);
-          let livePrice, prevPrice, change, changePct;
-          if (extQ && Number(extQ.price) > 0 && Number(extQ.prevPrice) > 0 && Math.abs(Number(extQ.price) - Number(extQ.prevPrice)) > 1e-4) {
-            prevPrice = Fin.round(Number(extQ.prevPrice), 4);
-            livePrice = Fin.round(Number(extQ.price), 4);
-            change = Fin.round(livePrice - prevPrice, 3);
-            changePct = Fin.round(((livePrice - prevPrice) / prevPrice) * 100, 2);
-          } else {
-            prevPrice = Fin.round(refClose, 4);
-            livePrice = Fin.round(refClose * (1 + liveChgPct / 100), 4);
-            change = Fin.round(livePrice - prevPrice, 3);
-            changePct = Fin.round(liveChgPct, 2);
+          const prevPrice = Fin.round(refClose, 4);
+          const livePrice = Fin.round(refClose * (1 + liveChgPct / 100), 4);
+          const change = Fin.round(livePrice - prevPrice, 3);
+          const changePct = Fin.round(liveChgPct, 2);
+          const resolvedCurr = proxySpec.currency || staticMeta.currency || 'USD';
+          if (state?.fundamentals?.[lseSym] && !state.fundamentals[lseSym]._userCustomCurrency) {
+            state.fundamentals[lseSym].currency = resolvedCurr;
           }
           out[lseSym] = {
             price: livePrice,
             prevPrice,
             change,
             changePct,
-            high52w: snapBase?.high52w || state?.fundamentals?.[lseSym]?.high52w || null,
-            low52w: snapBase?.low52w || state?.fundamentals?.[lseSym]?.low52w || null,
-            currency: proxySpec.currency || staticMeta.currency,
+            high52w: extQ?.high52w || snapBase?.high52w || state?.fundamentals?.[lseSym]?.high52w || null,
+            low52w: extQ?.low52w || snapBase?.low52w || state?.fundamentals?.[lseSym]?.low52w || null,
+            currency: resolvedCurr,
             name: state?.fundamentals?.[lseSym]?.name || staticMeta.name || lseSym,
             source: `LSE Live Index Tracker (${proxySpec.proxyTicker} via qt.gtimg.cn)`,
             _isLseProxyFallback: true
@@ -639,7 +639,7 @@ var MarketAPI = {
               ...existingFund,
               name: resolvedName,
               sector: inferredSector,
-              currency: existingFund.currency || currency,
+              currency: (existingFund._userCustomCurrency && existingFund.currency) ? existingFund.currency : (currency || existingFund.currency),
               high52w,
               low52w
             };
@@ -659,20 +659,21 @@ var MarketAPI = {
             const refClose = (snapBase && snapBase.price > 0) ? snapBase.price : proxySpec.DefaultRefPrice;
             if (proxyQuote && proxyQuote.price > 0 && refClose > 0) {
               const liveChgPct = Number(proxyQuote.changePct || 0);
-              // If snapBase came from historical_prices.json quotes with its own prevPrice, preserve or apply live index delta
               const extQ = window.EXTERNAL_HISTORICAL_PRICES?.quotes?.[symbol];
-              let livePrice, prevPrice, change, changePct;
-              if (extQ && Number(extQ.price) > 0 && Number(extQ.prevPrice) > 0 && extQ.price !== extQ.prevPrice) {
-                // We have an exact LSE quote in historical_prices.json; apply intraday index movement if any
-                prevPrice = Fin.round(Number(extQ.prevPrice), 4);
-                livePrice = Fin.round(Number(extQ.price), 4);
-                change = Fin.round(livePrice - prevPrice, 3);
-                changePct = Fin.round(((livePrice - prevPrice) / prevPrice) * 100, 2);
-              } else {
-                prevPrice = Fin.round(refClose, 4);
-                livePrice = Fin.round(refClose * (1 + liveChgPct / 100), 4);
-                change = Fin.round(livePrice - prevPrice, 3);
-                changePct = Fin.round(liveChgPct, 2);
+              const histList = state?.historicalPrices?.[symbol] || window.EXTERNAL_HISTORICAL_PRICES?.prices?.[symbol] || [];
+              const lastHistClose = (Array.isArray(histList) && histList.length > 0)
+                ? Number(histList[histList.length - 1].rawClose || histList[histList.length - 1].close || 0)
+                : 0;
+              const baseRef = (extQ && Number(extQ.price) > 0)
+                ? Number(extQ.price)
+                : (lastHistClose > 0 ? lastHistClose : refClose);
+              const prevPrice = Fin.round(baseRef, 4);
+              const livePrice = Fin.round(baseRef * (1 + liveChgPct / 100), 4);
+              const change = Fin.round(livePrice - prevPrice, 3);
+              const changePct = Fin.round(liveChgPct, 2);
+              const resolvedCurr = proxySpec.currency || staticMeta.currency || 'USD';
+              if (state?.fundamentals?.[symbol] && !state.fundamentals[symbol]._userCustomCurrency) {
+                state.fundamentals[symbol].currency = resolvedCurr;
               }
               this.lastRouteUsed = `LSE Live Index Tracker (${proxySpec.proxyTicker} via qt.gtimg.cn)`;
               return {
@@ -680,9 +681,9 @@ var MarketAPI = {
                 prevPrice,
                 change,
                 changePct,
-                high52w: snapBase?.high52w || state?.fundamentals?.[symbol]?.high52w || null,
-                low52w: snapBase?.low52w || state?.fundamentals?.[symbol]?.low52w || null,
-                currency: proxySpec.currency || staticMeta.currency,
+                high52w: extQ?.high52w || snapBase?.high52w || state?.fundamentals?.[symbol]?.high52w || null,
+                low52w: extQ?.low52w || snapBase?.low52w || state?.fundamentals?.[symbol]?.low52w || null,
+                currency: resolvedCurr,
                 name: state?.fundamentals?.[symbol]?.name || staticMeta.name || symbol,
                 source: this.lastRouteUsed
               };
