@@ -830,8 +830,9 @@ function ingestHistoricalPricesData(data) {
         const existing = state.prices[sym];
         const incomingTs = Date.parse(q.lastUpdated || data._meta?.generatedAt || '') || 0;
         const existingTs = Date.parse(existing?.lastUpdated || '') || 0;
-        // Never overwrite an already-loaded live price or newer price with an older snapshot quote
-        if (existing && Number(existing.price) > 0 && (existing._isLiveQuote || (existingTs > 0 && incomingTs > 0 && existingTs >= incomingTs) || !incomingTs)) {
+        const isFreshLiveInSession = Boolean(existing?._isLiveQuote) && (Date.now() - existingTs < 15 * 60 * 1000);
+        // Never overwrite a fresh live price from the current session or a strictly newer price with an older snapshot quote
+        if (existing && Number(existing.price) > 0 && (isFreshLiveInSession || (existingTs > 0 && incomingTs > 0 && existingTs > incomingTs))) {
           if (!existing.high52w && q.high52w) existing.high52w = q.high52w;
           if (!existing.low52w && q.low52w) existing.low52w = q.low52w;
           return;

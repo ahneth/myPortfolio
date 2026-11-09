@@ -71,6 +71,12 @@ var MarketAPI = {
     s = s.replace(/\.(HKG|HKEX|SEHK)$/i, '.HK');
     s = s.replace(/\.(LON|LSE|XLON)$/i, '.L');
 
+    // Auto-append .L for known London Stock Exchange UCITS ETFs & UK stocks if entered without .L suffix
+    const lseKnownBare = ['VWRA', 'SPYL', 'VUAG', 'VUSA', 'VWRL', 'CSPX', 'HSBA', 'ISAC', 'EQQQ', 'IUIT', 'IWDA', 'EIMI', 'VWRP', 'SWDA'];
+    if (lseKnownBare.includes(s)) {
+      s = `${s}.L`;
+    }
+
     if (/^\d{1,5}$/.test(s)) {
       s = `${s}.HK`;
     }
@@ -179,7 +185,7 @@ var MarketAPI = {
   async fetchYahooJson(yahooPaths, cacheKey = null) {
     if (cacheKey && this._chartCache[cacheKey]) {
       const cached = this._chartCache[cacheKey];
-      if (Date.now() - cached.ts < 300000) {
+      if (Date.now() - cached.ts < 60000) {
         return cached.data;
       }
     }
@@ -196,7 +202,12 @@ var MarketAPI = {
       {
         name: 'AllOrigins-Raw',
         unwrapAllOrigins: false,
-        build: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`
+        build: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}&_=${Date.now()}`
+      },
+      {
+        name: 'CodeTabs',
+        unwrapAllOrigins: false,
+        build: (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
       },
       {
         name: 'AllOrigins-JSON',
@@ -204,17 +215,23 @@ var MarketAPI = {
         build: (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}&_=${Date.now()}`
       },
       {
-        name: 'CodeTabs',
+        name: 'CorsProxy-Org',
         unwrapAllOrigins: false,
-        build: (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
+        build: (u) => `https://corsproxy.org/?${encodeURIComponent(u)}`
+      },
+      {
+        name: 'ThingProxy',
+        unwrapAllOrigins: false,
+        build: (u) => `https://thingproxy.freeboard.io/fetch/${u}`
       }
     ];
 
-    // Staggered 2-stage proxy query to avoid triggering HTTP 429 rate-limits on public proxies
+    // Stage 1: Fast 3-way parallel race with 4000ms timeout (crucial for LSE .L tickers like VWRA.L & SPYL.L)
     try {
       const stage1 = [
-        this._tryProxyFetch(primaryUrl, proxySpecs[0], 2200),
-        this._tryProxyFetch(backupUrl, proxySpecs[1], 2200)
+        this._tryProxyFetch(primaryUrl, proxySpecs[0], 4000),
+        this._tryProxyFetch(backupUrl, proxySpecs[1], 4000),
+        this._tryProxyFetch(primaryUrl, proxySpecs[2], 4000)
       ];
       const winner1 = await Promise.any(stage1);
       if (winner1) {
@@ -227,10 +244,12 @@ var MarketAPI = {
       if (symErr1) throw symErr1;
     }
 
+    // Stage 2: Backup 3-way parallel race with 4500ms timeout
     try {
       const stage2 = [
-        this._tryProxyFetch(primaryUrl, proxySpecs[2], 2200),
-        this._tryProxyFetch(backupUrl, proxySpecs[3], 2200)
+        this._tryProxyFetch(primaryUrl, proxySpecs[3], 4500),
+        this._tryProxyFetch(backupUrl, proxySpecs[4], 4500),
+        this._tryProxyFetch(primaryUrl, proxySpecs[5], 4500)
       ];
       const winner2 = await Promise.any(stage2);
       if (winner2) {
@@ -370,8 +389,9 @@ var MarketAPI = {
 
   getEmbeddedOrCachedQuote(symbol) {
     const staticMeta = this.getStaticProfile(symbol);
-    const snapQuotes = (typeof window !== 'undefined' && window.EMBEDDED_HISTORICAL_PRICES?.quotes) || {};
-    const sq = snapQuotes[symbol] || state?.prices?.[symbol];
+    const extQuotes = (typeof window !== 'undefined' && window.EXTERNAL_HISTORICAL_PRICES?.quotes) || {};
+    const embQuotes = (typeof window !== 'undefined' && window.EMBEDDED_HISTORICAL_PRICES?.quotes) || {};
+    const sq = extQuotes[symbol] || embQuotes[symbol] || state?.prices?.[symbol];
     if (sq && Number(sq.price) > 0) {
       const price = Fin.round(Number(sq.price), 4);
       const prevPrice = Fin.round(Number(sq.prevClose || sq.prevPrice || price), 4);
@@ -465,28 +485,32 @@ var MarketAPI = {
 
     if (provider === 'yahoo') {
       // 1. Try fast zero-CORS direct browser JSONP (qt.gtimg.cn) first for HK/US live quotes (~200ms)
-      try {
-        const jsonpQuote = await this.fetchTencentJsonpQuote(symbol);
-        if (jsonpQuote && jsonpQuote.price > 0) {
-          const existingFund = state.fundamentals[symbol] || {};
-          state.fundamentals[symbol] = {
-            ...existingFund,
-            name: existingFund.name || jsonpQuote.name || staticMeta.name || symbol,
-            sector: existingFund.sector || staticMeta.sector || 'Equities',
-            currency: jsonpQuote.currency,
-            high52w: jsonpQuote.high52w || existingFund.high52w || null,
-            low52w: jsonpQuote.low52w || existingFund.low52w || null
-          };
-          return jsonpQuote;
-        }
-      } catch (_) {}
+      //    Skip for London (.L) tickers since Tencent JSONP only serves HK and US exchanges.
+      if (!symbol.endsWith('.L')) {
+        try {
+          const jsonpQuote = await this.fetchTencentJsonpQuote(symbol);
+          if (jsonpQuote && jsonpQuote.price > 0) {
+            const existingFund = state.fundamentals[symbol] || {};
+            state.fundamentals[symbol] = {
+              ...existingFund,
+              name: existingFund.name || jsonpQuote.name || staticMeta.name || symbol,
+              sector: existingFund.sector || staticMeta.sector || 'Equities',
+              currency: jsonpQuote.currency,
+              high52w: jsonpQuote.high52w || existingFund.high52w || null,
+              low52w: jsonpQuote.low52w || existingFund.low52w || null
+            };
+            return jsonpQuote;
+          }
+        } catch (_) {}
+      }
 
-      // 2. Fallback to lightweight Yahoo 2d live quote (2.5s max timeout)
+      // 2. Fetch live Yahoo Finance v8 5d/1d quote (range=5d ensures LSE .L tickers always have >=2 daily closes even across UK bank holidays/weekends; cacheKey=null ensures fresh live prices on every Sync click)
       try {
-        const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=2d&interval=1d&includePrePost=false`;
-        const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=2d&interval=1d&includePrePost=false`;
+        const cb = Date.now();
+        const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=false&_=${cb}`;
+        const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=false&_=${cb}`;
 
-        const data = await this.fetchYahooJson([q1, q2], `quote_${symbol}`);
+        const data = await this.fetchYahooJson([q1, q2], null);
         const result = data?.chart?.result?.[0];
         if (result && result.meta) {
           const meta = result.meta;
@@ -1134,13 +1158,20 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
         try {
           q = await MarketAPI.fetchQuote(ticker);
           isLive = Boolean(q && (!q.source || !q.source.includes('Snapshot')));
-        } catch (_) {
-          // Keep existing live price if we already have one; only fall back to snapshot if state.prices[ticker] is missing
-          if (state.prices[ticker] && Number(state.prices[ticker].price) > 0) {
-            return;
+        } catch (fetchErr) {
+          if (typeof AppLogger !== 'undefined') {
+            AppLogger.warn('MarketAPI', `Live quote proxy fetch failed for ${ticker} (${fetchErr.message}) — checking latest GitHub snapshot fallback.`);
           }
-          q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
-          isLive = false;
+          const extQ = window.EXTERNAL_HISTORICAL_PRICES?.quotes?.[ticker];
+          if (extQ && Number(extQ.price) > 0) {
+            q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
+            isLive = false;
+          } else if (state.prices[ticker] && Number(state.prices[ticker].price) > 0) {
+            return;
+          } else {
+            q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
+            isLive = false;
+          }
         }
       }
       if (q && q.price > 0) {

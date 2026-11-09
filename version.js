@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.3.9',
-  buildId: '20261109_1805',
-  releaseDate: '2026-11-09 18:05 HKT',
-  driveFolder: '/myPortfolio/20261109_1805/',
+  appVersion: '3.4.0',
+  buildId: '20261109_2045',
+  releaseDate: '2026-11-09 20:45 HKT',
+  driveFolder: '/myPortfolio/20261109_2045/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,17 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.4.0',
+      buildId: '20261109_2045',
+      date: '2026-11-09 20:45 HKT',
+      summary: 'Fixed London Stock Exchange (VWRA / VWRA.L & SPYL / SPYL.L) live price update bug caused by bare ticker normalization (treating VWRA/SPYL as US tickers on qt.gtimg.cn), 2d Yahoo range empty responses outside LSE hours, 5-minute quote cache, and snapshot timestamp guard.',
+      changes: [
+        'Fixed MarketAPI.normalizeTicker() (and Python normalize_ticker) to automatically normalize bare London UCITS ETFs & UK tickers (VWRA -> VWRA.L, SPYL -> SPYL.L, VUAG -> VUAG.L, CSPX -> CSPX.L, HSBA -> HSBA.L, etc.) so they are never misrouted as US tickers (usVWRA / usSPYL) to Tencent JSONP.',
+        'Updated MarketAPI.fetchQuote() to bypass Tencent JSONP for .L tickers, switched Yahoo live quote endpoint from range=2d to range=5d&interval=1d with cache-busting (cacheKey=null), and expanded CORS proxy pool to 6 endpoints with 4.0s-4.5s timeouts.',
+        'Fixed getEmbeddedOrCachedQuote() to read window.EXTERNAL_HISTORICAL_PRICES.quotes in addition to window.EMBEDDED_HISTORICAL_PRICES.quotes, and refined ingestHistoricalPricesData() quote guard so stale non-live localStorage prices are properly updated when historical_prices.json loads.'
+      ]
+    },
     {
       version: '3.3.9',
       buildId: '20261109_1805',
