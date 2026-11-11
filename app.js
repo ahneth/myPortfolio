@@ -4540,17 +4540,36 @@ function bootstrapPortfolioApp() {
     if (typeof AppLogger !== 'undefined') AppLogger.error('Boot', `renderAll failed: ${err.message}`, err);
   }
 
+  const AUTO_LIVE_SYNC_INTERVAL_MS = 30000;
+
+  const triggerActivePageAutoSync = () => {
+    if (document.visibilityState !== 'visible') return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    if (window.__LIVE_PRICE_SYNC_IN_FLIGHT__) return;
+    if (typeof syncAllMarketData === 'function') {
+      syncAllMarketData(false, { isAutoStartup: true, isAutoTimer: true }).catch(() => {});
+    }
+  };
+
+  if (window.__AUTO_LIVE_SYNC_TIMER_ID__) {
+    clearInterval(window.__AUTO_LIVE_SYNC_TIMER_ID__);
+  }
+  window.__AUTO_LIVE_SYNC_TIMER_ID__ = setInterval(triggerActivePageAutoSync, AUTO_LIVE_SYNC_INTERVAL_MS);
+
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       loadHistoricalPricesFromJson(true);
       loadCompanyNewsFromJson();
+      if (Date.now() - (window.__LAST_LIVE_SYNC_TS__ || 0) >= AUTO_LIVE_SYNC_INTERVAL_MS) {
+        triggerActivePageAutoSync();
+      }
     }
   });
 
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.2.9 boot sequence complete — triggering initial one-time live price API fetch.');
+      AppLogger.info('Boot', 'myPortfolio v3.4.8 boot sequence complete — triggering initial live price sync and starting 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

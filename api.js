@@ -975,13 +975,22 @@ var MarketAPI = {
 };
 
 async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
-  const isAutoStartup = Boolean(options && options.isAutoStartup);
+  const isAutoTimer = Boolean(options && options.isAutoTimer);
+  const isAutoStartup = Boolean((options && options.isAutoStartup) || isAutoTimer);
+  if (window.__LIVE_PRICE_SYNC_IN_FLIGHT__ && isAutoStartup && !triggerGitHubWorkflow) {
+    return;
+  }
+  window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = true;
   const tStart = performance.now();
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.action('Sync', `${isAutoStartup ? 'Initial page-load auto live price sync' : (triggerGitHubWorkflow ? 'Manual GitHub Historical Price Workflow triggered' : 'Live Price Sync button pressed')} (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
+    const syncLabel = isAutoTimer
+      ? 'Auto 30s active-page live price sync'
+      : (isAutoStartup ? 'Initial page-load auto live price sync' : (triggerGitHubWorkflow ? 'Manual GitHub Historical Price Workflow triggered' : 'Live Price Sync button pressed'));
+    AppLogger.action('Sync', `${syncLabel} (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
   }
 
   if (!MarketAPI.hasKey()) {
+    window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = false;
     if (!isAutoStartup) {
       if (typeof AppLogger !== 'undefined') {
         AppLogger.warn('Sync', 'API Key missing for selected keyed provider — redirecting to Settings.');
@@ -998,6 +1007,7 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
   ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
 
   if (allTickers.length === 0) {
+    window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = false;
     if (typeof AppLogger !== 'undefined') {
       AppLogger.info('Sync', 'No holdings or watchlist tickers to sync.');
     }
@@ -1130,10 +1140,24 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
     state.prices[ticker] = quoteObj;
   });
 
+  window.__LAST_LIVE_SYNC_TS__ = Date.now();
+  window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = false;
   state.settings.lastApiSync = new Date().toISOString();
   recalculatePortfolio();
   saveState();
-  renderAll();
+
+  const hasPriceChange = Object.keys(flashDirections).length > 0;
+  if (isAutoTimer && !hasPriceChange) {
+    try { if (typeof renderApiStatusUI === 'function') renderApiStatusUI(); } catch (_) {}
+    try { if (typeof renderKPIs === 'function') renderKPIs(); } catch (_) {}
+    try {
+      const activeTab = typeof getActiveTabName === 'function' ? getActiveTabName() : 'dashboard';
+      if (activeTab === 'holdings' && typeof renderHoldingsTable === 'function') renderHoldingsTable();
+      else if (activeTab === 'watchlist' && typeof renderWatchlistAndFundamentals === 'function') renderWatchlistAndFundamentals();
+    } catch (_) {}
+  } else {
+    renderAll();
+  }
 
   Object.entries(flashDirections).forEach(([ticker, isUp]) => {
     triggerRowPriceFlash(ticker, isUp);

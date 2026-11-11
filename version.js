@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.4.7',
-  buildId: '20261111_2305',
-  releaseDate: '2026-11-11 23:05 HKT',
-  driveFolder: '/myPortfolio/20261111_2305/',
+  appVersion: '3.4.8',
+  buildId: '20261112_0730',
+  releaseDate: '2026-11-12 07:30 HKT',
+  driveFolder: '/myPortfolio/20261112_0730/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,16 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.4.8',
+      buildId: '20261112_0730',
+      date: '2026-11-12 07:30 HKT',
+      summary: 'Implemented automatic 30-second live-quote background sync whenever the page is open and active (document.visibilityState === "visible"), regardless of time of day, with in-flight overlap protection and flicker-free DOM updates.',
+      changes: [
+        'Added a 30-second active-page auto-sync timer (AUTO_LIVE_SYNC_INTERVAL_MS = 30000) in bootstrapPortfolioApp() in app.js that triggers syncAllMarketData(false, { isAutoStartup: true, isAutoTimer: true }) whenever document.visibilityState === "visible", plus immediate catch-up sync on tab visibility restore if >=30s has elapsed.',
+        'Added window.__LIVE_PRICE_SYNC_IN_FLIGHT__ overlap protection and smart chart-preserving updates in syncAllMarketData() in api.js so background 30s ticks silently refresh live quotes, KPIs, and tables without toast spam or resetting active chart hover states when prices are unchanged.'
+      ]
+    },
     {
       version: '3.4.7',
       buildId: '20261111_2305',

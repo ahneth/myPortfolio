@@ -858,7 +858,7 @@ tr:hover .table-action-capsule {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.4.7 (20261111_2305)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.4.8 (20261112_0730)</span>
             </div>
           </div>
         </div>
@@ -3143,10 +3143,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.4.7',
-  buildId: '20261111_2305',
-  releaseDate: '2026-11-11 23:05 HKT',
-  driveFolder: '/myPortfolio/20261111_2305/',
+  appVersion: '3.4.8',
+  buildId: '20261112_0730',
+  releaseDate: '2026-11-12 07:30 HKT',
+  driveFolder: '/myPortfolio/20261112_0730/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -3159,6 +3159,16 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.4.8',
+      buildId: '20261112_0730',
+      date: '2026-11-12 07:30 HKT',
+      summary: 'Implemented automatic 30-second live-quote background sync whenever the page is open and active (document.visibilityState === "visible"), regardless of time of day, with in-flight overlap protection and flicker-free DOM updates.',
+      changes: [
+        'Added a 30-second active-page auto-sync timer (AUTO_LIVE_SYNC_INTERVAL_MS = 30000) in bootstrapPortfolioApp() in app.js that triggers syncAllMarketData(false, { isAutoStartup: true, isAutoTimer: true }) whenever document.visibilityState === "visible", plus immediate catch-up sync on tab visibility restore if >=30s has elapsed.',
+        'Added window.__LIVE_PRICE_SYNC_IN_FLIGHT__ overlap protection and smart chart-preserving updates in syncAllMarketData() in api.js so background 30s ticks silently refresh live quotes, KPIs, and tables without toast spam or resetting active chart hover states when prices are unchanged.'
+      ]
+    },
     {
       version: '3.4.7',
       buildId: '20261111_2305',
@@ -5406,13 +5416,22 @@ var MarketAPI = {
 };
 
 async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
-  const isAutoStartup = Boolean(options && options.isAutoStartup);
+  const isAutoTimer = Boolean(options && options.isAutoTimer);
+  const isAutoStartup = Boolean((options && options.isAutoStartup) || isAutoTimer);
+  if (window.__LIVE_PRICE_SYNC_IN_FLIGHT__ && isAutoStartup && !triggerGitHubWorkflow) {
+    return;
+  }
+  window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = true;
   const tStart = performance.now();
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.action('Sync', `${isAutoStartup ? 'Initial page-load auto live price sync' : (triggerGitHubWorkflow ? 'Manual GitHub Historical Price Workflow triggered' : 'Live Price Sync button pressed')} (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
+    const syncLabel = isAutoTimer
+      ? 'Auto 30s active-page live price sync'
+      : (isAutoStartup ? 'Initial page-load auto live price sync' : (triggerGitHubWorkflow ? 'Manual GitHub Historical Price Workflow triggered' : 'Live Price Sync button pressed'));
+    AppLogger.action('Sync', `${syncLabel} (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
   }
 
   if (!MarketAPI.hasKey()) {
+    window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = false;
     if (!isAutoStartup) {
       if (typeof AppLogger !== 'undefined') {
         AppLogger.warn('Sync', 'API Key missing for selected keyed provider — redirecting to Settings.');
@@ -5429,6 +5448,7 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
   ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
 
   if (allTickers.length === 0) {
+    window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = false;
     if (typeof AppLogger !== 'undefined') {
       AppLogger.info('Sync', 'No holdings or watchlist tickers to sync.');
     }
@@ -5561,10 +5581,24 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
     state.prices[ticker] = quoteObj;
   });
 
+  window.__LAST_LIVE_SYNC_TS__ = Date.now();
+  window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = false;
   state.settings.lastApiSync = new Date().toISOString();
   recalculatePortfolio();
   saveState();
-  renderAll();
+
+  const hasPriceChange = Object.keys(flashDirections).length > 0;
+  if (isAutoTimer && !hasPriceChange) {
+    try { if (typeof renderApiStatusUI === 'function') renderApiStatusUI(); } catch (_) {}
+    try { if (typeof renderKPIs === 'function') renderKPIs(); } catch (_) {}
+    try {
+      const activeTab = typeof getActiveTabName === 'function' ? getActiveTabName() : 'dashboard';
+      if (activeTab === 'holdings' && typeof renderHoldingsTable === 'function') renderHoldingsTable();
+      else if (activeTab === 'watchlist' && typeof renderWatchlistAndFundamentals === 'function') renderWatchlistAndFundamentals();
+    } catch (_) {}
+  } else {
+    renderAll();
+  }
 
   Object.entries(flashDirections).forEach(([ticker, isUp]) => {
     triggerRowPriceFlash(ticker, isUp);
@@ -15130,17 +15164,36 @@ function bootstrapPortfolioApp() {
     if (typeof AppLogger !== 'undefined') AppLogger.error('Boot', `renderAll failed: ${err.message}`, err);
   }
 
+  const AUTO_LIVE_SYNC_INTERVAL_MS = 30000;
+
+  const triggerActivePageAutoSync = () => {
+    if (document.visibilityState !== 'visible') return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    if (window.__LIVE_PRICE_SYNC_IN_FLIGHT__) return;
+    if (typeof syncAllMarketData === 'function') {
+      syncAllMarketData(false, { isAutoStartup: true, isAutoTimer: true }).catch(() => {});
+    }
+  };
+
+  if (window.__AUTO_LIVE_SYNC_TIMER_ID__) {
+    clearInterval(window.__AUTO_LIVE_SYNC_TIMER_ID__);
+  }
+  window.__AUTO_LIVE_SYNC_TIMER_ID__ = setInterval(triggerActivePageAutoSync, AUTO_LIVE_SYNC_INTERVAL_MS);
+
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       loadHistoricalPricesFromJson(true);
       loadCompanyNewsFromJson();
+      if (Date.now() - (window.__LAST_LIVE_SYNC_TS__ || 0) >= AUTO_LIVE_SYNC_INTERVAL_MS) {
+        triggerActivePageAutoSync();
+      }
     }
   });
 
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.2.9 boot sequence complete — triggering initial one-time live price API fetch.');
+      AppLogger.info('Boot', 'myPortfolio v3.4.8 boot sequence complete — triggering initial live price sync and starting 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;
