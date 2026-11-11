@@ -858,7 +858,7 @@ tr:hover .table-action-capsule {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.4.6 (20261111_2235)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.4.7 (20261111_2305)</span>
             </div>
           </div>
         </div>
@@ -3143,10 +3143,10 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.4.6',
-  buildId: '20261111_2235',
-  releaseDate: '2026-11-11 22:35 HKT',
-  driveFolder: '/myPortfolio/20261111_2235/',
+  appVersion: '3.4.7',
+  buildId: '20261111_2305',
+  releaseDate: '2026-11-11 23:05 HKT',
+  driveFolder: '/myPortfolio/20261111_2305/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -3159,6 +3159,16 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.4.7',
+      buildId: '20261111_2305',
+      date: '2026-11-11 23:05 HKT',
+      summary: 'Configured independent dual Y-axes on the Trades Historical Portfolio Balance & Cashflows chart so Cashflow stacked bars scale to the Left Y-axis and Portfolio/Cash Balance stacked areas scale to the Right Y-axis.',
+      changes: [
+        'Assigned all Cash Inflows (Deposits, Dividends, Stock Sells) and Cash Outflows (Stock Buys, Withdrawals) stacked bar datasets in renderTradesBalanceCashflowChart() to the Left Y-axis (yAxisID: "y", position: "left", stacked: true).',
+        'Assigned Cash Balance (translucent orange) and Portfolio Market Value (translucent green) stacked area datasets to an independent Right Y-axis (yAxisID: "yBalance", position: "right", stacked: true, drawOnChartArea: false) so monthly cashflow bars scale prominently without being dwarfed by total portfolio balance.'
+      ]
+    },
     {
       version: '3.4.6',
       buildId: '20261111_2235',
@@ -10386,7 +10396,7 @@ function renderTradesBalanceCashflowChart() {
     data: {
       labels,
       datasets: [
-        // 1. Cash Inflows — Stacked Bar Graph in Blue Tone Color Theme (drawn in front: order 1)
+        // 1. Cash Inflows — Stacked Bar Graph in Blue Tone Color Theme (Left Y-Axis 'y', drawn in front: order 1)
         {
           type: 'bar',
           label: `Deposits (${baseCurr})`,
@@ -10396,6 +10406,7 @@ function renderTradesBalanceCashflowChart() {
           borderWidth: 1,
           borderRadius: 2,
           stack: 'inflows',
+          yAxisID: 'y',
           order: 1
         },
         {
@@ -10407,6 +10418,7 @@ function renderTradesBalanceCashflowChart() {
           borderWidth: 1,
           borderRadius: 2,
           stack: 'inflows',
+          yAxisID: 'y',
           order: 1
         },
         {
@@ -10418,9 +10430,10 @@ function renderTradesBalanceCashflowChart() {
           borderWidth: 1,
           borderRadius: 2,
           stack: 'inflows',
+          yAxisID: 'y',
           order: 1
         },
-        // 2. Cash Outflows — Stacked Bar Graph in Red Tone Color Theme (drawn in front: order 1)
+        // 2. Cash Outflows — Stacked Bar Graph in Red Tone Color Theme (Left Y-Axis 'y', drawn in front: order 1)
         {
           type: 'bar',
           label: `Stock Buys (${baseCurr})`,
@@ -10430,6 +10443,7 @@ function renderTradesBalanceCashflowChart() {
           borderWidth: 1,
           borderRadius: 2,
           stack: 'outflows',
+          yAxisID: 'y',
           order: 1
         },
         {
@@ -10441,9 +10455,10 @@ function renderTradesBalanceCashflowChart() {
           borderWidth: 1,
           borderRadius: 2,
           stack: 'outflows',
+          yAxisID: 'y',
           order: 1
         },
-        // 3. Stacked Area Chart Behind the Cashflow Bars (order 2)
+        // 3. Stacked Area Chart Behind the Cashflow Bars (Right Y-Axis 'yBalance', order 2)
         //    - Cash Balance in translucent orange
         //    - Portfolio Monthly Market Value in translucent green
         {
@@ -10458,6 +10473,7 @@ function renderTradesBalanceCashflowChart() {
           tension: 0.3,
           fill: 'origin',
           stack: 'balance',
+          yAxisID: 'yBalance',
           order: 2
         },
         {
@@ -10472,6 +10488,7 @@ function renderTradesBalanceCashflowChart() {
           tension: 0.3,
           fill: '-1',
           stack: 'balance',
+          yAxisID: 'yBalance',
           order: 2
         }
       ]
@@ -10491,11 +10508,35 @@ function renderTradesBalanceCashflowChart() {
           }
         },
         y: {
+          position: 'left',
           stacked: true,
           beginAtZero: true,
+          title: {
+            display: !isMobile,
+            text: `Cashflows (${baseCurr})`,
+            color: isDark ? '#60a5fa' : '#2563eb',
+            font: { size: 10, weight: 'bold' }
+          },
           grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
           ticks: {
-            color: isDark ? '#94a3b8' : '#64748b',
+            color: isDark ? '#93c5fd' : '#2563eb',
+            font: { size: isMobile ? 9 : 10 },
+            callback: (v) => Fin.currency(v, false, baseCurr)
+          }
+        },
+        yBalance: {
+          position: 'right',
+          stacked: true,
+          beginAtZero: true,
+          title: {
+            display: !isMobile,
+            text: `Portfolio & Cash Balance (${baseCurr})`,
+            color: isDark ? '#34d399' : '#059669',
+            font: { size: 10, weight: 'bold' }
+          },
+          grid: { drawOnChartArea: false },
+          ticks: {
+            color: isDark ? '#6ee7b7' : '#059669',
             font: { size: isMobile ? 9 : 10 },
             callback: (v) => Fin.currency(v, false, baseCurr)
           }

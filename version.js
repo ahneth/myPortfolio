@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.4.6',
-  buildId: '20261111_2235',
-  releaseDate: '2026-11-11 22:35 HKT',
-  driveFolder: '/myPortfolio/20261111_2235/',
+  appVersion: '3.4.7',
+  buildId: '20261111_2305',
+  releaseDate: '2026-11-11 23:05 HKT',
+  driveFolder: '/myPortfolio/20261111_2305/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,16 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.4.7',
+      buildId: '20261111_2305',
+      date: '2026-11-11 23:05 HKT',
+      summary: 'Configured independent dual Y-axes on the Trades Historical Portfolio Balance & Cashflows chart so Cashflow stacked bars scale to the Left Y-axis and Portfolio/Cash Balance stacked areas scale to the Right Y-axis.',
+      changes: [
+        'Assigned all Cash Inflows (Deposits, Dividends, Stock Sells) and Cash Outflows (Stock Buys, Withdrawals) stacked bar datasets in renderTradesBalanceCashflowChart() to the Left Y-axis (yAxisID: "y", position: "left", stacked: true).',
+        'Assigned Cash Balance (translucent orange) and Portfolio Market Value (translucent green) stacked area datasets to an independent Right Y-axis (yAxisID: "yBalance", position: "right", stacked: true, drawOnChartArea: false) so monthly cashflow bars scale prominently without being dwarfed by total portfolio balance.'
+      ]
+    },
     {
       version: '3.4.6',
       buildId: '20261111_2235',

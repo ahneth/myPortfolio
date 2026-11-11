@@ -1608,7 +1608,7 @@ function renderTradesBalanceCashflowChart() {
     data: {
       labels,
       datasets: [
-        // 1. Cash Inflows — Stacked Bar Graph in Blue Tone Color Theme (drawn in front: order 1)
+        // 1. Cash Inflows — Stacked Bar Graph in Blue Tone Color Theme (Left Y-Axis 'y', drawn in front: order 1)
         {
           type: 'bar',
           label: `Deposits (${baseCurr})`,
@@ -1618,6 +1618,7 @@ function renderTradesBalanceCashflowChart() {
           borderWidth: 1,
           borderRadius: 2,
           stack: 'inflows',
+          yAxisID: 'y',
           order: 1
         },
         {
@@ -1629,6 +1630,7 @@ function renderTradesBalanceCashflowChart() {
           borderWidth: 1,
           borderRadius: 2,
           stack: 'inflows',
+          yAxisID: 'y',
           order: 1
         },
         {
@@ -1640,9 +1642,10 @@ function renderTradesBalanceCashflowChart() {
           borderWidth: 1,
           borderRadius: 2,
           stack: 'inflows',
+          yAxisID: 'y',
           order: 1
         },
-        // 2. Cash Outflows — Stacked Bar Graph in Red Tone Color Theme (drawn in front: order 1)
+        // 2. Cash Outflows — Stacked Bar Graph in Red Tone Color Theme (Left Y-Axis 'y', drawn in front: order 1)
         {
           type: 'bar',
           label: `Stock Buys (${baseCurr})`,
@@ -1652,6 +1655,7 @@ function renderTradesBalanceCashflowChart() {
           borderWidth: 1,
           borderRadius: 2,
           stack: 'outflows',
+          yAxisID: 'y',
           order: 1
         },
         {
@@ -1663,9 +1667,10 @@ function renderTradesBalanceCashflowChart() {
           borderWidth: 1,
           borderRadius: 2,
           stack: 'outflows',
+          yAxisID: 'y',
           order: 1
         },
-        // 3. Stacked Area Chart Behind the Cashflow Bars (order 2)
+        // 3. Stacked Area Chart Behind the Cashflow Bars (Right Y-Axis 'yBalance', order 2)
         //    - Cash Balance in translucent orange
         //    - Portfolio Monthly Market Value in translucent green
         {
@@ -1680,6 +1685,7 @@ function renderTradesBalanceCashflowChart() {
           tension: 0.3,
           fill: 'origin',
           stack: 'balance',
+          yAxisID: 'yBalance',
           order: 2
         },
         {
@@ -1694,6 +1700,7 @@ function renderTradesBalanceCashflowChart() {
           tension: 0.3,
           fill: '-1',
           stack: 'balance',
+          yAxisID: 'yBalance',
           order: 2
         }
       ]
@@ -1713,11 +1720,35 @@ function renderTradesBalanceCashflowChart() {
           }
         },
         y: {
+          position: 'left',
           stacked: true,
           beginAtZero: true,
+          title: {
+            display: !isMobile,
+            text: `Cashflows (${baseCurr})`,
+            color: isDark ? '#60a5fa' : '#2563eb',
+            font: { size: 10, weight: 'bold' }
+          },
           grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
           ticks: {
-            color: isDark ? '#94a3b8' : '#64748b',
+            color: isDark ? '#93c5fd' : '#2563eb',
+            font: { size: isMobile ? 9 : 10 },
+            callback: (v) => Fin.currency(v, false, baseCurr)
+          }
+        },
+        yBalance: {
+          position: 'right',
+          stacked: true,
+          beginAtZero: true,
+          title: {
+            display: !isMobile,
+            text: `Portfolio & Cash Balance (${baseCurr})`,
+            color: isDark ? '#34d399' : '#059669',
+            font: { size: 10, weight: 'bold' }
+          },
+          grid: { drawOnChartArea: false },
+          ticks: {
+            color: isDark ? '#6ee7b7' : '#059669',
             font: { size: isMobile ? 9 : 10 },
             callback: (v) => Fin.currency(v, false, baseCurr)
           }
