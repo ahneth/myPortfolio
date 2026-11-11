@@ -67,9 +67,15 @@ function renderCharts() {
       renderInlineStockChart('watchlist');
     }
   } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderInlineStockChart(watchlist) failed: ${err.message}`, err); }
+  try {
+    const tradesPane = document.getElementById('tab-content-transactions');
+    if (tradesPane && !tradesPane.classList.contains('hidden')) {
+      renderTradesBalanceCashflowChart();
+    }
+  } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderTradesBalanceCashflowChart failed: ${err.message}`, err); }
 }
 
-function computeMonthlyPortfolioSeries(rangeMonths) {
+function computeMonthlyPortfolioSeries(rangeMonths, onlyFromEarliestActivity = false) {
   const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
   const heldTickers = portfolio.activeHoldings.map(h => h.ticker);
   const allTxTickers = Array.from(new Set(
@@ -77,7 +83,7 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
   ));
   const relevantTickers = Array.from(new Set([...heldTickers, ...allTxTickers]));
 
-  if (relevantTickers.length === 0 && state.transactions.length === 0) {
+  if (relevantTickers.length === 0 && state.transactions.length === 0 && state.dividends.length === 0) {
     return null;
   }
 
@@ -93,32 +99,41 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
     }
   });
 
-  if (!hasRealHistoricalSeries || monthSet.size === 0) {
+  state.transactions.forEach(tx => {
+    if (tx && tx.date && String(tx.date).length >= 7) {
+      monthSet.add(String(tx.date).slice(0, 7));
+    }
+  });
+  state.dividends.forEach(d => {
+    if (d && d.payDate && String(d.payDate).length >= 7) {
+      monthSet.add(String(d.payDate).slice(0, 7));
+    }
+  });
+
+  if ((!hasRealHistoricalSeries && state.transactions.length === 0) || monthSet.size === 0) {
     return null;
   }
 
-  let allMonths = Array.from(monthSet).sort();
+  const allMonths = Array.from(monthSet).filter(Boolean).sort();
   if (allMonths.length === 0) return null;
 
   const txMonths = state.transactions
     .filter(tx => tx.date)
-    .map(tx => tx.date.slice(0, 7))
+    .map(tx => String(tx.date).slice(0, 7))
+    .sort();
+  const divMonths = state.dividends
+    .filter(d => d.payDate)
+    .map(d => String(d.payDate).slice(0, 7))
     .sort();
   const earliestTxMonth = txMonths.length > 0 ? txMonths[0] : null;
+  const activityMonths = [...txMonths, ...divMonths].sort();
+  const earliestActivityMonth = activityMonths.length > 0 ? activityMonths[0] : earliestTxMonth;
 
-  const slicedMonths = allMonths.slice(-rangeMonths);
-
-  const labels = [];
-  const balanceSeries = [];
-  const holdingsValueSeries = [];
-  const costBasisSeries = [];
-  const accumReturnDollarSeries = [];
-  const accumReturnPctSeries = [];
+  const fullRecords = [];
 
   const sortedTx = [...state.transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
   const sortedDiv = [...state.dividends].sort((a, b) => new Date(a.payDate) - new Date(b.payDate));
 
-  // Pre-index monthly historical prices per ticker for O(1) lookup and monotonic cursor advancement
   const histByTicker = {};
   const histCursor = {};
   relevantTickers.forEach(t => {
@@ -147,7 +162,6 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
     return arr[idx].month <= monthStr ? arr[idx] : arr[0];
   };
 
-  // Single-pass incremental state across slicedMonths: O(M + T + D)
   let txPtr = 0;
   let divPtr = 0;
   let runningCash = Fin.round(state.initialCash || 0, 2);
@@ -157,7 +171,7 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
   let divNoTxPtr = 0;
   const posMap = {};
 
-  slicedMonths.forEach(monthStr => {
+  allMonths.forEach(monthStr => {
     const hasTxUpToMonth = Boolean(earliestTxMonth && monthStr >= earliestTxMonth);
 
     let monthMarketVal = 0;
@@ -166,22 +180,41 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
     let cumRealized = 0;
     let cumDividends = 0;
 
+    let monthDepositInflow = 0;
+    let monthDividendInflow = 0;
+    let monthSellInflow = 0;
+    let monthBuyOutflow = 0;
+    let monthWithdrawOutflow = 0;
+
     if (hasTxUpToMonth) {
       while (txPtr < sortedTx.length && (sortedTx[txPtr].date || '').slice(0, 7) <= monthStr) {
         const tx = sortedTx[txPtr++];
+        const txMonth = (tx.date || '').slice(0, 7);
+        const isCurrentMonthTx = (txMonth === monthStr);
         const fees = Fin.round(tx.fees || 0, 2);
         const shares = Fin.round(tx.shares || 0, 4);
         const price = Fin.round(tx.price || 0, 4);
         const tCurr = state.prices[tx.ticker]?.currency || state.fundamentals[tx.ticker]?.currency || MarketAPI.getStaticProfile(tx.ticker).currency || baseCurr;
 
         if (tx.type === 'DEPOSIT') {
-          runningCash = Fin.round(runningCash + (tx.amount || 0), 2);
+          const depAmt = Fin.round(tx.amount || 0, 2);
+          runningCash = Fin.round(runningCash + depAmt, 2);
+          if (isCurrentMonthTx && depAmt > 0) {
+            monthDepositInflow = Fin.round(monthDepositInflow + depAmt, 2);
+          }
         } else if (tx.type === 'WITHDRAW') {
-          runningCash = Fin.round(runningCash - (tx.amount || 0), 2);
+          const wdrAmt = Fin.round(tx.amount || 0, 2);
+          runningCash = Fin.round(runningCash - wdrAmt, 2);
+          if (isCurrentMonthTx && wdrAmt > 0) {
+            monthWithdrawOutflow = Fin.round(monthWithdrawOutflow + wdrAmt, 2);
+          }
         } else if (tx.type === 'BUY') {
           const outlayNative = Fin.round(shares * price + fees, 2);
           const outlayBase = Fin.convertCurrency(outlayNative, tCurr, baseCurr);
           runningCash = Fin.round(runningCash - outlayBase, 2);
+          if (isCurrentMonthTx && outlayBase > 0) {
+            monthBuyOutflow = Fin.round(monthBuyOutflow + outlayBase, 2);
+          }
           if (!posMap[tx.ticker]) posMap[tx.ticker] = { shares: 0, costNative: 0, avgNative: 0, currency: tCurr };
           posMap[tx.ticker].shares = Fin.round(posMap[tx.ticker].shares + shares, 4);
           posMap[tx.ticker].costNative = Fin.round(posMap[tx.ticker].costNative + outlayNative, 2);
@@ -196,6 +229,9 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
           const netProceedsNative = Fin.round(shares * price - fees, 2);
           const netProceedsBase = Fin.convertCurrency(netProceedsNative, tCurr, baseCurr);
           runningCash = Fin.round(runningCash + netProceedsBase, 2);
+          if (isCurrentMonthTx && netProceedsBase > 0) {
+            monthSellInflow = Fin.round(monthSellInflow + netProceedsBase, 2);
+          }
           if (!posMap[tx.ticker]) posMap[tx.ticker] = { shares: 0, costNative: 0, avgNative: 0, currency: tCurr };
           const soldCostNative = Fin.round(shares * posMap[tx.ticker].avgNative, 2);
           runningRealized = Fin.round(runningRealized + Fin.convertCurrency(netProceedsNative - soldCostNative, tCurr, baseCurr), 2);
@@ -211,11 +247,16 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
 
       while (divPtr < sortedDiv.length && (sortedDiv[divPtr].payDate || '').slice(0, 7) <= monthStr) {
         const d = sortedDiv[divPtr++];
+        const divMonth = (d.payDate || '').slice(0, 7);
+        const isCurrentMonthDiv = (divMonth === monthStr);
         const dCurr = d.currency || state.prices[d.ticker]?.currency || MarketAPI.getStaticProfile(d.ticker).currency || baseCurr;
         const amtBase = Fin.convertCurrency(d.totalAmount || 0, dCurr, baseCurr);
         runningDividends = Fin.round(runningDividends + amtBase, 2);
         if (!d.isDrip) {
           runningCash = Fin.round(runningCash + amtBase, 2);
+          if (isCurrentMonthDiv && amtBase > 0) {
+            monthDividendInflow = Fin.round(monthDividendInflow + amtBase, 2);
+          }
         }
       }
 
@@ -248,33 +289,64 @@ function computeMonthlyPortfolioSeries(rangeMonths) {
       });
       while (divNoTxPtr < sortedDiv.length && (sortedDiv[divNoTxPtr].payDate || '').slice(0, 7) <= monthStr) {
         const d = sortedDiv[divNoTxPtr++];
+        const divMonth = (d.payDate || '').slice(0, 7);
+        const isCurrentMonthDiv = (divMonth === monthStr);
         const dCurr = d.currency || state.prices[d.ticker]?.currency || MarketAPI.getStaticProfile(d.ticker).currency || baseCurr;
-        runningDividendsNoTx = Fin.round(runningDividendsNoTx + Fin.convertCurrency(d.totalAmount || 0, dCurr, baseCurr), 2);
+        const amtBase = Fin.convertCurrency(d.totalAmount || 0, dCurr, baseCurr);
+        runningDividendsNoTx = Fin.round(runningDividendsNoTx + amtBase, 2);
+        if (!d.isDrip && isCurrentMonthDiv && amtBase > 0) {
+          monthDividendInflow = Fin.round(monthDividendInflow + amtBase, 2);
+        }
       }
       cumDividends = runningDividendsNoTx;
       cumRealized = portfolio.totalRealizedPnL || 0;
     }
 
-    const totalBalance = Fin.round(monthMarketVal + Math.max(0, monthCash), 2);
-    const unrealized = Fin.round(monthMarketVal - monthCostBasis, 2);
+    const clampedCash = Fin.round(Math.max(0, monthCash), 2);
+    const roundedMv = Fin.round(monthMarketVal, 2);
+    const totalBalance = Fin.round(roundedMv + clampedCash, 2);
+    const unrealized = Fin.round(roundedMv - monthCostBasis, 2);
     const accumReturnDollar = Fin.round(unrealized + cumRealized + cumDividends, 2);
     const accumReturnPct = monthCostBasis > 0 ? Fin.round((accumReturnDollar / monthCostBasis) * 100, 2) : 0;
 
-    labels.push(monthStr);
-    balanceSeries.push(totalBalance);
-    holdingsValueSeries.push(Fin.round(monthMarketVal, 2));
-    costBasisSeries.push(Fin.round(monthCostBasis + Math.max(0, monthCash), 2));
-    accumReturnDollarSeries.push(accumReturnDollar);
-    accumReturnPctSeries.push(accumReturnPct);
+    fullRecords.push({
+      month: monthStr,
+      balance: totalBalance,
+      cashBalance: clampedCash,
+      holdingsValue: roundedMv,
+      costBasis: Fin.round(monthCostBasis + clampedCash, 2),
+      accumReturnDollar,
+      accumReturnPct,
+      inflowDeposit: monthDepositInflow,
+      inflowDividend: monthDividendInflow,
+      inflowSell: monthSellInflow,
+      outflowBuy: monthBuyOutflow,
+      outflowWithdraw: monthWithdrawOutflow
+    });
   });
 
+  let filteredRecords = fullRecords;
+  if (onlyFromEarliestActivity && earliestActivityMonth) {
+    const activeFiltered = fullRecords.filter(r => r.month >= earliestActivityMonth);
+    if (activeFiltered.length > 0) {
+      filteredRecords = activeFiltered;
+    }
+  }
+  const sliced = filteredRecords.slice(-rangeMonths);
+
   return {
-    labels,
-    balanceSeries,
-    holdingsValueSeries,
-    costBasisSeries,
-    accumReturnDollarSeries,
-    accumReturnPctSeries
+    labels: sliced.map(r => r.month),
+    balanceSeries: sliced.map(r => r.balance),
+    cashBalanceSeries: sliced.map(r => r.cashBalance),
+    holdingsValueSeries: sliced.map(r => r.holdingsValue),
+    costBasisSeries: sliced.map(r => r.costBasis),
+    accumReturnDollarSeries: sliced.map(r => r.accumReturnDollar),
+    accumReturnPctSeries: sliced.map(r => r.accumReturnPct),
+    inflowDepositsSeries: sliced.map(r => r.inflowDeposit),
+    inflowDividendsSeries: sliced.map(r => r.inflowDividend),
+    inflowSellsSeries: sliced.map(r => r.inflowSell),
+    outflowBuysSeries: sliced.map(r => r.outflowBuy),
+    outflowWithdrawalsSeries: sliced.map(r => r.outflowWithdraw)
   };
 }
 
@@ -1059,8 +1131,8 @@ function renderInlineStockChart(tabType) {
     });
   }
 
-  // Add Monthly Buy Avg Price (Blue X) and Monthly Sell Avg Price (Red X) markers on the Holdings chart (hidden in Privacy Mode)
-  if (isHoldings && !hideMoney) {
+  // Add Monthly Buy Avg Price (Blue X) and Monthly Sell Avg Price (Red X) markers on the Holdings chart (visible in Privacy Mode; shares & amounts hidden in popup)
+  if (isHoldings) {
     if (buyMarkerData.some(v => v !== null)) {
       datasets.push({
         label: 'Buy Avg Price (Blue X)',
@@ -1105,6 +1177,7 @@ function renderInlineStockChart(tabType) {
 
   const renderClickedTradeMarkerDetail = (metaList) => {
     if (!tradeMarkerBoxEl || !Array.isArray(metaList) || metaList.length === 0) return;
+    const isPriv = Fin.isPrivacyMode();
     tradeMarkerBoxEl.classList.remove('hidden');
     tradeMarkerBoxEl.innerHTML = metaList.map(meta => {
       const isBuy = meta.type === 'BUY';
@@ -1114,16 +1187,19 @@ function renderInlineStockChart(tabType) {
       const badgeCls = isBuy
         ? 'bg-blue-600 text-white'
         : 'bg-rose-600 text-white';
+      const orderPricesText = (meta.trades && meta.trades.length > 1)
+        ? meta.trades.map(t => `${t.date}: ${Fin.currency(t.price, false, currency)}`).join(' · ')
+        : '';
       return `
         <div class="p-2.5 sm:p-3 rounded-xl border ${toneCls} flex flex-wrap items-center justify-between gap-3 text-xs">
           <div class="flex flex-wrap items-center gap-2 sm:gap-4">
             <span class="px-2 py-0.5 rounded font-mono font-bold text-[11px] ${badgeCls}">
               ${isBuy ? '✕ BUY' : '✕ SELL'} (${meta.month})
             </span>
-            <span>Average Price: <strong class="num-font text-slate-900 dark:text-white">${Fin.currency(meta.avgPrice, false, currency)}</strong></span>
-            <span>Shares: <strong class="num-font text-slate-900 dark:text-white">${Fin.shares(meta.shares)}</strong></span>
-            <span>${isBuy ? 'Buy' : 'Sell'} Amount: <strong class="num-font text-slate-900 dark:text-white">${Fin.currency(meta.amount, false, currency)}</strong></span>
-            ${meta.trades.length > 1 ? `<span class="text-[10px] text-slate-500">(${meta.trades.length} orders in ${meta.month})</span>` : ''}
+            <span>${meta.trades && meta.trades.length > 1 ? 'Avg Price' : 'Price'}: <strong class="num-font text-slate-900 dark:text-white">${Fin.currency(meta.avgPrice, false, currency)}</strong></span>
+            ${isPriv ? '' : `<span>Shares: <strong class="num-font text-slate-900 dark:text-white">${Fin.shares(meta.shares)}</strong></span>`}
+            ${isPriv ? '' : `<span>${isBuy ? 'Buy' : 'Sell'} Amount: <strong class="num-font text-slate-900 dark:text-white">${Fin.currency(meta.amount, false, currency)}</strong></span>`}
+            ${meta.trades.length > 1 ? `<span class="text-[10px] text-slate-500">(${meta.trades.length} orders: ${orderPricesText})</span>` : ''}
           </div>
           <button type="button" onclick="this.closest('#holdings-chart-trade-marker-box, #watchlist-chart-trade-marker-box').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-1.5" title="Dismiss">
             <i class="fa-solid fa-xmark"></i>
@@ -1183,6 +1259,13 @@ function renderInlineStockChart(tabType) {
               const ds = c.dataset;
               if (ds && ds._tradeMeta && ds._tradeMeta[c.dataIndex]) {
                 const tm = ds._tradeMeta[c.dataIndex];
+                if (Fin.isPrivacyMode()) {
+                  const lines = [` ${tm.type} (${tm.month}): ${tm.trades && tm.trades.length > 1 ? 'Avg ' : ''}Price ${Fin.currency(tm.avgPrice, false, currency)}`];
+                  if (tm.trades && tm.trades.length > 1) {
+                    lines.push(`   • ${tm.trades.length} ${tm.type} orders @ ${tm.trades.map(t => Fin.currency(t.price, false, currency)).join(', ')}`);
+                  }
+                  return lines;
+                }
                 return [
                   ` ${tm.type} Marker (${tm.month}): Avg Price ${Fin.currency(tm.avgPrice, false, currency)}`,
                   `   • Action: ${tm.type} | Shares: ${Fin.shares(tm.shares)} | ${tm.type === 'BUY' ? 'Buy' : 'Sell'} Amount: ${Fin.currency(tm.amount, false, currency)}`
@@ -1457,3 +1540,228 @@ window.renderInlineStockChart = renderInlineStockChart;
 window.renderAllocationChart = renderAllocationChart;
 window.renderDividendsChart = renderDividendsChart;
 window.renderPnlBreakdownChart = renderPnlBreakdownChart;
+
+/**
+ * Renders the Historical Portfolio Balance & Cashflows Chart at the bottom of the Trades tab:
+ * - Cash Inflows (Deposits, Dividends, Stock Sells): Stacked Bar Graph in Blue tone color theme
+ * - Cash Outflows (Stock Buys, Withdrawals): Stacked Bar Graph in Red tone color theme
+ * - Cash Balance (Translucent Orange) & Portfolio Monthly Market Value (Translucent Green):
+ *   Stacked Area Chart behind the cashflows stacked bar chart
+ * - Completely hidden when Privacy Mode is ON.
+ */
+function renderTradesBalanceCashflowChart() {
+  const cardEl = document.getElementById('trades-balance-cashflow-chart-card');
+  const ctx = document.getElementById('chart-trades-balance-cashflow');
+  const emptyOverlay = document.getElementById('chart-trades-cashflow-empty');
+  const summaryBadge = document.getElementById('trades-cashflow-summary-badge');
+
+  if (!cardEl || !ctx) return;
+
+  if (charts.tradesBalanceCashflow) {
+    charts.tradesBalanceCashflow.destroy();
+    charts.tradesBalanceCashflow = null;
+  }
+
+  // Hide this entire chart card when Privacy Mode is ON
+  if (Fin.isPrivacyMode()) {
+    cardEl.classList.add('hidden');
+    return;
+  }
+  cardEl.classList.remove('hidden');
+
+  const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
+  const rangeMonths = typeof tradesCashflowRangeMonths === 'number' ? tradesCashflowRangeMonths : 120;
+  const seriesData = computeMonthlyPortfolioSeries(rangeMonths, true);
+
+  if (!seriesData || seriesData.labels.length === 0 || (portfolio.activeHoldings.length === 0 && state.transactions.length === 0)) {
+    if (emptyOverlay) emptyOverlay.classList.remove('hidden');
+    if (summaryBadge) summaryBadge.textContent = 'No Data';
+    return;
+  }
+  if (emptyOverlay) emptyOverlay.classList.add('hidden');
+
+  const {
+    labels,
+    balanceSeries,
+    cashBalanceSeries,
+    holdingsValueSeries,
+    inflowDepositsSeries,
+    inflowDividendsSeries,
+    inflowSellsSeries,
+    outflowBuysSeries,
+    outflowWithdrawalsSeries
+  } = seriesData;
+
+  const latestBalance = balanceSeries[balanceSeries.length - 1] || 0;
+  const latestCash = cashBalanceSeries[cashBalanceSeries.length - 1] || 0;
+  const latestMv = holdingsValueSeries[holdingsValueSeries.length - 1] || 0;
+
+  if (summaryBadge) {
+    summaryBadge.textContent = `Total: ${Fin.currency(latestBalance, false, baseCurr)} (Stocks ${Fin.currency(latestMv, false, baseCurr)} · Cash ${Fin.currency(latestCash, false, baseCurr)})`;
+  }
+
+  const isDark = document.documentElement.classList.contains('dark');
+  const isMobile = DeviceDetector.profile.effectiveMode === 'mobile';
+
+  charts.tradesBalanceCashflow = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        // 1. Cash Inflows — Stacked Bar Graph in Blue Tone Color Theme (drawn in front: order 1)
+        {
+          type: 'bar',
+          label: `Deposits (${baseCurr})`,
+          data: inflowDepositsSeries,
+          backgroundColor: isDark ? 'rgba(37, 99, 235, 0.88)' : 'rgba(37, 99, 235, 0.85)',
+          borderColor: '#1d4ed8',
+          borderWidth: 1,
+          borderRadius: 2,
+          stack: 'inflows',
+          order: 1
+        },
+        {
+          type: 'bar',
+          label: `Dividends (${baseCurr})`,
+          data: inflowDividendsSeries,
+          backgroundColor: isDark ? 'rgba(14, 165, 233, 0.88)' : 'rgba(14, 165, 233, 0.85)',
+          borderColor: '#0284c7',
+          borderWidth: 1,
+          borderRadius: 2,
+          stack: 'inflows',
+          order: 1
+        },
+        {
+          type: 'bar',
+          label: `Stock Sells (${baseCurr})`,
+          data: inflowSellsSeries,
+          backgroundColor: isDark ? 'rgba(56, 189, 248, 0.88)' : 'rgba(56, 189, 248, 0.85)',
+          borderColor: '#0ea5e9',
+          borderWidth: 1,
+          borderRadius: 2,
+          stack: 'inflows',
+          order: 1
+        },
+        // 2. Cash Outflows — Stacked Bar Graph in Red Tone Color Theme (drawn in front: order 1)
+        {
+          type: 'bar',
+          label: `Stock Buys (${baseCurr})`,
+          data: outflowBuysSeries,
+          backgroundColor: isDark ? 'rgba(225, 29, 72, 0.88)' : 'rgba(225, 29, 72, 0.85)',
+          borderColor: '#be123c',
+          borderWidth: 1,
+          borderRadius: 2,
+          stack: 'outflows',
+          order: 1
+        },
+        {
+          type: 'bar',
+          label: `Withdrawals (${baseCurr})`,
+          data: outflowWithdrawalsSeries,
+          backgroundColor: isDark ? 'rgba(248, 113, 113, 0.88)' : 'rgba(239, 68, 68, 0.85)',
+          borderColor: '#dc2626',
+          borderWidth: 1,
+          borderRadius: 2,
+          stack: 'outflows',
+          order: 1
+        },
+        // 3. Stacked Area Chart Behind the Cashflow Bars (order 2)
+        //    - Cash Balance in translucent orange
+        //    - Portfolio Monthly Market Value in translucent green
+        {
+          type: 'line',
+          label: `Cash Balance (${baseCurr})`,
+          data: cashBalanceSeries,
+          borderColor: 'rgba(249, 115, 22, 0.90)',
+          backgroundColor: isDark ? 'rgba(249, 115, 22, 0.30)' : 'rgba(249, 115, 22, 0.24)',
+          borderWidth: 1.8,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.3,
+          fill: 'origin',
+          stack: 'balance',
+          order: 2
+        },
+        {
+          type: 'line',
+          label: `Portfolio Market Value (${baseCurr})`,
+          data: holdingsValueSeries,
+          borderColor: 'rgba(16, 185, 129, 0.90)',
+          backgroundColor: isDark ? 'rgba(16, 185, 129, 0.28)' : 'rgba(16, 185, 129, 0.22)',
+          borderWidth: 1.8,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.3,
+          fill: '-1',
+          stack: 'balance',
+          order: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
+          ticks: {
+            color: isDark ? '#94a3b8' : '#64748b',
+            font: { size: isMobile ? 9 : 10 },
+            maxTicksLimit: isMobile ? 6 : 12
+          }
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
+          ticks: {
+            color: isDark ? '#94a3b8' : '#64748b',
+            font: { size: isMobile ? 9 : 10 },
+            callback: (v) => Fin.currency(v, false, baseCurr)
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            boxWidth: 11,
+            color: isDark ? '#cbd5e1' : '#334155',
+            font: { size: isMobile ? 10 : 11 }
+          }
+        },
+        tooltip: {
+          filter: (item) => {
+            if (item.dataset.type === 'bar') {
+              return Number(item.raw) > 0;
+            }
+            return true;
+          },
+          callbacks: {
+            label: (c) => {
+              const val = Number(c.raw || 0);
+              return ` ${c.dataset.label}: ${Fin.currency(val, false, baseCurr)}`;
+            },
+            footer: (items) => {
+              if (!items || items.length === 0) return '';
+              const idx = items[0].dataIndex;
+              const totBal = balanceSeries[idx] || 0;
+              const totIn = Fin.round((inflowDepositsSeries[idx] || 0) + (inflowDividendsSeries[idx] || 0) + (inflowSellsSeries[idx] || 0), 2);
+              const totOut = Fin.round((outflowBuysSeries[idx] || 0) + (outflowWithdrawalsSeries[idx] || 0), 2);
+              const lines = [`Total Portfolio Balance: ${Fin.currency(totBal, false, baseCurr)}`];
+              if (totIn > 0 || totOut > 0) {
+                lines.push(`Inflows: +${Fin.currency(totIn, false, baseCurr)} | Outflows: -${Fin.currency(totOut, false, baseCurr)}`);
+              }
+              return lines;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+window.renderTradesBalanceCashflowChart = renderTradesBalanceCashflowChart;
+

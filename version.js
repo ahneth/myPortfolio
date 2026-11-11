@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.4.5',
-  buildId: '20261111_2110',
-  releaseDate: '2026-11-11 21:10 HKT',
-  driveFolder: '/myPortfolio/20261111_2110/',
+  appVersion: '3.4.6',
+  buildId: '20261111_2235',
+  releaseDate: '2026-11-11 22:35 HKT',
+  driveFolder: '/myPortfolio/20261111_2235/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,17 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.4.6',
+      buildId: '20261111_2235',
+      date: '2026-11-11 22:35 HKT',
+      summary: 'Displayed per-share Live Price and Avg Cost (plus per-share targets/52W bounds) in native ticker currency while keeping Market Value, P&L, Dividends, Total Cost, and Total Return in Base Currency; kept Buy/Sell markers visible on Holdings chart in Privacy Mode with shares & amounts hidden in popups; added Historical Portfolio Balance & Cashflows stacked bar + area chart at the bottom of the Trades tab.',
+      changes: [
+        'Updated renderHoldingsTable() in app.js so tickers trading in a non-base currency display Live Price and Avg Cost (and per-share target/52W levels) in their native ticker currency, while Market Value, Day P&L, Unrealized P&L, Realized P&L, Accumulated Dividends, Total Cost, and Total Return are displayed in the Base Currency.',
+        'Updated renderInlineStockChart() in charts.js so Buy (Blue X) and Sell (Red X) markers remain visible on the Holdings chart when Privacy Mode is on, while tooltips and clicked marker popups show only the BUY/SELL action, month, and trade prices (hiding share counts and total dollar amounts).',
+        'Added the Historical Portfolio Balance & Cashflows chart at the bottom of the Trades page (renderTradesBalanceCashflowChart in charts.js): stacked blue-tone bars for Cash Inflows (Deposits, Dividends, Stock Sells), stacked red-tone bars for Cash Outflows (Stock Buys, Withdrawals), and a stacked area chart behind the bars for Cash Balance (translucent orange) and Portfolio Market Value (translucent green), automatically hidden when Privacy Mode is on.'
+      ]
+    },
     {
       version: '3.4.5',
       buildId: '20261111_2110',

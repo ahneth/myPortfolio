@@ -155,6 +155,7 @@ function renderSingleTabContent(tabName) {
       break;
     case 'transactions':
       try { renderTransactionsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderTransactionsTable failed: ${err.message}`, err); }
+      try { if (typeof renderTradesBalanceCashflowChart === 'function') renderTradesBalanceCashflowChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderTradesBalanceCashflowChart failed: ${err.message}`, err); }
       break;
     case 'dividends':
       try { renderDividendsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderDividendsTable failed: ${err.message}`, err); }
@@ -1659,14 +1660,14 @@ function renderHoldingsTable() {
         const totalRetColor = totalRetValBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
         const priceChangeColor = h.priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
 
-        const recBuyBase = toBaseNullable(h.recommendedBuyPrice);
-        const recSellBase = toBaseNullable(h.recommendedSellPrice);
-        const recStopBase = toBaseNullable(h.recommendedStopLoss || h.suggestedStopLoss);
-        const custBuyBase = toBaseNullable(h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice);
-        const custSellBase = toBaseNullable(h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice);
-        const custStopBase = toBaseNullable(h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss);
-        const low52wBase = toBaseNullable(h.low52w);
-        const high52wBase = toBaseNullable(h.high52w);
+        const recBuyNative = (h.recommendedBuyPrice && Number(h.recommendedBuyPrice) > 0) ? Number(h.recommendedBuyPrice) : null;
+        const recSellNative = (h.recommendedSellPrice && Number(h.recommendedSellPrice) > 0) ? Number(h.recommendedSellPrice) : null;
+        const recStopNative = ((h.recommendedStopLoss || h.suggestedStopLoss) && Number(h.recommendedStopLoss || h.suggestedStopLoss) > 0) ? Number(h.recommendedStopLoss || h.suggestedStopLoss) : null;
+        const custBuyNative = ((h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice) && Number(h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice) > 0) ? Number(h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice) : null;
+        const custSellNative = ((h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice) && Number(h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice) > 0) ? Number(h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice) : null;
+        const custStopNative = ((h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss) && Number(h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss) > 0) ? Number(h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss) : null;
+        const low52wNative = (h.low52w && Number(h.low52w) > 0) ? Number(h.low52w) : null;
+        const high52wNative = (h.high52w && Number(h.high52w) > 0) ? Number(h.high52w) : null;
 
         tr.innerHTML = `
           <td class="py-1 pl-2.5 pr-2 sm:py-1.5 sm:pl-6 sm:pr-3 sticky-col-mobile max-w-[142px] sm:max-w-none">
@@ -1677,7 +1678,7 @@ function renderHoldingsTable() {
               <div class="min-w-0">
                 <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1">
                   <span class="hover:text-brand-500 underline decoration-dotted underline-offset-2 truncate">${h.ticker}</span>
-                  <span class="text-[9px] sm:text-[10px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium shrink-0" title="Displayed in ${baseCurr}${hCurr !== baseCurr ? ` (Converted from ${hCurr})` : ''}">${baseCurr}</span>
+                  <span class="text-[9px] sm:text-[10px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium shrink-0" title="Ticker price &amp; avg cost in ${hCurr}; Market Value, P&amp;L, Div, Total Cost &amp; Total Return in ${baseCurr}">${hCurr}</span>
                   ${!isAct ? '<span class="text-[8.5px] px-1 py-0 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold shrink-0">0 SH</span>' : ''}
                 </div>
                 <div class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[96px] sm:max-w-[180px]">${h.companyName}</div>
@@ -1685,7 +1686,7 @@ function renderHoldingsTable() {
             </div>
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
-            <div class="font-bold num-font text-slate-900 dark:text-white" title="${hCurr !== baseCurr && h.currentPrice > 0 ? `Native: ${Fin.currency(h.currentPrice, false, hCurr)}` : ''}">${curPriceBase > 0 ? Fin.currency(curPriceBase, false, baseCurr) : '-'}</div>
+            <div class="font-bold num-font text-slate-900 dark:text-white" title="${hCurr !== baseCurr && curPriceBase > 0 ? `Equivalent in ${baseCurr}: ${Fin.currency(curPriceBase, false, baseCurr)}` : ''}">${h.currentPrice > 0 ? Fin.currency(h.currentPrice, false, hCurr) : '-'}</div>
             <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
               <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct)}
             </div>
@@ -1733,16 +1734,16 @@ function renderHoldingsTable() {
             ${formatDividendExDateCell(h.divInfo)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium ${isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}">${hideMoney ? '••••' : Fin.shares(h.shares)}</td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300" title="${hCurr !== baseCurr && h.avgCost > 0 ? `Native Avg Cost: ${Fin.currency(h.avgCost, false, hCurr)}` : ''}">${isAct ? (hideMoney ? '••••••' : Fin.currency(avgCostBase, false, baseCurr)) : '<span class="text-slate-400">-</span>'}</td>
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300" title="${hCurr !== baseCurr && avgCostBase > 0 ? `Equivalent in ${baseCurr}: ${Fin.currency(avgCostBase, false, baseCurr)}` : ''}">${isAct ? (hideMoney ? '••••••' : Fin.currency(h.avgCost, false, hCurr)) : '<span class="text-slate-400">-</span>'}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">${isAct ? (hideMoney ? '••••••' : Fin.currency(totalCostBase, false, baseCurr)) : `<span class="text-slate-400 text-[10px]">-</span>`}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font">
-            ${formatTargetLevelCell(custBuyBase, recBuyBase, curPriceBase, baseCurr, 'text-sky-500', 'Buy Target')}
+            ${formatTargetLevelCell(custBuyNative, recBuyNative, h.currentPrice, hCurr, 'text-sky-500', 'Buy Target')}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font">
-            ${formatTargetLevelCell(custSellBase, recSellBase, curPriceBase, baseCurr, 'text-pink-500', 'Sell Target')}
+            ${formatTargetLevelCell(custSellNative, recSellNative, h.currentPrice, hCurr, 'text-pink-500', 'Sell Target')}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font">
-            ${formatTargetLevelCell(custStopBase, recStopBase, curPriceBase, baseCurr, 'text-red-700 dark:text-red-500', 'Stop Loss')}
+            ${formatTargetLevelCell(custStopNative, recStopNative, h.currentPrice, hCurr, 'text-red-700 dark:text-red-500', 'Stop Loss')}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font" title="${h.xirrPct !== null && h.xirrPct !== undefined ? `Annualized Money-Weighted Return (XIRR): ${Fin.percent(h.xirrPct, true)} p.a. | Real Inflation-Adjusted: ${Fin.percent(h.realXirrPct, true)} p.a. (includes all BUY/SELL cash flows & dividends)` : 'Insufficient cash flow span'}">
             <div class="font-bold text-xs ${h.xirrPct === null || h.xirrPct !== undefined && h.xirrPct === null ? 'text-slate-400' : (h.xirrPct >= 0 ? 'text-emerald-500' : 'text-rose-500')}">
@@ -1756,13 +1757,13 @@ function renderHoldingsTable() {
             </span>
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300 col-quant-extra">
-            ${low52wBase !== null ? Fin.currency(low52wBase, false, baseCurr) : '<span class="text-slate-400 text-[11px]">-</span>'}
+            ${low52wNative !== null ? Fin.currency(low52wNative, false, hCurr) : '<span class="text-slate-400 text-[11px]">-</span>'}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300 col-quant-extra">
-            ${high52wBase !== null ? Fin.currency(high52wBase, false, baseCurr) : '<span class="text-slate-400 text-[11px]">-</span>'}
+            ${high52wNative !== null ? Fin.currency(high52wNative, false, hCurr) : '<span class="text-slate-400 text-[11px]">-</span>'}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
-            ${format52wPositionCell(low52wBase, high52wBase, h.pos52wPct, baseCurr)}
+            ${format52wPositionCell(low52wNative, high52wNative, h.pos52wPct, hCurr)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
             ${formatPeriodChangeCell(h.momPct, 'MoM', h.momRefMonth)}
@@ -4219,6 +4220,19 @@ function setupEventListeners() {
       });
       btn.className = 'watchlist-stock-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition';
       renderInlineStockChart('watchlist');
+    });
+  });
+
+  document.querySelectorAll('.trades-cashflow-range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      tradesCashflowRangeMonths = parseInt(btn.getAttribute('data-trades-range'), 10) || 120;
+      document.querySelectorAll('.trades-cashflow-range-btn').forEach(b => {
+        b.className = 'trades-cashflow-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+      });
+      btn.className = 'trades-cashflow-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition';
+      if (typeof renderTradesBalanceCashflowChart === 'function') {
+        renderTradesBalanceCashflowChart();
+      }
     });
   });
 

@@ -406,11 +406,13 @@ var holdingsStockRangeMonths = 24;
 
 var selectedWatchlistTicker = null;
 var watchlistStockRangeMonths = 24;
+var tradesCashflowRangeMonths = 120;
 
 var charts = {
   monthlyHistory: null,
   holdingsStockHistory: null,
   watchlistStockHistory: null,
+  tradesBalanceCashflow: null,
   allocation: null,
   dividends: null,
   pnlBreakdown: null
