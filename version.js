@@ -7,15 +7,15 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.4.3',
-  buildId: '20261109_2128',
-  releaseDate: '2026-11-09 21:28 HKT',
-  driveFolder: '/myPortfolio/20261109_2128/',
+  appVersion: '3.4.5',
+  buildId: '20261111_2110',
+  releaseDate: '2026-11-11 21:10 HKT',
+  driveFolder: '/myPortfolio/20261111_2110/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
-    'api.js':       { version: '3.1.0', updated: '20261031_1650', role: 'Yahoo v8 15y Dividend Events, Live FX Rates, Canonical News & Catalyst RSS/Search Engine' },
+    'api.js':       { version: '3.4.5', updated: '20261111_2110', role: 'Cloudflare Pages Yahoo Finance Worker (myportfolio-quotes.pages.dev) Primary + Yahoo CORS Secondary, Live FX & News Engine' },
     'portfolio.js': { version: '3.1.0', updated: '20261031_1650', role: '2018+ Dividend Auto-Backfill, TTM Yield Boundary Fix, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
     'charts.js':    { version: '3.1.0', updated: '20261031_1650', role: 'FX-Normalized Portfolio Charts + Interactive SMA 20/50/200 & 12M Regression Channel Overlays' },
     'app.js':       { version: '3.1.0', updated: '20261031_1650', role: 'Startup JSON Auto-Sync, Signal Breakdown Modal, News Scope Filters, Rebalance Trim Alerts & Order Staging, Settings Customizer' },
@@ -23,6 +23,17 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.4.5',
+      buildId: '20261111_2110',
+      date: '2026-11-11 21:10 HKT',
+      summary: 'Switched primary live quote engine to dedicated Cloudflare Pages Yahoo Finance Worker (https://myportfolio-quotes.pages.dev), completely removed all Tencent (qt.gtimg.cn / web.ifzq.gtimg.cn) quote & kline methods, and configured Yahoo Finance CORS proxy race as secondary fallback.',
+      changes: [
+        'Configured MarketAPI.fetchCloudflareBatchQuotes() and MarketAPI.fetchQuote() in api.js to query https://myportfolio-quotes.pages.dev/?symbols=... as Tier 1 primary live-quote provider for all HKEX (2800.HK), LSE (VWRA.L, SPYL.L), US (VOO), and FX pairs.',
+        'Completely removed all Tencent quote and history functions (_toTencentCode, _parseTencentQuoteString, fetchTencentBatchQuotes, fetchTencentJsonpQuote, fetchTencentMonthlyHistory, and LSE_LIVE_INDEX_PROXY_MAP) from api.js and index.html.',
+        'Retained the 6-endpoint browser Yahoo Finance v8 CORS proxy race (fetchYahooJson) strictly as Tier 2 secondary fallback and historical_prices.json as Tier 3 offline snapshot fallback.'
+      ]
+    },
     {
       version: '3.4.3',
       buildId: '20261109_2128',
@@ -35,7 +46,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.4.2',
-      buildId: '20261109_2118',
+      buildId: '20261111_0935',
       date: '2026-11-09 21:18 HKT',
       summary: 'Fixed ReferenceError: hkMatch is not defined inside fetchTencentJsonpQuote() script.onload callback and integrated London (.L) ETF live index proxy quotes directly into the primary fetchTencentBatchQuotes() request.',
       changes: [

@@ -1,4 +1,4 @@
-const CACHE_NAME = "myportfolio-cache-v3.4.3-20261109_2128";
+const CACHE_NAME = "myportfolio-cache-v3.4.5-20261111_2110";
 const FETCH_TIMEOUT_MS = 2500;
 const APP_SHELL = [
   "./",
@@ -49,7 +49,7 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   try {
     const reqUrl = new URL(event.request.url);
-    // Do not intercept cross-origin requests (Yahoo CORS proxies, GitHub API, Tencent JSONP, etc.)
+    // Do not intercept cross-origin requests (Cloudflare Worker, Yahoo CORS proxies, GitHub API, etc.)
     if (reqUrl.origin !== self.location.origin) return;
     // Do not intercept dynamic data JSON files so they are always fetched fresh from network
     if (reqUrl.pathname.endsWith("historical_prices.json") || reqUrl.pathname.endsWith("company_news.json")) {

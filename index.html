@@ -858,7 +858,7 @@ tr:hover .table-action-capsule {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.4.3 (20261109_2128)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.4.5 (20261111_2110)</span>
             </div>
           </div>
         </div>
@@ -3115,15 +3115,15 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.4.3',
-  buildId: '20261109_2128',
-  releaseDate: '2026-11-09 21:28 HKT',
-  driveFolder: '/myPortfolio/20261109_2128/',
+  appVersion: '3.4.5',
+  buildId: '20261111_2110',
+  releaseDate: '2026-11-11 21:10 HKT',
+  driveFolder: '/myPortfolio/20261111_2110/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
-    'api.js':       { version: '3.1.0', updated: '20261031_1650', role: 'Yahoo v8 15y Dividend Events, Live FX Rates, Canonical News & Catalyst RSS/Search Engine' },
+    'api.js':       { version: '3.4.5', updated: '20261111_2110', role: 'Cloudflare Pages Yahoo Finance Worker (myportfolio-quotes.pages.dev) Primary + Yahoo CORS Secondary, Live FX & News Engine' },
     'portfolio.js': { version: '3.1.0', updated: '20261031_1650', role: '2018+ Dividend Auto-Backfill, TTM Yield Boundary Fix, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
     'charts.js':    { version: '3.1.0', updated: '20261031_1650', role: 'FX-Normalized Portfolio Charts + Interactive SMA 20/50/200 & 12M Regression Channel Overlays' },
     'app.js':       { version: '3.1.0', updated: '20261031_1650', role: 'Startup JSON Auto-Sync, Signal Breakdown Modal, News Scope Filters, Rebalance Trim Alerts & Order Staging, Settings Customizer' },
@@ -3131,6 +3131,17 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.4.5',
+      buildId: '20261111_2110',
+      date: '2026-11-11 21:10 HKT',
+      summary: 'Switched primary live quote engine to dedicated Cloudflare Pages Yahoo Finance Worker (https://myportfolio-quotes.pages.dev), completely removed all Tencent (qt.gtimg.cn / web.ifzq.gtimg.cn) quote & kline methods, and configured Yahoo Finance CORS proxy race as secondary fallback.',
+      changes: [
+        'Configured MarketAPI.fetchCloudflareBatchQuotes() and MarketAPI.fetchQuote() in api.js to query https://myportfolio-quotes.pages.dev/?symbols=... as Tier 1 primary live-quote provider for all HKEX (2800.HK), LSE (VWRA.L, SPYL.L), US (VOO), and FX pairs.',
+        'Completely removed all Tencent quote and history functions (_toTencentCode, _parseTencentQuoteString, fetchTencentBatchQuotes, fetchTencentJsonpQuote, fetchTencentMonthlyHistory, and LSE_LIVE_INDEX_PROXY_MAP) from api.js and index.html.',
+        'Retained the 6-endpoint browser Yahoo Finance v8 CORS proxy race (fetchYahooJson) strictly as Tier 2 secondary fallback and historical_prices.json as Tier 3 offline snapshot fallback.'
+      ]
+    },
     {
       version: '3.4.3',
       buildId: '20261109_2128',
@@ -3143,7 +3154,7 @@ var APP_VERSION_MANIFEST = {
     },
     {
       version: '3.4.2',
-      buildId: '20261109_2118',
+      buildId: '20261111_0935',
       date: '2026-11-09 21:18 HKT',
       summary: 'Fixed ReferenceError: hkMatch is not defined inside fetchTencentJsonpQuote() script.onload callback and integrated London (.L) ETF live index proxy quotes directly into the primary fetchTencentBatchQuotes() request.',
       changes: [
@@ -4372,11 +4383,12 @@ window.DeviceDetector = DeviceDetector;
 /**
  * @file api.js
  * @module MarketAPIModule
- * @version 3.1.0
- * @build 20261031_1650
+ * @version 3.4.5
+ * @build 20261111_2110
  * @description Compartmentalized Global Stock Market API Client (HKEX, US NYSE/NASDAQ, London LSE).
- *   - Tier 1: Parallel Yahoo Finance v8 Chart Proxy Race (Promise.any) with 15y history + events=div
- *   - Tier 2: Zero-CORS Browser script-tag JSONP Quote Fallback (qt.gtimg.cn) for HK & US equities
+ *   - Tier 1 (Primary): Dedicated Cloudflare Pages Yahoo Finance Worker (https://myportfolio-quotes.pages.dev)
+ *   - Tier 2 (Secondary): Parallel Yahoo Finance v8 Chart CORS Proxy Race (Promise.any)
+ *   - Tier 3 (Offline Fallback): Verified GitHub Python Snapshot (historical_prices.json)
  *   - Live Multi-Currency FX Rate Sync (USDHKD=X, GBPUSD=X, GBPHKD=X)
  *   - Live Company & Watchlist News Search (/v1/finance/search) with Catalyst & Sentiment Tagger
  *   - Optional keyed providers: Alpha Vantage, Twelve Data, Finnhub
@@ -4421,21 +4433,11 @@ var TICKER_STATIC_DIRECTORY = {
 };
 
 
-// Direct zero-CORS live tracking map for London (.L) UCITS ETFs & dual-listed UK stocks
-// Used when browser CORS proxies to Yahoo Finance are blocked or rate-limited on the client network.
-var LSE_LIVE_INDEX_PROXY_MAP = {
-  'VWRA.L': { proxyTicker: 'VT',      currency: 'USD', DefaultRefPrice: 189.42 },
-  'VWRP.L': { proxyTicker: 'VT',      currency: 'GBP', DefaultRefPrice: 141.55 },
-  'VWRL.L': { proxyTicker: 'VT',      currency: 'USD', DefaultRefPrice: 142.80 },
-  'SPYL.L': { proxyTicker: 'VOO',     currency: 'USD', DefaultRefPrice: 19.05  },
-  'VUAG.L': { proxyTicker: 'VOO',     currency: 'GBP', DefaultRefPrice: 94.20  },
-  'VUSA.L': { proxyTicker: 'VOO',     currency: 'GBP', DefaultRefPrice: 89.50  },
-  'CSPX.L': { proxyTicker: 'VOO',     currency: 'USD', DefaultRefPrice: 628.40 },
-  'EQQQ.L': { proxyTicker: 'QQQ',     currency: 'GBP', DefaultRefPrice: 412.00 },
-  'HSBA.L': { proxyTicker: '0005.HK', currency: 'GBp', DefaultRefPrice: 895.40 }
-};
+// Primary Cloudflare Pages Yahoo Finance Live Quote Worker endpoint
+var CLOUDFLARE_WORKER_URL = 'https://myportfolio-quotes.pages.dev';
 
 var MarketAPI = {
+  cloudflareWorkerUrl: CLOUDFLARE_WORKER_URL,
   _chartCache: {},
   lastRouteUsed: 'Yahoo Finance v8 Chart',
 
@@ -4651,170 +4653,98 @@ var MarketAPI = {
     throw new Error('Browser CORS proxies rate-limited or unreachable.');
   },
 
-  _toTencentCode(symbol) {
-    const hkMatch = String(symbol || '').match(/^(\d+)\.HK$/);
-    if (hkMatch) return `r_hk${hkMatch[1].padStart(5, '0')}`;
-    if (/^[A-Z]+(-[A-Z]+)?$/.test(symbol)) return `us${symbol.replace('-', '.')}`;
-    return null;
-  },
-
-  _parseTencentQuoteString(symbol, raw) {
-    if (!raw || typeof raw !== 'string') return null;
-    const parts = raw.split('~');
-    if (parts.length < 35) return null;
-    const price = parseFloat(parts[3]);
-    const prevPrice = parseFloat(parts[4]) || price;
-    if (!price || isNaN(price) || price <= 0) return null;
-    const change = Fin.round(price - prevPrice, 3);
-    const changePct = prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0;
-    const high52w = parseFloat(parts[48]) > 0 ? Fin.round(parseFloat(parts[48]), 4) : null;
-    const low52w = parseFloat(parts[49]) > 0 ? Fin.round(parseFloat(parts[49]), 4) : null;
-    const currency = symbol.endsWith('.HK') ? 'HKD' : 'USD';
+  _applyQuoteToFundamentals(symbol, quoteData) {
+    if (!symbol || !quoteData || typeof state === 'undefined' || !state.fundamentals) return;
     const staticMeta = this.getStaticProfile(symbol);
-    const name = state?.fundamentals?.[symbol]?.name || staticMeta.name || parts[1] || symbol;
-    return { price, prevPrice, change, changePct, high52w, low52w, currency, name, source: 'Direct Browser JSONP (qt.gtimg.cn)' };
+    const existingFund = state.fundamentals[symbol] || {};
+    const wlEntry = Array.isArray(state?.watchlist)
+      ? state.watchlist.find(w => w.ticker === symbol)
+      : null;
+    const longName = quoteData.name || existingFund.name || staticMeta.name || symbol;
+    const userSector = (existingFund._userCustomSector && existingFund.sector)
+      ? existingFund.sector
+      : (wlEntry?.sector || (existingFund.sector && existingFund.sector !== 'Equities' ? existingFund.sector : ''));
+    const inferredSector = userSector
+      || ((quoteData.instrumentType === 'ETF' || this.isEtfSector('', symbol, longName)) ? 'Index ETF' : (staticMeta.sector || 'Equities'));
+    const resolvedName = (existingFund._userCustomName && existingFund.name)
+      ? existingFund.name
+      : (existingFund.name && existingFund.name !== symbol ? existingFund.name : longName);
+    const high52w = Number(quoteData.high52w) > 0 ? Fin.round(Number(quoteData.high52w), 4) : (existingFund.high52w || null);
+    const low52w = Number(quoteData.low52w) > 0 ? Fin.round(Number(quoteData.low52w), 4) : (existingFund.low52w || null);
+    const currency = (existingFund._userCustomCurrency && existingFund.currency)
+      ? existingFund.currency
+      : (quoteData.currency || existingFund.currency || staticMeta.currency);
+
+    state.fundamentals[symbol] = {
+      ...existingFund,
+      name: resolvedName,
+      sector: inferredSector,
+      currency,
+      high52w,
+      low52w
+    };
   },
 
-  async fetchTencentBatchQuotes(tickers = []) {
-    const codeMap = {};
-    const lseTargets = [];
-    tickers.forEach(t => {
-      const sym = this.normalizeTicker(t);
-      const qCode = this._toTencentCode(sym);
-      if (qCode) {
-        codeMap[sym] = qCode;
-      } else if (sym.endsWith('.L') && LSE_LIVE_INDEX_PROXY_MAP[sym]) {
-        lseTargets.push(sym);
-        const proxySym = LSE_LIVE_INDEX_PROXY_MAP[sym].proxyTicker;
-        const proxyCode = this._toTencentCode(proxySym);
-        if (proxyCode) codeMap[proxySym] = proxyCode;
-      }
-    });
-    const syms = Object.keys(codeMap);
+  async fetchCloudflareBatchQuotes(tickers = [], timeoutMs = 8000) {
+    const syms = Array.from(new Set(
+      (tickers || []).map(t => this.normalizeTicker(t)).filter(Boolean)
+    ));
     if (syms.length === 0) return {};
 
-    return new Promise((resolve) => {
-      const qList = syms.map(s => codeMap[s]).join(',');
-      const script = document.createElement('script');
-      const timer = setTimeout(() => {
-        if (script && script.remove) script.remove();
-        resolve({});
-      }, 2500);
-
-      script.charset = 'gbk';
-      script.src = `https://qt.gtimg.cn/q=${qList}&_=${Date.now()}`;
-      script.onload = () => {
-        clearTimeout(timer);
-        if (script && script.remove) script.remove();
-        const out = {};
-        syms.forEach(sym => {
-          const qCode = codeMap[sym];
-          const parsed = this._parseTencentQuoteString(sym, window[`v_${qCode}`]);
-          if (parsed) out[sym] = parsed;
-        });
-        // Synthesize zero-CORS live index-tracked quotes for LSE (.L) ETFs (VWRA.L, SPYL.L, etc.)
-        lseTargets.forEach(lseSym => {
-          const proxySpec = LSE_LIVE_INDEX_PROXY_MAP[lseSym];
-          const proxyQ = proxySpec ? out[proxySpec.proxyTicker] : null;
-          if (!proxyQ || !(proxyQ.price > 0)) return;
-          const staticMeta = this.getStaticProfile(lseSym);
-          const snapBase = this.getEmbeddedOrCachedQuote(lseSym);
-          const extQ = window.EXTERNAL_HISTORICAL_PRICES?.quotes?.[lseSym];
-          const histList = state?.historicalPrices?.[lseSym] || window.EXTERNAL_HISTORICAL_PRICES?.prices?.[lseSym] || [];
-          const lastHistClose = (Array.isArray(histList) && histList.length > 0)
-            ? Number(histList[histList.length - 1].rawClose || histList[histList.length - 1].close || 0)
-            : 0;
-          const refClose = (extQ && Number(extQ.price) > 0)
-            ? Number(extQ.price)
-            : (lastHistClose > 0 ? lastHistClose : ((snapBase && snapBase.price > 0) ? snapBase.price : proxySpec.DefaultRefPrice));
-          const liveChgPct = Number(proxyQ.changePct || 0);
-          const prevPrice = Fin.round(refClose, 4);
-          const livePrice = Fin.round(refClose * (1 + liveChgPct / 100), 4);
-          const change = Fin.round(livePrice - prevPrice, 3);
-          const changePct = Fin.round(liveChgPct, 2);
-          const resolvedCurr = proxySpec.currency || staticMeta.currency || 'USD';
-          if (state?.fundamentals?.[lseSym] && !state.fundamentals[lseSym]._userCustomCurrency) {
-            state.fundamentals[lseSym].currency = resolvedCurr;
-          }
-          out[lseSym] = {
-            price: livePrice,
-            prevPrice,
-            change,
-            changePct,
-            high52w: extQ?.high52w || snapBase?.high52w || state?.fundamentals?.[lseSym]?.high52w || null,
-            low52w: extQ?.low52w || snapBase?.low52w || state?.fundamentals?.[lseSym]?.low52w || null,
-            currency: resolvedCurr,
-            name: state?.fundamentals?.[lseSym]?.name || staticMeta.name || lseSym,
-            source: `LSE Live Index Tracker (${proxySpec.proxyTicker} via qt.gtimg.cn)`,
-            _isLseProxyFallback: true
-          };
-        });
-        if (Object.keys(out).length > 0) {
-          this.lastRouteUsed = 'Direct Browser Batch JSONP (qt.gtimg.cn)';
-        }
-        resolve(out);
-      };
-      script.onerror = () => {
-        clearTimeout(timer);
-        if (script && script.remove) script.remove();
-        resolve({});
-      };
-      document.head.appendChild(script);
-    });
-  },
-
-  async fetchTencentMonthlyHistory(symbol) {
-    const hkMatch = String(symbol || '').match(/^(\d+)\.HK$/);
-    let kCode = null;
-    if (hkMatch) {
-      kCode = `hk${hkMatch[1].padStart(5, '0')}`;
-    } else if (/^[A-Z]+$/.test(symbol)) {
-      kCode = `us${symbol}`;
-    } else {
-      return null;
-    }
+    const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
+    if (!workerBase) return {};
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const url = `https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${kCode},month,,,180,qfq&_=${Date.now()}`;
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(timer);
-      if (!res.ok) return null;
-      const json = await res.json();
-      const stockNode = json?.data?.[kCode];
-      const bars = stockNode?.qfqmonth || stockNode?.month || [];
-      if (!Array.isArray(bars) || bars.length === 0) return null;
-
-      const byMonth = {};
-      bars.forEach(b => {
-        if (!Array.isArray(b) || b.length < 5) return;
-        const dStr = String(b[0] || '');
-        const closeVal = parseFloat(b[2]);
-        const highVal = parseFloat(b[3]) || closeVal;
-        const lowVal = parseFloat(b[4]) || closeVal;
-        const volVal = parseInt(b[5] || 0, 10);
-        if (!dStr || isNaN(closeVal) || closeVal <= 0) return;
-        const month = dStr.slice(0, 7);
-        byMonth[month] = {
-          month,
-          date: dStr,
-          close: Fin.round(closeVal, 4),
-          rawClose: Fin.round(closeVal, 4),
-          high: Fin.round(highVal, 4),
-          low: Fin.round(lowVal, 4),
-          volume: isNaN(volVal) ? 0 : volVal
-        };
+      const url = `${workerBase}/?symbols=${encodeURIComponent(syms.join(','))}&range=5d&interval=1d&_=${Date.now()}`;
+      const res = await fetch(url, {
+        signal: controller.signal,
+        cache: 'no-store'
       });
-      const sorted = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
-      if (sorted.length > 0) {
-        this.lastRouteUsed = 'Direct CORS Kline API (web.ifzq.gtimg.cn)';
-        return sorted;
-      }
-      return null;
-    } catch (_) {
       clearTimeout(timer);
-      return null;
+      if (!res.ok) {
+        throw new Error(`Cloudflare Worker HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      const rawQuotes = data?.quotes || {};
+      const out = {};
+      syms.forEach(sym => {
+        const q = rawQuotes[sym];
+        if (!q || !q.ok || !(Number(q.price) > 0)) return;
+        const staticMeta = this.getStaticProfile(sym);
+        const price = Fin.round(Number(q.price), 4);
+        const prevPrice = Fin.round(Number(q.prevPrice || q.price), 4);
+        const change = q.change !== undefined ? Fin.round(Number(q.change), 3) : Fin.round(price - prevPrice, 3);
+        const changePct = q.changePct !== undefined
+          ? Fin.round(Number(q.changePct), 2)
+          : (prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0);
+        const currency = q.currency || staticMeta.currency || (sym.endsWith('.HK') ? 'HKD' : 'USD');
+        const name = q.name || state?.fundamentals?.[sym]?.name || staticMeta.name || sym;
+        const high52w = Number(q.high52w) > 0 ? Fin.round(Number(q.high52w), 4) : (state?.fundamentals?.[sym]?.high52w || null);
+        const low52w = Number(q.low52w) > 0 ? Fin.round(Number(q.low52w), 4) : (state?.fundamentals?.[sym]?.low52w || null);
+        const quoteObj = {
+          price,
+          prevPrice,
+          change,
+          changePct,
+          high52w,
+          low52w,
+          currency,
+          name,
+          instrumentType: q.instrumentType || '',
+          source: 'Cloudflare Worker (myportfolio-quotes.pages.dev)'
+        };
+        this._applyQuoteToFundamentals(sym, quoteObj);
+        out[sym] = quoteObj;
+      });
+      if (Object.keys(out).length > 0) {
+        this.lastRouteUsed = 'Cloudflare Worker (myportfolio-quotes.pages.dev)';
+      }
+      return out;
+    } catch (err) {
+      clearTimeout(timer);
+      throw err;
     }
   },
 
@@ -4880,83 +4810,22 @@ var MarketAPI = {
     return null;
   },
 
-  async fetchTencentJsonpQuote(symbol) {
-    return new Promise((resolve, reject) => {
-      const qCode = this._toTencentCode(symbol);
-      if (!qCode) {
-        return reject(new Error('JSONP fallback supports HK and US tickers'));
-      }
-
-      const script = document.createElement('script');
-      const timer = setTimeout(() => {
-        if (script && script.remove) script.remove();
-        reject(new Error('JSONP quote timeout'));
-      }, 1800);
-
-      script.charset = 'gbk';
-      script.src = `https://qt.gtimg.cn/q=${qCode}&_=${Date.now()}`;
-      script.onload = () => {
-        clearTimeout(timer);
-        if (script && script.remove) script.remove();
-        const raw = window[`v_${qCode}`];
-        if (!raw || typeof raw !== 'string') {
-          return reject(new Error('Empty JSONP quote payload'));
-        }
-        const parts = raw.split('~');
-        if (parts.length < 35) {
-          return reject(new Error('Malformed JSONP quote payload'));
-        }
-        const price = parseFloat(parts[3]);
-        const prevPrice = parseFloat(parts[4]) || price;
-        if (!price || isNaN(price)) {
-          return reject(new Error('Invalid price in JSONP payload'));
-        }
-        const change = Fin.round(price - prevPrice, 3);
-        const changePct = prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0;
-        const high52w = parseFloat(parts[48]) > 0 ? Fin.round(parseFloat(parts[48]), 4) : null;
-        const low52w = parseFloat(parts[49]) > 0 ? Fin.round(parseFloat(parts[49]), 4) : null;
-        const currency = String(symbol || '').endsWith('.HK') ? 'HKD' : 'USD';
-        const staticMeta = this.getStaticProfile(symbol);
-        const name = state?.fundamentals?.[symbol]?.name || staticMeta.name || parts[1] || symbol;
-        this.lastRouteUsed = 'Direct Browser JSONP (qt.gtimg.cn)';
-        resolve({ price, prevPrice, change, changePct, high52w, low52w, currency, name, source: this.lastRouteUsed });
-      };
-      script.onerror = () => {
-        clearTimeout(timer);
-        if (script && script.remove) script.remove();
-        reject(new Error('JSONP script load blocked'));
-      };
-      document.head.appendChild(script);
-    });
-  },
-
   async fetchQuote(ticker) {
     const symbol = this.normalizeTicker(ticker);
     const provider = this.getProvider();
     const staticMeta = this.getStaticProfile(symbol);
 
     if (provider === 'yahoo') {
-      // 1. Try fast zero-CORS direct browser JSONP (qt.gtimg.cn) first for HK/US live quotes (~200ms)
-      //    Skip for London (.L) tickers since Tencent JSONP only serves HK and US exchanges.
-      if (!symbol.endsWith('.L')) {
-        try {
-          const jsonpQuote = await this.fetchTencentJsonpQuote(symbol);
-          if (jsonpQuote && jsonpQuote.price > 0) {
-            const existingFund = state.fundamentals[symbol] || {};
-            state.fundamentals[symbol] = {
-              ...existingFund,
-              name: existingFund.name || jsonpQuote.name || staticMeta.name || symbol,
-              sector: existingFund.sector || staticMeta.sector || 'Equities',
-              currency: jsonpQuote.currency,
-              high52w: jsonpQuote.high52w || existingFund.high52w || null,
-              low52w: jsonpQuote.low52w || existingFund.low52w || null
-            };
-            return jsonpQuote;
-          }
-        } catch (_) {}
-      }
+      // 1. Primary Route: Dedicated Cloudflare Pages Yahoo Finance Worker (https://myportfolio-quotes.pages.dev)
+      try {
+        const cfBatch = await this.fetchCloudflareBatchQuotes([symbol], 6500);
+        if (cfBatch && cfBatch[symbol] && cfBatch[symbol].price > 0) {
+          this.lastRouteUsed = 'Cloudflare Worker (myportfolio-quotes.pages.dev)';
+          return cfBatch[symbol];
+        }
+      } catch (_) {}
 
-      // 2. Fetch live Yahoo Finance v8 5d/1d quote (range=5d ensures LSE .L tickers always have >=2 daily closes even across UK bank holidays/weekends; cacheKey=null ensures fresh live prices on every Sync click)
+      // 2. Secondary Route: Yahoo Finance v8 5d/1d quote via Browser CORS Proxy Pool
       try {
         const cb = Date.now();
         const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=false&_=${cb}`;
@@ -4969,7 +4838,6 @@ var MarketAPI = {
           const closes = (result.indicators?.quote?.[0]?.close || []).filter(v => v !== null && v !== undefined && !isNaN(v));
           const price = parseFloat(meta.regularMarketPrice ?? closes[closes.length - 1]);
           if (price && !isNaN(price)) {
-            // Priority: yesterday's daily close from 5d/1d bars or regularMarketPreviousClose (NEVER multi-year chartPreviousClose)
             let prevPrice = (closes.length >= 2 ? parseFloat(closes[closes.length - 2]) : NaN);
             if (!prevPrice || isNaN(prevPrice)) {
               prevPrice = parseFloat(meta.regularMarketPreviousClose ?? meta.previousClose);
@@ -4978,7 +4846,6 @@ var MarketAPI = {
               prevPrice = price;
             }
 
-            // Sanity guard: prevent multi-year inception prices (e.g. 1.118 vs 12.30 = +1000%) from polluting 1-day change %
             if (prevPrice > 0 && Math.abs((price - prevPrice) / prevPrice) > 0.40) {
               if (closes.length >= 2 && closes[closes.length - 2] > 0 && Math.abs((price - closes[closes.length - 2]) / closes[closes.length - 2]) <= 0.40) {
                 prevPrice = parseFloat(closes[closes.length - 2]);
@@ -4991,95 +4858,26 @@ var MarketAPI = {
             const changePct = prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0;
             const currency = meta.currency || staticMeta.currency;
             const longName = meta.longName || meta.shortName || state?.fundamentals?.[symbol]?.name || staticMeta.name || symbol;
+            const high52w = meta.fiftyTwoWeekHigh ? Fin.round(parseFloat(meta.fiftyTwoWeekHigh), 4) : (state?.fundamentals?.[symbol]?.high52w || null);
+            const low52w = meta.fiftyTwoWeekLow ? Fin.round(parseFloat(meta.fiftyTwoWeekLow), 4) : (state?.fundamentals?.[symbol]?.low52w || null);
 
-            const existingFund = state.fundamentals[symbol] || {};
-            const wlEntry = (typeof state !== 'undefined' && Array.isArray(state?.watchlist))
-              ? state.watchlist.find(w => w.ticker === symbol)
-              : null;
-            const userSector = (existingFund._userCustomSector && existingFund.sector)
-              ? existingFund.sector
-              : (wlEntry?.sector || (existingFund.sector && existingFund.sector !== 'Equities' ? existingFund.sector : ''));
-            const inferredSector = userSector
-              || ((meta.instrumentType === 'ETF' || this.isEtfSector('', symbol, longName)) ? 'Index ETF' : (staticMeta.sector || 'Equities'));
-            const resolvedName = (existingFund._userCustomName && existingFund.name)
-              ? existingFund.name
-              : (existingFund.name && existingFund.name !== symbol ? existingFund.name : longName);
-            const high52w = meta.fiftyTwoWeekHigh ? Fin.round(parseFloat(meta.fiftyTwoWeekHigh), 4) : (existingFund.high52w || null);
-            const low52w = meta.fiftyTwoWeekLow ? Fin.round(parseFloat(meta.fiftyTwoWeekLow), 4) : (existingFund.low52w || null);
-            state.fundamentals[symbol] = {
-              ...existingFund,
-              name: resolvedName,
-              sector: inferredSector,
-              currency: (existingFund._userCustomCurrency && existingFund.currency) ? existingFund.currency : (currency || existingFund.currency),
+            const quoteObj = {
+              price: Fin.round(price, 4),
+              prevPrice: Fin.round(prevPrice, 4),
+              change,
+              changePct,
               high52w,
-              low52w
+              low52w,
+              currency,
+              name: longName,
+              instrumentType: meta.instrumentType || '',
+              source: this.lastRouteUsed
             };
-
-            return { price, prevPrice, change, changePct, high52w, low52w, currency, name: longName, source: this.lastRouteUsed };
+            this._applyQuoteToFundamentals(symbol, quoteObj);
+            return quoteObj;
           }
         }
       } catch (yahooErr) {
-        // For London (.L) UCITS ETFs (VWRA.L, SPYL.L, etc.): if browser CORS proxies to Yahoo Finance are blocked,
-        // use the zero-CORS Tencent JSONP live quote of the underlying index ETF (VT for VWRA.L, VOO for SPYL.L)
-        // applied to the latest verified LSE reference price from historical_prices.json!
-        if (symbol.endsWith('.L') && LSE_LIVE_INDEX_PROXY_MAP[symbol]) {
-          try {
-            const proxySpec = LSE_LIVE_INDEX_PROXY_MAP[symbol];
-            const proxyQuote = await this.fetchTencentJsonpQuote(proxySpec.proxyTicker);
-            const snapBase = this.getEmbeddedOrCachedQuote(symbol);
-            const refClose = (snapBase && snapBase.price > 0) ? snapBase.price : proxySpec.DefaultRefPrice;
-            if (proxyQuote && proxyQuote.price > 0 && refClose > 0) {
-              const liveChgPct = Number(proxyQuote.changePct || 0);
-              const extQ = window.EXTERNAL_HISTORICAL_PRICES?.quotes?.[symbol];
-              const histList = state?.historicalPrices?.[symbol] || window.EXTERNAL_HISTORICAL_PRICES?.prices?.[symbol] || [];
-              const lastHistClose = (Array.isArray(histList) && histList.length > 0)
-                ? Number(histList[histList.length - 1].rawClose || histList[histList.length - 1].close || 0)
-                : 0;
-              const baseRef = (extQ && Number(extQ.price) > 0)
-                ? Number(extQ.price)
-                : (lastHistClose > 0 ? lastHistClose : refClose);
-              const prevPrice = Fin.round(baseRef, 4);
-              const livePrice = Fin.round(baseRef * (1 + liveChgPct / 100), 4);
-              const change = Fin.round(livePrice - prevPrice, 3);
-              const changePct = Fin.round(liveChgPct, 2);
-              const resolvedCurr = proxySpec.currency || staticMeta.currency || 'USD';
-              if (state?.fundamentals?.[symbol] && !state.fundamentals[symbol]._userCustomCurrency) {
-                state.fundamentals[symbol].currency = resolvedCurr;
-              }
-              this.lastRouteUsed = `LSE Live Index Tracker (${proxySpec.proxyTicker} via qt.gtimg.cn)`;
-              return {
-                price: livePrice,
-                prevPrice,
-                change,
-                changePct,
-                high52w: extQ?.high52w || snapBase?.high52w || state?.fundamentals?.[symbol]?.high52w || null,
-                low52w: extQ?.low52w || snapBase?.low52w || state?.fundamentals?.[symbol]?.low52w || null,
-                currency: resolvedCurr,
-                name: state?.fundamentals?.[symbol]?.name || staticMeta.name || symbol,
-                source: this.lastRouteUsed
-              };
-            }
-          } catch (_) {}
-        }
-
-        if (!symbol.endsWith('.L')) {
-          try {
-            const jsonpQuote = await this.fetchTencentJsonpQuote(symbol);
-            if (jsonpQuote && jsonpQuote.price > 0) {
-              const existingFund = state.fundamentals[symbol] || {};
-              state.fundamentals[symbol] = {
-                ...existingFund,
-                name: existingFund.name || jsonpQuote.name || staticMeta.name || symbol,
-                sector: existingFund.sector || staticMeta.sector || 'Equities',
-                currency: jsonpQuote.currency,
-                high52w: jsonpQuote.high52w || existingFund.high52w || null,
-                low52w: jsonpQuote.low52w || existingFund.low52w || null
-              };
-              return jsonpQuote;
-            }
-          } catch (_) {}
-        }
-
         const cachedQuote = this.getEmbeddedOrCachedQuote(symbol);
         if (cachedQuote) {
           return cachedQuote;
@@ -5627,42 +5425,45 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
 
   // Step 3: Fetch LIVE PRICES ONLY via MarketAPI into a staging buffer so display prices never bounce or flicker mid-sync
   let updatedQuotes = 0;
-  let liveJsonpCount = 0;
+  let cfWorkerCount = 0;
+  let corsFallbackCount = 0;
   let snapshotQuoteCount = 0;
   const errors = [];
   const stagedPrices = {};
   const flashDirections = {};
 
   if (typeof AppLogger !== 'undefined') {
-    AppLogger.api('MarketAPI', `Fetching live quotes for ${allTickers.length} tickers (${allTickers.slice(0, 6).join(', ')}${allTickers.length > 6 ? '...' : ''})...`);
+    AppLogger.api('MarketAPI', `Fetching live quotes via Cloudflare Worker (${CLOUDFLARE_WORKER_URL}) for ${allTickers.length} tickers (${allTickers.slice(0, 6).join(', ')}${allTickers.length > 6 ? '...' : ''})...`);
   }
 
   let batchQuotes = {};
   if (MarketAPI.getProvider() === 'yahoo') {
     try {
-      batchQuotes = await MarketAPI.fetchTencentBatchQuotes(allTickers);
-      liveJsonpCount = Object.keys(batchQuotes).length;
-      if (liveJsonpCount > 0 && typeof AppLogger !== 'undefined') {
-        AppLogger.api('MarketAPI', `Batch JSONP (qt.gtimg.cn) returned ${liveJsonpCount}/${allTickers.length} live quotes.`);
+      batchQuotes = await MarketAPI.fetchCloudflareBatchQuotes(allTickers, 8000);
+      cfWorkerCount = Object.keys(batchQuotes).length;
+      if (cfWorkerCount > 0 && typeof AppLogger !== 'undefined') {
+        AppLogger.api('MarketAPI', `Cloudflare Worker (myportfolio-quotes.pages.dev) returned ${cfWorkerCount}/${allTickers.length} live Yahoo Finance quotes.`);
       }
-    } catch (_) {}
+    } catch (cfErr) {
+      if (typeof AppLogger !== 'undefined') {
+        AppLogger.warn('MarketAPI', `Cloudflare Worker batch request failed (${cfErr.message}) — falling back to secondary Yahoo CORS proxies.`);
+      }
+    }
   }
 
   // Parallel live quote resolution for all tickers into stagedPrices buffer
   await Promise.allSettled(allTickers.map(async (ticker) => {
     try {
       const batchCandidate = batchQuotes[ticker];
-      let q = (batchCandidate && !batchCandidate._isLseProxyFallback) ? batchCandidate : null;
+      // If batchQuotes already gave us a quote (including live index-tracked quotes for VWRA.L & SPYL.L),
+      // use it immediately with ZERO network waiting!
+      let q = (batchCandidate && batchCandidate.price > 0) ? batchCandidate : null;
       let isLive = Boolean(q);
       if (!q) {
         try {
           q = await MarketAPI.fetchQuote(ticker);
           isLive = Boolean(q && (!q.source || !q.source.includes('Snapshot')));
         } catch (fetchErr) {
-          if (batchCandidate && batchCandidate.price > 0) {
-            q = batchCandidate;
-            isLive = true;
-          } else {
           if (typeof AppLogger !== 'undefined') {
             AppLogger.warn('MarketAPI', `Live quote proxy fetch failed for ${ticker} (${fetchErr.message}) — checking latest GitHub snapshot fallback.`);
           }
@@ -5675,7 +5476,6 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
           } else {
             q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
             isLive = false;
-          }
           }
         }
       }
@@ -5697,6 +5497,7 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
         }
         updatedQuotes++;
         if (q.source && q.source.includes('Snapshot')) snapshotQuoteCount++;
+        else if (!batchCandidate && q.source && !q.source.includes('Cloudflare')) corsFallbackCount++;
       }
     } catch (err) {
       if (typeof AppLogger !== 'undefined') {
@@ -5729,7 +5530,7 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
       : '';
     AppLogger.info(
       'Sync',
-      `Sync completed in ${elapsed}ms: ${updatedQuotes}/${allTickers.length} live quotes updated (${liveJsonpCount} live JSONP, ${snapshotQuoteCount} GitHub Python snapshot)${wfMsg}.`
+      `Sync completed in ${elapsed}ms: ${updatedQuotes}/${allTickers.length} quotes updated (${cfWorkerCount} Cloudflare Worker, ${corsFallbackCount} Yahoo CORS secondary, ${snapshotQuoteCount} GitHub snapshot)${wfMsg}.`
     );
     if (typeof renderLogsTab === 'function') renderLogsTab();
   }
