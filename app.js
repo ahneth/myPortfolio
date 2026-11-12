@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.5.3-20261112_1638') {
+      if (k !== 'myportfolio-cache-v3.5.4-20261112_2028') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -2380,7 +2380,7 @@ function renderWatchlistAndFundamentals() {
               <td class="py-1 sm:py-1.5 px-3 text-right">
                 ${curPrice > 0
                   ? `<div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(curPrice, false, wlCurrency)}</div>
-                     <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day change vs. previous close (${Fin.currency(state.prices[h.ticker]?.prevPrice || h.currentPrice, false, hCurr)})">
+                     <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day change vs. previous close (${Fin.currency(state.prices[w.ticker]?.prevPrice || curPrice, false, wlCurrency)})">
                        <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(priceChangePct) > 40 ? 0 : priceChangePct)}
                      </div>`
                   : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
@@ -4549,7 +4549,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.5.3 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
+      AppLogger.info('Boot', 'myPortfolio v3.5.4 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

@@ -7,22 +7,31 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.3',
-  buildId: '20261112_1638',
-  releaseDate: '2026-11-12 16:38 HKT',
-  driveFolder: '/myPortfolio/20261112_1638/',
+  appVersion: '3.5.4',
+  buildId: '20261112_2028',
+  releaseDate: '2026-11-12 20:28 HKT',
+  driveFolder: '/myPortfolio/20261112_2028/',
   modules: {
-    'version.js':   { version: '3.5.3', updated: '20261112_1638', role: 'Version manifest, module registry & v3.5.3 changelog history' },
+    'version.js':   { version: '3.5.4', updated: '20261112_2028', role: 'Version manifest, module registry & v3.5.4 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
     'portfolio.js': { version: '3.5.1', updated: '20261112_1325', role: 'Cloudflare Worker ingestion, 2018+ Dividend Auto-Backfill, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.3', updated: '20261112_1638', role: 'Holdings Total Return next to Market Value, Prev Close tooltip, Option 1 Daily Rollover Check' },
+    'app.js':       { version: '3.5.4', updated: '20261112_2028', role: 'Holdings Total Return next to Market Value, Watchlist/Holdings Prev Close tooltip fix, Option 1 Daily Rollover Check' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.3', updated: '20261112_1638', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.5.4', updated: '20261112_2028', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.4',
+      buildId: '20261112_2028',
+      date: '2026-11-12 20:28 HKT',
+      summary: 'Fixed ReferenceError: h is not defined in renderWatchlistAndFundamentals() caused by the 1D previous-close tooltip referencing h/hCurr instead of w/curPrice/wlCurrency.',
+      changes: [
+        'Updated line 2383 of app.js inside renderWatchlistAndFundamentals() to reference state.prices[w.ticker]?.prevPrice || curPrice and wlCurrency instead of h.ticker / h.currentPrice / hCurr.'
+      ]
+    },
     {
       version: '3.5.3',
       buildId: '20261112_1638',

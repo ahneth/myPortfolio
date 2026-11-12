@@ -858,7 +858,7 @@ tr:hover .table-action-capsule {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.5.3 (20261112_1638)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.5.4 (20261112_2028)</span>
             </div>
           </div>
         </div>
@@ -2286,13 +2286,13 @@ tr:hover .table-action-capsule {
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.5.3 • Build 20261112_1638</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.5.4 • Build 20261112_2028</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261112_1638</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261112_2028</span>/
           </span>
         </div>
 
@@ -2559,7 +2559,7 @@ tr:hover .table-action-capsule {
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 flex flex-col lg:flex-row items-center justify-between gap-2.5">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.5.3 (Build 20261112_1638)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.5.4 (Build 20261112_2028)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
       <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
@@ -3137,22 +3137,31 @@ tr:hover .table-action-capsule {
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.3',
-  buildId: '20261112_1638',
-  releaseDate: '2026-11-12 16:38 HKT',
-  driveFolder: '/myPortfolio/20261112_1638/',
+  appVersion: '3.5.4',
+  buildId: '20261112_2028',
+  releaseDate: '2026-11-12 20:28 HKT',
+  driveFolder: '/myPortfolio/20261112_2028/',
   modules: {
-    'version.js':   { version: '3.5.3', updated: '20261112_1638', role: 'Version manifest, module registry & v3.5.3 changelog history' },
+    'version.js':   { version: '3.5.4', updated: '20261112_2028', role: 'Version manifest, module registry & v3.5.4 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
     'portfolio.js': { version: '3.5.1', updated: '20261112_1325', role: 'Cloudflare Worker ingestion, 2018+ Dividend Auto-Backfill, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.3', updated: '20261112_1638', role: 'Holdings Total Return next to Market Value, Prev Close tooltip, Option 1 Daily Rollover Check' },
+    'app.js':       { version: '3.5.4', updated: '20261112_2028', role: 'Holdings Total Return next to Market Value, Watchlist/Holdings Prev Close tooltip fix, Option 1 Daily Rollover Check' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.3', updated: '20261112_1638', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.5.4', updated: '20261112_2028', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.4',
+      buildId: '20261112_2028',
+      date: '2026-11-12 20:28 HKT',
+      summary: 'Fixed ReferenceError: h is not defined in renderWatchlistAndFundamentals() caused by the 1D previous-close tooltip referencing h/hCurr instead of w/curPrice/wlCurrency.',
+      changes: [
+        'Updated line 2383 of app.js inside renderWatchlistAndFundamentals() to reference state.prices[w.ticker]?.prevPrice || curPrice and wlCurrency instead of h.ticker / h.currentPrice / hCurr.'
+      ]
+    },
     {
       version: '3.5.3',
       buildId: '20261112_1638',
@@ -11032,7 +11041,7 @@ window.renderTradesBalanceCashflowChart = renderTradesBalanceCashflowChart;
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.5.3-20261112_1638') {
+      if (k !== 'myportfolio-cache-v3.5.4-20261112_2028') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -13409,7 +13418,7 @@ function renderWatchlistAndFundamentals() {
               <td class="py-1 sm:py-1.5 px-3 text-right">
                 ${curPrice > 0
                   ? `<div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(curPrice, false, wlCurrency)}</div>
-                     <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day change vs. previous close (${Fin.currency(state.prices[h.ticker]?.prevPrice || h.currentPrice, false, hCurr)})">
+                     <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day change vs. previous close (${Fin.currency(state.prices[w.ticker]?.prevPrice || curPrice, false, wlCurrency)})">
                        <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(priceChangePct) > 40 ? 0 : priceChangePct)}
                      </div>`
                   : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
@@ -15578,7 +15587,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.5.3 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
+      AppLogger.info('Boot', 'myPortfolio v3.5.4 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;
