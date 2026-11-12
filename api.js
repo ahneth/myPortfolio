@@ -368,17 +368,12 @@ var MarketAPI = {
 
   getEmbeddedOrCachedQuote(symbol) {
     const staticMeta = this.getStaticProfile(symbol);
-    const extQuotes = (typeof window !== 'undefined' && window.EXTERNAL_HISTORICAL_PRICES?.quotes) || {};
-    const embQuotes = (typeof window !== 'undefined' && window.EMBEDDED_HISTORICAL_PRICES?.quotes) || {};
-    const histSeries = state?.historicalPrices?.[symbol]
-      || window.EXTERNAL_HISTORICAL_PRICES?.prices?.[symbol]
-      || window.EMBEDDED_HISTORICAL_PRICES?.prices?.[symbol]
-      || [];
+    const histSeries = state?.historicalPrices?.[symbol] || [];
     const lastBar = Array.isArray(histSeries) && histSeries.length > 0 ? histSeries[histSeries.length - 1] : null;
     const prevBar = Array.isArray(histSeries) && histSeries.length > 1 ? histSeries[histSeries.length - 2] : lastBar;
 
-    let sq = extQuotes[symbol] || embQuotes[symbol];
-    if (!sq && lastBar && Number(lastBar.rawClose || lastBar.close) > 0) {
+    let sq = state?.prices?.[symbol];
+    if ((!sq || !(Number(sq.price) > 0)) && lastBar && Number(lastBar.rawClose || lastBar.close) > 0) {
       const c = Number(lastBar.rawClose || lastBar.close);
       const pc = prevBar && Number(prevBar.rawClose || prevBar.close) > 0 ? Number(prevBar.rawClose || prevBar.close) : c;
       sq = {
@@ -389,9 +384,6 @@ var MarketAPI = {
         currency: staticMeta.currency
       };
     }
-    if (!sq) {
-      sq = state?.prices?.[symbol];
-    }
     if (sq && Number(sq.price) > 0) {
       const price = Fin.round(Number(sq.price), 4);
       const prevPrice = Fin.round(Number(sq.prevClose || sq.prevPrice || price), 4);
@@ -399,7 +391,7 @@ var MarketAPI = {
       const changePct = sq.changePct !== undefined
         ? Fin.round(Number(sq.changePct), 2)
         : (prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0);
-      this.lastRouteUsed = 'Verified Portfolio Snapshot (historical_prices.json)';
+      this.lastRouteUsed = 'Cached Portfolio Quote (localStorage)';
       return {
         price,
         prevPrice,
@@ -417,15 +409,243 @@ var MarketAPI = {
 
   getEmbeddedOrCachedHistory(symbol) {
     if (Array.isArray(state?.historicalPrices?.[symbol]) && state.historicalPrices[symbol].length > 0) {
-      this.lastRouteUsed = 'Verified Portfolio Snapshot (historical_prices.json)';
+      this.lastRouteUsed = 'Cached 15Y History (localStorage)';
       return state.historicalPrices[symbol];
     }
-    const snapHist = (typeof window !== 'undefined' && window.EMBEDDED_HISTORICAL_PRICES?.tickers?.[symbol]) || null;
-    if (Array.isArray(snapHist) && snapHist.length > 0) {
-      this.lastRouteUsed = 'Embedded Portfolio Snapshot (historical_prices.json)';
-      return snapHist;
-    }
     return null;
+  },
+
+  _parseRawYahooChartHistoryAndDivs(symbol, result) {
+    if (!result || !result.meta) return null;
+    const meta = result.meta;
+    const timestamps = result.timestamp || [];
+    const q = result.indicators?.quote?.[0] || {};
+    const adj = result.indicators?.adjclose?.[0]?.adjclose || [];
+    const closes = q.close || [];
+    const highs = q.high || [];
+    const lows = q.low || [];
+    const volumes = q.volume || [];
+
+    const byMonth = {};
+    for (let i = 0; i < timestamps.length; i++) {
+      const ts = Number(timestamps[i]);
+      const c = closes[i];
+      if (!ts || c === null || c === undefined || isNaN(c) || Number(c) <= 0) continue;
+
+      const dObj = new Date(ts * 1000);
+      let dateStr = dObj.toISOString().slice(0, 10);
+      let monthStr = dateStr.slice(0, 7);
+
+      if (/^\d{4}-\d{2}-(28|29|30|31)$/.test(dateStr)) {
+        const nextDay = new Date((ts + 12 * 3600) * 1000);
+        if (nextDay.getUTCDate() === 1) {
+          const ny = nextDay.getUTCFullYear();
+          const nm = String(nextDay.getUTCMonth() + 1).padStart(2, '0');
+          monthStr = `${ny}-${nm}`;
+          dateStr = `${monthStr}-01`;
+        }
+      }
+
+      const rawClose = Fin.round(Number(c), 4);
+      const adjClose = (adj[i] !== null && adj[i] !== undefined && Number(adj[i]) > 0)
+        ? Fin.round(Number(adj[i]), 4)
+        : rawClose;
+      const rawHigh = (highs[i] !== null && highs[i] !== undefined && Number(highs[i]) > 0)
+        ? Fin.round(Math.max(Number(highs[i]), rawClose), 4)
+        : rawClose;
+      const rawLow = (lows[i] !== null && lows[i] !== undefined && Number(lows[i]) > 0)
+        ? Fin.round(Math.min(Number(lows[i]), rawClose), 4)
+        : rawClose;
+      const vol = parseInt(volumes[i] || 0, 10);
+
+      byMonth[monthStr] = {
+        month: monthStr,
+        date: dateStr,
+        close: rawClose,
+        rawClose,
+        adjClose,
+        high: rawHigh,
+        low: rawLow,
+        volume: isNaN(vol) ? 0 : vol
+      };
+    }
+
+    const history = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
+    const dividends = result.events?.dividends || {};
+    return {
+      symbol,
+      currency: meta.currency || (symbol.endsWith('.HK') ? 'HKD' : 'USD'),
+      name: meta.longName || meta.shortName || symbol,
+      instrumentType: meta.instrumentType || '',
+      price: Number(meta.regularMarketPrice) > 0 ? Fin.round(Number(meta.regularMarketPrice), 4) : (history.length > 0 ? history[history.length - 1].close : null),
+      high52w: Number(meta.fiftyTwoWeekHigh) > 0 ? Fin.round(Number(meta.fiftyTwoWeekHigh), 4) : null,
+      low52w: Number(meta.fiftyTwoWeekLow) > 0 ? Fin.round(Number(meta.fiftyTwoWeekLow), 4) : null,
+      history,
+      dividends
+    };
+  },
+
+  async _fetchSingleHistoryViaWorkerUrlOrCors(symbol) {
+    const sym = this.normalizeTicker(symbol);
+    if (!sym) return null;
+    const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
+    const yahooUrl1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=15y&interval=1mo&events=div&includePrePost=false`;
+    const yahooUrl2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=15y&interval=1mo&events=div&includePrePost=false`;
+
+    // Tier 1B: Cloudflare Worker ?url= proxy
+    if (workerBase) {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 9000);
+        const res = await fetch(`${workerBase}/?url=${encodeURIComponent(yahooUrl1)}&_=${Date.now()}`, {
+          signal: ctrl.signal,
+          cache: 'no-store'
+        });
+        clearTimeout(timer);
+        if (res.ok) {
+          const data = await res.json();
+          const parsed = this._parseRawYahooChartHistoryAndDivs(sym, data?.chart?.result?.[0]);
+          if (parsed && parsed.history.length > 0) {
+            this.lastRouteUsed = 'Cloudflare Worker Proxy (myportfolio-quotes.pages.dev)';
+            return parsed;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Tier 2: Yahoo CORS proxy pool fallback
+    const data = await this.fetchYahooJson([yahooUrl1, yahooUrl2], `hist15y_${sym}`);
+    return this._parseRawYahooChartHistoryAndDivs(sym, data?.chart?.result?.[0]);
+  },
+
+  async fetchCloudflareHistoryAndDividends(tickers = [], mode = 'history') {
+    const syms = Array.from(new Set(
+      (tickers || []).map(t => this.normalizeTicker(t)).filter(Boolean)
+    ));
+    if (syms.length === 0) return { historyCount: 0, dividendCount: 0 };
+
+    const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
+    const chunkSize = 15;
+    let historyCount = 0;
+    let dividendCount = 0;
+
+    const applyTickerPayload = (sym, histBars, divEventsMap, quoteMeta) => {
+      if (quoteMeta && typeof quoteMeta === 'object') {
+        this._applyQuoteToFundamentals(sym, quoteMeta);
+      }
+      if (mode === 'history' && Array.isArray(histBars) && histBars.length > 0) {
+        state.historicalPrices[sym] = histBars;
+        historyCount++;
+      }
+      if (divEventsMap && typeof divEventsMap === 'object' && typeof buildDividendScheduleForTicker === 'function') {
+        const refPx = Number(quoteMeta?.price || state?.prices?.[sym]?.price || 0);
+        const refCurr = quoteMeta?.currency || state?.prices?.[sym]?.currency || null;
+        const sched = buildDividendScheduleForTicker(sym, divEventsMap, refPx, refCurr);
+        if (sched) {
+          if (!state.dividendSchedules) state.dividendSchedules = {};
+          state.dividendSchedules[sym] = sched;
+          dividendCount++;
+        }
+      }
+    };
+
+    for (let i = 0; i < syms.length; i += chunkSize) {
+      const chunk = syms.slice(i, i + chunkSize);
+      let handledByBatchEndpoint = false;
+
+      if (workerBase) {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 12000);
+          const url = `${workerBase}/?type=${encodeURIComponent(mode)}&symbols=${encodeURIComponent(chunk.join(','))}&range=15y&interval=1mo&_=${Date.now()}`;
+          const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+          clearTimeout(timer);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && (data.type === 'history' || data.type === 'dividends') && data.dividends) {
+              handledByBatchEndpoint = true;
+              this.lastRouteUsed = `Cloudflare Worker ${mode} (myportfolio-quotes.pages.dev)`;
+              chunk.forEach(sym => {
+                const hBars = data.history ? data.history[sym] : null;
+                const dMap = data.dividends ? data.dividends[sym] : null;
+                const qMeta = data.quotes ? data.quotes[sym] : null;
+                applyTickerPayload(sym, hBars, dMap, qMeta);
+              });
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!handledByBatchEndpoint) {
+        await Promise.allSettled(chunk.map(async (sym) => {
+          try {
+            const parsed = await this._fetchSingleHistoryViaWorkerUrlOrCors(sym);
+            if (parsed) {
+              applyTickerPayload(sym, parsed.history, parsed.dividends, parsed);
+            }
+          } catch (_) {}
+        }));
+      }
+    }
+
+    if (typeof invalidateStockMetricsCache === 'function') {
+      invalidateStockMetricsCache();
+    }
+    return { historyCount, dividendCount };
+  },
+
+  async fetchCloudflareNewsBatch(tickers = [], maxPerTicker = 6) {
+    const syms = Array.from(new Set(
+      (tickers || []).map(t => this.normalizeTicker(t)).filter(Boolean)
+    ));
+    if (syms.length === 0) return [];
+
+    const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
+    const chunkSize = 15;
+    const allArticles = [];
+
+    for (let i = 0; i < syms.length; i += chunkSize) {
+      const chunk = syms.slice(i, i + chunkSize);
+      let handledByBatchEndpoint = false;
+
+      if (workerBase) {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 10000);
+          const url = `${workerBase}/?type=news&symbols=${encodeURIComponent(chunk.join(','))}&limit=${maxPerTicker}&_=${Date.now()}`;
+          const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+          clearTimeout(timer);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.type === 'news' && Array.isArray(data.articles)) {
+              handledByBatchEndpoint = true;
+              this.lastRouteUsed = 'Cloudflare Worker news (myportfolio-quotes.pages.dev)';
+              data.articles.forEach(art => {
+                const sym = this.normalizeTicker(art.ticker);
+                const staticMeta = this.getStaticProfile(sym);
+                allArticles.push({
+                  ...art,
+                  ticker: sym,
+                  companyName: state?.fundamentals?.[sym]?.name || art.companyName || staticMeta.name || sym,
+                  sector: state?.fundamentals?.[sym]?.sector || staticMeta.sector || 'Equities'
+                });
+              });
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!handledByBatchEndpoint) {
+        await Promise.allSettled(chunk.map(async (sym) => {
+          try {
+            const arts = await this.fetchTickerNewsLive(sym, maxPerTicker);
+            if (Array.isArray(arts)) allArticles.push(...arts);
+          } catch (_) {}
+        }));
+      }
+    }
+
+    return allArticles;
   },
 
   async fetchQuote(ticker) {
@@ -564,139 +784,18 @@ var MarketAPI = {
   },
 
   /**
-   * Fetches monthly historical prices (up to 15 years of monthly closes + full 2018+ dividend events).
+   * Fetches 15-year monthly historical prices + dividend events via Cloudflare Worker
    */
-  /**
-   * Historical monthly prices & dividends are 100% managed by the GitHub Actions Python job
-   * (update_historical_prices.py -> historical_prices.json). No browser third-party API calls are made for history.
-   */
-  async fetchMonthlyHistory(ticker) {
+  async fetchMonthlyHistory(ticker, forceRefresh = false) {
     const symbol = this.normalizeTicker(ticker);
-    const cachedHist = this.getEmbeddedOrCachedHistory(symbol);
-    if (Array.isArray(cachedHist) && cachedHist.length > 0) {
-      return cachedHist;
-    }
-    if (typeof loadHistoricalPricesFromJson === 'function') {
-      await loadHistoricalPricesFromJson(false);
-      const afterLoad = this.getEmbeddedOrCachedHistory(symbol);
-      if (Array.isArray(afterLoad) && afterLoad.length > 0) {
-        return afterLoad;
+    if (!forceRefresh) {
+      const cachedHist = this.getEmbeddedOrCachedHistory(symbol);
+      if (Array.isArray(cachedHist) && cachedHist.length > 0) {
+        return cachedHist;
       }
     }
-    return [];
-  },
-
-  /**
-   * Triggers a GitHub Actions workflow_dispatch run (e.g. 'update-historical-prices.yml' or 'update-company-news.yml')
-   * using the repository and Fine-Grained PAT configured in Settings.
-   */
-  async triggerGitHubWorkflow(workflowFile = 'update-historical-prices.yml', inputs = {}) {
-    const repo = (state?.settings?.githubRepo || 'ahneth/myPortfolio').trim();
-    const branch = (state?.settings?.githubBranch || 'main').trim();
-    const token = (state?.settings?.githubToken || '').trim();
-
-    if (!token) {
-      if (typeof AppLogger !== 'undefined') {
-        AppLogger.info('GitHubActions', `GitHub Token not configured in Settings — pulling latest committed output for ${workflowFile} from ${repo}@${branch}. (Add a GitHub PAT with Actions:Write in Settings to trigger new Python runs from the browser.)`);
-      }
-      return { triggered: false, reason: 'no_token', repo, branch, workflowFile };
-    }
-
-    const url = `https://api.github.com/repos/${repo}/actions/workflows/${workflowFile}/dispatches`;
-    if (typeof AppLogger !== 'undefined') {
-      AppLogger.api('GitHubActions', `POST ${url} (ref: ${branch}) — triggering Python workflow ${workflowFile}...`);
-    }
-
-    try {
-      const payload = { ref: branch };
-      if (inputs && Object.keys(inputs).length > 0) {
-        payload.inputs = inputs;
-      }
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/vnd.github+json',
-          'Authorization': `Bearer ${token}`,
-          'X-GitHub-Api-Version': '2022-11-28',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.status === 204 || res.ok) {
-        if (typeof AppLogger !== 'undefined') {
-          AppLogger.info('GitHubActions', `Successfully triggered ${workflowFile} on ${repo}@${branch} (HTTP ${res.status}). Polling run status...`);
-        }
-        this.pollGitHubWorkflowCompletion(repo, branch, token, workflowFile, Date.now());
-        return { triggered: true, status: res.status, repo, branch, workflowFile };
-      } else {
-        const errTxt = await res.text().catch(() => '');
-        const msg = `GitHub API HTTP ${res.status}: ${errTxt.slice(0, 140) || res.statusText}`;
-        if (typeof AppLogger !== 'undefined') {
-          AppLogger.warn('GitHubActions', `Failed to trigger ${workflowFile}: ${msg}`);
-        }
-        return { triggered: false, reason: 'http_error', status: res.status, message: msg, repo, branch, workflowFile };
-      }
-    } catch (err) {
-      if (typeof AppLogger !== 'undefined') {
-        AppLogger.warn('GitHubActions', `Network error triggering ${workflowFile}: ${err.message}`);
-      }
-      return { triggered: false, reason: 'network_error', message: err.message, repo, branch, workflowFile };
-    }
-  },
-
-  async pollGitHubWorkflowCompletion(repo, branch, token, workflowFile, dispatchTime = 0) {
-    const isNews = workflowFile.includes('news');
-    const maxPolls = 24;
-    if (typeof setGhSyncStatus === 'function') setGhSyncStatus(true, isNews ? 'Syncing News...' : 'Syncing Prices...');
-    for (let i = 0; i < maxPolls; i++) {
-      await new Promise(r => setTimeout(r, 5000));
-      try {
-        const runsUrl = `https://api.github.com/repos/${repo}/actions/workflows/${workflowFile}/runs?branch=${encodeURIComponent(branch)}&per_page=1&_=${Date.now()}`;
-        const res = await fetch(runsUrl, {
-          headers: {
-            'Accept': 'application/vnd.github+json',
-            'Authorization': `Bearer ${token}`,
-            'X-GitHub-Api-Version': '2022-11-28'
-          },
-          cache: 'no-store'
-        });
-        if (!res.ok) continue;
-        const data = await res.json();
-        const latestRun = data?.workflow_runs?.[0];
-        if (!latestRun) continue;
-        const createdMs = Date.parse(latestRun.created_at || '') || 0;
-        if (dispatchTime > 0 && createdMs > 0 && createdMs < dispatchTime - 20000) {
-          continue;
-        }
-
-        if (typeof AppLogger !== 'undefined' && (i === 0 || latestRun.status === 'completed')) {
-          AppLogger.info('GitHubActions', `Workflow ${workflowFile} run #${latestRun.run_number}: status=${latestRun.status}, conclusion=${latestRun.conclusion || 'running'}`);
-        }
-
-        if (latestRun.status === 'completed') {
-          if (typeof setGhSyncStatus === 'function') setGhSyncStatus(false);
-          if (latestRun.conclusion === 'success') {
-            if (isNews && typeof loadCompanyNewsFromJson === 'function') {
-              await loadCompanyNewsFromJson(false);
-              if (typeof renderAll === 'function') renderAll(true);
-              if (typeof showToast === 'function') {
-                showToast('GitHub Python News workflow completed! Refreshed company_news.json on page.', 'success');
-              }
-            } else if (typeof loadHistoricalPricesFromJson === 'function') {
-              await loadHistoricalPricesFromJson(false);
-              if (typeof renderAll === 'function') renderAll(true);
-              if (typeof showToast === 'function') {
-                showToast('GitHub Python Price workflow completed! Refreshed historical_prices.json on page.', 'success');
-              }
-            }
-          } else if (typeof showToast === 'function') {
-            showToast(`GitHub workflow ${workflowFile} finished with status: ${latestRun.conclusion}`, 'error');
-          }
-          return;
-        }
-      } catch (_) {}
-    }
+    await this.fetchCloudflareHistoryAndDividends([symbol], 'history');
+    return this.getEmbeddedOrCachedHistory(symbol) || [];
   },
 
   async fetchFundamentals(ticker) {
@@ -831,7 +930,23 @@ var MarketAPI = {
 
     const u1 = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol)}&quotesCount=1&newsCount=${maxArticles}`;
     const u2 = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol)}&quotesCount=1&newsCount=${maxArticles}`;
-    const data = await this.fetchYahooJson([u1, u2], `news_${symbol}`);
+    let data = null;
+    const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
+    if (workerBase) {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 7000);
+        const res = await fetch(`${workerBase}/?url=${encodeURIComponent(u1)}&_=${Date.now()}`, { signal: ctrl.signal, cache: 'no-store' });
+        clearTimeout(timer);
+        if (res.ok) {
+          data = await res.json();
+          this.lastRouteUsed = 'Cloudflare Worker News Proxy (myportfolio-quotes.pages.dev)';
+        }
+      } catch (_) {}
+    }
+    if (!data || !Array.isArray(data.news)) {
+      data = await this.fetchYahooJson([u1, u2], `news_${symbol}`);
+    }
     const newsList = data?.news || [];
     const articles = [];
 
@@ -974,10 +1089,227 @@ var MarketAPI = {
   }
 };
 
-async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
+function getLocalTodayDateString() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+window.getLocalTodayDateString = getLocalTodayDateString;
+
+function getAllPortfolioAndWatchlistTickers() {
+  return Array.from(new Set([
+    ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
+    ...(state?.transactions || []).map(t => t.ticker),
+    ...(state?.watchlist || []).map(w => w.ticker)
+  ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
+}
+window.getAllPortfolioAndWatchlistTickers = getAllPortfolioAndWatchlistTickers;
+
+async function syncHistoricalPricesFromCloudflare(manual = true, customTickers = null) {
+  if (window.__CF_HISTORY_SYNC_IN_FLIGHT__ && !manual) return false;
+  window.__CF_HISTORY_SYNC_IN_FLIGHT__ = true;
+  const tStart = performance.now();
+  const targetTickers = Array.isArray(customTickers) && customTickers.length > 0
+    ? Array.from(new Set(customTickers.map(t => MarketAPI.normalizeTicker(t)).filter(Boolean)))
+    : getAllPortfolioAndWatchlistTickers();
+
+  if (targetTickers.length === 0) {
+    window.__CF_HISTORY_SYNC_IN_FLIGHT__ = false;
+    return false;
+  }
+
+  const icons = [
+    document.getElementById('btn-fetch-monthly-icon'),
+    document.querySelector('#btn-trigger-gh-prices i')
+  ].filter(Boolean);
+  icons.forEach(ic => ic.classList.add('fa-spin'));
+
+  if (manual && typeof showToast === 'function') {
+    showToast(`Fetching 15Y monthly prices & dividends for ${targetTickers.length} tickers via Cloudflare Worker...`, 'info');
+  }
+
+  try {
+    const { historyCount, dividendCount } = await MarketAPI.fetchCloudflareHistoryAndDividends(targetTickers, 'history');
+    const nowIso = new Date().toISOString();
+    if (state && state.settings) {
+      state.settings.lastHistoricalPricesUpdate = nowIso;
+      state.settings.lastDividendsUpdate = nowIso;
+    }
+    recalculatePortfolio();
+    saveState();
+    renderAll();
+    if (typeof renderFooterUpdateTimestamps === 'function') renderFooterUpdateTimestamps();
+
+    const elapsed = Math.round(performance.now() - tStart);
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.info('CloudflareHistory', `Synced 15Y monthly history (${historyCount} series) & dividends (${dividendCount} schedules) in ${elapsed}ms.`);
+      if (typeof renderLogsTab === 'function') renderLogsTab();
+    }
+    if (manual && typeof showToast === 'function') {
+      showToast(`Refreshed 15Y monthly history (${historyCount}/${targetTickers.length}) & dividends in ${elapsed}ms!`, 'success');
+    }
+    return historyCount > 0;
+  } catch (err) {
+    if (manual && typeof showToast === 'function') {
+      showToast(`History sync notice: ${err.message}`, 'error');
+    }
+    return false;
+  } finally {
+    window.__CF_HISTORY_SYNC_IN_FLIGHT__ = false;
+    icons.forEach(ic => ic.classList.remove('fa-spin'));
+  }
+}
+window.syncHistoricalPricesFromCloudflare = syncHistoricalPricesFromCloudflare;
+window.loadHistoricalPricesFromJson = (silent = true) => syncHistoricalPricesFromCloudflare(!silent);
+
+async function syncDividendsFromCloudflare(manual = true, customTickers = null) {
+  const tStart = performance.now();
+  const targetTickers = Array.isArray(customTickers) && customTickers.length > 0
+    ? Array.from(new Set(customTickers.map(t => MarketAPI.normalizeTicker(t)).filter(Boolean)))
+    : getAllPortfolioAndWatchlistTickers();
+
+  if (targetTickers.length === 0) {
+    if (manual && typeof showToast === 'function') {
+      showToast('Add a stock holding or watchlist ticker first.', 'info');
+    }
+    return false;
+  }
+
+  const divIcons = [
+    document.querySelector('#btn-sync-dividends-live i'),
+    document.querySelector('#btn-sync-dividends-cal i'),
+    document.querySelector('#btn-settings-sync-dividends i')
+  ].filter(Boolean);
+  divIcons.forEach(ic => ic.classList.add('fa-spin'));
+
+  if (manual && typeof showToast === 'function') {
+    showToast(`Refreshing dividend history, yields & ex-dates for ${targetTickers.length} tickers via Cloudflare Worker...`, 'info');
+  }
+
+  try {
+    const { dividendCount } = await MarketAPI.fetchCloudflareHistoryAndDividends(targetTickers, 'dividends');
+    if (state && state.settings) {
+      state.settings.lastDividendsUpdate = new Date().toISOString();
+    }
+    recalculatePortfolio();
+    saveState();
+    renderAll();
+    if (typeof renderFooterUpdateTimestamps === 'function') renderFooterUpdateTimestamps();
+
+    const elapsed = Math.round(performance.now() - tStart);
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.info('CloudflareDividends', `Refreshed ${dividendCount}/${targetTickers.length} dividend schedules in ${elapsed}ms.`);
+      if (typeof renderLogsTab === 'function') renderLogsTab();
+    }
+    if (manual && typeof showToast === 'function') {
+      showToast(`Refreshed dividend schedules & ex-dates for ${dividendCount}/${targetTickers.length} tickers (${elapsed}ms)!`, 'success');
+    }
+    return dividendCount > 0;
+  } catch (err) {
+    if (manual && typeof showToast === 'function') {
+      showToast(`Dividend refresh notice: ${err.message}`, 'error');
+    }
+    return false;
+  } finally {
+    divIcons.forEach(ic => ic.classList.remove('fa-spin'));
+  }
+}
+window.syncDividendsFromCloudflare = syncDividendsFromCloudflare;
+
+async function syncCompanyNewsLive(manual = true, customTickers = null) {
+  if (window.__CF_NEWS_SYNC_IN_FLIGHT__ && !manual) return false;
+  window.__CF_NEWS_SYNC_IN_FLIGHT__ = true;
+  const tStart = performance.now();
+  const targetTickers = Array.isArray(customTickers) && customTickers.length > 0
+    ? Array.from(new Set(customTickers.map(t => MarketAPI.normalizeTicker(t)).filter(Boolean)))
+    : getAllPortfolioAndWatchlistTickers();
+
+  const newsIcons = [
+    document.querySelector('#btn-sync-news-live i'),
+    document.querySelector('#btn-trigger-gh-news i')
+  ].filter(Boolean);
+  newsIcons.forEach(ic => ic.classList.add('fa-spin'));
+
+  if (manual && typeof showToast === 'function') {
+    showToast(`Fetching latest company & ETF news for ${targetTickers.length} tickers via Cloudflare Worker...`, 'info');
+  }
+
+  try {
+    const articles = await MarketAPI.fetchCloudflareNewsBatch(targetTickers, 6);
+    if (typeof ingestCompanyNewsData === 'function') {
+      ingestCompanyNewsData({
+        generatedAt: new Date().toISOString(),
+        articles
+      });
+    }
+    saveState();
+    if (typeof renderNewsTab === 'function') renderNewsTab();
+    if (typeof renderFooterUpdateTimestamps === 'function') renderFooterUpdateTimestamps();
+
+    const count = Array.isArray(state?.companyNews) ? state.companyNews.length : 0;
+    const elapsed = Math.round(performance.now() - tStart);
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.info('CloudflareNews', `News refresh completed in ${elapsed}ms: ${count} total articles cached (${articles.length} fetched).`);
+      if (typeof renderLogsTab === 'function') renderLogsTab();
+    }
+    if (manual && typeof showToast === 'function') {
+      showToast(`Refreshed ${count} company & ETF news articles via Cloudflare Worker (${elapsed}ms)!`, 'success');
+    }
+    return articles.length > 0;
+  } catch (err) {
+    if (manual && typeof showToast === 'function') {
+      showToast(`News refresh notice: ${err.message}`, 'error');
+    }
+    return false;
+  } finally {
+    window.__CF_NEWS_SYNC_IN_FLIGHT__ = false;
+    newsIcons.forEach(ic => ic.classList.remove('fa-spin'));
+  }
+}
+window.syncCompanyNewsLive = syncCompanyNewsLive;
+window.loadCompanyNewsFromJson = (silent = true) => syncCompanyNewsLive(!silent);
+
+/**
+ * Option 1 Daily Date-Stamp Auto-Refresh:
+ * Checks if today's local date (YYYY-MM-DD) differs from state.settings.lastDailySyncDate,
+ * or if any active/watchlist ticker is missing 15Y monthly history in localStorage.
+ * Triggered on initial page load, on every 30s active-page timer tick, and on tab visibility restore.
+ */
+async function checkAndRunDailyCloudflareSync(forceAll = false) {
+  if (!state || !state.settings) return;
+  const allTickers = getAllPortfolioAndWatchlistTickers();
+  if (allTickers.length === 0) return;
+
+  const todayStr = getLocalTodayDateString();
+  const isNewCalendarDay = (state.settings.lastDailySyncDate !== todayStr);
+  const missingHistoryTickers = allTickers.filter(sym => !Array.isArray(state.historicalPrices?.[sym]) || state.historicalPrices[sym].length === 0);
+  const hasEmptyNews = !Array.isArray(state.companyNews) || state.companyNews.length === 0;
+
+  if (forceAll || isNewCalendarDay) {
+    state.settings.lastDailySyncDate = todayStr;
+    saveState();
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.info('DailyAutoSync', `First active session of ${todayStr} — auto-fetching 15Y monthly prices, dividends & news via Cloudflare Worker.`);
+    }
+    await Promise.allSettled([
+      syncHistoricalPricesFromCloudflare(false, allTickers),
+      syncCompanyNewsLive(false, allTickers)
+    ]);
+  } else {
+    if (missingHistoryTickers.length > 0) {
+      await syncHistoricalPricesFromCloudflare(false, missingHistoryTickers);
+    }
+    if (hasEmptyNews) {
+      await syncCompanyNewsLive(false, allTickers);
+    }
+  }
+}
+window.checkAndRunDailyCloudflareSync = checkAndRunDailyCloudflareSync;
+
+async function syncAllMarketData(refreshHistoryAndDivs = false, options = {}) {
   const isAutoTimer = Boolean(options && options.isAutoTimer);
   const isAutoStartup = Boolean((options && options.isAutoStartup) || isAutoTimer);
-  if (window.__LIVE_PRICE_SYNC_IN_FLIGHT__ && isAutoStartup && !triggerGitHubWorkflow) {
+  if (window.__LIVE_PRICE_SYNC_IN_FLIGHT__ && isAutoStartup && !refreshHistoryAndDivs) {
     return;
   }
   window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = true;
@@ -985,32 +1317,22 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
   if (typeof AppLogger !== 'undefined') {
     const syncLabel = isAutoTimer
       ? 'Auto 30s active-page live price sync'
-      : (isAutoStartup ? 'Initial page-load auto live price sync' : (triggerGitHubWorkflow ? 'Manual GitHub Historical Price Workflow triggered' : 'Live Price Sync button pressed'));
-    AppLogger.action('Sync', `${syncLabel} (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
+      : (isAutoStartup ? 'Initial page-load auto live price sync' : (refreshHistoryAndDivs ? 'Manual 15Y History + Live Price Sync' : 'Live Price Sync button pressed'));
+    AppLogger.action('Sync', `${syncLabel} (provider=${MarketAPI.getProvider()})`);
   }
 
   if (!MarketAPI.hasKey()) {
     window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = false;
     if (!isAutoStartup) {
-      if (typeof AppLogger !== 'undefined') {
-        AppLogger.warn('Sync', 'API Key missing for selected keyed provider — redirecting to Settings.');
-      }
       showToast('Please select Yahoo Finance (Keyless) or configure your API Key in Settings.', 'error');
       switchTab('settings');
     }
     return;
   }
 
-  const allTickers = Array.from(new Set([
-    ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
-    ...(state?.watchlist || []).map(w => w.ticker)
-  ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
-
+  const allTickers = getAllPortfolioAndWatchlistTickers();
   if (allTickers.length === 0) {
     window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = false;
-    if (typeof AppLogger !== 'undefined') {
-      AppLogger.info('Sync', 'No holdings or watchlist tickers to sync.');
-    }
     if (!isAutoStartup) {
       showToast('Add a stock transaction or watchlist ticker first.', 'info');
     }
@@ -1027,31 +1349,20 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
 
   if (!isAutoStartup) {
     showToast(
-      triggerGitHubWorkflow
-        ? `Triggering GitHub Python historical price workflow & syncing live quotes (${allTickers.length} tickers)...`
+      refreshHistoryAndDivs
+        ? `Refreshing 15Y monthly history, dividends & live quotes (${allTickers.length} tickers)...`
         : `Syncing live market prices for ${allTickers.length} tickers...`,
       'info'
     );
   }
 
-  // Step 1: ONLY dispatch update-historical-prices.yml on GitHub Actions when explicitly requested
-  // (e.g. from the manual Settings button #btn-trigger-gh-prices or when adding a brand-new ticker)
-  let workflowStatus = null;
-  if (triggerGitHubWorkflow) {
-    workflowStatus = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
-      tickers: allTickers.join(',')
-    });
+  if (refreshHistoryAndDivs) {
+    await syncHistoricalPricesFromCloudflare(false, allTickers);
+  } else {
+    // Check Option 1 daily date-stamp rollover (runs once per calendar day or if any ticker lacks history)
+    checkAndRunDailyCloudflareSync(false).catch(() => {});
   }
 
-  // Step 2: Load historical_prices.json (read-only GET, does NOT trigger GitHub Actions workflow)
-  // if not yet loaded or if we have London (.L) tickers that may need the latest GitHub committed LSE quotes
-  const hasLseTickers = allTickers.some(t => t.endsWith('.L'));
-  const hasLoadedHistory = Boolean(window.__HISTORICAL_PRICES_JSON_LOADED__) && Object.keys(state?.historicalPrices || {}).length > 0;
-  if ((triggerGitHubWorkflow || !hasLoadedHistory || hasLseTickers) && typeof loadHistoricalPricesFromJson === 'function') {
-    await loadHistoricalPricesFromJson(true, false);
-  }
-
-  // Step 3: Fetch LIVE PRICES ONLY via MarketAPI into a staging buffer so display prices never bounce or flicker mid-sync
   let updatedQuotes = 0;
   let cfWorkerCount = 0;
   let corsFallbackCount = 0;
@@ -1060,51 +1371,29 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
   const stagedPrices = {};
   const flashDirections = {};
 
-  if (typeof AppLogger !== 'undefined') {
-    AppLogger.api('MarketAPI', `Fetching live quotes via Cloudflare Worker (${CLOUDFLARE_WORKER_URL}) for ${allTickers.length} tickers (${allTickers.slice(0, 6).join(', ')}${allTickers.length > 6 ? '...' : ''})...`);
-  }
-
   let batchQuotes = {};
   if (MarketAPI.getProvider() === 'yahoo') {
     try {
       batchQuotes = await MarketAPI.fetchCloudflareBatchQuotes(allTickers, 8000);
       cfWorkerCount = Object.keys(batchQuotes).length;
-      if (cfWorkerCount > 0 && typeof AppLogger !== 'undefined') {
-        AppLogger.api('MarketAPI', `Cloudflare Worker (myportfolio-quotes.pages.dev) returned ${cfWorkerCount}/${allTickers.length} live Yahoo Finance quotes.`);
-      }
-    } catch (cfErr) {
-      if (typeof AppLogger !== 'undefined') {
-        AppLogger.warn('MarketAPI', `Cloudflare Worker batch request failed (${cfErr.message}) — falling back to secondary Yahoo CORS proxies.`);
-      }
-    }
+    } catch (_) {}
   }
 
-  // Parallel live quote resolution for all tickers into stagedPrices buffer
   await Promise.allSettled(allTickers.map(async (ticker) => {
     try {
       const batchCandidate = batchQuotes[ticker];
-      // If batchQuotes already gave us a quote (including live index-tracked quotes for VWRA.L & SPYL.L),
-      // use it immediately with ZERO network waiting!
       let q = (batchCandidate && batchCandidate.price > 0) ? batchCandidate : null;
       let isLive = Boolean(q);
       if (!q) {
         try {
           q = await MarketAPI.fetchQuote(ticker);
-          isLive = Boolean(q && (!q.source || !q.source.includes('Snapshot')));
+          isLive = Boolean(q && (!q.source || !q.source.includes('Cached')));
         } catch (fetchErr) {
-          if (typeof AppLogger !== 'undefined') {
-            AppLogger.warn('MarketAPI', `Live quote proxy fetch failed for ${ticker} (${fetchErr.message}) — checking latest GitHub snapshot fallback.`);
-          }
-          const extQ = window.EXTERNAL_HISTORICAL_PRICES?.quotes?.[ticker];
-          if (extQ && Number(extQ.price) > 0) {
-            q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
-            isLive = false;
-          } else if (state.prices[ticker] && Number(state.prices[ticker].price) > 0) {
+          if (state.prices[ticker] && Number(state.prices[ticker].price) > 0) {
             return;
-          } else {
-            q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
-            isLive = false;
           }
+          q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
+          isLive = false;
         }
       }
       if (q && q.price > 0) {
@@ -1124,18 +1413,14 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
           flashDirections[ticker] = q.price >= prevDisplayed;
         }
         updatedQuotes++;
-        if (q.source && q.source.includes('Snapshot')) snapshotQuoteCount++;
+        if (q.source && q.source.includes('Cached')) snapshotQuoteCount++;
         else if (!batchCandidate && q.source && !q.source.includes('Cloudflare')) corsFallbackCount++;
       }
     } catch (err) {
-      if (typeof AppLogger !== 'undefined') {
-        AppLogger.warn('MarketAPI', `Live quote fetch failed for ${ticker}: ${err.message}`);
-      }
       errors.push(`${ticker}: ${err.message}`);
     }
   }));
 
-  // Atomically commit all fetched live quotes at once, recalculate, and render a single time
   Object.entries(stagedPrices).forEach(([ticker, quoteObj]) => {
     state.prices[ticker] = quoteObj;
   });
@@ -1182,63 +1467,19 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
   const elapsed = Math.round(performance.now() - tStart);
 
   if (typeof AppLogger !== 'undefined') {
-    const wfMsg = workflowStatus?.triggered
-      ? ` | GitHub workflow update-historical-prices.yml triggered on ${workflowStatus.repo}`
-      : '';
     AppLogger.info(
       'Sync',
-      `Sync completed in ${elapsed}ms: ${updatedQuotes}/${allTickers.length} quotes updated (${cfWorkerCount} Cloudflare Worker, ${corsFallbackCount} Yahoo CORS secondary, ${snapshotQuoteCount} GitHub snapshot)${wfMsg}.`
+      `Sync completed in ${elapsed}ms: ${updatedQuotes}/${allTickers.length} quotes updated (${cfWorkerCount} Cloudflare Worker, ${corsFallbackCount} Yahoo CORS secondary).`
     );
     if (typeof renderLogsTab === 'function') renderLogsTab();
   }
 
-  if (workflowStatus?.triggered) {
-    showToast(`Live prices synced (${updatedQuotes}/${allTickers.length}) & GitHub historical price workflow triggered!`, 'success');
-  } else if (errors.length > 0 && updatedQuotes === 0) {
+  if (errors.length > 0 && updatedQuotes === 0) {
     if (!isAutoStartup) showToast(`Live price sync error — ${errors[0]}`, 'error');
   } else if (!isAutoStartup) {
     showToast(`Synced ${updatedQuotes}/${allTickers.length} live market prices (${elapsed}ms).`, 'success');
   }
 }
-
-async function syncCompanyNewsLive(triggerGitHubWorkflow = true) {
-  const tStart = performance.now();
-  if (typeof AppLogger !== 'undefined') {
-    AppLogger.action('NewsSync', `Refresh News button pressed (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)})`);
-  }
-
-  const newsBtnIcon = document.querySelector('#btn-sync-news-live i');
-  if (newsBtnIcon) newsBtnIcon.classList.add('fa-spin');
-  showToast('Refreshing company_news.json from GitHub Python workflow...', 'info');
-
-  let wfResult = null;
-  if (triggerGitHubWorkflow) {
-    wfResult = await MarketAPI.triggerGitHubWorkflow('update-company-news.yml');
-  }
-
-  const ok = typeof loadCompanyNewsFromJson === 'function' ? await loadCompanyNewsFromJson(false) : false;
-  const count = Array.isArray(state?.companyNews) ? state.companyNews.length : 0;
-
-  if (newsBtnIcon) newsBtnIcon.classList.remove('fa-spin');
-  const elapsed = Math.round(performance.now() - tStart);
-
-  if (typeof AppLogger !== 'undefined') {
-    AppLogger.info(
-      'NewsSync',
-      `News refresh completed in ${elapsed}ms: ${count} articles loaded on page${wfResult?.triggered ? ' (GitHub workflow update-company-news.yml triggered)' : ''}.`
-    );
-    if (typeof renderLogsTab === 'function') renderLogsTab();
-  }
-
-  if (wfResult?.triggered) {
-    showToast(`Triggered GitHub News workflow & refreshed ${count} articles on page!`, 'success');
-  } else if (ok) {
-    showToast(`Refreshed ${count} company news articles from GitHub Python snapshot (${elapsed}ms).`, 'success');
-  } else {
-    showToast('News feed is up to date.', 'info');
-  }
-}
-window.syncCompanyNewsLive = syncCompanyNewsLive;
 
 async function runAndRenderApiDiagnostics(customTickers = null) {
   const inputEl = document.getElementById('diag-test-tickers-input');

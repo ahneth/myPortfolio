@@ -7,22 +7,35 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.0',
-  buildId: '20261112_1008',
-  releaseDate: '2026-11-12 10:08 HKT',
-  driveFolder: '/myPortfolio/20261112_1008/',
+  appVersion: '3.5.1',
+  buildId: '20261112_1325',
+  releaseDate: '2026-11-12 13:25 HKT',
+  driveFolder: '/myPortfolio/20261112_1325/',
   modules: {
-    'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
+    'version.js':   { version: '3.5.1', updated: '20261112_1325', role: 'Version manifest, module registry & v3.5.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
-    'api.js':       { version: '3.4.5', updated: '20261111_2110', role: 'Cloudflare Pages Yahoo Finance Worker (myportfolio-quotes.pages.dev) Primary + Yahoo CORS Secondary, Live FX & News Engine' },
-    'portfolio.js': { version: '3.1.0', updated: '20261031_1650', role: '2018+ Dividend Auto-Backfill, TTM Yield Boundary Fix, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
-    'charts.js':    { version: '3.1.0', updated: '20261031_1650', role: 'FX-Normalized Portfolio Charts + Interactive SMA 20/50/200 & 12M Regression Channel Overlays' },
-    'app.js':       { version: '3.1.0', updated: '20261031_1650', role: 'Startup JSON Auto-Sync, Signal Breakdown Modal, News Scope Filters, Rebalance Trim Alerts & Order Staging, Settings Customizer' },
+    'api.js':       { version: '3.5.1', updated: '20261112_1325', role: 'Unified Cloudflare Worker (quotes, 15Y monthly history, dividends & news) + Option 1 Daily Date-Stamp Auto-Sync' },
+    'portfolio.js': { version: '3.5.1', updated: '20261112_1325', role: 'Cloudflare Worker ingestion, 2018+ Dividend Auto-Backfill, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
+    'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
+    'app.js':       { version: '3.5.1', updated: '20261112_1325', role: 'Holdings Total Return next to Market Value, Option 1 Daily Rollover Check, Manual Refresh Buttons in Dividends & News' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
+    'index.html':   { version: '3.5.1', updated: '20261112_1325', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.1',
+      buildId: '20261112_1325',
+      date: '2026-11-12 13:25 HKT',
+      summary: 'Replaced all GitHub-stored JSON files and Python workflows with unified Cloudflare Worker endpoints (?type=quotes, ?type=history, ?type=dividends, ?type=news), implemented Option 1 Daily Date-Stamp Auto-Refresh + New-Ticker Auto-Fetch, added manual Refresh buttons in Dividends and News, and moved Total Return next to Market Value in the Holdings table.',
+      changes: [
+        'Eliminated all usage of GitHub-stored historical_prices.json, company_news.json, window.EMBEDDED_HISTORICAL_PRICES, window.EMBEDDED_COMPANY_NEWS, and GitHub Personal Access Token workflow dispatch.',
+        'Upgraded Cloudflare Pages Worker (_worker.js on https://myportfolio-quotes.pages.dev) with 4 endpoints (?type=quotes, ?type=history, ?type=dividends, ?type=news) plus ?url= pass-through fallback so existing deployments work seamlessly even before re-uploading _worker.js.',
+        'Implemented Option 1 Daily Date-Stamp Auto-Refresh (checkAndRunDailyCloudflareSync): automatically syncs 15-year monthly prices, dividends, and 90-day news once per calendar day (checked on boot, on every 30s active-page timer tick for midnight rollover, and on tab visibility restore) and immediately when new tickers are added to Holdings or Watchlist.',
+        'Added manual "Refresh Dividends" buttons (#btn-sync-dividends-cal and #btn-sync-dividends-live) on the Dividends page and updated "Refresh News" (#btn-sync-news-live) on the News page (plus manual refresh controls in Settings).',
+        'Moved the Total Return column in the Holdings table (#holdings-main-table) to sit immediately next to Market Value across the table header, Portfolio Total row, Sector Group subtotal rows, and individual holding rows.'
+      ]
+    },
     {
       version: '3.5.0',
       buildId: '20261112_1008',

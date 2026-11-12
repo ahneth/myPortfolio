@@ -858,7 +858,7 @@ tr:hover .table-action-capsule {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.5.0 (20261112_1008)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.5.1 (20261112_1325)</span>
             </div>
           </div>
         </div>
@@ -1298,10 +1298,10 @@ tr:hover .table-action-capsule {
                 <th class="py-1.5 px-3 text-right" data-sort-col="price" title="Click to sort by Current Live Price">Live Price <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="dayPnL" title="Click to sort by 1-Day P&L">Day P&amp;L <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="marketValue" title="Click to sort by Market Value">Market Value <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
+                <th class="py-1.5 px-3 text-right" data-sort-col="totalReturn" title="Click to sort by Total Return">Total Return <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="unrealizedGain" title="Click to sort by Unrealized P&L">Unrealized P&amp;L <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="realizedGain" title="Click to sort by Realized P&L">Realized P&amp;L <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="totalDividends" title="Click to sort by Accumulated Dividends">Accumulated Div <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
-                <th class="py-1.5 px-3 text-right" data-sort-col="totalReturn" title="Click to sort by Total Return">Total Return <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="netYield" title="Click to sort by Net Dividend Yield">Div / Ex-Date <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="shares" title="Click to sort by Shares Held">Shares <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="avgCost" title="Click to sort by Average Cost">Avg Cost <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
@@ -1523,13 +1523,16 @@ tr:hover .table-action-capsule {
 
       <!-- Upcoming Ex-Dividend Calendar & Yearly Yield Tracker -->
       <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
-        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex items-center justify-between">
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
               <i class="fa-solid fa-calendar-check text-brand-500"></i> Auto-Tracked Dividend Ex-Dates, Payout Cadence &amp; Yearly Yield
             </h2>
-            <p class="text-xs text-slate-500 dark:text-slate-400">Tracks Trailing 12M Yield, Tax-Adjusted Net Yield, 3Y Dividend CAGR, and Confirmed/Seasonal Upcoming Ex-Dates</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Synced automatically once per day via Cloudflare Worker or on demand &bull; Tracks Trailing 12M Yield, Net Yield, 3Y CAGR &amp; Upcoming Ex-Dates</p>
           </div>
+          <button type="button" id="btn-sync-dividends-cal" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center gap-1.5 shadow-sm shrink-0" title="Fetch latest 2018–Present dividend history &amp; ex-dividend dates from Cloudflare Worker">
+            <i class="fa-solid fa-rotate text-xs"></i> Refresh Dividends
+          </button>
         </div>
         <div class="table-responsive-wrapper">
           <table class="w-full text-left text-xs whitespace-nowrap">
@@ -1571,6 +1574,9 @@ tr:hover .table-action-capsule {
               </select>
             </div>
             <input type="text" id="div-log-search-text" placeholder="Search ticker or notes..." class="px-3 py-1.5 text-xs bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 w-40">
+            <button type="button" id="btn-sync-dividends-live" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center gap-1.5 shadow-sm shrink-0" title="Refresh dividend history &amp; auto-detect new payouts via Cloudflare Worker">
+              <i class="fa-solid fa-rotate text-xs"></i> Refresh Dividends
+            </button>
             <button id="btn-open-dividend-modal" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition flex items-center gap-1.5 shadow-sm shrink-0">
               <i class="fa-solid fa-plus text-xs"></i> Log Dividend
             </button>
@@ -1777,7 +1783,7 @@ tr:hover .table-action-capsule {
               <span id="news-total-count-badge" class="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30">0 Articles</span>
             </div>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Synced automatically via scheduled GitHub Action (<code class="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">update_company_news.py</code> &rarr; <code class="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">company_news.json</code>) or live on-demand via Yahoo Finance Search API
+              Synced automatically once per calendar day (and when new tickers are added) via Cloudflare Worker (<code class="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">myportfolio-quotes.pages.dev</code>) or manually on demand
             </p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
@@ -1802,8 +1808,8 @@ tr:hover .table-action-capsule {
               <option value="NEUTRAL">Neutral</option>
               <option value="BEARISH">Bearish</option>
             </select>
-            <button type="button" id="btn-sync-news-live" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center gap-1.5 shadow-sm" title="Trigger GitHub Python update_company_news.py workflow & refresh company_news.json on page">
-              <i class="fa-solid fa-rotate text-xs"></i> Refresh News (GitHub Python)
+            <button type="button" id="btn-sync-news-live" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center gap-1.5 shadow-sm" title="Fetch latest 90-day company news &amp; catalysts via Cloudflare Worker">
+              <i class="fa-solid fa-rotate text-xs"></i> Refresh News
             </button>
           </div>
         </div>
@@ -1858,31 +1864,24 @@ tr:hover .table-action-capsule {
               <span id="last-api-sync-label" class="text-[11px] text-slate-400">Never synced</span>
             </div>
 
-            <!-- GitHub Actions Python Workflow Dispatch Configuration -->
+            <!-- Cloudflare Worker Historical Prices, Dividends & News Sync -->
             <div class="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
               <label class="block text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <i class="fa-brands fa-github text-slate-900 dark:text-white"></i> GitHub Actions Python Workflow Trigger <span id="github-token-status-badge" class="text-[11px] font-normal text-amber-500">(Optional • Add PAT to trigger GitHub Actions runs)</span>
+                <i class="fa-solid fa-cloud-bolt text-brand-500"></i> Cloudflare Worker Historical Data, Dividends &amp; News <span class="text-[11px] font-normal text-emerald-500">(Keyless • Auto-syncs once per calendar day &amp; on new ticker)</span>
               </label>
-              <div class="grid grid-cols-3 gap-2">
-                <input type="text" id="setting-github-repo" value="ahneth/myPortfolio" placeholder="owner/repo" class="col-span-2 px-3 py-1.5 text-xs font-mono bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200" title="GitHub Repository (owner/repo)">
-                <input type="text" id="setting-github-branch" value="main" placeholder="main" class="px-3 py-1.5 text-xs font-mono bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200" title="GitHub Branch">
-              </div>
-              <div class="flex items-center gap-2">
-                <input type="password" id="setting-github-token" placeholder="Paste GitHub PAT (Actions: Read & Write) to trigger Python workflows..." class="flex-1 px-3 py-1.5 text-xs font-mono bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200">
-                <button type="button" id="btn-save-github-settings" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white transition whitespace-nowrap">
-                  Save PAT
-                </button>
-              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                Powered by <code class="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">https://myportfolio-quotes.pages.dev</code> &mdash; no GitHub Personal Access Token or scheduled GitHub Actions required.
+              </p>
               <div class="flex flex-wrap items-center gap-2">
                 <button type="button" id="btn-trigger-gh-prices" class="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 transition flex items-center gap-1">
-                  <i class="fa-brands fa-python"></i> Run Price Workflow (update_historical_prices.py)
+                  <i class="fa-solid fa-chart-line"></i> Refresh 15-Y Monthly Prices
+                </button>
+                <button type="button" id="btn-settings-sync-dividends" class="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 transition flex items-center gap-1">
+                  <i class="fa-solid fa-hand-holding-dollar"></i> Refresh Dividends
                 </button>
                 <button type="button" id="btn-trigger-gh-news" class="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-cyan-600/15 hover:bg-cyan-600/25 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 transition flex items-center gap-1">
-                  <i class="fa-solid fa-newspaper"></i> Run News Workflow (update_company_news.py)
+                  <i class="fa-solid fa-newspaper"></i> Refresh News
                 </button>
-                <a href="https://github.com/ahneth/myPortfolio/actions" target="_blank" rel="noopener" class="text-[11px] text-indigo-500 hover:underline font-semibold ml-auto">
-                  Open GitHub Actions &nearr;
-                </a>
               </div>
             </div>
 
@@ -2287,13 +2286,13 @@ tr:hover .table-action-capsule {
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.3.0 • Build 20261107_2225</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.5.1 • Build 20261112_1325</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261107_2225</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261112_1325</span>/
           </span>
         </div>
 
@@ -2560,7 +2559,7 @@ tr:hover .table-action-capsule {
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 flex flex-col lg:flex-row items-center justify-between gap-2.5">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.3.0 (Build 20261107_2225)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.5.1 (Build 20261112_1325)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
       <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
@@ -3127,11 +3126,6 @@ tr:hover .table-action-capsule {
 
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container" class="fixed bottom-16 md:bottom-5 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
-
-  <script id="embedded-static-snapshots">
-window.EMBEDDED_HISTORICAL_PRICES = {"_meta":{"version":"3.1.7","buildId":"20261101_1240","generatedAt":null,"source":"Yahoo Finance v8/v10 API (15y/1mo + 2y/1d technicals + events=div)","note":"Populated with real monthly OHLCV + adjusted close data, FX rates, 2018+ dividend histories, and daily technical signals by update_historical_prices.py. Populated by update_historical_prices.py via GitHub Actions.","range":"15y","interval":"1mo","tickers":["2800.HK","2840.HK","3077.HK","3195.HK","3433.HK","3476.HK","0002.HK","0003.HK","0005.HK","0006.HK","0012.HK","0066.HK","0101.HK","0386.HK","0700.HK","0857.HK","0939.HK","1088.HK","1093.HK","1288.HK","1299.HK","1378.HK","1398.HK","2318.HK","2388.HK","AAPL","HSBA.L","MSFT","NVDA","SPY","SPYL.L","VOO","VWRA.L"],"tickerCount":0},"fxRates":{"base":"USD","USDHKD":7.8453,"GBPUSD":1.3382,"GBPHKD":10.4985,"updatedAt":"2026-10-30T15:10:00Z"},"prices":{},"quotes":{"VWRA.L":{"price":189.42,"prevPrice":188.54,"change":0.88,"changePct":0.47,"high52w":195.52,"low52w":163.46,"currency":"USD","name":"Vanguard FTSE All-World UCITS ETF (USD) Accumulating","lastUpdated":"2026-11-09T12:00:00Z"},"SPYL.L":{"price":19.05,"prevPrice":18.83,"change":0.22,"changePct":1.17,"high52w":19.11,"low52w":15.87,"currency":"USD","name":"State Street SPDR S&P 500 UCITS ETF (Acc)","lastUpdated":"2026-11-09T12:00:00Z"}},"fundamentals":{},"dividends":{"0002.HK":{"currency":"HKD","frequency":"Quarterly","paymentsPerYear":4,"ttmDivPerShare":3.2,"forwardDivPerShare":3.2,"trailingYieldPct":4.15,"forwardYieldPct":4.15,"withholdingTaxPct":0.0,"netYieldPct":4.15,"divCagr3Y":null,"nextExDate":"2026-12-02","nextPayDate":"2026-12-27","nextEstAmount":0.63,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-03-08","payDate":"2024-03-21","payDateEstimated":false,"amount":1.21,"currency":"HKD"},{"exDate":"2024-05-31","payDate":"2024-06-14","payDateEstimated":false,"amount":0.63,"currency":"HKD"},{"exDate":"2024-09-02","payDate":"2024-09-13","payDateEstimated":false,"amount":0.63,"currency":"HKD"},{"exDate":"2024-12-02","payDate":"2024-12-13","payDateEstimated":false,"amount":0.63,"currency":"HKD"},{"exDate":"2025-03-07","payDate":"2025-03-20","payDateEstimated":false,"amount":1.26,"currency":"HKD"},{"exDate":"2025-06-02","payDate":"2025-06-13","payDateEstimated":false,"amount":0.63,"currency":"HKD"},{"exDate":"2025-09-02","payDate":"2025-09-15","payDateEstimated":false,"amount":0.63,"currency":"HKD"},{"exDate":"2025-12-02","payDate":"2025-12-15","payDateEstimated":false,"amount":0.63,"currency":"HKD"},{"exDate":"2026-03-11","payDate":"2026-03-24","payDateEstimated":false,"amount":1.31,"currency":"HKD"},{"exDate":"2026-06-02","payDate":"2026-06-15","payDateEstimated":false,"amount":0.63,"currency":"HKD"},{"exDate":"2026-09-02","payDate":"2026-09-15","payDateEstimated":false,"amount":0.63,"currency":"HKD"},{"exDate":"2026-12-02","payDate":"2026-12-15","payDateEstimated":false,"amount":0.63,"currency":"HKD"}]},"0003.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":0.35,"forwardDivPerShare":0.35,"trailingYieldPct":4.85,"forwardYieldPct":4.85,"withholdingTaxPct":0.0,"netYieldPct":4.85,"divCagr3Y":null,"nextExDate":"2027-06-03","nextPayDate":"2027-06-28","nextEstAmount":0.23,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-06-06","payDate":"2024-06-24","payDateEstimated":false,"amount":0.23,"currency":"HKD"},{"exDate":"2024-08-29","payDate":"2024-09-11","payDateEstimated":false,"amount":0.12,"currency":"HKD"},{"exDate":"2025-06-06","payDate":"2025-06-23","payDateEstimated":false,"amount":0.23,"currency":"HKD"},{"exDate":"2025-09-02","payDate":"2025-09-15","payDateEstimated":false,"amount":0.12,"currency":"HKD"},{"exDate":"2026-06-03","payDate":"2026-06-18","payDateEstimated":false,"amount":0.23,"currency":"HKD"},{"exDate":"2026-08-31","payDate":"2026-09-11","payDateEstimated":false,"amount":0.12,"currency":"HKD"}]},"0005.HK":{"currency":"HKD","frequency":"Quarterly","paymentsPerYear":4,"ttmDivPerShare":5.8679,"forwardDivPerShare":5.8747,"trailingYieldPct":8.17,"forwardYieldPct":8.18,"withholdingTaxPct":0.0,"netYieldPct":8.17,"divCagr3Y":null,"nextExDate":"2026-11-06","nextPayDate":"2026-12-01","nextEstAmount":0.777722,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-03-07","payDate":"2024-04-25","payDateEstimated":false,"amount":2.426355,"currency":"HKD"},{"exDate":"2024-05-09","payDate":"2024-06-21","payDateEstimated":false,"amount":2.420133,"currency":"HKD"},{"exDate":"2024-08-15","payDate":"2024-09-27","payDateEstimated":false,"amount":0.779073,"currency":"HKD"},{"exDate":"2024-11-07","payDate":"2024-12-19","payDateEstimated":false,"amount":0.777313,"currency":"HKD"},{"exDate":"2025-03-06","payDate":"2025-04-25","payDateEstimated":false,"amount":2.791007,"currency":"HKD"},{"exDate":"2025-05-08","payDate":"2025-06-20","payDateEstimated":false,"amount":0.783972,"currency":"HKD"},{"exDate":"2025-08-14","payDate":"2025-09-26","payDateEstimated":false,"amount":0.777678,"currency":"HKD"},{"exDate":"2025-11-06","payDate":"2025-12-18","payDateEstimated":false,"amount":0.777722,"currency":"HKD"},{"exDate":"2026-03-12","payDate":"2026-04-30","payDateEstimated":false,"amount":3.522942,"currency":"HKD"},{"exDate":"2026-05-14","payDate":"2026-06-26","payDateEstimated":false,"amount":0.783188,"currency":"HKD"},{"exDate":"2026-08-13","payDate":"2026-09-25","payDateEstimated":false,"amount":0.784088,"currency":"HKD"},{"exDate":"2026-11-05","payDate":"2026-12-17","payDateEstimated":false,"amount":0.7845,"currency":"HKD"}]},"0006.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":2.82,"forwardDivPerShare":2.82,"trailingYieldPct":4.66,"forwardYieldPct":4.66,"withholdingTaxPct":0.0,"netYieldPct":4.66,"divCagr3Y":null,"nextExDate":"2027-05-26","nextPayDate":"2027-06-20","nextEstAmount":2.04,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-05-27","payDate":"2024-06-11","payDateEstimated":false,"amount":2.04,"currency":"HKD"},{"exDate":"2024-09-11","payDate":"2024-09-24","payDateEstimated":false,"amount":0.78,"currency":"HKD"},{"exDate":"2025-05-26","payDate":"2025-06-10","payDateEstimated":false,"amount":2.04,"currency":"HKD"},{"exDate":"2025-09-10","payDate":"2025-09-23","payDateEstimated":false,"amount":0.78,"currency":"HKD"},{"exDate":"2026-05-26","payDate":"2026-06-09","payDateEstimated":false,"amount":2.04,"currency":"HKD"},{"exDate":"2026-09-09","payDate":"2026-09-22","payDateEstimated":false,"amount":0.78,"currency":"HKD"}]},"0012.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":1.26,"forwardDivPerShare":1.26,"trailingYieldPct":4.63,"forwardYieldPct":4.63,"withholdingTaxPct":0.0,"netYieldPct":4.63,"divCagr3Y":null,"nextExDate":"2027-06-04","nextPayDate":"2027-06-29","nextEstAmount":0.76,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-06-05","payDate":"2024-06-21","payDateEstimated":false,"amount":1.3,"currency":"HKD"},{"exDate":"2024-09-03","payDate":"2024-09-17","payDateEstimated":false,"amount":0.5,"currency":"HKD"},{"exDate":"2025-06-05","payDate":"2025-06-20","payDateEstimated":false,"amount":1.3,"currency":"HKD"},{"exDate":"2025-09-03","payDate":"2025-09-17","payDateEstimated":false,"amount":0.5,"currency":"HKD"},{"exDate":"2026-06-04","payDate":"2026-06-23","payDateEstimated":false,"amount":0.76,"currency":"HKD"},{"exDate":"2026-09-03","payDate":"2026-09-17","payDateEstimated":false,"amount":0.5,"currency":"HKD"}]},"0066.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":1.31,"forwardDivPerShare":1.31,"trailingYieldPct":4.05,"forwardYieldPct":4.05,"withholdingTaxPct":0.0,"netYieldPct":4.05,"divCagr3Y":null,"nextExDate":"2027-05-29","nextPayDate":"2027-06-23","nextEstAmount":0.89,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-05-24","payDate":"2024-07-16","payDateEstimated":false,"amount":0.89,"currency":"HKD"},{"exDate":"2024-08-28","payDate":"2024-09-17","payDateEstimated":false,"amount":0.42,"currency":"HKD"},{"exDate":"2025-05-23","payDate":"2025-06-13","payDateEstimated":false,"amount":0.89,"currency":"HKD"},{"exDate":"2025-08-27","payDate":"2025-09-16","payDateEstimated":false,"amount":0.42,"currency":"HKD"},{"exDate":"2026-05-29","payDate":"2026-06-22","payDateEstimated":false,"amount":0.89,"currency":"HKD"},{"exDate":"2026-08-26","payDate":"2026-09-15","payDateEstimated":false,"amount":0.42,"currency":"HKD"}]},"0101.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":0.52,"forwardDivPerShare":0.52,"trailingYieldPct":8.12,"forwardYieldPct":8.12,"withholdingTaxPct":0.0,"netYieldPct":8.12,"divCagr3Y":null,"nextExDate":"2027-05-06","nextPayDate":"2027-05-31","nextEstAmount":0.4,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-05-08","payDate":"2024-06-14","payDateEstimated":false,"amount":0.6,"currency":"HKD"},{"exDate":"2024-08-14","payDate":"2024-09-25","payDateEstimated":false,"amount":0.12,"currency":"HKD"},{"exDate":"2025-05-07","payDate":"2025-06-16","payDateEstimated":false,"amount":0.4,"currency":"HKD"},{"exDate":"2025-08-13","payDate":"2025-09-24","payDateEstimated":false,"amount":0.12,"currency":"HKD"},{"exDate":"2026-05-06","payDate":"2026-06-15","payDateEstimated":false,"amount":0.4,"currency":"HKD"},{"exDate":"2026-08-12","payDate":"2026-09-25","payDateEstimated":false,"amount":0.12,"currency":"HKD"}]},"0386.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":0.2512,"forwardDivPerShare":0.2512,"trailingYieldPct":5.58,"forwardYieldPct":5.58,"withholdingTaxPct":0.0,"netYieldPct":5.58,"divCagr3Y":null,"nextExDate":"2027-06-08","nextPayDate":"2027-07-03","nextEstAmount":0.1289,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-07-08","payDate":"2024-07-26","payDateEstimated":false,"amount":0.2194,"currency":"HKD"},{"exDate":"2024-09-05","payDate":"2024-09-26","payDateEstimated":false,"amount":0.1593,"currency":"HKD"},{"exDate":"2025-06-09","payDate":"2025-06-27","payDateEstimated":false,"amount":0.1523,"currency":"HKD"},{"exDate":"2025-09-04","payDate":"2025-09-25","payDateEstimated":false,"amount":0.0967,"currency":"HKD"},{"exDate":"2026-06-08","payDate":"2026-06-26","payDateEstimated":false,"amount":0.1289,"currency":"HKD"},{"exDate":"2026-09-21","payDate":"2026-10-14","payDateEstimated":false,"amount":0.1223,"currency":"HKD"}]},"0700.HK":{"currency":"HKD","frequency":"Annual","paymentsPerYear":1,"ttmDivPerShare":5.3,"forwardDivPerShare":5.3,"trailingYieldPct":1.26,"forwardYieldPct":1.26,"withholdingTaxPct":0.0,"netYieldPct":1.26,"divCagr3Y":null,"nextExDate":"2027-05-15","nextPayDate":"2027-06-09","nextEstAmount":5.3,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-05-17","payDate":"2024-05-31","payDateEstimated":false,"amount":3.4,"currency":"HKD"},{"exDate":"2025-05-16","payDate":"2025-05-30","payDateEstimated":false,"amount":4.5,"currency":"HKD"},{"exDate":"2026-05-15","payDate":"2026-06-01","payDateEstimated":false,"amount":5.3,"currency":"HKD"}]},"0857.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":0.5878,"forwardDivPerShare":0.5878,"trailingYieldPct":5.88,"forwardYieldPct":5.88,"withholdingTaxPct":0.0,"netYieldPct":5.88,"divCagr3Y":null,"nextExDate":"2027-06-18","nextPayDate":"2027-07-13","nextEstAmount":0.2873,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-06-18","payDate":"2024-07-29","payDateEstimated":false,"amount":0.25287,"currency":"HKD"},{"exDate":"2024-09-11","payDate":"2024-10-28","payDateEstimated":false,"amount":0.24033,"currency":"HKD"},{"exDate":"2025-06-17","payDate":"2025-07-24","payDateEstimated":false,"amount":0.2727,"currency":"HKD"},{"exDate":"2025-09-09","payDate":"2025-10-23","payDateEstimated":false,"amount":0.24105,"currency":"HKD"},{"exDate":"2026-06-18","payDate":"2026-07-31","payDateEstimated":false,"amount":0.2873,"currency":"HKD"},{"exDate":"2026-09-10","payDate":"2026-10-26","payDateEstimated":false,"amount":0.30047,"currency":"HKD"}]},"0939.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":0.4389,"forwardDivPerShare":0.4389,"trailingYieldPct":4.45,"forwardYieldPct":4.45,"withholdingTaxPct":0.0,"netYieldPct":4.45,"divCagr3Y":null,"nextExDate":"2026-12-03","nextPayDate":"2026-12-28","nextEstAmount":0.204656,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-07-04","payDate":"2024-08-02","payDateEstimated":false,"amount":0.438393,"currency":"HKD"},{"exDate":"2025-01-02","payDate":"2025-01-27","payDateEstimated":false,"amount":0.213131,"currency":"HKD"},{"exDate":"2025-04-30","payDate":"2025-05-28","payDateEstimated":false,"amount":0.221775,"currency":"HKD"},{"exDate":"2025-12-03","payDate":"2026-01-26","payDateEstimated":false,"amount":0.204656,"currency":"HKD"},{"exDate":"2026-07-02","payDate":"2026-08-21","payDateEstimated":false,"amount":0.234256,"currency":"HKD"}]},"1088.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":2.324,"forwardDivPerShare":2.324,"trailingYieldPct":5.46,"forwardYieldPct":5.46,"withholdingTaxPct":0.0,"netYieldPct":5.46,"divCagr3Y":null,"nextExDate":"2027-07-02","nextPayDate":"2027-07-27","nextEstAmount":1.185,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-06-27","payDate":"2024-08-21","payDateEstimated":false,"amount":2.491,"currency":"HKD"},{"exDate":"2025-06-26","payDate":"2025-08-20","payDateEstimated":false,"amount":2.4486,"currency":"HKD"},{"exDate":"2025-10-30","payDate":"2025-12-24","payDateEstimated":false,"amount":1.074,"currency":"HKD"},{"exDate":"2026-07-02","payDate":"2026-08-26","payDateEstimated":false,"amount":1.185,"currency":"HKD"},{"exDate":"2026-10-08","payDate":"2026-11-23","payDateEstimated":false,"amount":1.139,"currency":"HKD"}]},"1093.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":0.33,"forwardDivPerShare":0.33,"trailingYieldPct":3.72,"forwardYieldPct":3.72,"withholdingTaxPct":0.0,"netYieldPct":3.72,"divCagr3Y":null,"nextExDate":"2027-06-24","nextPayDate":"2027-07-19","nextEstAmount":0.15,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-05-31","payDate":"2024-06-26","payDateEstimated":false,"amount":0.14,"currency":"HKD"},{"exDate":"2024-10-31","payDate":"2024-11-20","payDateEstimated":false,"amount":0.16,"currency":"HKD"},{"exDate":"2025-06-04","payDate":"2025-07-18","payDateEstimated":false,"amount":0.1,"currency":"HKD"},{"exDate":"2025-10-17","payDate":"2025-11-18","payDateEstimated":false,"amount":0.14,"currency":"HKD"},{"exDate":"2026-06-24","payDate":"2026-07-15","payDateEstimated":false,"amount":0.15,"currency":"HKD"},{"exDate":"2026-10-20","payDate":"2026-11-10","payDateEstimated":false,"amount":0.18,"currency":"HKD"}]},"1288.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":0.3019,"forwardDivPerShare":0.3019,"trailingYieldPct":4.48,"forwardYieldPct":4.48,"withholdingTaxPct":0.0,"netYieldPct":4.48,"divCagr3Y":null,"nextExDate":"2026-12-05","nextPayDate":"2026-12-30","nextEstAmount":0.131628,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-05-30","payDate":"2024-06-28","payDateEstimated":false,"amount":0.25331,"currency":"HKD"},{"exDate":"2025-01-02","payDate":"2025-01-24","payDateEstimated":false,"amount":0.126035,"currency":"HKD"},{"exDate":"2025-07-09","payDate":"2025-08-27","payDateEstimated":false,"amount":0.137534,"currency":"HKD"},{"exDate":"2025-12-05","payDate":"2026-01-26","payDateEstimated":false,"amount":0.131628,"currency":"HKD"},{"exDate":"2026-05-04","payDate":"2026-06-16","payDateEstimated":false,"amount":0.149634,"currency":"HKD"},{"exDate":"2026-10-09","payDate":"2026-11-25","payDateEstimated":false,"amount":0.152217,"currency":"HKD"}]},"1299.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":1.9798,"forwardDivPerShare":1.9798,"trailingYieldPct":2.7,"forwardYieldPct":2.7,"withholdingTaxPct":0.0,"netYieldPct":2.7,"divCagr3Y":null,"nextExDate":"2027-05-28","nextPayDate":"2027-06-22","nextEstAmount":1.4408,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-05-29","payDate":"2024-06-14","payDateEstimated":false,"amount":1.1907,"currency":"HKD"},{"exDate":"2024-09-09","payDate":"2024-09-25","payDateEstimated":false,"amount":0.445,"currency":"HKD"},{"exDate":"2025-05-28","payDate":"2025-06-12","payDateEstimated":false,"amount":1.3098,"currency":"HKD"},{"exDate":"2025-09-05","payDate":"2025-09-23","payDateEstimated":false,"amount":0.49,"currency":"HKD"},{"exDate":"2026-05-28","payDate":"2026-06-12","payDateEstimated":false,"amount":1.4408,"currency":"HKD"},{"exDate":"2026-09-04","payDate":"2026-09-22","payDateEstimated":false,"amount":0.539,"currency":"HKD"}]},"1378.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":1.65,"forwardDivPerShare":2.67,"trailingYieldPct":8.4,"forwardYieldPct":13.59,"withholdingTaxPct":0.0,"netYieldPct":8.4,"divCagr3Y":null,"nextExDate":"2027-05-22","nextPayDate":"2027-06-16","nextEstAmount":1.65,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-05-22","payDate":"2024-06-14","payDateEstimated":false,"amount":0.29,"currency":"HKD"},{"exDate":"2024-11-14","payDate":"2024-12-06","payDateEstimated":false,"amount":0.59,"currency":"HKD"},{"exDate":"2025-05-21","payDate":"2025-06-13","payDateEstimated":false,"amount":1.02,"currency":"HKD"},{"exDate":"2026-05-22","payDate":"2026-06-12","payDateEstimated":false,"amount":1.65,"currency":"HKD"}]},"1398.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":0.3717,"forwardDivPerShare":0.3717,"trailingYieldPct":4.9,"forwardYieldPct":4.9,"withholdingTaxPct":0.0,"netYieldPct":4.9,"divCagr3Y":null,"nextExDate":"2026-12-04","nextPayDate":"2026-12-29","nextEstAmount":0.15575,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-07-08","payDate":"2024-08-19","payDateEstimated":false,"amount":0.335715,"currency":"HKD"},{"exDate":"2025-01-02","payDate":"2025-01-24","payDateEstimated":false,"amount":0.155291,"currency":"HKD"},{"exDate":"2025-07-03","payDate":"2025-08-22","payDateEstimated":false,"amount":0.180384,"currency":"HKD"},{"exDate":"2025-12-04","payDate":"2026-01-26","payDateEstimated":false,"amount":0.15575,"currency":"HKD"},{"exDate":"2026-05-04","payDate":"2026-06-16","payDateEstimated":false,"amount":0.19441,"currency":"HKD"},{"exDate":"2026-10-09","payDate":"2026-11-25","payDateEstimated":false,"amount":0.177332,"currency":"HKD"}]},"2318.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":3.1448,"forwardDivPerShare":3.1448,"trailingYieldPct":6.28,"forwardYieldPct":6.28,"withholdingTaxPct":0.0,"netYieldPct":6.28,"divCagr3Y":null,"nextExDate":"2027-06-02","nextPayDate":"2027-06-27","nextEstAmount":2.011291,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-06-07","payDate":"2024-07-26","payDateEstimated":false,"amount":1.64678,"currency":"HKD"},{"exDate":"2024-09-04","payDate":"2024-10-18","payDateEstimated":false,"amount":1.02048,"currency":"HKD"},{"exDate":"2025-05-15","payDate":"2025-06-30","payDateEstimated":false,"amount":1.76266,"currency":"HKD"},{"exDate":"2025-09-10","payDate":"2025-10-24","payDateEstimated":false,"amount":1.04048,"currency":"HKD"},{"exDate":"2026-06-02","payDate":"2026-07-15","payDateEstimated":false,"amount":2.011291,"currency":"HKD"},{"exDate":"2026-09-02","payDate":"2026-10-16","payDateEstimated":false,"amount":1.13347,"currency":"HKD"}]},"2388.HK":{"currency":"HKD","frequency":"Quarterly","paymentsPerYear":4,"ttmDivPerShare":2.3638,"forwardDivPerShare":2.3638,"trailingYieldPct":4.71,"forwardYieldPct":4.71,"withholdingTaxPct":0.0,"netYieldPct":4.71,"divCagr3Y":null,"nextExDate":"2026-11-12","nextPayDate":"2026-12-07","nextEstAmount":0.29,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-07-02","payDate":"2024-07-15","payDateEstimated":false,"amount":1.145,"currency":"HKD"},{"exDate":"2024-09-12","payDate":"2024-09-27","payDateEstimated":false,"amount":0.57,"currency":"HKD"},{"exDate":"2025-05-14","payDate":"2025-05-29","payDateEstimated":false,"amount":0.29,"currency":"HKD"},{"exDate":"2025-06-30","payDate":"2025-07-17","payDateEstimated":false,"amount":1.419,"currency":"HKD"},{"exDate":"2025-09-11","payDate":"2025-09-26","payDateEstimated":false,"amount":0.29,"currency":"HKD"},{"exDate":"2025-11-12","payDate":"2025-11-26","payDateEstimated":false,"amount":0.29,"currency":"HKD"},{"exDate":"2026-05-13","payDate":"2026-05-28","payDateEstimated":false,"amount":0.29,"currency":"HKD"},{"exDate":"2026-06-29","payDate":"2026-07-17","payDateEstimated":false,"amount":1.255,"currency":"HKD"},{"exDate":"2026-09-10","payDate":"2026-09-25","payDateEstimated":false,"amount":0.5288,"currency":"HKD"},{"exDate":"2026-11-12","payDate":"2026-11-26","payDateEstimated":false,"amount":0.29,"currency":"HKD"}]},"2800.HK":{"currency":"HKD","frequency":"Semi-Annual","paymentsPerYear":2,"ttmDivPerShare":0.76,"forwardDivPerShare":0.76,"trailingYieldPct":3.06,"forwardYieldPct":3.06,"withholdingTaxPct":0.0,"netYieldPct":3.06,"divCagr3Y":6.36,"nextExDate":"2027-04-29","nextPayDate":"2027-05-24","nextEstAmount":0.19,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2018-04-27","payDate":"2018-05-30","payDateEstimated":false,"amount":0.16,"currency":"HKD"},{"exDate":"2018-10-31","payDate":"2018-11-30","payDateEstimated":false,"amount":0.79,"currency":"HKD"},{"exDate":"2019-04-29","payDate":"2019-05-31","payDateEstimated":false,"amount":0.15,"currency":"HKD"},{"exDate":"2019-10-31","payDate":"2019-11-29","payDateEstimated":false,"amount":0.78,"currency":"HKD"},{"exDate":"2020-04-28","payDate":"2020-05-29","payDateEstimated":false,"amount":0.09,"currency":"HKD"},{"exDate":"2020-10-30","payDate":"2020-11-30","payDateEstimated":false,"amount":0.66,"currency":"HKD"},{"exDate":"2021-04-29","payDate":"2021-05-31","payDateEstimated":false,"amount":0.13,"currency":"HKD"},{"exDate":"2021-10-29","payDate":"2021-11-30","payDateEstimated":false,"amount":0.54,"currency":"HKD"},{"exDate":"2022-04-28","payDate":"2022-05-31","payDateEstimated":false,"amount":0.08,"currency":"HKD"},{"exDate":"2022-10-28","payDate":"2022-11-30","payDateEstimated":false,"amount":0.56,"currency":"HKD"},{"exDate":"2023-04-28","payDate":"2023-05-31","payDateEstimated":false,"amount":0.1,"currency":"HKD"},{"exDate":"2023-10-30","payDate":"2023-11-30","payDateEstimated":false,"amount":0.55,"currency":"HKD"},{"exDate":"2024-04-29","payDate":"2024-05-31","payDateEstimated":false,"amount":0.15,"currency":"HKD"},{"exDate":"2024-10-30","payDate":"2024-11-29","payDateEstimated":false,"amount":0.62,"currency":"HKD"},{"exDate":"2025-04-29","payDate":"2025-05-30","payDateEstimated":false,"amount":0.22,"currency":"HKD"},{"exDate":"2025-10-30","payDate":"2025-11-28","payDateEstimated":false,"amount":0.55,"currency":"HKD"},{"exDate":"2026-04-29","payDate":"2026-05-29","payDateEstimated":false,"amount":0.19,"currency":"HKD"},{"exDate":"2026-10-30","payDate":"2026-11-30","payDateEstimated":false,"amount":0.57,"currency":"HKD"}]},"3077.HK":{"currency":"HKD","frequency":"Quarterly","paymentsPerYear":4,"ttmDivPerShare":146.32,"forwardDivPerShare":146.32,"trailingYieldPct":3.68,"forwardYieldPct":3.68,"withholdingTaxPct":0.0,"netYieldPct":3.68,"divCagr3Y":null,"nextExDate":"2026-11-05","nextPayDate":"2026-11-30","nextEstAmount":41.97,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-02-15","payDate":"2024-02-21","payDateEstimated":false,"amount":56.1,"currency":"HKD"},{"exDate":"2024-05-10","payDate":"2024-05-17","payDateEstimated":false,"amount":59.3,"currency":"HKD"},{"exDate":"2024-08-08","payDate":"2024-08-13","payDateEstimated":false,"amount":52.3,"currency":"HKD"},{"exDate":"2024-11-08","payDate":"2024-11-14","payDateEstimated":false,"amount":52.0,"currency":"HKD"},{"exDate":"2025-02-14","payDate":"2025-02-20","payDateEstimated":false,"amount":46.1,"currency":"HKD"},{"exDate":"2025-05-14","payDate":"2025-05-20","payDateEstimated":false,"amount":44.55,"currency":"HKD"},{"exDate":"2025-08-07","payDate":"2025-08-12","payDateEstimated":false,"amount":37.58,"currency":"HKD"},{"exDate":"2025-11-05","payDate":"2025-11-11","payDateEstimated":false,"amount":41.97,"currency":"HKD"},{"exDate":"2026-02-06","payDate":"2026-02-12","payDateEstimated":false,"amount":37.66,"currency":"HKD"},{"exDate":"2026-05-07","payDate":"2026-05-13","payDateEstimated":false,"amount":34.52,"currency":"HKD"},{"exDate":"2026-08-05","payDate":"2026-08-11","payDateEstimated":false,"amount":32.17,"currency":"HKD"}]},"3433.HK":{"currency":"HKD","frequency":"Quarterly","paymentsPerYear":4,"ttmDivPerShare":3.35,"forwardDivPerShare":3.35,"trailingYieldPct":5.31,"forwardYieldPct":5.31,"withholdingTaxPct":0.0,"netYieldPct":5.31,"divCagr3Y":null,"nextExDate":"2027-01-16","nextPayDate":"2027-02-10","nextEstAmount":0.83,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-04-18","payDate":"2024-04-25","payDateEstimated":false,"amount":1.58,"currency":"HKD"},{"exDate":"2024-07-18","payDate":"2024-07-25","payDateEstimated":false,"amount":1.52,"currency":"HKD"},{"exDate":"2024-10-18","payDate":"2024-10-28","payDateEstimated":false,"amount":0.82,"currency":"HKD"},{"exDate":"2025-01-17","payDate":"2025-01-27","payDateEstimated":false,"amount":0.85,"currency":"HKD"},{"exDate":"2025-04-22","payDate":"2025-04-30","payDateEstimated":false,"amount":0.82,"currency":"HKD"},{"exDate":"2025-07-18","payDate":"2025-07-28","payDateEstimated":false,"amount":0.84,"currency":"HKD"},{"exDate":"2025-10-17","payDate":"2025-10-28","payDateEstimated":false,"amount":0.83,"currency":"HKD"},{"exDate":"2026-01-16","payDate":"2026-01-29","payDateEstimated":false,"amount":0.83,"currency":"HKD"},{"exDate":"2026-04-22","payDate":"2026-04-29","payDateEstimated":false,"amount":0.84,"currency":"HKD"},{"exDate":"2026-07-22","payDate":"2026-07-29","payDateEstimated":false,"amount":0.84,"currency":"HKD"},{"exDate":"2026-10-20","payDate":"2026-10-28","payDateEstimated":false,"amount":0.84,"currency":"HKD"}]},"3476.HK":{"currency":"HKD","frequency":"Monthly","paymentsPerYear":12,"ttmDivPerShare":1.1494,"forwardDivPerShare":1.1447,"trailingYieldPct":7.69,"forwardYieldPct":7.66,"withholdingTaxPct":0.0,"netYieldPct":7.69,"divCagr3Y":null,"nextExDate":"2026-11-03","nextPayDate":"2026-11-28","nextEstAmount":0.1051,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2025-08-01","payDate":"2025-08-11","payDateEstimated":false,"amount":0.0957,"currency":"HKD"},{"exDate":"2025-09-01","payDate":"2025-09-09","payDateEstimated":false,"amount":0.1059,"currency":"HKD"},{"exDate":"2025-10-02","payDate":"2025-10-14","payDateEstimated":false,"amount":0.1067,"currency":"HKD"},{"exDate":"2025-11-03","payDate":"2025-11-12","payDateEstimated":false,"amount":0.1051,"currency":"HKD"},{"exDate":"2025-12-01","payDate":"2025-12-09","payDateEstimated":false,"amount":0.1067,"currency":"HKD"},{"exDate":"2026-01-02","payDate":"2026-01-12","payDateEstimated":false,"amount":0.0957,"currency":"HKD"},{"exDate":"2026-02-02","payDate":"2026-02-10","payDateEstimated":false,"amount":0.0988,"currency":"HKD"},{"exDate":"2026-03-02","payDate":"2026-03-10","payDateEstimated":false,"amount":0.0879,"currency":"HKD"},{"exDate":"2026-04-01","payDate":"2026-04-14","payDateEstimated":false,"amount":0.0871,"currency":"HKD"},{"exDate":"2026-05-05","payDate":"2026-05-13","payDateEstimated":false,"amount":0.0871,"currency":"HKD"},{"exDate":"2026-06-01","payDate":"2026-06-09","payDateEstimated":false,"amount":0.0926,"currency":"HKD"},{"exDate":"2026-07-02","payDate":"2026-07-10","payDateEstimated":false,"amount":0.0918,"currency":"HKD"},{"exDate":"2026-08-03","payDate":"2026-08-11","payDateEstimated":false,"amount":0.0934,"currency":"HKD"},{"exDate":"2026-09-01","payDate":"2026-09-10","payDateEstimated":false,"amount":0.1028,"currency":"HKD"},{"exDate":"2026-10-02","payDate":"2026-10-13","payDateEstimated":false,"amount":0.1004,"currency":"HKD"},{"exDate":"2026-11-02","payDate":"2026-11-10","payDateEstimated":false,"amount":0.1004,"currency":"HKD"}]},"AAPL":{"currency":"USD","frequency":"Quarterly","paymentsPerYear":4,"ttmDivPerShare":1.06,"forwardDivPerShare":1.06,"trailingYieldPct":0.45,"forwardYieldPct":0.45,"withholdingTaxPct":30.0,"netYieldPct":0.32,"divCagr3Y":null,"nextExDate":"2026-11-10","nextPayDate":"2026-11-15","nextEstAmount":0.26,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-02-09","payDate":"2024-02-15","payDateEstimated":false,"amount":0.24,"currency":"USD"},{"exDate":"2024-05-10","payDate":"2024-05-16","payDateEstimated":false,"amount":0.25,"currency":"USD"},{"exDate":"2024-08-12","payDate":"2024-08-15","payDateEstimated":false,"amount":0.25,"currency":"USD"},{"exDate":"2024-11-08","payDate":"2024-11-14","payDateEstimated":false,"amount":0.25,"currency":"USD"},{"exDate":"2025-02-10","payDate":"2025-02-13","payDateEstimated":false,"amount":0.25,"currency":"USD"},{"exDate":"2025-05-12","payDate":"2025-05-15","payDateEstimated":false,"amount":0.26,"currency":"USD"},{"exDate":"2025-08-11","payDate":"2025-08-14","payDateEstimated":false,"amount":0.26,"currency":"USD"},{"exDate":"2025-11-10","payDate":"2025-11-13","payDateEstimated":false,"amount":0.26,"currency":"USD"},{"exDate":"2026-02-09","payDate":"2026-02-12","payDateEstimated":false,"amount":0.26,"currency":"USD"},{"exDate":"2026-05-11","payDate":"2026-05-14","payDateEstimated":false,"amount":0.27,"currency":"USD"},{"exDate":"2026-08-10","payDate":"2026-08-13","payDateEstimated":false,"amount":0.27,"currency":"USD"}]},"MSFT":{"currency":"USD","frequency":"Quarterly","paymentsPerYear":4,"ttmDivPerShare":3.6,"forwardDivPerShare":3.6,"trailingYieldPct":0.81,"forwardYieldPct":0.81,"withholdingTaxPct":30.0,"netYieldPct":0.57,"divCagr3Y":null,"nextExDate":"2026-11-20","nextPayDate":"2026-11-25","nextEstAmount":0.9,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2024-02-14","payDate":"2024-03-14","payDateEstimated":false,"amount":0.75,"currency":"USD"},{"exDate":"2024-05-15","payDate":"2024-06-13","payDateEstimated":false,"amount":0.75,"currency":"USD"},{"exDate":"2024-08-15","payDate":"2024-09-12","payDateEstimated":false,"amount":0.75,"currency":"USD"},{"exDate":"2024-11-21","payDate":"2024-12-12","payDateEstimated":false,"amount":0.83,"currency":"USD"},{"exDate":"2025-02-20","payDate":"2025-03-13","payDateEstimated":false,"amount":0.83,"currency":"USD"},{"exDate":"2025-05-15","payDate":"2025-06-12","payDateEstimated":false,"amount":0.83,"currency":"USD"},{"exDate":"2025-08-21","payDate":"2025-09-11","payDateEstimated":false,"amount":0.83,"currency":"USD"},{"exDate":"2025-11-20","payDate":"2025-12-11","payDateEstimated":false,"amount":0.9,"currency":"USD"},{"exDate":"2026-02-19","payDate":"2026-03-12","payDateEstimated":false,"amount":0.9,"currency":"USD"},{"exDate":"2026-05-21","payDate":"2026-06-11","payDateEstimated":false,"amount":0.9,"currency":"USD"},{"exDate":"2026-08-20","payDate":"2026-09-10","payDateEstimated":false,"amount":0.9,"currency":"USD"}]},"VOO":{"currency":"USD","frequency":"Quarterly","paymentsPerYear":4,"ttmDivPerShare":7.19,"forwardDivPerShare":7.19,"trailingYieldPct":1.02,"forwardYieldPct":1.02,"withholdingTaxPct":30.0,"netYieldPct":0.71,"divCagr3Y":5.6,"nextExDate":"2026-12-22","nextPayDate":"2026-12-27","nextEstAmount":1.815,"nextStatus":"PROJECTED_SEASONAL","history":[{"exDate":"2018-03-26","payDate":"2018-03-29","payDateEstimated":false,"amount":1.093,"currency":"USD"},{"exDate":"2018-06-28","payDate":"2018-07-02","payDateEstimated":false,"amount":1.157,"currency":"USD"},{"exDate":"2018-09-26","payDate":"2018-09-28","payDateEstimated":false,"amount":1.206,"currency":"USD"},{"exDate":"2018-12-18","payDate":"2018-12-20","payDateEstimated":false,"amount":1.289,"currency":"USD"},{"exDate":"2019-03-22","payDate":"2019-03-26","payDateEstimated":false,"amount":1.455,"currency":"USD"},{"exDate":"2019-06-27","payDate":"2019-07-01","payDateEstimated":false,"amount":1.386,"currency":"USD"},{"exDate":"2019-09-26","payDate":"2019-09-30","payDateEstimated":false,"amount":1.301,"currency":"USD"},{"exDate":"2019-12-23","payDate":"2019-12-26","payDateEstimated":false,"amount":1.429,"currency":"USD"},{"exDate":"2020-03-10","payDate":"2020-03-12","payDateEstimated":false,"amount":1.178,"currency":"USD"},{"exDate":"2020-06-29","payDate":"2020-07-01","payDateEstimated":false,"amount":1.433,"currency":"USD"},{"exDate":"2020-09-28","payDate":"2020-09-30","payDateEstimated":false,"amount":1.308,"currency":"USD"},{"exDate":"2020-12-22","payDate":"2020-12-24","payDateEstimated":false,"amount":1.383,"currency":"USD"},{"exDate":"2021-03-26","payDate":"2021-03-30","payDateEstimated":false,"amount":1.263,"currency":"USD"},{"exDate":"2021-06-28","payDate":"2021-06-30","payDateEstimated":false,"amount":1.333,"currency":"USD"},{"exDate":"2021-09-27","payDate":"2021-09-29","payDateEstimated":false,"amount":1.308,"currency":"USD"},{"exDate":"2021-12-21","payDate":"2021-12-23","payDateEstimated":false,"amount":1.496,"currency":"USD"},{"exDate":"2022-03-24","payDate":"2022-03-28","payDateEstimated":false,"amount":1.374,"currency":"USD"},{"exDate":"2022-06-28","payDate":"2022-06-30","payDateEstimated":false,"amount":1.432,"currency":"USD"},{"exDate":"2022-09-27","payDate":"2022-09-29","payDateEstimated":false,"amount":1.468,"currency":"USD"},{"exDate":"2022-12-20","payDate":"2022-12-22","payDateEstimated":false,"amount":1.672,"currency":"USD"},{"exDate":"2023-03-24","payDate":"2023-03-28","payDateEstimated":false,"amount":1.487,"currency":"USD"},{"exDate":"2023-06-29","payDate":"2023-07-03","payDateEstimated":false,"amount":1.576,"currency":"USD"},{"exDate":"2023-09-27","payDate":"2023-09-29","payDateEstimated":false,"amount":1.493,"currency":"USD"},{"exDate":"2023-12-20","payDate":"2023-12-22","payDateEstimated":false,"amount":1.812,"currency":"USD"},{"exDate":"2024-03-22","payDate":"2024-03-26","payDateEstimated":false,"amount":1.543,"currency":"USD"},{"exDate":"2024-06-28","payDate":"2024-07-02","payDateEstimated":false,"amount":1.783,"currency":"USD"},{"exDate":"2024-09-27","payDate":"2024-10-01","payDateEstimated":false,"amount":1.638,"currency":"USD"},{"exDate":"2024-12-20","payDate":"2024-12-24","payDateEstimated":false,"amount":1.739,"currency":"USD"},{"exDate":"2025-03-27","payDate":"2025-03-31","payDateEstimated":false,"amount":1.682,"currency":"USD"},{"exDate":"2025-06-27","payDate":"2025-07-01","payDateEstimated":false,"amount":1.795,"currency":"USD"},{"exDate":"2025-09-26","payDate":"2025-09-30","payDateEstimated":false,"amount":1.71,"currency":"USD"},{"exDate":"2025-12-22","payDate":"2025-12-24","payDateEstimated":false,"amount":1.815,"currency":"USD"},{"exDate":"2026-03-26","payDate":"2026-03-30","payDateEstimated":false,"amount":1.745,"currency":"USD"},{"exDate":"2026-06-26","payDate":"2026-06-30","payDateEstimated":false,"amount":1.84,"currency":"USD"},{"exDate":"2026-09-25","payDate":"2026-09-29","payDateEstimated":false,"amount":1.79,"currency":"USD"}]}},"technicals":{}};
-window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"articleCount":0,"tickerCount":0,"articles":[],"byTicker":{}};
-  </script>
   <!-- Module: version.js -->
   <script data-module="version.js">
 /**
@@ -3143,22 +3137,35 @@ window.EMBEDDED_COMPANY_NEWS = {"schemaVersion":"3.1.7","generatedAt":null,"arti
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.0',
-  buildId: '20261112_1008',
-  releaseDate: '2026-11-12 10:08 HKT',
-  driveFolder: '/myPortfolio/20261112_1008/',
+  appVersion: '3.5.1',
+  buildId: '20261112_1325',
+  releaseDate: '2026-11-12 13:25 HKT',
+  driveFolder: '/myPortfolio/20261112_1325/',
   modules: {
-    'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
+    'version.js':   { version: '3.5.1', updated: '20261112_1325', role: 'Version manifest, module registry & v3.5.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
-    'api.js':       { version: '3.4.5', updated: '20261111_2110', role: 'Cloudflare Pages Yahoo Finance Worker (myportfolio-quotes.pages.dev) Primary + Yahoo CORS Secondary, Live FX & News Engine' },
-    'portfolio.js': { version: '3.1.0', updated: '20261031_1650', role: '2018+ Dividend Auto-Backfill, TTM Yield Boundary Fix, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
-    'charts.js':    { version: '3.1.0', updated: '20261031_1650', role: 'FX-Normalized Portfolio Charts + Interactive SMA 20/50/200 & 12M Regression Channel Overlays' },
-    'app.js':       { version: '3.1.0', updated: '20261031_1650', role: 'Startup JSON Auto-Sync, Signal Breakdown Modal, News Scope Filters, Rebalance Trim Alerts & Order Staging, Settings Customizer' },
+    'api.js':       { version: '3.5.1', updated: '20261112_1325', role: 'Unified Cloudflare Worker (quotes, 15Y monthly history, dividends & news) + Option 1 Daily Date-Stamp Auto-Sync' },
+    'portfolio.js': { version: '3.5.1', updated: '20261112_1325', role: 'Cloudflare Worker ingestion, 2018+ Dividend Auto-Backfill, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
+    'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
+    'app.js':       { version: '3.5.1', updated: '20261112_1325', role: 'Holdings Total Return next to Market Value, Option 1 Daily Rollover Check, Manual Refresh Buttons in Dividends & News' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
+    'index.html':   { version: '3.5.1', updated: '20261112_1325', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.1',
+      buildId: '20261112_1325',
+      date: '2026-11-12 13:25 HKT',
+      summary: 'Replaced all GitHub-stored JSON files and Python workflows with unified Cloudflare Worker endpoints (?type=quotes, ?type=history, ?type=dividends, ?type=news), implemented Option 1 Daily Date-Stamp Auto-Refresh + New-Ticker Auto-Fetch, added manual Refresh buttons in Dividends and News, and moved Total Return next to Market Value in the Holdings table.',
+      changes: [
+        'Eliminated all usage of GitHub-stored historical_prices.json, company_news.json, window.EMBEDDED_HISTORICAL_PRICES, window.EMBEDDED_COMPANY_NEWS, and GitHub Personal Access Token workflow dispatch.',
+        'Upgraded Cloudflare Pages Worker (_worker.js on https://myportfolio-quotes.pages.dev) with 4 endpoints (?type=quotes, ?type=history, ?type=dividends, ?type=news) plus ?url= pass-through fallback so existing deployments work seamlessly even before re-uploading _worker.js.',
+        'Implemented Option 1 Daily Date-Stamp Auto-Refresh (checkAndRunDailyCloudflareSync): automatically syncs 15-year monthly prices, dividends, and 90-day news once per calendar day (checked on boot, on every 30s active-page timer tick for midnight rollover, and on tab visibility restore) and immediately when new tickers are added to Holdings or Watchlist.',
+        'Added manual "Refresh Dividends" buttons (#btn-sync-dividends-cal and #btn-sync-dividends-live) on the Dividends page and updated "Refresh News" (#btn-sync-news-live) on the News page (plus manual refresh controls in Settings).',
+        'Moved the Total Return column in the Holdings table (#holdings-main-table) to sit immediately next to Market Value across the table header, Portfolio Total row, Sector Group subtotal rows, and individual holding rows.'
+      ]
+    },
     {
       version: '3.5.0',
       buildId: '20261112_1008',
@@ -3951,7 +3958,7 @@ var AppLogger = (function() {
       ? Object.keys(state.historicalPrices).filter(k => Array.isArray(state.historicalPrices[k]) && state.historicalPrices[k].length > 0).length
       : 0;
     const jsonStatus = window.__HISTORICAL_PRICES_JSON_LOADED__
-      ? 'historical_prices.json loaded'
+      ? 'Cloudflare 15Y history synced'
       : 'no preloaded history (charts stay empty until real data is loaded)';
     checks.push({
       name: 'MarketAPI & Historical Price Cache',
@@ -4829,17 +4836,12 @@ var MarketAPI = {
 
   getEmbeddedOrCachedQuote(symbol) {
     const staticMeta = this.getStaticProfile(symbol);
-    const extQuotes = (typeof window !== 'undefined' && window.EXTERNAL_HISTORICAL_PRICES?.quotes) || {};
-    const embQuotes = (typeof window !== 'undefined' && window.EMBEDDED_HISTORICAL_PRICES?.quotes) || {};
-    const histSeries = state?.historicalPrices?.[symbol]
-      || window.EXTERNAL_HISTORICAL_PRICES?.prices?.[symbol]
-      || window.EMBEDDED_HISTORICAL_PRICES?.prices?.[symbol]
-      || [];
+    const histSeries = state?.historicalPrices?.[symbol] || [];
     const lastBar = Array.isArray(histSeries) && histSeries.length > 0 ? histSeries[histSeries.length - 1] : null;
     const prevBar = Array.isArray(histSeries) && histSeries.length > 1 ? histSeries[histSeries.length - 2] : lastBar;
 
-    let sq = extQuotes[symbol] || embQuotes[symbol];
-    if (!sq && lastBar && Number(lastBar.rawClose || lastBar.close) > 0) {
+    let sq = state?.prices?.[symbol];
+    if ((!sq || !(Number(sq.price) > 0)) && lastBar && Number(lastBar.rawClose || lastBar.close) > 0) {
       const c = Number(lastBar.rawClose || lastBar.close);
       const pc = prevBar && Number(prevBar.rawClose || prevBar.close) > 0 ? Number(prevBar.rawClose || prevBar.close) : c;
       sq = {
@@ -4850,9 +4852,6 @@ var MarketAPI = {
         currency: staticMeta.currency
       };
     }
-    if (!sq) {
-      sq = state?.prices?.[symbol];
-    }
     if (sq && Number(sq.price) > 0) {
       const price = Fin.round(Number(sq.price), 4);
       const prevPrice = Fin.round(Number(sq.prevClose || sq.prevPrice || price), 4);
@@ -4860,7 +4859,7 @@ var MarketAPI = {
       const changePct = sq.changePct !== undefined
         ? Fin.round(Number(sq.changePct), 2)
         : (prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0);
-      this.lastRouteUsed = 'Verified Portfolio Snapshot (historical_prices.json)';
+      this.lastRouteUsed = 'Cached Portfolio Quote (localStorage)';
       return {
         price,
         prevPrice,
@@ -4878,15 +4877,243 @@ var MarketAPI = {
 
   getEmbeddedOrCachedHistory(symbol) {
     if (Array.isArray(state?.historicalPrices?.[symbol]) && state.historicalPrices[symbol].length > 0) {
-      this.lastRouteUsed = 'Verified Portfolio Snapshot (historical_prices.json)';
+      this.lastRouteUsed = 'Cached 15Y History (localStorage)';
       return state.historicalPrices[symbol];
     }
-    const snapHist = (typeof window !== 'undefined' && window.EMBEDDED_HISTORICAL_PRICES?.tickers?.[symbol]) || null;
-    if (Array.isArray(snapHist) && snapHist.length > 0) {
-      this.lastRouteUsed = 'Embedded Portfolio Snapshot (historical_prices.json)';
-      return snapHist;
-    }
     return null;
+  },
+
+  _parseRawYahooChartHistoryAndDivs(symbol, result) {
+    if (!result || !result.meta) return null;
+    const meta = result.meta;
+    const timestamps = result.timestamp || [];
+    const q = result.indicators?.quote?.[0] || {};
+    const adj = result.indicators?.adjclose?.[0]?.adjclose || [];
+    const closes = q.close || [];
+    const highs = q.high || [];
+    const lows = q.low || [];
+    const volumes = q.volume || [];
+
+    const byMonth = {};
+    for (let i = 0; i < timestamps.length; i++) {
+      const ts = Number(timestamps[i]);
+      const c = closes[i];
+      if (!ts || c === null || c === undefined || isNaN(c) || Number(c) <= 0) continue;
+
+      const dObj = new Date(ts * 1000);
+      let dateStr = dObj.toISOString().slice(0, 10);
+      let monthStr = dateStr.slice(0, 7);
+
+      if (/^\d{4}-\d{2}-(28|29|30|31)$/.test(dateStr)) {
+        const nextDay = new Date((ts + 12 * 3600) * 1000);
+        if (nextDay.getUTCDate() === 1) {
+          const ny = nextDay.getUTCFullYear();
+          const nm = String(nextDay.getUTCMonth() + 1).padStart(2, '0');
+          monthStr = `${ny}-${nm}`;
+          dateStr = `${monthStr}-01`;
+        }
+      }
+
+      const rawClose = Fin.round(Number(c), 4);
+      const adjClose = (adj[i] !== null && adj[i] !== undefined && Number(adj[i]) > 0)
+        ? Fin.round(Number(adj[i]), 4)
+        : rawClose;
+      const rawHigh = (highs[i] !== null && highs[i] !== undefined && Number(highs[i]) > 0)
+        ? Fin.round(Math.max(Number(highs[i]), rawClose), 4)
+        : rawClose;
+      const rawLow = (lows[i] !== null && lows[i] !== undefined && Number(lows[i]) > 0)
+        ? Fin.round(Math.min(Number(lows[i]), rawClose), 4)
+        : rawClose;
+      const vol = parseInt(volumes[i] || 0, 10);
+
+      byMonth[monthStr] = {
+        month: monthStr,
+        date: dateStr,
+        close: rawClose,
+        rawClose,
+        adjClose,
+        high: rawHigh,
+        low: rawLow,
+        volume: isNaN(vol) ? 0 : vol
+      };
+    }
+
+    const history = Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month));
+    const dividends = result.events?.dividends || {};
+    return {
+      symbol,
+      currency: meta.currency || (symbol.endsWith('.HK') ? 'HKD' : 'USD'),
+      name: meta.longName || meta.shortName || symbol,
+      instrumentType: meta.instrumentType || '',
+      price: Number(meta.regularMarketPrice) > 0 ? Fin.round(Number(meta.regularMarketPrice), 4) : (history.length > 0 ? history[history.length - 1].close : null),
+      high52w: Number(meta.fiftyTwoWeekHigh) > 0 ? Fin.round(Number(meta.fiftyTwoWeekHigh), 4) : null,
+      low52w: Number(meta.fiftyTwoWeekLow) > 0 ? Fin.round(Number(meta.fiftyTwoWeekLow), 4) : null,
+      history,
+      dividends
+    };
+  },
+
+  async _fetchSingleHistoryViaWorkerUrlOrCors(symbol) {
+    const sym = this.normalizeTicker(symbol);
+    if (!sym) return null;
+    const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
+    const yahooUrl1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=15y&interval=1mo&events=div&includePrePost=false`;
+    const yahooUrl2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=15y&interval=1mo&events=div&includePrePost=false`;
+
+    // Tier 1B: Cloudflare Worker ?url= proxy
+    if (workerBase) {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 9000);
+        const res = await fetch(`${workerBase}/?url=${encodeURIComponent(yahooUrl1)}&_=${Date.now()}`, {
+          signal: ctrl.signal,
+          cache: 'no-store'
+        });
+        clearTimeout(timer);
+        if (res.ok) {
+          const data = await res.json();
+          const parsed = this._parseRawYahooChartHistoryAndDivs(sym, data?.chart?.result?.[0]);
+          if (parsed && parsed.history.length > 0) {
+            this.lastRouteUsed = 'Cloudflare Worker Proxy (myportfolio-quotes.pages.dev)';
+            return parsed;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Tier 2: Yahoo CORS proxy pool fallback
+    const data = await this.fetchYahooJson([yahooUrl1, yahooUrl2], `hist15y_${sym}`);
+    return this._parseRawYahooChartHistoryAndDivs(sym, data?.chart?.result?.[0]);
+  },
+
+  async fetchCloudflareHistoryAndDividends(tickers = [], mode = 'history') {
+    const syms = Array.from(new Set(
+      (tickers || []).map(t => this.normalizeTicker(t)).filter(Boolean)
+    ));
+    if (syms.length === 0) return { historyCount: 0, dividendCount: 0 };
+
+    const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
+    const chunkSize = 15;
+    let historyCount = 0;
+    let dividendCount = 0;
+
+    const applyTickerPayload = (sym, histBars, divEventsMap, quoteMeta) => {
+      if (quoteMeta && typeof quoteMeta === 'object') {
+        this._applyQuoteToFundamentals(sym, quoteMeta);
+      }
+      if (mode === 'history' && Array.isArray(histBars) && histBars.length > 0) {
+        state.historicalPrices[sym] = histBars;
+        historyCount++;
+      }
+      if (divEventsMap && typeof divEventsMap === 'object' && typeof buildDividendScheduleForTicker === 'function') {
+        const refPx = Number(quoteMeta?.price || state?.prices?.[sym]?.price || 0);
+        const refCurr = quoteMeta?.currency || state?.prices?.[sym]?.currency || null;
+        const sched = buildDividendScheduleForTicker(sym, divEventsMap, refPx, refCurr);
+        if (sched) {
+          if (!state.dividendSchedules) state.dividendSchedules = {};
+          state.dividendSchedules[sym] = sched;
+          dividendCount++;
+        }
+      }
+    };
+
+    for (let i = 0; i < syms.length; i += chunkSize) {
+      const chunk = syms.slice(i, i + chunkSize);
+      let handledByBatchEndpoint = false;
+
+      if (workerBase) {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 12000);
+          const url = `${workerBase}/?type=${encodeURIComponent(mode)}&symbols=${encodeURIComponent(chunk.join(','))}&range=15y&interval=1mo&_=${Date.now()}`;
+          const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+          clearTimeout(timer);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && (data.type === 'history' || data.type === 'dividends') && data.dividends) {
+              handledByBatchEndpoint = true;
+              this.lastRouteUsed = `Cloudflare Worker ${mode} (myportfolio-quotes.pages.dev)`;
+              chunk.forEach(sym => {
+                const hBars = data.history ? data.history[sym] : null;
+                const dMap = data.dividends ? data.dividends[sym] : null;
+                const qMeta = data.quotes ? data.quotes[sym] : null;
+                applyTickerPayload(sym, hBars, dMap, qMeta);
+              });
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!handledByBatchEndpoint) {
+        await Promise.allSettled(chunk.map(async (sym) => {
+          try {
+            const parsed = await this._fetchSingleHistoryViaWorkerUrlOrCors(sym);
+            if (parsed) {
+              applyTickerPayload(sym, parsed.history, parsed.dividends, parsed);
+            }
+          } catch (_) {}
+        }));
+      }
+    }
+
+    if (typeof invalidateStockMetricsCache === 'function') {
+      invalidateStockMetricsCache();
+    }
+    return { historyCount, dividendCount };
+  },
+
+  async fetchCloudflareNewsBatch(tickers = [], maxPerTicker = 6) {
+    const syms = Array.from(new Set(
+      (tickers || []).map(t => this.normalizeTicker(t)).filter(Boolean)
+    ));
+    if (syms.length === 0) return [];
+
+    const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
+    const chunkSize = 15;
+    const allArticles = [];
+
+    for (let i = 0; i < syms.length; i += chunkSize) {
+      const chunk = syms.slice(i, i + chunkSize);
+      let handledByBatchEndpoint = false;
+
+      if (workerBase) {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 10000);
+          const url = `${workerBase}/?type=news&symbols=${encodeURIComponent(chunk.join(','))}&limit=${maxPerTicker}&_=${Date.now()}`;
+          const res = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+          clearTimeout(timer);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.type === 'news' && Array.isArray(data.articles)) {
+              handledByBatchEndpoint = true;
+              this.lastRouteUsed = 'Cloudflare Worker news (myportfolio-quotes.pages.dev)';
+              data.articles.forEach(art => {
+                const sym = this.normalizeTicker(art.ticker);
+                const staticMeta = this.getStaticProfile(sym);
+                allArticles.push({
+                  ...art,
+                  ticker: sym,
+                  companyName: state?.fundamentals?.[sym]?.name || art.companyName || staticMeta.name || sym,
+                  sector: state?.fundamentals?.[sym]?.sector || staticMeta.sector || 'Equities'
+                });
+              });
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!handledByBatchEndpoint) {
+        await Promise.allSettled(chunk.map(async (sym) => {
+          try {
+            const arts = await this.fetchTickerNewsLive(sym, maxPerTicker);
+            if (Array.isArray(arts)) allArticles.push(...arts);
+          } catch (_) {}
+        }));
+      }
+    }
+
+    return allArticles;
   },
 
   async fetchQuote(ticker) {
@@ -5025,139 +5252,18 @@ var MarketAPI = {
   },
 
   /**
-   * Fetches monthly historical prices (up to 15 years of monthly closes + full 2018+ dividend events).
+   * Fetches 15-year monthly historical prices + dividend events via Cloudflare Worker
    */
-  /**
-   * Historical monthly prices & dividends are 100% managed by the GitHub Actions Python job
-   * (update_historical_prices.py -> historical_prices.json). No browser third-party API calls are made for history.
-   */
-  async fetchMonthlyHistory(ticker) {
+  async fetchMonthlyHistory(ticker, forceRefresh = false) {
     const symbol = this.normalizeTicker(ticker);
-    const cachedHist = this.getEmbeddedOrCachedHistory(symbol);
-    if (Array.isArray(cachedHist) && cachedHist.length > 0) {
-      return cachedHist;
-    }
-    if (typeof loadHistoricalPricesFromJson === 'function') {
-      await loadHistoricalPricesFromJson(false);
-      const afterLoad = this.getEmbeddedOrCachedHistory(symbol);
-      if (Array.isArray(afterLoad) && afterLoad.length > 0) {
-        return afterLoad;
+    if (!forceRefresh) {
+      const cachedHist = this.getEmbeddedOrCachedHistory(symbol);
+      if (Array.isArray(cachedHist) && cachedHist.length > 0) {
+        return cachedHist;
       }
     }
-    return [];
-  },
-
-  /**
-   * Triggers a GitHub Actions workflow_dispatch run (e.g. 'update-historical-prices.yml' or 'update-company-news.yml')
-   * using the repository and Fine-Grained PAT configured in Settings.
-   */
-  async triggerGitHubWorkflow(workflowFile = 'update-historical-prices.yml', inputs = {}) {
-    const repo = (state?.settings?.githubRepo || 'ahneth/myPortfolio').trim();
-    const branch = (state?.settings?.githubBranch || 'main').trim();
-    const token = (state?.settings?.githubToken || '').trim();
-
-    if (!token) {
-      if (typeof AppLogger !== 'undefined') {
-        AppLogger.info('GitHubActions', `GitHub Token not configured in Settings — pulling latest committed output for ${workflowFile} from ${repo}@${branch}. (Add a GitHub PAT with Actions:Write in Settings to trigger new Python runs from the browser.)`);
-      }
-      return { triggered: false, reason: 'no_token', repo, branch, workflowFile };
-    }
-
-    const url = `https://api.github.com/repos/${repo}/actions/workflows/${workflowFile}/dispatches`;
-    if (typeof AppLogger !== 'undefined') {
-      AppLogger.api('GitHubActions', `POST ${url} (ref: ${branch}) — triggering Python workflow ${workflowFile}...`);
-    }
-
-    try {
-      const payload = { ref: branch };
-      if (inputs && Object.keys(inputs).length > 0) {
-        payload.inputs = inputs;
-      }
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/vnd.github+json',
-          'Authorization': `Bearer ${token}`,
-          'X-GitHub-Api-Version': '2022-11-28',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.status === 204 || res.ok) {
-        if (typeof AppLogger !== 'undefined') {
-          AppLogger.info('GitHubActions', `Successfully triggered ${workflowFile} on ${repo}@${branch} (HTTP ${res.status}). Polling run status...`);
-        }
-        this.pollGitHubWorkflowCompletion(repo, branch, token, workflowFile, Date.now());
-        return { triggered: true, status: res.status, repo, branch, workflowFile };
-      } else {
-        const errTxt = await res.text().catch(() => '');
-        const msg = `GitHub API HTTP ${res.status}: ${errTxt.slice(0, 140) || res.statusText}`;
-        if (typeof AppLogger !== 'undefined') {
-          AppLogger.warn('GitHubActions', `Failed to trigger ${workflowFile}: ${msg}`);
-        }
-        return { triggered: false, reason: 'http_error', status: res.status, message: msg, repo, branch, workflowFile };
-      }
-    } catch (err) {
-      if (typeof AppLogger !== 'undefined') {
-        AppLogger.warn('GitHubActions', `Network error triggering ${workflowFile}: ${err.message}`);
-      }
-      return { triggered: false, reason: 'network_error', message: err.message, repo, branch, workflowFile };
-    }
-  },
-
-  async pollGitHubWorkflowCompletion(repo, branch, token, workflowFile, dispatchTime = 0) {
-    const isNews = workflowFile.includes('news');
-    const maxPolls = 24;
-    if (typeof setGhSyncStatus === 'function') setGhSyncStatus(true, isNews ? 'Syncing News...' : 'Syncing Prices...');
-    for (let i = 0; i < maxPolls; i++) {
-      await new Promise(r => setTimeout(r, 5000));
-      try {
-        const runsUrl = `https://api.github.com/repos/${repo}/actions/workflows/${workflowFile}/runs?branch=${encodeURIComponent(branch)}&per_page=1&_=${Date.now()}`;
-        const res = await fetch(runsUrl, {
-          headers: {
-            'Accept': 'application/vnd.github+json',
-            'Authorization': `Bearer ${token}`,
-            'X-GitHub-Api-Version': '2022-11-28'
-          },
-          cache: 'no-store'
-        });
-        if (!res.ok) continue;
-        const data = await res.json();
-        const latestRun = data?.workflow_runs?.[0];
-        if (!latestRun) continue;
-        const createdMs = Date.parse(latestRun.created_at || '') || 0;
-        if (dispatchTime > 0 && createdMs > 0 && createdMs < dispatchTime - 20000) {
-          continue;
-        }
-
-        if (typeof AppLogger !== 'undefined' && (i === 0 || latestRun.status === 'completed')) {
-          AppLogger.info('GitHubActions', `Workflow ${workflowFile} run #${latestRun.run_number}: status=${latestRun.status}, conclusion=${latestRun.conclusion || 'running'}`);
-        }
-
-        if (latestRun.status === 'completed') {
-          if (typeof setGhSyncStatus === 'function') setGhSyncStatus(false);
-          if (latestRun.conclusion === 'success') {
-            if (isNews && typeof loadCompanyNewsFromJson === 'function') {
-              await loadCompanyNewsFromJson(false);
-              if (typeof renderAll === 'function') renderAll(true);
-              if (typeof showToast === 'function') {
-                showToast('GitHub Python News workflow completed! Refreshed company_news.json on page.', 'success');
-              }
-            } else if (typeof loadHistoricalPricesFromJson === 'function') {
-              await loadHistoricalPricesFromJson(false);
-              if (typeof renderAll === 'function') renderAll(true);
-              if (typeof showToast === 'function') {
-                showToast('GitHub Python Price workflow completed! Refreshed historical_prices.json on page.', 'success');
-              }
-            }
-          } else if (typeof showToast === 'function') {
-            showToast(`GitHub workflow ${workflowFile} finished with status: ${latestRun.conclusion}`, 'error');
-          }
-          return;
-        }
-      } catch (_) {}
-    }
+    await this.fetchCloudflareHistoryAndDividends([symbol], 'history');
+    return this.getEmbeddedOrCachedHistory(symbol) || [];
   },
 
   async fetchFundamentals(ticker) {
@@ -5292,7 +5398,23 @@ var MarketAPI = {
 
     const u1 = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol)}&quotesCount=1&newsCount=${maxArticles}`;
     const u2 = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol)}&quotesCount=1&newsCount=${maxArticles}`;
-    const data = await this.fetchYahooJson([u1, u2], `news_${symbol}`);
+    let data = null;
+    const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
+    if (workerBase) {
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 7000);
+        const res = await fetch(`${workerBase}/?url=${encodeURIComponent(u1)}&_=${Date.now()}`, { signal: ctrl.signal, cache: 'no-store' });
+        clearTimeout(timer);
+        if (res.ok) {
+          data = await res.json();
+          this.lastRouteUsed = 'Cloudflare Worker News Proxy (myportfolio-quotes.pages.dev)';
+        }
+      } catch (_) {}
+    }
+    if (!data || !Array.isArray(data.news)) {
+      data = await this.fetchYahooJson([u1, u2], `news_${symbol}`);
+    }
     const newsList = data?.news || [];
     const articles = [];
 
@@ -5435,10 +5557,227 @@ var MarketAPI = {
   }
 };
 
-async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
+function getLocalTodayDateString() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+window.getLocalTodayDateString = getLocalTodayDateString;
+
+function getAllPortfolioAndWatchlistTickers() {
+  return Array.from(new Set([
+    ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
+    ...(state?.transactions || []).map(t => t.ticker),
+    ...(state?.watchlist || []).map(w => w.ticker)
+  ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
+}
+window.getAllPortfolioAndWatchlistTickers = getAllPortfolioAndWatchlistTickers;
+
+async function syncHistoricalPricesFromCloudflare(manual = true, customTickers = null) {
+  if (window.__CF_HISTORY_SYNC_IN_FLIGHT__ && !manual) return false;
+  window.__CF_HISTORY_SYNC_IN_FLIGHT__ = true;
+  const tStart = performance.now();
+  const targetTickers = Array.isArray(customTickers) && customTickers.length > 0
+    ? Array.from(new Set(customTickers.map(t => MarketAPI.normalizeTicker(t)).filter(Boolean)))
+    : getAllPortfolioAndWatchlistTickers();
+
+  if (targetTickers.length === 0) {
+    window.__CF_HISTORY_SYNC_IN_FLIGHT__ = false;
+    return false;
+  }
+
+  const icons = [
+    document.getElementById('btn-fetch-monthly-icon'),
+    document.querySelector('#btn-trigger-gh-prices i')
+  ].filter(Boolean);
+  icons.forEach(ic => ic.classList.add('fa-spin'));
+
+  if (manual && typeof showToast === 'function') {
+    showToast(`Fetching 15Y monthly prices & dividends for ${targetTickers.length} tickers via Cloudflare Worker...`, 'info');
+  }
+
+  try {
+    const { historyCount, dividendCount } = await MarketAPI.fetchCloudflareHistoryAndDividends(targetTickers, 'history');
+    const nowIso = new Date().toISOString();
+    if (state && state.settings) {
+      state.settings.lastHistoricalPricesUpdate = nowIso;
+      state.settings.lastDividendsUpdate = nowIso;
+    }
+    recalculatePortfolio();
+    saveState();
+    renderAll();
+    if (typeof renderFooterUpdateTimestamps === 'function') renderFooterUpdateTimestamps();
+
+    const elapsed = Math.round(performance.now() - tStart);
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.info('CloudflareHistory', `Synced 15Y monthly history (${historyCount} series) & dividends (${dividendCount} schedules) in ${elapsed}ms.`);
+      if (typeof renderLogsTab === 'function') renderLogsTab();
+    }
+    if (manual && typeof showToast === 'function') {
+      showToast(`Refreshed 15Y monthly history (${historyCount}/${targetTickers.length}) & dividends in ${elapsed}ms!`, 'success');
+    }
+    return historyCount > 0;
+  } catch (err) {
+    if (manual && typeof showToast === 'function') {
+      showToast(`History sync notice: ${err.message}`, 'error');
+    }
+    return false;
+  } finally {
+    window.__CF_HISTORY_SYNC_IN_FLIGHT__ = false;
+    icons.forEach(ic => ic.classList.remove('fa-spin'));
+  }
+}
+window.syncHistoricalPricesFromCloudflare = syncHistoricalPricesFromCloudflare;
+window.loadHistoricalPricesFromJson = (silent = true) => syncHistoricalPricesFromCloudflare(!silent);
+
+async function syncDividendsFromCloudflare(manual = true, customTickers = null) {
+  const tStart = performance.now();
+  const targetTickers = Array.isArray(customTickers) && customTickers.length > 0
+    ? Array.from(new Set(customTickers.map(t => MarketAPI.normalizeTicker(t)).filter(Boolean)))
+    : getAllPortfolioAndWatchlistTickers();
+
+  if (targetTickers.length === 0) {
+    if (manual && typeof showToast === 'function') {
+      showToast('Add a stock holding or watchlist ticker first.', 'info');
+    }
+    return false;
+  }
+
+  const divIcons = [
+    document.querySelector('#btn-sync-dividends-live i'),
+    document.querySelector('#btn-sync-dividends-cal i'),
+    document.querySelector('#btn-settings-sync-dividends i')
+  ].filter(Boolean);
+  divIcons.forEach(ic => ic.classList.add('fa-spin'));
+
+  if (manual && typeof showToast === 'function') {
+    showToast(`Refreshing dividend history, yields & ex-dates for ${targetTickers.length} tickers via Cloudflare Worker...`, 'info');
+  }
+
+  try {
+    const { dividendCount } = await MarketAPI.fetchCloudflareHistoryAndDividends(targetTickers, 'dividends');
+    if (state && state.settings) {
+      state.settings.lastDividendsUpdate = new Date().toISOString();
+    }
+    recalculatePortfolio();
+    saveState();
+    renderAll();
+    if (typeof renderFooterUpdateTimestamps === 'function') renderFooterUpdateTimestamps();
+
+    const elapsed = Math.round(performance.now() - tStart);
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.info('CloudflareDividends', `Refreshed ${dividendCount}/${targetTickers.length} dividend schedules in ${elapsed}ms.`);
+      if (typeof renderLogsTab === 'function') renderLogsTab();
+    }
+    if (manual && typeof showToast === 'function') {
+      showToast(`Refreshed dividend schedules & ex-dates for ${dividendCount}/${targetTickers.length} tickers (${elapsed}ms)!`, 'success');
+    }
+    return dividendCount > 0;
+  } catch (err) {
+    if (manual && typeof showToast === 'function') {
+      showToast(`Dividend refresh notice: ${err.message}`, 'error');
+    }
+    return false;
+  } finally {
+    divIcons.forEach(ic => ic.classList.remove('fa-spin'));
+  }
+}
+window.syncDividendsFromCloudflare = syncDividendsFromCloudflare;
+
+async function syncCompanyNewsLive(manual = true, customTickers = null) {
+  if (window.__CF_NEWS_SYNC_IN_FLIGHT__ && !manual) return false;
+  window.__CF_NEWS_SYNC_IN_FLIGHT__ = true;
+  const tStart = performance.now();
+  const targetTickers = Array.isArray(customTickers) && customTickers.length > 0
+    ? Array.from(new Set(customTickers.map(t => MarketAPI.normalizeTicker(t)).filter(Boolean)))
+    : getAllPortfolioAndWatchlistTickers();
+
+  const newsIcons = [
+    document.querySelector('#btn-sync-news-live i'),
+    document.querySelector('#btn-trigger-gh-news i')
+  ].filter(Boolean);
+  newsIcons.forEach(ic => ic.classList.add('fa-spin'));
+
+  if (manual && typeof showToast === 'function') {
+    showToast(`Fetching latest company & ETF news for ${targetTickers.length} tickers via Cloudflare Worker...`, 'info');
+  }
+
+  try {
+    const articles = await MarketAPI.fetchCloudflareNewsBatch(targetTickers, 6);
+    if (typeof ingestCompanyNewsData === 'function') {
+      ingestCompanyNewsData({
+        generatedAt: new Date().toISOString(),
+        articles
+      });
+    }
+    saveState();
+    if (typeof renderNewsTab === 'function') renderNewsTab();
+    if (typeof renderFooterUpdateTimestamps === 'function') renderFooterUpdateTimestamps();
+
+    const count = Array.isArray(state?.companyNews) ? state.companyNews.length : 0;
+    const elapsed = Math.round(performance.now() - tStart);
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.info('CloudflareNews', `News refresh completed in ${elapsed}ms: ${count} total articles cached (${articles.length} fetched).`);
+      if (typeof renderLogsTab === 'function') renderLogsTab();
+    }
+    if (manual && typeof showToast === 'function') {
+      showToast(`Refreshed ${count} company & ETF news articles via Cloudflare Worker (${elapsed}ms)!`, 'success');
+    }
+    return articles.length > 0;
+  } catch (err) {
+    if (manual && typeof showToast === 'function') {
+      showToast(`News refresh notice: ${err.message}`, 'error');
+    }
+    return false;
+  } finally {
+    window.__CF_NEWS_SYNC_IN_FLIGHT__ = false;
+    newsIcons.forEach(ic => ic.classList.remove('fa-spin'));
+  }
+}
+window.syncCompanyNewsLive = syncCompanyNewsLive;
+window.loadCompanyNewsFromJson = (silent = true) => syncCompanyNewsLive(!silent);
+
+/**
+ * Option 1 Daily Date-Stamp Auto-Refresh:
+ * Checks if today's local date (YYYY-MM-DD) differs from state.settings.lastDailySyncDate,
+ * or if any active/watchlist ticker is missing 15Y monthly history in localStorage.
+ * Triggered on initial page load, on every 30s active-page timer tick, and on tab visibility restore.
+ */
+async function checkAndRunDailyCloudflareSync(forceAll = false) {
+  if (!state || !state.settings) return;
+  const allTickers = getAllPortfolioAndWatchlistTickers();
+  if (allTickers.length === 0) return;
+
+  const todayStr = getLocalTodayDateString();
+  const isNewCalendarDay = (state.settings.lastDailySyncDate !== todayStr);
+  const missingHistoryTickers = allTickers.filter(sym => !Array.isArray(state.historicalPrices?.[sym]) || state.historicalPrices[sym].length === 0);
+  const hasEmptyNews = !Array.isArray(state.companyNews) || state.companyNews.length === 0;
+
+  if (forceAll || isNewCalendarDay) {
+    state.settings.lastDailySyncDate = todayStr;
+    saveState();
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.info('DailyAutoSync', `First active session of ${todayStr} — auto-fetching 15Y monthly prices, dividends & news via Cloudflare Worker.`);
+    }
+    await Promise.allSettled([
+      syncHistoricalPricesFromCloudflare(false, allTickers),
+      syncCompanyNewsLive(false, allTickers)
+    ]);
+  } else {
+    if (missingHistoryTickers.length > 0) {
+      await syncHistoricalPricesFromCloudflare(false, missingHistoryTickers);
+    }
+    if (hasEmptyNews) {
+      await syncCompanyNewsLive(false, allTickers);
+    }
+  }
+}
+window.checkAndRunDailyCloudflareSync = checkAndRunDailyCloudflareSync;
+
+async function syncAllMarketData(refreshHistoryAndDivs = false, options = {}) {
   const isAutoTimer = Boolean(options && options.isAutoTimer);
   const isAutoStartup = Boolean((options && options.isAutoStartup) || isAutoTimer);
-  if (window.__LIVE_PRICE_SYNC_IN_FLIGHT__ && isAutoStartup && !triggerGitHubWorkflow) {
+  if (window.__LIVE_PRICE_SYNC_IN_FLIGHT__ && isAutoStartup && !refreshHistoryAndDivs) {
     return;
   }
   window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = true;
@@ -5446,32 +5785,22 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
   if (typeof AppLogger !== 'undefined') {
     const syncLabel = isAutoTimer
       ? 'Auto 30s active-page live price sync'
-      : (isAutoStartup ? 'Initial page-load auto live price sync' : (triggerGitHubWorkflow ? 'Manual GitHub Historical Price Workflow triggered' : 'Live Price Sync button pressed'));
-    AppLogger.action('Sync', `${syncLabel} (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)}, provider=${MarketAPI.getProvider()})`);
+      : (isAutoStartup ? 'Initial page-load auto live price sync' : (refreshHistoryAndDivs ? 'Manual 15Y History + Live Price Sync' : 'Live Price Sync button pressed'));
+    AppLogger.action('Sync', `${syncLabel} (provider=${MarketAPI.getProvider()})`);
   }
 
   if (!MarketAPI.hasKey()) {
     window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = false;
     if (!isAutoStartup) {
-      if (typeof AppLogger !== 'undefined') {
-        AppLogger.warn('Sync', 'API Key missing for selected keyed provider — redirecting to Settings.');
-      }
       showToast('Please select Yahoo Finance (Keyless) or configure your API Key in Settings.', 'error');
       switchTab('settings');
     }
     return;
   }
 
-  const allTickers = Array.from(new Set([
-    ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
-    ...(state?.watchlist || []).map(w => w.ticker)
-  ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
-
+  const allTickers = getAllPortfolioAndWatchlistTickers();
   if (allTickers.length === 0) {
     window.__LIVE_PRICE_SYNC_IN_FLIGHT__ = false;
-    if (typeof AppLogger !== 'undefined') {
-      AppLogger.info('Sync', 'No holdings or watchlist tickers to sync.');
-    }
     if (!isAutoStartup) {
       showToast('Add a stock transaction or watchlist ticker first.', 'info');
     }
@@ -5488,31 +5817,20 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
 
   if (!isAutoStartup) {
     showToast(
-      triggerGitHubWorkflow
-        ? `Triggering GitHub Python historical price workflow & syncing live quotes (${allTickers.length} tickers)...`
+      refreshHistoryAndDivs
+        ? `Refreshing 15Y monthly history, dividends & live quotes (${allTickers.length} tickers)...`
         : `Syncing live market prices for ${allTickers.length} tickers...`,
       'info'
     );
   }
 
-  // Step 1: ONLY dispatch update-historical-prices.yml on GitHub Actions when explicitly requested
-  // (e.g. from the manual Settings button #btn-trigger-gh-prices or when adding a brand-new ticker)
-  let workflowStatus = null;
-  if (triggerGitHubWorkflow) {
-    workflowStatus = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
-      tickers: allTickers.join(',')
-    });
+  if (refreshHistoryAndDivs) {
+    await syncHistoricalPricesFromCloudflare(false, allTickers);
+  } else {
+    // Check Option 1 daily date-stamp rollover (runs once per calendar day or if any ticker lacks history)
+    checkAndRunDailyCloudflareSync(false).catch(() => {});
   }
 
-  // Step 2: Load historical_prices.json (read-only GET, does NOT trigger GitHub Actions workflow)
-  // if not yet loaded or if we have London (.L) tickers that may need the latest GitHub committed LSE quotes
-  const hasLseTickers = allTickers.some(t => t.endsWith('.L'));
-  const hasLoadedHistory = Boolean(window.__HISTORICAL_PRICES_JSON_LOADED__) && Object.keys(state?.historicalPrices || {}).length > 0;
-  if ((triggerGitHubWorkflow || !hasLoadedHistory || hasLseTickers) && typeof loadHistoricalPricesFromJson === 'function') {
-    await loadHistoricalPricesFromJson(true, false);
-  }
-
-  // Step 3: Fetch LIVE PRICES ONLY via MarketAPI into a staging buffer so display prices never bounce or flicker mid-sync
   let updatedQuotes = 0;
   let cfWorkerCount = 0;
   let corsFallbackCount = 0;
@@ -5521,51 +5839,29 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
   const stagedPrices = {};
   const flashDirections = {};
 
-  if (typeof AppLogger !== 'undefined') {
-    AppLogger.api('MarketAPI', `Fetching live quotes via Cloudflare Worker (${CLOUDFLARE_WORKER_URL}) for ${allTickers.length} tickers (${allTickers.slice(0, 6).join(', ')}${allTickers.length > 6 ? '...' : ''})...`);
-  }
-
   let batchQuotes = {};
   if (MarketAPI.getProvider() === 'yahoo') {
     try {
       batchQuotes = await MarketAPI.fetchCloudflareBatchQuotes(allTickers, 8000);
       cfWorkerCount = Object.keys(batchQuotes).length;
-      if (cfWorkerCount > 0 && typeof AppLogger !== 'undefined') {
-        AppLogger.api('MarketAPI', `Cloudflare Worker (myportfolio-quotes.pages.dev) returned ${cfWorkerCount}/${allTickers.length} live Yahoo Finance quotes.`);
-      }
-    } catch (cfErr) {
-      if (typeof AppLogger !== 'undefined') {
-        AppLogger.warn('MarketAPI', `Cloudflare Worker batch request failed (${cfErr.message}) — falling back to secondary Yahoo CORS proxies.`);
-      }
-    }
+    } catch (_) {}
   }
 
-  // Parallel live quote resolution for all tickers into stagedPrices buffer
   await Promise.allSettled(allTickers.map(async (ticker) => {
     try {
       const batchCandidate = batchQuotes[ticker];
-      // If batchQuotes already gave us a quote (including live index-tracked quotes for VWRA.L & SPYL.L),
-      // use it immediately with ZERO network waiting!
       let q = (batchCandidate && batchCandidate.price > 0) ? batchCandidate : null;
       let isLive = Boolean(q);
       if (!q) {
         try {
           q = await MarketAPI.fetchQuote(ticker);
-          isLive = Boolean(q && (!q.source || !q.source.includes('Snapshot')));
+          isLive = Boolean(q && (!q.source || !q.source.includes('Cached')));
         } catch (fetchErr) {
-          if (typeof AppLogger !== 'undefined') {
-            AppLogger.warn('MarketAPI', `Live quote proxy fetch failed for ${ticker} (${fetchErr.message}) — checking latest GitHub snapshot fallback.`);
-          }
-          const extQ = window.EXTERNAL_HISTORICAL_PRICES?.quotes?.[ticker];
-          if (extQ && Number(extQ.price) > 0) {
-            q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
-            isLive = false;
-          } else if (state.prices[ticker] && Number(state.prices[ticker].price) > 0) {
+          if (state.prices[ticker] && Number(state.prices[ticker].price) > 0) {
             return;
-          } else {
-            q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
-            isLive = false;
           }
+          q = MarketAPI.getEmbeddedOrCachedQuote(ticker);
+          isLive = false;
         }
       }
       if (q && q.price > 0) {
@@ -5585,18 +5881,14 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
           flashDirections[ticker] = q.price >= prevDisplayed;
         }
         updatedQuotes++;
-        if (q.source && q.source.includes('Snapshot')) snapshotQuoteCount++;
+        if (q.source && q.source.includes('Cached')) snapshotQuoteCount++;
         else if (!batchCandidate && q.source && !q.source.includes('Cloudflare')) corsFallbackCount++;
       }
     } catch (err) {
-      if (typeof AppLogger !== 'undefined') {
-        AppLogger.warn('MarketAPI', `Live quote fetch failed for ${ticker}: ${err.message}`);
-      }
       errors.push(`${ticker}: ${err.message}`);
     }
   }));
 
-  // Atomically commit all fetched live quotes at once, recalculate, and render a single time
   Object.entries(stagedPrices).forEach(([ticker, quoteObj]) => {
     state.prices[ticker] = quoteObj;
   });
@@ -5643,63 +5935,19 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
   const elapsed = Math.round(performance.now() - tStart);
 
   if (typeof AppLogger !== 'undefined') {
-    const wfMsg = workflowStatus?.triggered
-      ? ` | GitHub workflow update-historical-prices.yml triggered on ${workflowStatus.repo}`
-      : '';
     AppLogger.info(
       'Sync',
-      `Sync completed in ${elapsed}ms: ${updatedQuotes}/${allTickers.length} quotes updated (${cfWorkerCount} Cloudflare Worker, ${corsFallbackCount} Yahoo CORS secondary, ${snapshotQuoteCount} GitHub snapshot)${wfMsg}.`
+      `Sync completed in ${elapsed}ms: ${updatedQuotes}/${allTickers.length} quotes updated (${cfWorkerCount} Cloudflare Worker, ${corsFallbackCount} Yahoo CORS secondary).`
     );
     if (typeof renderLogsTab === 'function') renderLogsTab();
   }
 
-  if (workflowStatus?.triggered) {
-    showToast(`Live prices synced (${updatedQuotes}/${allTickers.length}) & GitHub historical price workflow triggered!`, 'success');
-  } else if (errors.length > 0 && updatedQuotes === 0) {
+  if (errors.length > 0 && updatedQuotes === 0) {
     if (!isAutoStartup) showToast(`Live price sync error — ${errors[0]}`, 'error');
   } else if (!isAutoStartup) {
     showToast(`Synced ${updatedQuotes}/${allTickers.length} live market prices (${elapsed}ms).`, 'success');
   }
 }
-
-async function syncCompanyNewsLive(triggerGitHubWorkflow = true) {
-  const tStart = performance.now();
-  if (typeof AppLogger !== 'undefined') {
-    AppLogger.action('NewsSync', `Refresh News button pressed (triggerGitHubWorkflow=${Boolean(triggerGitHubWorkflow)})`);
-  }
-
-  const newsBtnIcon = document.querySelector('#btn-sync-news-live i');
-  if (newsBtnIcon) newsBtnIcon.classList.add('fa-spin');
-  showToast('Refreshing company_news.json from GitHub Python workflow...', 'info');
-
-  let wfResult = null;
-  if (triggerGitHubWorkflow) {
-    wfResult = await MarketAPI.triggerGitHubWorkflow('update-company-news.yml');
-  }
-
-  const ok = typeof loadCompanyNewsFromJson === 'function' ? await loadCompanyNewsFromJson(false) : false;
-  const count = Array.isArray(state?.companyNews) ? state.companyNews.length : 0;
-
-  if (newsBtnIcon) newsBtnIcon.classList.remove('fa-spin');
-  const elapsed = Math.round(performance.now() - tStart);
-
-  if (typeof AppLogger !== 'undefined') {
-    AppLogger.info(
-      'NewsSync',
-      `News refresh completed in ${elapsed}ms: ${count} articles loaded on page${wfResult?.triggered ? ' (GitHub workflow update-company-news.yml triggered)' : ''}.`
-    );
-    if (typeof renderLogsTab === 'function') renderLogsTab();
-  }
-
-  if (wfResult?.triggered) {
-    showToast(`Triggered GitHub News workflow & refreshed ${count} articles on page!`, 'success');
-  } else if (ok) {
-    showToast(`Refreshed ${count} company news articles from GitHub Python snapshot (${elapsed}ms).`, 'success');
-  } else {
-    showToast('News feed is up to date.', 'info');
-  }
-}
-window.syncCompanyNewsLive = syncCompanyNewsLive;
 
 async function runAndRenderApiDiagnostics(customTickers = null) {
   const inputEl = document.getElementById('diag-test-tickers-input');
@@ -6852,158 +7100,18 @@ function ingestCompanyNewsData(data) {
 }
 
 async function loadHistoricalPricesFromJson(silent = true, renderWhenDone = true) {
-  try {
-    let data = null;
-    let sourceLabel = 'embedded snapshot';
-    const repo = (typeof state !== 'undefined' && state?.settings?.githubRepo) ? state.settings.githubRepo.trim() : 'ahneth/myPortfolio';
-    const branch = (typeof state !== 'undefined' && state?.settings?.githubBranch) ? state.settings.githubBranch.trim() : 'main';
-
-    // 1. Try GitHub API raw blob (0s CDN cache lag) then raw.githubusercontent.com when syncing or when local history is empty
-    const hasAnyLocalHistory = Object.keys(state?.historicalPrices || {}).length > 0;
-    if ((!silent || !hasAnyLocalHistory) && repo && repo.includes('/')) {
-      try {
-        const ctrl = new AbortController();
-        const tId = setTimeout(() => ctrl.abort(), 4000);
-        const ghHeaders = { 'Accept': 'application/vnd.github.raw+json' };
-        if (state?.settings?.githubToken) {
-          ghHeaders['Authorization'] = `Bearer ${state.settings.githubToken.trim()}`;
-        }
-        const apiUrl = `https://api.github.com/repos/${repo}/contents/historical_prices.json?ref=${encodeURIComponent(branch)}&_=${Date.now()}`;
-        const apiRes = await fetch(apiUrl, { headers: ghHeaders, signal: ctrl.signal, cache: 'no-store' });
-        clearTimeout(tId);
-        if (apiRes.ok) {
-          data = await apiRes.json();
-          sourceLabel = `GitHub API (${repo}@${branch})`;
-        }
-      } catch (_) {}
-      if (!data || typeof data !== 'object') {
-        try {
-          const ctrl = new AbortController();
-          const tId = setTimeout(() => ctrl.abort(), 3500);
-          const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/historical_prices.json?_=${Date.now()}`;
-          const rawRes = await fetch(rawUrl, { signal: ctrl.signal, cache: 'no-store' });
-          clearTimeout(tId);
-          if (rawRes.ok) {
-            data = await rawRes.json();
-            sourceLabel = `GitHub raw (${repo}@${branch})`;
-          }
-        } catch (_) {}
-      }
-    }
-
-    // 2. Same-origin ./historical_prices.json
-    if (!data || typeof data !== 'object') {
-      try {
-        const res = await fetch(`./historical_prices.json?_=${Date.now()}`, { cache: 'no-store' });
-        if (res.ok) {
-          data = await res.json();
-          sourceLabel = './historical_prices.json';
-        }
-      } catch (_) {}
-    }
-
-    // 3. Embedded fallback
-    if ((!data || typeof data !== 'object') && typeof window.EMBEDDED_HISTORICAL_PRICES === 'object') {
-      data = window.EMBEDDED_HISTORICAL_PRICES;
-      sourceLabel = 'window.EMBEDDED_HISTORICAL_PRICES';
-    }
-
-    if (!data || typeof data !== 'object') {
-      window.__HISTORICAL_PRICES_JSON_LOADED__ = false;
-      return false;
-    }
-
-    const loadedSeriesCount = ingestHistoricalPricesData(data);
-    window.__HISTORICAL_PRICES_JSON_LOADED__ = true;
-    if (renderWhenDone) {
-      recalculatePortfolio();
-      saveState();
-      if (typeof renderAll === 'function') {
-        renderAll();
-      }
-    }
-    if (!silent && typeof AppLogger !== 'undefined') {
-      AppLogger.api('GitHubPython', `Loaded historical_prices.json from ${sourceLabel}: ${loadedSeriesCount} historical series (generated ${data?._meta?.generatedAt || 'N/A'})`);
-    }
-    return loadedSeriesCount > 0;
-  } catch (err) {
-    if (!silent && typeof AppLogger !== 'undefined') {
-      AppLogger.warn('GitHubPython', `Failed to load historical_prices.json: ${err.message}`);
-    }
-    window.__HISTORICAL_PRICES_JSON_LOADED__ = false;
-    return false;
+  if (typeof syncHistoricalPricesFromCloudflare === 'function') {
+    const res = await syncHistoricalPricesFromCloudflare(!silent);
+    window.__HISTORICAL_PRICES_JSON_LOADED__ = Boolean(res && res.loadedSeries > 0);
+    return window.__HISTORICAL_PRICES_JSON_LOADED__;
   }
+  return false;
 }
 
 async function loadCompanyNewsFromJson(silent = true) {
-  try {
-    let data = null;
-    let sourceLabel = 'embedded news snapshot';
-    const repo = (typeof state !== 'undefined' && state?.settings?.githubRepo) ? state.settings.githubRepo.trim() : 'ahneth/myPortfolio';
-    const branch = (typeof state !== 'undefined' && state?.settings?.githubBranch) ? state.settings.githubBranch.trim() : 'main';
-
-    const hasAnyLocalNews = Array.isArray(state?.companyNews) && state.companyNews.length > 0;
-    if ((!silent || !hasAnyLocalNews) && repo && repo.includes('/')) {
-      try {
-        const ctrl = new AbortController();
-        const tId = setTimeout(() => ctrl.abort(), 4000);
-        const ghHeaders = { 'Accept': 'application/vnd.github.raw+json' };
-        if (state?.settings?.githubToken) {
-          ghHeaders['Authorization'] = `Bearer ${state.settings.githubToken.trim()}`;
-        }
-        const apiUrl = `https://api.github.com/repos/${repo}/contents/company_news.json?ref=${encodeURIComponent(branch)}&_=${Date.now()}`;
-        const apiRes = await fetch(apiUrl, { headers: ghHeaders, signal: ctrl.signal, cache: 'no-store' });
-        clearTimeout(tId);
-        if (apiRes.ok) {
-          data = await apiRes.json();
-          sourceLabel = `GitHub API (${repo}@${branch})`;
-        }
-      } catch (_) {}
-      if (!data || typeof data !== 'object') {
-        try {
-          const ctrl = new AbortController();
-          const tId = setTimeout(() => ctrl.abort(), 3500);
-          const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/company_news.json?_=${Date.now()}`;
-          const rawRes = await fetch(rawUrl, { signal: ctrl.signal, cache: 'no-store' });
-          clearTimeout(tId);
-          if (rawRes.ok) {
-            data = await rawRes.json();
-            sourceLabel = `GitHub raw (${repo}@${branch})`;
-          }
-        } catch (_) {}
-      }
-    }
-
-    if (!data || !Array.isArray(data.articles)) {
-      try {
-        const res = await fetch(`./company_news.json?_=${Date.now()}`, { cache: 'no-store' });
-        if (res.ok) {
-          data = await res.json();
-          sourceLabel = './company_news.json';
-        }
-      } catch (_) {}
-    }
-
-    if ((!data || !Array.isArray(data.articles)) && typeof window.EMBEDDED_COMPANY_NEWS === 'object') {
-      data = window.EMBEDDED_COMPANY_NEWS;
-      sourceLabel = 'window.EMBEDDED_COMPANY_NEWS';
-    }
-
-    if (data && typeof data === 'object') {
-      ingestCompanyNewsData(data);
-      saveState();
-      if (typeof renderNewsTab === 'function') renderNewsTab();
-      if (typeof renderFooterUpdateTimestamps === 'function') renderFooterUpdateTimestamps();
-      if (!silent && typeof AppLogger !== 'undefined') {
-        const artLen = Array.isArray(data.articles) ? data.articles.length : 0;
-        AppLogger.api('GitHubNews', `Loaded ${artLen} news articles (<=3M) from ${sourceLabel} (generated ${data?._meta?.generatedAt || data?.generatedAt || 'N/A'})`);
-      }
-      return Array.isArray(data.articles) && data.articles.length > 0;
-    }
-  } catch (err) {
-    if (!silent && typeof AppLogger !== 'undefined') {
-      AppLogger.warn('GitHubNews', `Failed to load company_news.json: ${err.message}`);
-    }
+  if (typeof syncCompanyNewsLive === 'function') {
+    const cnt = await syncCompanyNewsLive(!silent);
+    return cnt > 0;
   }
   return false;
 }
@@ -7116,9 +7224,6 @@ function initAppState() {
     document.documentElement.classList.add('dark');
   }
 
-  if (typeof window.EMBEDDED_HISTORICAL_PRICES === 'object') {
-    ingestHistoricalPricesData(window.EMBEDDED_HISTORICAL_PRICES);
-  }
   // Sanitize any stale or corrupted prevPrice / changePct (>40%) in localStorage state.prices
   Object.keys(state.prices || {}).forEach(sym => {
     const pObj = state.prices[sym];
@@ -7126,26 +7231,17 @@ function initAppState() {
       const p = Number(pObj.price);
       let pp = Number(pObj.prevPrice || p);
       if (!pp || pp <= 0 || Math.abs((p - pp) / pp) > 0.40 || Math.abs(Number(pObj.changePct || 0)) > 40) {
-        const fallbackQ = window.EMBEDDED_HISTORICAL_PRICES?.quotes?.[sym];
-        pp = (fallbackQ && Number(fallbackQ.prevPrice) > 0 && Math.abs((p - fallbackQ.prevPrice) / fallbackQ.prevPrice) <= 0.40)
-          ? Number(fallbackQ.prevPrice)
-          : p;
+        pp = p;
         pObj.prevPrice = pp;
-        pObj.change = Fin.round(p - pp, 4);
-        pObj.changePct = pp > 0 ? Fin.round(((p - pp) / pp) * 100, 2) : 0;
+        pObj.change = 0;
+        pObj.changePct = 0;
       }
     }
   });
-  if (typeof window.EMBEDDED_COMPANY_NEWS === 'object') {
-    ingestCompanyNewsData(window.EMBEDDED_COMPANY_NEWS);
-  }
   cleanseCachedPortfolioData();
 
   recalculatePortfolio();
   saveState();
-
-  loadHistoricalPricesFromJson(true);
-  loadCompanyNewsFromJson();
 }
 
 var _saveStateTimer = null;
@@ -8817,7 +8913,9 @@ function restorePortfolioFromExcel(file) {
       recalculatePortfolio();
       saveState();
       renderAll();
-      loadHistoricalPricesFromJson(true);
+      if (typeof checkAndRunDailyCloudflareSync === 'function') {
+        checkAndRunDailyCloudflareSync(true);
+      }
 
       const detectedCount = portfolio?.detectedDividends?.length || 0;
       if (statusMsg) {
@@ -10825,7 +10923,7 @@ window.renderTradesBalanceCashflowChart = renderTradesBalanceCashflowChart;
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.3.4-20261108_1435') {
+      if (k !== 'myportfolio-cache-v3.5.1-20261112_1325') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -11047,15 +11145,8 @@ function renderFooterUpdateTimestamps() {
   const histEl = document.getElementById('footer-hist-prices-updated');
   const newsEl = document.getElementById('footer-news-analysis-updated');
 
-  const histTs = state?.settings?.lastHistoricalPricesUpdate
-    || window.EXTERNAL_HISTORICAL_PRICES?._meta?.generatedAt
-    || window.EXTERNAL_HISTORICAL_PRICES?.generatedAt
-    || null;
-
-  let newsTs = state?.settings?.lastNewsAnalysisUpdate
-    || window.EMBEDDED_COMPANY_NEWS?._meta?.generatedAt
-    || window.EMBEDDED_COMPANY_NEWS?.generatedAt
-    || null;
+  const histTs = state?.settings?.lastHistoricalPricesUpdate || null;
+  let newsTs = state?.settings?.lastNewsAnalysisUpdate || null;
   if (!newsTs && Array.isArray(state?.companyNews) && state.companyNews.length > 0) {
     newsTs = state.companyNews[0]?.publishedAt || null;
   }
@@ -11207,7 +11298,6 @@ function renderApiStatusUI() {
 
   const effectiveSyncTs = state?.settings?.lastApiSync
     || state?.settings?.lastHistoricalPricesUpdate
-    || window.EXTERNAL_HISTORICAL_PRICES?._meta?.generatedAt
     || null;
   const formattedSyncDt = formatUpdateTimestamp(effectiveSyncTs);
   if (syncLabel) {
@@ -12206,6 +12296,11 @@ function renderHoldingsTable() {
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-900 dark:text-white">
       ${hideMoney ? '100.0% wt' : Fin.currency(totMarketValueBase, false, baseCurr)}
     </td>
+    <td class="py-1.5 px-3 text-right num-font ${totRetColor}">
+      ${hideMoney
+        ? `<div class="font-extrabold">${Fin.percent(totTotalReturnPct, true)}</div>`
+        : `<div class="font-extrabold">${Fin.currency(totTotalReturnBase, true, baseCurr)}</div><div class="text-[10px] font-semibold">${Fin.percent(totTotalReturnPct, true)}</div>`}
+    </td>
     <td class="py-1.5 px-3 text-right num-font ${totUnrColor}">
       ${hideMoney
         ? `<div class="font-extrabold">${Fin.percent(totUnrealizedPct, true)}</div>`
@@ -12216,11 +12311,6 @@ function renderHoldingsTable() {
     </td>
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-cyan-600 dark:text-cyan-400">
       ${hideMoney ? `${totYoCPct.toFixed(2)}% YoC` : ('+' + Fin.currency(totAccumDivBase, false, baseCurr))}
-    </td>
-    <td class="py-1.5 px-3 text-right num-font ${totRetColor}">
-      ${hideMoney
-        ? `<div class="font-extrabold">${Fin.percent(totTotalReturnPct, true)}</div>`
-        : `<div class="font-extrabold">${Fin.currency(totTotalReturnBase, true, baseCurr)}</div><div class="text-[10px] font-semibold">${Fin.percent(totTotalReturnPct, true)}</div>`}
     </td>
     <td class="py-1.5 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">
       <div class="font-bold">${totNetYieldPct > 0 ? totNetYieldPct.toFixed(2) + '% Net' : '-'}</div>
@@ -12401,6 +12491,11 @@ function renderHoldingsTable() {
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-extrabold text-slate-900 dark:text-white">
         ${hideMoney ? `${weightPct}% wt` : Fin.currency(group.totalMarketValue, false, group.currency)}
       </td>
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupRetColor}">
+        ${hideMoney
+          ? `<div>${Fin.percent(groupTotalReturnPct, true)}</div>`
+          : `<div>${Fin.currency(groupTotalReturn, true, group.currency)}</div><div class="text-[10px] font-semibold">${Fin.percent(groupTotalReturnPct, true)}</div>`}
+      </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupPnlColor}">
         ${hideMoney
           ? `<div>${Fin.percent(groupUnrealizedPct)}</div>`
@@ -12415,11 +12510,6 @@ function renderHoldingsTable() {
         ${hideMoney
           ? `${groupYoC.toFixed(2)}% YoC`
           : (group.totalDividends > 0 ? '+' + Fin.currency(group.totalDividends, false, group.currency) : Fin.currency(0, false, group.currency))}
-      </td>
-      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupRetColor}">
-        ${hideMoney
-          ? `<div>${Fin.percent(groupTotalReturnPct, true)}</div>`
-          : `<div>${Fin.currency(groupTotalReturn, true, group.currency)}</div><div class="text-[10px] font-semibold">${Fin.percent(groupTotalReturnPct, true)}</div>`}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
         ${groupNetYieldPct > 0 ? groupNetYieldPct.toFixed(2) + '% Net' : '-'}
@@ -12532,6 +12622,12 @@ function renderHoldingsTable() {
                   : Fin.currency(marketValBase, false, baseCurr))
               : '<span class="text-slate-400 font-normal">-</span>'}
           </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right" title="Total Return = Unrealized P&L + Realized P&L + Accumulated Dividends">
+            ${hideMoney
+              ? `<div class="font-bold num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.percent(totalRetPct, true)}</div>`
+              : `<div class="font-bold num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.currency(totalRetValBase, true, baseCurr)}</div>
+                 <div class="text-[10px] num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'} font-semibold">${Fin.percent(totalRetPct, true)}</div>`}
+          </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             ${isAct
               ? (hideMoney
@@ -12549,12 +12645,6 @@ function renderHoldingsTable() {
             ${hideMoney
               ? `${h.yieldOnCost.toFixed(2)}% YoC`
               : (totalDivValBase > 0 ? '+' + Fin.currency(totalDivValBase, false, baseCurr) : Fin.currency(0, false, baseCurr))}
-          </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right" title="Total Return = Unrealized P&L + Realized P&L + Accumulated Dividends">
-            ${hideMoney
-              ? `<div class="font-bold num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.percent(totalRetPct, true)}</div>`
-              : `<div class="font-bold num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.currency(totalRetValBase, true, baseCurr)}</div>
-                 <div class="text-[10px] num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'} font-semibold">${Fin.percent(totalRetPct, true)}</div>`}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             ${formatDividendExDateCell(h.divInfo)}
@@ -14184,22 +14274,15 @@ async function handleTradeSubmit(e) {
       const q = await MarketAPI.fetchQuote(ticker);
       if (q?.price) state.prices[ticker] = { ...q, lastUpdated: new Date().toISOString() };
       if (!state.historicalPrices[ticker] || state.historicalPrices[ticker].length === 0) {
-        const hist = await MarketAPI.fetchMonthlyHistory(ticker);
-        if (hist?.length) {
-          state.historicalPrices[ticker] = hist;
-        } else if (!existingTx && typeof MarketAPI.triggerGitHubWorkflow === 'function') {
-          const allTickers = Array.from(new Set([
-            ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
-            ...(state?.watchlist || []).map(w => w.ticker),
-            ticker
-          ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
-          const wfRes = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
-            tickers: allTickers.join(',')
-          });
-          if (wfRes?.triggered) {
-            showToast(`New ticker ${ticker} added — triggered GitHub workflow to fetch historical prices!`, 'info');
-          }
+        if (typeof syncHistoricalPricesFromCloudflare === 'function') {
+          await syncHistoricalPricesFromCloudflare(false, [ticker]);
+        } else {
+          const hist = await MarketAPI.fetchMonthlyHistory(ticker);
+          if (hist?.length) state.historicalPrices[ticker] = hist;
         }
+      }
+      if (!existingTx && typeof syncCompanyNewsLive === 'function') {
+        syncCompanyNewsLive(false, [ticker]).catch(() => {});
       }
       if (!state.fundamentals[ticker] || !state.fundamentals[ticker].pe) {
         const fetchedFund = await MarketAPI.fetchFundamentals(ticker);
@@ -14458,20 +14541,14 @@ async function handleWatchlistSubmit(e) {
           _userCustomName: Boolean(name) || Boolean(state.fundamentals[ticker]?._userCustomName)
         };
       }
-      const hist = await MarketAPI.fetchMonthlyHistory(ticker);
-      if (hist?.length) {
-        state.historicalPrices[ticker] = hist;
-      } else if (!isEditing && typeof MarketAPI.triggerGitHubWorkflow === 'function') {
-        const allTickers = Array.from(new Set([
-          ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
-          ...(state?.watchlist || []).map(w => w.ticker)
-        ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
-        const wfRes = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
-          tickers: allTickers.join(',')
-        });
-        if (wfRes?.triggered) {
-          showToast(`Triggered GitHub Python workflow to fetch 15Y monthly history for ${ticker}!`, 'info');
-        }
+      if (typeof syncHistoricalPricesFromCloudflare === 'function') {
+        await syncHistoricalPricesFromCloudflare(false, [ticker]);
+      } else {
+        const hist = await MarketAPI.fetchMonthlyHistory(ticker);
+        if (hist?.length) state.historicalPrices[ticker] = hist;
+      }
+      if (!isEditing && typeof syncCompanyNewsLive === 'function') {
+        syncCompanyNewsLive(false, [ticker]).catch(() => {});
       }
       recalculatePortfolio();
       saveState();
@@ -14962,26 +15039,15 @@ function setupEventListeners() {
   on('btn-refresh-prices-now', 'click', () => syncAllMarketData(false));
   on('btn-sync-watchlist-api', 'click', () => syncAllMarketData(false));
   on('btn-sync-all-api', 'click', () => syncAllMarketData(false));
-  on('btn-fetch-monthly-history', 'click', () => syncAllMarketData(false));
+  on('btn-fetch-monthly-history', 'click', () => syncHistoricalPricesFromCloudflare(true));
   on('btn-fetch-fundamentals-api', 'click', syncFundamentalsViaAPI);
 
-  // GitHub Actions Workflow Trigger Controls in Settings
-  on('btn-save-github-settings', 'click', () => {
-    const repoEl = document.getElementById('setting-github-repo');
-    const branchEl = document.getElementById('setting-github-branch');
-    const tokEl = document.getElementById('setting-github-token');
-    if (repoEl) state.settings.githubRepo = repoEl.value.trim() || 'ahneth/myPortfolio';
-    if (branchEl) state.settings.githubBranch = branchEl.value.trim() || 'main';
-    if (tokEl) state.settings.githubToken = tokEl.value.trim();
-    saveState();
-    renderApiStatusUI();
-    if (typeof AppLogger !== 'undefined') {
-      AppLogger.action('Settings', `Saved GitHub workflow settings for ${state.settings.githubRepo}@${state.settings.githubBranch} (PAT configured: ${Boolean(state.settings.githubToken)})`);
-    }
-    showToast(`Saved GitHub workflow settings (${state.settings.githubRepo})!`, 'success');
-  });
-  on('btn-trigger-gh-prices', 'click', () => syncAllMarketData(true));
+  // Cloudflare Worker Manual Sync Controls (Settings, Dividends & News)
+  on('btn-trigger-gh-prices', 'click', () => syncHistoricalPricesFromCloudflare(true));
+  on('btn-settings-sync-dividends', 'click', () => syncDividendsFromCloudflare(true));
   on('btn-trigger-gh-news', 'click', () => syncCompanyNewsLive(true));
+  on('btn-sync-dividends-live', 'click', () => syncDividendsFromCloudflare(true));
+  on('btn-sync-dividends-cal', 'click', () => syncDividendsFromCloudflare(true));
 
   // News Tab Controls
   on('btn-sync-news-live', 'click', () => syncCompanyNewsLive(true));
@@ -15391,8 +15457,9 @@ function bootstrapPortfolioApp() {
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      loadHistoricalPricesFromJson(true);
-      loadCompanyNewsFromJson();
+      if (typeof checkAndRunDailyCloudflareSync === 'function') {
+        checkAndRunDailyCloudflareSync(false);
+      }
       if (Date.now() - (window.__LAST_LIVE_SYNC_TS__ || 0) >= AUTO_LIVE_SYNC_INTERVAL_MS) {
         triggerActivePageAutoSync();
       }
@@ -15402,7 +15469,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.4.8 boot sequence complete — triggering initial live price sync and starting 30s active-page auto-sync timer.');
+      AppLogger.info('Boot', 'myPortfolio v3.5.1 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;
@@ -15411,6 +15478,9 @@ function bootstrapPortfolioApp() {
           AppLogger.warn('Boot', `Initial live price API fetch notice: ${err.message}`);
         }
       });
+    }
+    if (typeof checkAndRunDailyCloudflareSync === 'function') {
+      checkAndRunDailyCloudflareSync(false);
     }
   }, 150);
 }

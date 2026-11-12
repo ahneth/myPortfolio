@@ -993,158 +993,18 @@ function ingestCompanyNewsData(data) {
 }
 
 async function loadHistoricalPricesFromJson(silent = true, renderWhenDone = true) {
-  try {
-    let data = null;
-    let sourceLabel = 'embedded snapshot';
-    const repo = (typeof state !== 'undefined' && state?.settings?.githubRepo) ? state.settings.githubRepo.trim() : 'ahneth/myPortfolio';
-    const branch = (typeof state !== 'undefined' && state?.settings?.githubBranch) ? state.settings.githubBranch.trim() : 'main';
-
-    // 1. Try GitHub API raw blob (0s CDN cache lag) then raw.githubusercontent.com when syncing or when local history is empty
-    const hasAnyLocalHistory = Object.keys(state?.historicalPrices || {}).length > 0;
-    if ((!silent || !hasAnyLocalHistory) && repo && repo.includes('/')) {
-      try {
-        const ctrl = new AbortController();
-        const tId = setTimeout(() => ctrl.abort(), 4000);
-        const ghHeaders = { 'Accept': 'application/vnd.github.raw+json' };
-        if (state?.settings?.githubToken) {
-          ghHeaders['Authorization'] = `Bearer ${state.settings.githubToken.trim()}`;
-        }
-        const apiUrl = `https://api.github.com/repos/${repo}/contents/historical_prices.json?ref=${encodeURIComponent(branch)}&_=${Date.now()}`;
-        const apiRes = await fetch(apiUrl, { headers: ghHeaders, signal: ctrl.signal, cache: 'no-store' });
-        clearTimeout(tId);
-        if (apiRes.ok) {
-          data = await apiRes.json();
-          sourceLabel = `GitHub API (${repo}@${branch})`;
-        }
-      } catch (_) {}
-      if (!data || typeof data !== 'object') {
-        try {
-          const ctrl = new AbortController();
-          const tId = setTimeout(() => ctrl.abort(), 3500);
-          const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/historical_prices.json?_=${Date.now()}`;
-          const rawRes = await fetch(rawUrl, { signal: ctrl.signal, cache: 'no-store' });
-          clearTimeout(tId);
-          if (rawRes.ok) {
-            data = await rawRes.json();
-            sourceLabel = `GitHub raw (${repo}@${branch})`;
-          }
-        } catch (_) {}
-      }
-    }
-
-    // 2. Same-origin ./historical_prices.json
-    if (!data || typeof data !== 'object') {
-      try {
-        const res = await fetch(`./historical_prices.json?_=${Date.now()}`, { cache: 'no-store' });
-        if (res.ok) {
-          data = await res.json();
-          sourceLabel = './historical_prices.json';
-        }
-      } catch (_) {}
-    }
-
-    // 3. Embedded fallback
-    if ((!data || typeof data !== 'object') && typeof window.EMBEDDED_HISTORICAL_PRICES === 'object') {
-      data = window.EMBEDDED_HISTORICAL_PRICES;
-      sourceLabel = 'window.EMBEDDED_HISTORICAL_PRICES';
-    }
-
-    if (!data || typeof data !== 'object') {
-      window.__HISTORICAL_PRICES_JSON_LOADED__ = false;
-      return false;
-    }
-
-    const loadedSeriesCount = ingestHistoricalPricesData(data);
-    window.__HISTORICAL_PRICES_JSON_LOADED__ = true;
-    if (renderWhenDone) {
-      recalculatePortfolio();
-      saveState();
-      if (typeof renderAll === 'function') {
-        renderAll();
-      }
-    }
-    if (!silent && typeof AppLogger !== 'undefined') {
-      AppLogger.api('GitHubPython', `Loaded historical_prices.json from ${sourceLabel}: ${loadedSeriesCount} historical series (generated ${data?._meta?.generatedAt || 'N/A'})`);
-    }
-    return loadedSeriesCount > 0;
-  } catch (err) {
-    if (!silent && typeof AppLogger !== 'undefined') {
-      AppLogger.warn('GitHubPython', `Failed to load historical_prices.json: ${err.message}`);
-    }
-    window.__HISTORICAL_PRICES_JSON_LOADED__ = false;
-    return false;
+  if (typeof syncHistoricalPricesFromCloudflare === 'function') {
+    const res = await syncHistoricalPricesFromCloudflare(!silent);
+    window.__HISTORICAL_PRICES_JSON_LOADED__ = Boolean(res && res.loadedSeries > 0);
+    return window.__HISTORICAL_PRICES_JSON_LOADED__;
   }
+  return false;
 }
 
 async function loadCompanyNewsFromJson(silent = true) {
-  try {
-    let data = null;
-    let sourceLabel = 'embedded news snapshot';
-    const repo = (typeof state !== 'undefined' && state?.settings?.githubRepo) ? state.settings.githubRepo.trim() : 'ahneth/myPortfolio';
-    const branch = (typeof state !== 'undefined' && state?.settings?.githubBranch) ? state.settings.githubBranch.trim() : 'main';
-
-    const hasAnyLocalNews = Array.isArray(state?.companyNews) && state.companyNews.length > 0;
-    if ((!silent || !hasAnyLocalNews) && repo && repo.includes('/')) {
-      try {
-        const ctrl = new AbortController();
-        const tId = setTimeout(() => ctrl.abort(), 4000);
-        const ghHeaders = { 'Accept': 'application/vnd.github.raw+json' };
-        if (state?.settings?.githubToken) {
-          ghHeaders['Authorization'] = `Bearer ${state.settings.githubToken.trim()}`;
-        }
-        const apiUrl = `https://api.github.com/repos/${repo}/contents/company_news.json?ref=${encodeURIComponent(branch)}&_=${Date.now()}`;
-        const apiRes = await fetch(apiUrl, { headers: ghHeaders, signal: ctrl.signal, cache: 'no-store' });
-        clearTimeout(tId);
-        if (apiRes.ok) {
-          data = await apiRes.json();
-          sourceLabel = `GitHub API (${repo}@${branch})`;
-        }
-      } catch (_) {}
-      if (!data || typeof data !== 'object') {
-        try {
-          const ctrl = new AbortController();
-          const tId = setTimeout(() => ctrl.abort(), 3500);
-          const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/company_news.json?_=${Date.now()}`;
-          const rawRes = await fetch(rawUrl, { signal: ctrl.signal, cache: 'no-store' });
-          clearTimeout(tId);
-          if (rawRes.ok) {
-            data = await rawRes.json();
-            sourceLabel = `GitHub raw (${repo}@${branch})`;
-          }
-        } catch (_) {}
-      }
-    }
-
-    if (!data || !Array.isArray(data.articles)) {
-      try {
-        const res = await fetch(`./company_news.json?_=${Date.now()}`, { cache: 'no-store' });
-        if (res.ok) {
-          data = await res.json();
-          sourceLabel = './company_news.json';
-        }
-      } catch (_) {}
-    }
-
-    if ((!data || !Array.isArray(data.articles)) && typeof window.EMBEDDED_COMPANY_NEWS === 'object') {
-      data = window.EMBEDDED_COMPANY_NEWS;
-      sourceLabel = 'window.EMBEDDED_COMPANY_NEWS';
-    }
-
-    if (data && typeof data === 'object') {
-      ingestCompanyNewsData(data);
-      saveState();
-      if (typeof renderNewsTab === 'function') renderNewsTab();
-      if (typeof renderFooterUpdateTimestamps === 'function') renderFooterUpdateTimestamps();
-      if (!silent && typeof AppLogger !== 'undefined') {
-        const artLen = Array.isArray(data.articles) ? data.articles.length : 0;
-        AppLogger.api('GitHubNews', `Loaded ${artLen} news articles (<=3M) from ${sourceLabel} (generated ${data?._meta?.generatedAt || data?.generatedAt || 'N/A'})`);
-      }
-      return Array.isArray(data.articles) && data.articles.length > 0;
-    }
-  } catch (err) {
-    if (!silent && typeof AppLogger !== 'undefined') {
-      AppLogger.warn('GitHubNews', `Failed to load company_news.json: ${err.message}`);
-    }
+  if (typeof syncCompanyNewsLive === 'function') {
+    const cnt = await syncCompanyNewsLive(!silent);
+    return cnt > 0;
   }
   return false;
 }
@@ -1257,9 +1117,6 @@ function initAppState() {
     document.documentElement.classList.add('dark');
   }
 
-  if (typeof window.EMBEDDED_HISTORICAL_PRICES === 'object') {
-    ingestHistoricalPricesData(window.EMBEDDED_HISTORICAL_PRICES);
-  }
   // Sanitize any stale or corrupted prevPrice / changePct (>40%) in localStorage state.prices
   Object.keys(state.prices || {}).forEach(sym => {
     const pObj = state.prices[sym];
@@ -1267,26 +1124,17 @@ function initAppState() {
       const p = Number(pObj.price);
       let pp = Number(pObj.prevPrice || p);
       if (!pp || pp <= 0 || Math.abs((p - pp) / pp) > 0.40 || Math.abs(Number(pObj.changePct || 0)) > 40) {
-        const fallbackQ = window.EMBEDDED_HISTORICAL_PRICES?.quotes?.[sym];
-        pp = (fallbackQ && Number(fallbackQ.prevPrice) > 0 && Math.abs((p - fallbackQ.prevPrice) / fallbackQ.prevPrice) <= 0.40)
-          ? Number(fallbackQ.prevPrice)
-          : p;
+        pp = p;
         pObj.prevPrice = pp;
-        pObj.change = Fin.round(p - pp, 4);
-        pObj.changePct = pp > 0 ? Fin.round(((p - pp) / pp) * 100, 2) : 0;
+        pObj.change = 0;
+        pObj.changePct = 0;
       }
     }
   });
-  if (typeof window.EMBEDDED_COMPANY_NEWS === 'object') {
-    ingestCompanyNewsData(window.EMBEDDED_COMPANY_NEWS);
-  }
   cleanseCachedPortfolioData();
 
   recalculatePortfolio();
   saveState();
-
-  loadHistoricalPricesFromJson(true);
-  loadCompanyNewsFromJson();
 }
 
 var _saveStateTimer = null;
@@ -2958,7 +2806,9 @@ function restorePortfolioFromExcel(file) {
       recalculatePortfolio();
       saveState();
       renderAll();
-      loadHistoricalPricesFromJson(true);
+      if (typeof checkAndRunDailyCloudflareSync === 'function') {
+        checkAndRunDailyCloudflareSync(true);
+      }
 
       const detectedCount = portfolio?.detectedDividends?.length || 0;
       if (statusMsg) {

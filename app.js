@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.3.4-20261108_1435') {
+      if (k !== 'myportfolio-cache-v3.5.1-20261112_1325') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -225,15 +225,8 @@ function renderFooterUpdateTimestamps() {
   const histEl = document.getElementById('footer-hist-prices-updated');
   const newsEl = document.getElementById('footer-news-analysis-updated');
 
-  const histTs = state?.settings?.lastHistoricalPricesUpdate
-    || window.EXTERNAL_HISTORICAL_PRICES?._meta?.generatedAt
-    || window.EXTERNAL_HISTORICAL_PRICES?.generatedAt
-    || null;
-
-  let newsTs = state?.settings?.lastNewsAnalysisUpdate
-    || window.EMBEDDED_COMPANY_NEWS?._meta?.generatedAt
-    || window.EMBEDDED_COMPANY_NEWS?.generatedAt
-    || null;
+  const histTs = state?.settings?.lastHistoricalPricesUpdate || null;
+  let newsTs = state?.settings?.lastNewsAnalysisUpdate || null;
   if (!newsTs && Array.isArray(state?.companyNews) && state.companyNews.length > 0) {
     newsTs = state.companyNews[0]?.publishedAt || null;
   }
@@ -385,7 +378,6 @@ function renderApiStatusUI() {
 
   const effectiveSyncTs = state?.settings?.lastApiSync
     || state?.settings?.lastHistoricalPricesUpdate
-    || window.EXTERNAL_HISTORICAL_PRICES?._meta?.generatedAt
     || null;
   const formattedSyncDt = formatUpdateTimestamp(effectiveSyncTs);
   if (syncLabel) {
@@ -1384,6 +1376,11 @@ function renderHoldingsTable() {
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-900 dark:text-white">
       ${hideMoney ? '100.0% wt' : Fin.currency(totMarketValueBase, false, baseCurr)}
     </td>
+    <td class="py-1.5 px-3 text-right num-font ${totRetColor}">
+      ${hideMoney
+        ? `<div class="font-extrabold">${Fin.percent(totTotalReturnPct, true)}</div>`
+        : `<div class="font-extrabold">${Fin.currency(totTotalReturnBase, true, baseCurr)}</div><div class="text-[10px] font-semibold">${Fin.percent(totTotalReturnPct, true)}</div>`}
+    </td>
     <td class="py-1.5 px-3 text-right num-font ${totUnrColor}">
       ${hideMoney
         ? `<div class="font-extrabold">${Fin.percent(totUnrealizedPct, true)}</div>`
@@ -1394,11 +1391,6 @@ function renderHoldingsTable() {
     </td>
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-cyan-600 dark:text-cyan-400">
       ${hideMoney ? `${totYoCPct.toFixed(2)}% YoC` : ('+' + Fin.currency(totAccumDivBase, false, baseCurr))}
-    </td>
-    <td class="py-1.5 px-3 text-right num-font ${totRetColor}">
-      ${hideMoney
-        ? `<div class="font-extrabold">${Fin.percent(totTotalReturnPct, true)}</div>`
-        : `<div class="font-extrabold">${Fin.currency(totTotalReturnBase, true, baseCurr)}</div><div class="text-[10px] font-semibold">${Fin.percent(totTotalReturnPct, true)}</div>`}
     </td>
     <td class="py-1.5 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">
       <div class="font-bold">${totNetYieldPct > 0 ? totNetYieldPct.toFixed(2) + '% Net' : '-'}</div>
@@ -1579,6 +1571,11 @@ function renderHoldingsTable() {
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-extrabold text-slate-900 dark:text-white">
         ${hideMoney ? `${weightPct}% wt` : Fin.currency(group.totalMarketValue, false, group.currency)}
       </td>
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupRetColor}">
+        ${hideMoney
+          ? `<div>${Fin.percent(groupTotalReturnPct, true)}</div>`
+          : `<div>${Fin.currency(groupTotalReturn, true, group.currency)}</div><div class="text-[10px] font-semibold">${Fin.percent(groupTotalReturnPct, true)}</div>`}
+      </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupPnlColor}">
         ${hideMoney
           ? `<div>${Fin.percent(groupUnrealizedPct)}</div>`
@@ -1593,11 +1590,6 @@ function renderHoldingsTable() {
         ${hideMoney
           ? `${groupYoC.toFixed(2)}% YoC`
           : (group.totalDividends > 0 ? '+' + Fin.currency(group.totalDividends, false, group.currency) : Fin.currency(0, false, group.currency))}
-      </td>
-      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupRetColor}">
-        ${hideMoney
-          ? `<div>${Fin.percent(groupTotalReturnPct, true)}</div>`
-          : `<div>${Fin.currency(groupTotalReturn, true, group.currency)}</div><div class="text-[10px] font-semibold">${Fin.percent(groupTotalReturnPct, true)}</div>`}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
         ${groupNetYieldPct > 0 ? groupNetYieldPct.toFixed(2) + '% Net' : '-'}
@@ -1710,6 +1702,12 @@ function renderHoldingsTable() {
                   : Fin.currency(marketValBase, false, baseCurr))
               : '<span class="text-slate-400 font-normal">-</span>'}
           </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right" title="Total Return = Unrealized P&L + Realized P&L + Accumulated Dividends">
+            ${hideMoney
+              ? `<div class="font-bold num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.percent(totalRetPct, true)}</div>`
+              : `<div class="font-bold num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.currency(totalRetValBase, true, baseCurr)}</div>
+                 <div class="text-[10px] num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'} font-semibold">${Fin.percent(totalRetPct, true)}</div>`}
+          </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             ${isAct
               ? (hideMoney
@@ -1727,12 +1725,6 @@ function renderHoldingsTable() {
             ${hideMoney
               ? `${h.yieldOnCost.toFixed(2)}% YoC`
               : (totalDivValBase > 0 ? '+' + Fin.currency(totalDivValBase, false, baseCurr) : Fin.currency(0, false, baseCurr))}
-          </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right" title="Total Return = Unrealized P&L + Realized P&L + Accumulated Dividends">
-            ${hideMoney
-              ? `<div class="font-bold num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.percent(totalRetPct, true)}</div>`
-              : `<div class="font-bold num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.currency(totalRetValBase, true, baseCurr)}</div>
-                 <div class="text-[10px] num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'} font-semibold">${Fin.percent(totalRetPct, true)}</div>`}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             ${formatDividendExDateCell(h.divInfo)}
@@ -3362,22 +3354,15 @@ async function handleTradeSubmit(e) {
       const q = await MarketAPI.fetchQuote(ticker);
       if (q?.price) state.prices[ticker] = { ...q, lastUpdated: new Date().toISOString() };
       if (!state.historicalPrices[ticker] || state.historicalPrices[ticker].length === 0) {
-        const hist = await MarketAPI.fetchMonthlyHistory(ticker);
-        if (hist?.length) {
-          state.historicalPrices[ticker] = hist;
-        } else if (!existingTx && typeof MarketAPI.triggerGitHubWorkflow === 'function') {
-          const allTickers = Array.from(new Set([
-            ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
-            ...(state?.watchlist || []).map(w => w.ticker),
-            ticker
-          ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
-          const wfRes = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
-            tickers: allTickers.join(',')
-          });
-          if (wfRes?.triggered) {
-            showToast(`New ticker ${ticker} added — triggered GitHub workflow to fetch historical prices!`, 'info');
-          }
+        if (typeof syncHistoricalPricesFromCloudflare === 'function') {
+          await syncHistoricalPricesFromCloudflare(false, [ticker]);
+        } else {
+          const hist = await MarketAPI.fetchMonthlyHistory(ticker);
+          if (hist?.length) state.historicalPrices[ticker] = hist;
         }
+      }
+      if (!existingTx && typeof syncCompanyNewsLive === 'function') {
+        syncCompanyNewsLive(false, [ticker]).catch(() => {});
       }
       if (!state.fundamentals[ticker] || !state.fundamentals[ticker].pe) {
         const fetchedFund = await MarketAPI.fetchFundamentals(ticker);
@@ -3636,20 +3621,14 @@ async function handleWatchlistSubmit(e) {
           _userCustomName: Boolean(name) || Boolean(state.fundamentals[ticker]?._userCustomName)
         };
       }
-      const hist = await MarketAPI.fetchMonthlyHistory(ticker);
-      if (hist?.length) {
-        state.historicalPrices[ticker] = hist;
-      } else if (!isEditing && typeof MarketAPI.triggerGitHubWorkflow === 'function') {
-        const allTickers = Array.from(new Set([
-          ...((portfolio?.allHoldings && portfolio.allHoldings.length > 0) ? portfolio.allHoldings : (portfolio?.activeHoldings || [])).map(h => h.ticker),
-          ...(state?.watchlist || []).map(w => w.ticker)
-        ])).map(t => MarketAPI.normalizeTicker(t)).filter(Boolean);
-        const wfRes = await MarketAPI.triggerGitHubWorkflow('update-historical-prices.yml', {
-          tickers: allTickers.join(',')
-        });
-        if (wfRes?.triggered) {
-          showToast(`Triggered GitHub Python workflow to fetch 15Y monthly history for ${ticker}!`, 'info');
-        }
+      if (typeof syncHistoricalPricesFromCloudflare === 'function') {
+        await syncHistoricalPricesFromCloudflare(false, [ticker]);
+      } else {
+        const hist = await MarketAPI.fetchMonthlyHistory(ticker);
+        if (hist?.length) state.historicalPrices[ticker] = hist;
+      }
+      if (!isEditing && typeof syncCompanyNewsLive === 'function') {
+        syncCompanyNewsLive(false, [ticker]).catch(() => {});
       }
       recalculatePortfolio();
       saveState();
@@ -4140,26 +4119,15 @@ function setupEventListeners() {
   on('btn-refresh-prices-now', 'click', () => syncAllMarketData(false));
   on('btn-sync-watchlist-api', 'click', () => syncAllMarketData(false));
   on('btn-sync-all-api', 'click', () => syncAllMarketData(false));
-  on('btn-fetch-monthly-history', 'click', () => syncAllMarketData(false));
+  on('btn-fetch-monthly-history', 'click', () => syncHistoricalPricesFromCloudflare(true));
   on('btn-fetch-fundamentals-api', 'click', syncFundamentalsViaAPI);
 
-  // GitHub Actions Workflow Trigger Controls in Settings
-  on('btn-save-github-settings', 'click', () => {
-    const repoEl = document.getElementById('setting-github-repo');
-    const branchEl = document.getElementById('setting-github-branch');
-    const tokEl = document.getElementById('setting-github-token');
-    if (repoEl) state.settings.githubRepo = repoEl.value.trim() || 'ahneth/myPortfolio';
-    if (branchEl) state.settings.githubBranch = branchEl.value.trim() || 'main';
-    if (tokEl) state.settings.githubToken = tokEl.value.trim();
-    saveState();
-    renderApiStatusUI();
-    if (typeof AppLogger !== 'undefined') {
-      AppLogger.action('Settings', `Saved GitHub workflow settings for ${state.settings.githubRepo}@${state.settings.githubBranch} (PAT configured: ${Boolean(state.settings.githubToken)})`);
-    }
-    showToast(`Saved GitHub workflow settings (${state.settings.githubRepo})!`, 'success');
-  });
-  on('btn-trigger-gh-prices', 'click', () => syncAllMarketData(true));
+  // Cloudflare Worker Manual Sync Controls (Settings, Dividends & News)
+  on('btn-trigger-gh-prices', 'click', () => syncHistoricalPricesFromCloudflare(true));
+  on('btn-settings-sync-dividends', 'click', () => syncDividendsFromCloudflare(true));
   on('btn-trigger-gh-news', 'click', () => syncCompanyNewsLive(true));
+  on('btn-sync-dividends-live', 'click', () => syncDividendsFromCloudflare(true));
+  on('btn-sync-dividends-cal', 'click', () => syncDividendsFromCloudflare(true));
 
   // News Tab Controls
   on('btn-sync-news-live', 'click', () => syncCompanyNewsLive(true));
@@ -4569,8 +4537,9 @@ function bootstrapPortfolioApp() {
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      loadHistoricalPricesFromJson(true);
-      loadCompanyNewsFromJson();
+      if (typeof checkAndRunDailyCloudflareSync === 'function') {
+        checkAndRunDailyCloudflareSync(false);
+      }
       if (Date.now() - (window.__LAST_LIVE_SYNC_TS__ || 0) >= AUTO_LIVE_SYNC_INTERVAL_MS) {
         triggerActivePageAutoSync();
       }
@@ -4580,7 +4549,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.4.8 boot sequence complete — triggering initial live price sync and starting 30s active-page auto-sync timer.');
+      AppLogger.info('Boot', 'myPortfolio v3.5.1 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;
@@ -4589,6 +4558,9 @@ function bootstrapPortfolioApp() {
           AppLogger.warn('Boot', `Initial live price API fetch notice: ${err.message}`);
         }
       });
+    }
+    if (typeof checkAndRunDailyCloudflareSync === 'function') {
+      checkAndRunDailyCloudflareSync(false);
     }
   }, 150);
 }

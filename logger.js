@@ -315,7 +315,7 @@ var AppLogger = (function() {
       ? Object.keys(state.historicalPrices).filter(k => Array.isArray(state.historicalPrices[k]) && state.historicalPrices[k].length > 0).length
       : 0;
     const jsonStatus = window.__HISTORICAL_PRICES_JSON_LOADED__
-      ? 'historical_prices.json loaded'
+      ? 'Cloudflare 15Y history synced'
       : 'no preloaded history (charts stay empty until real data is loaded)';
     checks.push({
       name: 'MarketAPI & Historical Price Cache',
