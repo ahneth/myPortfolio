@@ -303,6 +303,96 @@ var MarketAPI = {
     };
   },
 
+  _extractExactQuoteFromYahooChart(symbol, result, rangeHint = '5d') {
+    if (!result || !result.meta) return null;
+    const staticMeta = this.getStaticProfile(symbol);
+    const meta = result.meta;
+    const timestamps = Array.isArray(result.timestamp) ? result.timestamp : [];
+    const rawCloses = result.indicators?.quote?.[0]?.close || [];
+    const gmtOffsetSec = Number(meta.gmtoffset) || 0;
+    const toLocalDay = (tsSec) => {
+      const ms = (Number(tsSec) + gmtOffsetSec) * 1000;
+      return Number.isFinite(ms) && ms > 0 ? new Date(ms).toISOString().slice(0, 10) : '';
+    };
+
+    const datedBars = [];
+    const closes = [];
+    for (let i = 0; i < rawCloses.length; i++) {
+      const c = rawCloses[i] !== null && rawCloses[i] !== undefined ? Number(rawCloses[i]) : NaN;
+      if (!Number.isFinite(c) || c <= 0) continue;
+      closes.push(c);
+      const ts = Number(timestamps[i]);
+      const day = ts > 0 ? toLocalDay(ts) : '';
+      if (day) {
+        if (datedBars.length > 0 && datedBars[datedBars.length - 1].day === day) {
+          datedBars[datedBars.length - 1].close = c;
+        } else {
+          datedBars.push({ ts, day, close: c });
+        }
+      }
+    }
+
+    const price = Number.isFinite(Number(meta.regularMarketPrice)) && Number(meta.regularMarketPrice) > 0
+      ? Number(meta.regularMarketPrice)
+      : (closes.length > 0 ? closes[closes.length - 1] : NaN);
+    if (!Number.isFinite(price) || price <= 0) return null;
+
+    const quoteDay = Number(meta.regularMarketTime) > 0
+      ? toLocalDay(meta.regularMarketTime)
+      : (datedBars.length > 0 ? datedBars[datedBars.length - 1].day : '');
+    const priorDayBars = quoteDay ? datedBars.filter(b => b.day < quoteDay) : [];
+
+    let prevPrice = NaN;
+    const metaPrev = Number(
+      meta.regularMarketPreviousClose ??
+      meta.previousClose ??
+      (rangeHint === '1d' ? meta.chartPreviousClose : NaN)
+    );
+
+    if (priorDayBars.length > 0) {
+      prevPrice = priorDayBars[priorDayBars.length - 1].close;
+    } else if (Number.isFinite(metaPrev) && metaPrev > 0) {
+      prevPrice = metaPrev;
+    } else if (closes.length >= 1) {
+      const lastBarClose = closes[closes.length - 1];
+      if (Math.abs(lastBarClose - price) > 1e-4) {
+        prevPrice = lastBarClose;
+      } else if (closes.length >= 2) {
+        prevPrice = closes[closes.length - 2];
+      }
+    }
+
+    if (!Number.isFinite(prevPrice) || prevPrice <= 0) {
+      prevPrice = price;
+    }
+    if (prevPrice > 0 && Math.abs((price - prevPrice) / prevPrice) > 0.40) {
+      if (priorDayBars.length > 0 && Math.abs((price - priorDayBars[priorDayBars.length - 1].close) / priorDayBars[priorDayBars.length - 1].close) <= 0.40) {
+        prevPrice = priorDayBars[priorDayBars.length - 1].close;
+      } else {
+        prevPrice = price;
+      }
+    }
+
+    const change = Fin.round(price - prevPrice, 4);
+    const changePct = prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0;
+    const currency = meta.currency || staticMeta.currency || (symbol.endsWith('.HK') ? 'HKD' : 'USD');
+    const longName = meta.longName || meta.shortName || state?.fundamentals?.[symbol]?.name || staticMeta.name || symbol;
+    const high52w = Number(meta.fiftyTwoWeekHigh) > 0 ? Fin.round(Number(meta.fiftyTwoWeekHigh), 4) : (state?.fundamentals?.[symbol]?.high52w || null);
+    const low52w = Number(meta.fiftyTwoWeekLow) > 0 ? Fin.round(Number(meta.fiftyTwoWeekLow), 4) : (state?.fundamentals?.[symbol]?.low52w || null);
+
+    return {
+      price: Fin.round(price, 4),
+      prevPrice: Fin.round(prevPrice, 4),
+      change,
+      changePct,
+      high52w,
+      low52w,
+      currency,
+      name: longName,
+      instrumentType: meta.instrumentType || ''
+    };
+  },
+
   async fetchCloudflareBatchQuotes(tickers = [], timeoutMs = 8000) {
     const syms = Array.from(new Set(
       (tickers || []).map(t => this.normalizeTicker(t)).filter(Boolean)
@@ -315,6 +405,9 @@ var MarketAPI = {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
+      // Request range=1d&interval=1d so even a legacy v3.4.5 _worker.js (where closes.length <= 1)
+      // avoids picking closes[closes.length - 2] (2 days ago), and if workerVersion < 3.5.2,
+      // also verify via ?url= raw 5d/1d chart so 1D prevPrice is 100% exact before & after worker update.
       const url = `${workerBase}/?symbols=${encodeURIComponent(syms.join(','))}&range=5d&interval=1d&_=${Date.now()}`;
       const res = await fetch(url, {
         signal: controller.signal,
@@ -325,37 +418,67 @@ var MarketAPI = {
         throw new Error(`Cloudflare Worker HTTP ${res.status}`);
       }
       const data = await res.json();
+      const isUpgradedWorker = Boolean(data?.workerVersion && String(data.workerVersion) >= '3.5.2');
       const rawQuotes = data?.quotes || {};
       const out = {};
-      syms.forEach(sym => {
-        const q = rawQuotes[sym];
-        if (!q || !q.ok || !(Number(q.price) > 0)) return;
-        const staticMeta = this.getStaticProfile(sym);
-        const price = Fin.round(Number(q.price), 4);
-        const prevPrice = Fin.round(Number(q.prevPrice || q.price), 4);
-        const change = q.change !== undefined ? Fin.round(Number(q.change), 3) : Fin.round(price - prevPrice, 3);
-        const changePct = q.changePct !== undefined
-          ? Fin.round(Number(q.changePct), 2)
-          : (prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0);
-        const currency = q.currency || staticMeta.currency || (sym.endsWith('.HK') ? 'HKD' : 'USD');
-        const name = q.name || state?.fundamentals?.[sym]?.name || staticMeta.name || sym;
-        const high52w = Number(q.high52w) > 0 ? Fin.round(Number(q.high52w), 4) : (state?.fundamentals?.[sym]?.high52w || null);
-        const low52w = Number(q.low52w) > 0 ? Fin.round(Number(q.low52w), 4) : (state?.fundamentals?.[sym]?.low52w || null);
-        const quoteObj = {
-          price,
-          prevPrice,
-          change,
-          changePct,
-          high52w,
-          low52w,
-          currency,
-          name,
-          instrumentType: q.instrumentType || '',
-          source: 'Cloudflare Worker (myportfolio-quotes.pages.dev)'
-        };
-        this._applyQuoteToFundamentals(sym, quoteObj);
-        out[sym] = quoteObj;
-      });
+
+      if (isUpgradedWorker) {
+        syms.forEach(sym => {
+          const q = rawQuotes[sym];
+          if (!q || !q.ok || !(Number(q.price) > 0)) return;
+          const staticMeta = this.getStaticProfile(sym);
+          const price = Fin.round(Number(q.price), 4);
+          const prevPrice = Fin.round(Number(q.prevPrice || q.price), 4);
+          const change = Fin.round(price - prevPrice, 4);
+          const changePct = prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0;
+          const currency = q.currency || staticMeta.currency || (sym.endsWith('.HK') ? 'HKD' : 'USD');
+          const name = q.name || state?.fundamentals?.[sym]?.name || staticMeta.name || sym;
+          const high52w = Number(q.high52w) > 0 ? Fin.round(Number(q.high52w), 4) : (state?.fundamentals?.[sym]?.high52w || null);
+          const low52w = Number(q.low52w) > 0 ? Fin.round(Number(q.low52w), 4) : (state?.fundamentals?.[sym]?.low52w || null);
+          const quoteObj = {
+            price,
+            prevPrice,
+            change,
+            changePct,
+            high52w,
+            low52w,
+            currency,
+            name,
+            instrumentType: q.instrumentType || '',
+            source: 'Cloudflare Worker (myportfolio-quotes.pages.dev)'
+          };
+          this._applyQuoteToFundamentals(sym, quoteObj);
+          out[sym] = quoteObj;
+        });
+      } else {
+        // Legacy worker fallback: use ?url= pass-through on myportfolio-quotes.pages.dev to parse exact exchange-dated prevPrice
+        await Promise.allSettled(syms.map(async (sym) => {
+          try {
+            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=5d&interval=1d&includePrePost=false`;
+            const pCtrl = new AbortController();
+            const pTimer = setTimeout(() => pCtrl.abort(), 6500);
+            const pRes = await fetch(`${workerBase}/?url=${encodeURIComponent(yahooUrl)}&_=${Date.now()}`, {
+              signal: pCtrl.signal,
+              cache: 'no-store'
+            });
+            clearTimeout(pTimer);
+            if (pRes.ok) {
+              const pData = await pRes.json();
+              const parsedQ = this._extractExactQuoteFromYahooChart(sym, pData?.chart?.result?.[0], '5d');
+              if (parsedQ && parsedQ.price > 0) {
+                const quoteObj = {
+                  ...parsedQ,
+                  source: 'Cloudflare Worker (myportfolio-quotes.pages.dev)'
+                };
+                this._applyQuoteToFundamentals(sym, quoteObj);
+                out[sym] = quoteObj;
+                return;
+              }
+            }
+          } catch (_) {}
+        }));
+      }
+
       if (Object.keys(out).length > 0) {
         this.lastRouteUsed = 'Cloudflare Worker (myportfolio-quotes.pages.dev)';
       }
@@ -375,12 +498,11 @@ var MarketAPI = {
     let sq = state?.prices?.[symbol];
     if ((!sq || !(Number(sq.price) > 0)) && lastBar && Number(lastBar.rawClose || lastBar.close) > 0) {
       const c = Number(lastBar.rawClose || lastBar.close);
-      const pc = prevBar && Number(prevBar.rawClose || prevBar.close) > 0 ? Number(prevBar.rawClose || prevBar.close) : c;
       sq = {
         price: c,
-        prevPrice: pc,
-        change: Fin.round(c - pc, 4),
-        changePct: pc > 0 ? Fin.round(((c - pc) / pc) * 100, 2) : 0,
+        prevPrice: c,
+        change: 0,
+        changePct: 0,
         currency: staticMeta.currency
       };
     }
@@ -670,50 +792,14 @@ var MarketAPI = {
         const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=false&_=${cb}`;
 
         const data = await this.fetchYahooJson([q1, q2], null);
-        const result = data?.chart?.result?.[0];
-        if (result && result.meta) {
-          const meta = result.meta;
-          const closes = (result.indicators?.quote?.[0]?.close || []).filter(v => v !== null && v !== undefined && !isNaN(v));
-          const price = parseFloat(meta.regularMarketPrice ?? closes[closes.length - 1]);
-          if (price && !isNaN(price)) {
-            let prevPrice = (closes.length >= 2 ? parseFloat(closes[closes.length - 2]) : NaN);
-            if (!prevPrice || isNaN(prevPrice)) {
-              prevPrice = parseFloat(meta.regularMarketPreviousClose ?? meta.previousClose);
-            }
-            if (!prevPrice || isNaN(prevPrice) || prevPrice <= 0) {
-              prevPrice = price;
-            }
-
-            if (prevPrice > 0 && Math.abs((price - prevPrice) / prevPrice) > 0.40) {
-              if (closes.length >= 2 && closes[closes.length - 2] > 0 && Math.abs((price - closes[closes.length - 2]) / closes[closes.length - 2]) <= 0.40) {
-                prevPrice = parseFloat(closes[closes.length - 2]);
-              } else {
-                prevPrice = price;
-              }
-            }
-
-            const change = Fin.round(price - prevPrice, 3);
-            const changePct = prevPrice > 0 ? Fin.round(((price - prevPrice) / prevPrice) * 100, 2) : 0;
-            const currency = meta.currency || staticMeta.currency;
-            const longName = meta.longName || meta.shortName || state?.fundamentals?.[symbol]?.name || staticMeta.name || symbol;
-            const high52w = meta.fiftyTwoWeekHigh ? Fin.round(parseFloat(meta.fiftyTwoWeekHigh), 4) : (state?.fundamentals?.[symbol]?.high52w || null);
-            const low52w = meta.fiftyTwoWeekLow ? Fin.round(parseFloat(meta.fiftyTwoWeekLow), 4) : (state?.fundamentals?.[symbol]?.low52w || null);
-
-            const quoteObj = {
-              price: Fin.round(price, 4),
-              prevPrice: Fin.round(prevPrice, 4),
-              change,
-              changePct,
-              high52w,
-              low52w,
-              currency,
-              name: longName,
-              instrumentType: meta.instrumentType || '',
-              source: this.lastRouteUsed
-            };
-            this._applyQuoteToFundamentals(symbol, quoteObj);
-            return quoteObj;
-          }
+        const parsedQ = this._extractExactQuoteFromYahooChart(symbol, data?.chart?.result?.[0], '5d');
+        if (parsedQ && parsedQ.price > 0) {
+          const quoteObj = {
+            ...parsedQ,
+            source: this.lastRouteUsed
+          };
+          this._applyQuoteToFundamentals(symbol, quoteObj);
+          return quoteObj;
         }
       } catch (yahooErr) {
         const cachedQuote = this.getEmbeddedOrCachedQuote(symbol);

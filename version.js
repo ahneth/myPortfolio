@@ -7,22 +7,33 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.1',
-  buildId: '20261112_1325',
-  releaseDate: '2026-11-12 13:25 HKT',
-  driveFolder: '/myPortfolio/20261112_1325/',
+  appVersion: '3.5.2',
+  buildId: '20261112_1615',
+  releaseDate: '2026-11-12 16:15 HKT',
+  driveFolder: '/myPortfolio/20261112_1615/',
   modules: {
-    'version.js':   { version: '3.5.1', updated: '20261112_1325', role: 'Version manifest, module registry & v3.5.1 changelog history' },
+    'version.js':   { version: '3.5.2', updated: '20261112_1615', role: 'Version manifest, module registry & v3.5.2 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
-    'api.js':       { version: '3.5.1', updated: '20261112_1325', role: 'Unified Cloudflare Worker (quotes, 15Y monthly history, dividends & news) + Option 1 Daily Date-Stamp Auto-Sync' },
+    'api.js':       { version: '3.5.2', updated: '20261112_1615', role: 'Exchange-Date-Verified 1D Previous Close Engine + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
     'portfolio.js': { version: '3.5.1', updated: '20261112_1325', role: 'Cloudflare Worker ingestion, 2018+ Dividend Auto-Backfill, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.1', updated: '20261112_1325', role: 'Holdings Total Return next to Market Value, Option 1 Daily Rollover Check, Manual Refresh Buttons in Dividends & News' },
+    'app.js':       { version: '3.5.2', updated: '20261112_1615', role: 'Holdings Total Return next to Market Value, Option 1 Daily Rollover Check, Manual Refresh Buttons in Dividends & News' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.1', updated: '20261112_1325', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.5.2', updated: '20261112_1615', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.2',
+      buildId: '20261112_1615',
+      date: '2026-11-12 16:15 HKT',
+      summary: 'Fixed 1D change % calculation bug where Yahoo Finance 5d/1d chart arrays with a null/unsettled current-day candle caused closes[closes.length - 2] to select the close from 2 trading days ago (e.g. $24.68 instead of yesterday\'s $24.40 on 2800.HK).',
+      changes: [
+        'Updated fetchSingleYahooQuote() in _worker.js and _extractExactQuoteFromYahooChart() in api.js to map each daily bar timestamp to its exchange-local calendar date (via meta.gmtoffset) and select the latest completed trading session strictly prior to the quote\'s calendar date (bar.day < quoteDay).',
+        'Added automatic client-side verification in fetchCloudflareBatchQuotes() so if the deployed Cloudflare Worker is running an older version (< 3.5.2), api.js fetches the raw 5d/1d chart via ?url= and computes the exact exchange-dated 1D previous close immediately.',
+        'Fixed getEmbeddedOrCachedQuote() in api.js so fallback quotes initialized from monthly history bars set prevPrice = price (0% 1D change) rather than using the prior month\'s close.'
+      ]
+    },
     {
       version: '3.5.1',
       buildId: '20261112_1325',
