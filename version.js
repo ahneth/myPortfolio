@@ -7,22 +7,32 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.2',
-  buildId: '20261112_1615',
-  releaseDate: '2026-11-12 16:15 HKT',
-  driveFolder: '/myPortfolio/20261112_1615/',
+  appVersion: '3.5.3',
+  buildId: '20261112_1638',
+  releaseDate: '2026-11-12 16:38 HKT',
+  driveFolder: '/myPortfolio/20261112_1638/',
   modules: {
-    'version.js':   { version: '3.5.2', updated: '20261112_1615', role: 'Version manifest, module registry & v3.5.2 changelog history' },
+    'version.js':   { version: '3.5.3', updated: '20261112_1638', role: 'Version manifest, module registry & v3.5.3 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
-    'api.js':       { version: '3.5.2', updated: '20261112_1615', role: 'Exchange-Date-Verified 1D Previous Close Engine + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
+    'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
     'portfolio.js': { version: '3.5.1', updated: '20261112_1325', role: 'Cloudflare Worker ingestion, 2018+ Dividend Auto-Backfill, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.2', updated: '20261112_1615', role: 'Holdings Total Return next to Market Value, Option 1 Daily Rollover Check, Manual Refresh Buttons in Dividends & News' },
+    'app.js':       { version: '3.5.3', updated: '20261112_1638', role: 'Holdings Total Return next to Market Value, Prev Close tooltip, Option 1 Daily Rollover Check' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.2', updated: '20261112_1615', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.5.3', updated: '20261112_1638', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.3',
+      buildId: '20261112_1638',
+      date: '2026-11-12 16:38 HKT',
+      summary: 'Switched live quote endpoint from range=5d&interval=1d to range=1d&interval=15m so Yahoo Finance directly provides the exact official previous trading day close in meta.chartPreviousClose (eliminating multi-day daily-candle settlement lag that caused 2800.HK to show -2.27% instead of -1.23%).',
+      changes: [
+        'Updated _worker.js and api.js quote fetchers to request range=1d&interval=15m and prioritize meta.regularMarketPreviousClose ?? meta.previousClose ?? meta.chartPreviousClose.',
+        'Added the exact previous close price to the 1D % hover tooltip in renderHoldingsTable() in app.js.'
+      ]
+    },
     {
       version: '3.5.2',
       buildId: '20261112_1615',

@@ -858,7 +858,7 @@ tr:hover .table-action-capsule {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.5.2 (20261112_1615)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.5.3 (20261112_1638)</span>
             </div>
           </div>
         </div>
@@ -2286,13 +2286,13 @@ tr:hover .table-action-capsule {
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.5.2 • Build 20261112_1615</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.5.3 • Build 20261112_1638</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261112_1615</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261112_1638</span>/
           </span>
         </div>
 
@@ -2559,7 +2559,7 @@ tr:hover .table-action-capsule {
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 flex flex-col lg:flex-row items-center justify-between gap-2.5">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.5.2 (Build 20261112_1615)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.5.3 (Build 20261112_1638)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
       <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
@@ -3137,22 +3137,32 @@ tr:hover .table-action-capsule {
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.2',
-  buildId: '20261112_1615',
-  releaseDate: '2026-11-12 16:15 HKT',
-  driveFolder: '/myPortfolio/20261112_1615/',
+  appVersion: '3.5.3',
+  buildId: '20261112_1638',
+  releaseDate: '2026-11-12 16:38 HKT',
+  driveFolder: '/myPortfolio/20261112_1638/',
   modules: {
-    'version.js':   { version: '3.5.2', updated: '20261112_1615', role: 'Version manifest, module registry & v3.5.2 changelog history' },
+    'version.js':   { version: '3.5.3', updated: '20261112_1638', role: 'Version manifest, module registry & v3.5.3 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
-    'api.js':       { version: '3.5.2', updated: '20261112_1615', role: 'Exchange-Date-Verified 1D Previous Close Engine + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
+    'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
     'portfolio.js': { version: '3.5.1', updated: '20261112_1325', role: 'Cloudflare Worker ingestion, 2018+ Dividend Auto-Backfill, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.2', updated: '20261112_1615', role: 'Holdings Total Return next to Market Value, Option 1 Daily Rollover Check, Manual Refresh Buttons in Dividends & News' },
+    'app.js':       { version: '3.5.3', updated: '20261112_1638', role: 'Holdings Total Return next to Market Value, Prev Close tooltip, Option 1 Daily Rollover Check' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.2', updated: '20261112_1615', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.5.3', updated: '20261112_1638', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.3',
+      buildId: '20261112_1638',
+      date: '2026-11-12 16:38 HKT',
+      summary: 'Switched live quote endpoint from range=5d&interval=1d to range=1d&interval=15m so Yahoo Finance directly provides the exact official previous trading day close in meta.chartPreviousClose (eliminating multi-day daily-candle settlement lag that caused 2800.HK to show -2.27% instead of -1.23%).',
+      changes: [
+        'Updated _worker.js and api.js quote fetchers to request range=1d&interval=15m and prioritize meta.regularMarketPreviousClose ?? meta.previousClose ?? meta.chartPreviousClose.',
+        'Added the exact previous close price to the 1D % hover tooltip in renderHoldingsTable() in app.js.'
+      ]
+    },
     {
       version: '3.5.2',
       buildId: '20261112_1615',
@@ -4828,7 +4838,9 @@ var MarketAPI = {
       (rangeHint === '1d' ? meta.chartPreviousClose : NaN)
     );
 
-    if (priorDayBars.length > 0) {
+    if (rangeHint === '1d' && Number.isFinite(metaPrev) && metaPrev > 0) {
+      prevPrice = metaPrev;
+    } else if (priorDayBars.length > 0) {
       prevPrice = priorDayBars[priorDayBars.length - 1].close;
     } else if (Number.isFinite(metaPrev) && metaPrev > 0) {
       prevPrice = metaPrev;
@@ -4887,7 +4899,7 @@ var MarketAPI = {
       // Request range=1d&interval=1d so even a legacy v3.4.5 _worker.js (where closes.length <= 1)
       // avoids picking closes[closes.length - 2] (2 days ago), and if workerVersion < 3.5.2,
       // also verify via ?url= raw 5d/1d chart so 1D prevPrice is 100% exact before & after worker update.
-      const url = `${workerBase}/?symbols=${encodeURIComponent(syms.join(','))}&range=5d&interval=1d&_=${Date.now()}`;
+      const url = `${workerBase}/?symbols=${encodeURIComponent(syms.join(','))}&range=1d&interval=15m&_=${Date.now()}`;
       const res = await fetch(url, {
         signal: controller.signal,
         cache: 'no-store'
@@ -4897,7 +4909,7 @@ var MarketAPI = {
         throw new Error(`Cloudflare Worker HTTP ${res.status}`);
       }
       const data = await res.json();
-      const isUpgradedWorker = Boolean(data?.workerVersion && String(data.workerVersion) >= '3.5.2');
+      const isUpgradedWorker = Boolean(data?.workerVersion && String(data.workerVersion) >= '3.5.3');
       const rawQuotes = data?.quotes || {};
       const out = {};
 
@@ -4933,7 +4945,7 @@ var MarketAPI = {
         // Legacy worker fallback: use ?url= pass-through on myportfolio-quotes.pages.dev to parse exact exchange-dated prevPrice
         await Promise.allSettled(syms.map(async (sym) => {
           try {
-            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=5d&interval=1d&includePrePost=false`;
+            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1d&interval=15m&includePrePost=false`;
             const pCtrl = new AbortController();
             const pTimer = setTimeout(() => pCtrl.abort(), 6500);
             const pRes = await fetch(`${workerBase}/?url=${encodeURIComponent(yahooUrl)}&_=${Date.now()}`, {
@@ -4943,7 +4955,7 @@ var MarketAPI = {
             clearTimeout(pTimer);
             if (pRes.ok) {
               const pData = await pRes.json();
-              const parsedQ = this._extractExactQuoteFromYahooChart(sym, pData?.chart?.result?.[0], '5d');
+              const parsedQ = this._extractExactQuoteFromYahooChart(sym, pData?.chart?.result?.[0], '1d');
               if (parsedQ && parsedQ.price > 0) {
                 const quoteObj = {
                   ...parsedQ,
@@ -5267,11 +5279,11 @@ var MarketAPI = {
       // 2. Secondary Route: Yahoo Finance v8 5d/1d quote via Browser CORS Proxy Pool
       try {
         const cb = Date.now();
-        const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=false&_=${cb}`;
-        const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=false&_=${cb}`;
+        const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=15m&includePrePost=false&_=${cb}`;
+        const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=15m&includePrePost=false&_=${cb}`;
 
         const data = await this.fetchYahooJson([q1, q2], null);
-        const parsedQ = this._extractExactQuoteFromYahooChart(symbol, data?.chart?.result?.[0], '5d');
+        const parsedQ = this._extractExactQuoteFromYahooChart(symbol, data?.chart?.result?.[0], '1d');
         if (parsedQ && parsedQ.price > 0) {
           const quoteObj = {
             ...parsedQ,
@@ -11020,7 +11032,7 @@ window.renderTradesBalanceCashflowChart = renderTradesBalanceCashflowChart;
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.5.2-20261112_1615') {
+      if (k !== 'myportfolio-cache-v3.5.3-20261112_1638') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -12700,7 +12712,7 @@ function renderHoldingsTable() {
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             <div class="font-bold num-font text-slate-900 dark:text-white" title="${hCurr !== baseCurr && curPriceBase > 0 ? `Equivalent in ${baseCurr}: ${Fin.currency(curPriceBase, false, baseCurr)}` : ''}">${h.currentPrice > 0 ? Fin.currency(h.currentPrice, false, hCurr) : '-'}</div>
-            <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
+            <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day change vs. previous close (${Fin.currency(state.prices[h.ticker]?.prevPrice || h.currentPrice, false, hCurr)})">
               <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct)}
             </div>
           </td>
@@ -13397,7 +13409,7 @@ function renderWatchlistAndFundamentals() {
               <td class="py-1 sm:py-1.5 px-3 text-right">
                 ${curPrice > 0
                   ? `<div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(curPrice, false, wlCurrency)}</div>
-                     <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day market price change vs. previous trading close">
+                     <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day change vs. previous close (${Fin.currency(state.prices[h.ticker]?.prevPrice || h.currentPrice, false, hCurr)})">
                        <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(priceChangePct) > 40 ? 0 : priceChangePct)}
                      </div>`
                   : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
@@ -15566,7 +15578,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.5.2 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
+      AppLogger.info('Boot', 'myPortfolio v3.5.3 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

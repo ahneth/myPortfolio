@@ -349,7 +349,9 @@ var MarketAPI = {
       (rangeHint === '1d' ? meta.chartPreviousClose : NaN)
     );
 
-    if (priorDayBars.length > 0) {
+    if (rangeHint === '1d' && Number.isFinite(metaPrev) && metaPrev > 0) {
+      prevPrice = metaPrev;
+    } else if (priorDayBars.length > 0) {
       prevPrice = priorDayBars[priorDayBars.length - 1].close;
     } else if (Number.isFinite(metaPrev) && metaPrev > 0) {
       prevPrice = metaPrev;
@@ -408,7 +410,7 @@ var MarketAPI = {
       // Request range=1d&interval=1d so even a legacy v3.4.5 _worker.js (where closes.length <= 1)
       // avoids picking closes[closes.length - 2] (2 days ago), and if workerVersion < 3.5.2,
       // also verify via ?url= raw 5d/1d chart so 1D prevPrice is 100% exact before & after worker update.
-      const url = `${workerBase}/?symbols=${encodeURIComponent(syms.join(','))}&range=5d&interval=1d&_=${Date.now()}`;
+      const url = `${workerBase}/?symbols=${encodeURIComponent(syms.join(','))}&range=1d&interval=15m&_=${Date.now()}`;
       const res = await fetch(url, {
         signal: controller.signal,
         cache: 'no-store'
@@ -418,7 +420,7 @@ var MarketAPI = {
         throw new Error(`Cloudflare Worker HTTP ${res.status}`);
       }
       const data = await res.json();
-      const isUpgradedWorker = Boolean(data?.workerVersion && String(data.workerVersion) >= '3.5.2');
+      const isUpgradedWorker = Boolean(data?.workerVersion && String(data.workerVersion) >= '3.5.3');
       const rawQuotes = data?.quotes || {};
       const out = {};
 
@@ -454,7 +456,7 @@ var MarketAPI = {
         // Legacy worker fallback: use ?url= pass-through on myportfolio-quotes.pages.dev to parse exact exchange-dated prevPrice
         await Promise.allSettled(syms.map(async (sym) => {
           try {
-            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=5d&interval=1d&includePrePost=false`;
+            const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1d&interval=15m&includePrePost=false`;
             const pCtrl = new AbortController();
             const pTimer = setTimeout(() => pCtrl.abort(), 6500);
             const pRes = await fetch(`${workerBase}/?url=${encodeURIComponent(yahooUrl)}&_=${Date.now()}`, {
@@ -464,7 +466,7 @@ var MarketAPI = {
             clearTimeout(pTimer);
             if (pRes.ok) {
               const pData = await pRes.json();
-              const parsedQ = this._extractExactQuoteFromYahooChart(sym, pData?.chart?.result?.[0], '5d');
+              const parsedQ = this._extractExactQuoteFromYahooChart(sym, pData?.chart?.result?.[0], '1d');
               if (parsedQ && parsedQ.price > 0) {
                 const quoteObj = {
                   ...parsedQ,
@@ -788,11 +790,11 @@ var MarketAPI = {
       // 2. Secondary Route: Yahoo Finance v8 5d/1d quote via Browser CORS Proxy Pool
       try {
         const cb = Date.now();
-        const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=false&_=${cb}`;
-        const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=5d&interval=1d&includePrePost=false&_=${cb}`;
+        const q1 = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=15m&includePrePost=false&_=${cb}`;
+        const q2 = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=15m&includePrePost=false&_=${cb}`;
 
         const data = await this.fetchYahooJson([q1, q2], null);
-        const parsedQ = this._extractExactQuoteFromYahooChart(symbol, data?.chart?.result?.[0], '5d');
+        const parsedQ = this._extractExactQuoteFromYahooChart(symbol, data?.chart?.result?.[0], '1d');
         if (parsedQ && parsedQ.price > 0) {
           const quoteObj = {
             ...parsedQ,
