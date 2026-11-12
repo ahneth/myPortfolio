@@ -1146,15 +1146,30 @@ async function syncAllMarketData(triggerGitHubWorkflow = false, options = {}) {
   recalculatePortfolio();
   saveState();
 
-  const hasPriceChange = Object.keys(flashDirections).length > 0;
-  if (isAutoTimer && !hasPriceChange) {
+  const prevWinScrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+  if (isAutoTimer) {
     try { if (typeof renderApiStatusUI === 'function') renderApiStatusUI(); } catch (_) {}
     try { if (typeof renderKPIs === 'function') renderKPIs(); } catch (_) {}
     try {
       const activeTab = typeof getActiveTabName === 'function' ? getActiveTabName() : 'dashboard';
-      if (activeTab === 'holdings' && typeof renderHoldingsTable === 'function') renderHoldingsTable();
-      else if (activeTab === 'watchlist' && typeof renderWatchlistAndFundamentals === 'function') renderWatchlistAndFundamentals();
+      if (activeTab === 'dashboard' && typeof renderCharts === 'function') {
+        renderCharts();
+      } else if (activeTab === 'holdings') {
+        if (typeof renderHoldingsTable === 'function') renderHoldingsTable();
+        if (typeof renderInlineStockChart === 'function') renderInlineStockChart('holdings');
+      } else if (activeTab === 'watchlist') {
+        if (typeof renderWatchlistAndFundamentals === 'function') renderWatchlistAndFundamentals();
+        if (typeof renderInlineStockChart === 'function') renderInlineStockChart('watchlist');
+      } else if (activeTab === 'transactions' && typeof renderTradesBalanceCashflowChart === 'function') {
+        renderTradesBalanceCashflowChart();
+      }
+      if (typeof _allTabNames !== 'undefined' && typeof markTabDirty === 'function') {
+        _allTabNames.forEach(t => { if (t !== activeTab) markTabDirty(t); });
+      }
     } catch (_) {}
+    if (typeof window !== 'undefined' && Math.abs(window.scrollY - prevWinScrollY) > 2) {
+      window.scrollTo(window.scrollX, prevWinScrollY);
+    }
   } else {
     renderAll();
   }

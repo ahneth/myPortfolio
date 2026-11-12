@@ -1215,7 +1215,11 @@ function updateHeaderSortIndicators(tableId, activeCol, activeOrder, attrName = 
 }
 
 function renderHoldingsTable() {
+  const winScrollY = typeof window !== 'undefined' ? window.scrollY : 0;
   const tbody = document.getElementById('holdings-table-body');
+  const scrollBox = tbody ? tbody.closest('.scrollable-portfolio-table-box') : null;
+  const boxScrollTop = scrollBox ? scrollBox.scrollTop : 0;
+  const boxScrollLeft = scrollBox ? scrollBox.scrollLeft : 0;
   const emptyState = document.getElementById('holdings-empty-state');
   const signalFilterEl = document.getElementById('holdings-filter-signal');
   const activeOnlyCheckbox = document.getElementById('holdings-filter-active-only');
@@ -1804,6 +1808,13 @@ function renderHoldingsTable() {
       });
     }
   });
+  if (scrollBox) {
+    scrollBox.scrollTop = boxScrollTop;
+    scrollBox.scrollLeft = boxScrollLeft;
+  }
+  if (typeof window !== 'undefined' && Math.abs(window.scrollY - winScrollY) > 2) {
+    window.scrollTo(window.scrollX, winScrollY);
+  }
 }
 
 var PAGINATION_PAGE_SIZE = 20;

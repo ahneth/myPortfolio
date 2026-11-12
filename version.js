@@ -7,10 +7,10 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.4.8',
-  buildId: '20261112_0730',
-  releaseDate: '2026-11-12 07:30 HKT',
-  driveFolder: '/myPortfolio/20261112_0730/',
+  appVersion: '3.5.0',
+  buildId: '20261112_1008',
+  releaseDate: '2026-11-12 10:08 HKT',
+  driveFolder: '/myPortfolio/20261112_1008/',
   modules: {
     'version.js':   { version: '3.1.0', updated: '20261031_1650', role: 'Version manifest, module registry & v3.0.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
@@ -23,6 +23,26 @@ var APP_VERSION_MANIFEST = {
     'index.html':   { version: '3.1.0', updated: '20261031_1650', role: 'Self-contained single-file production bundle with live MarketAPI quotes & GitHub Actions Python data pipeline' }
   },
   changelog: [
+    {
+      version: '3.5.0',
+      buildId: '20261112_1008',
+      date: '2026-11-12 10:08 HKT',
+      summary: 'Extended zero-bounce in-place chart.update("none") refresh logic across all Portfolio Balance & Return, Asset Allocation, P&L Breakdown, Dividend Income, and Trades Historical Balance & Cashflows charts.',
+      changes: [
+        'Updated renderMonthlyHistoryChart(), renderAllocationChart(), renderDividendsChart(), renderPnlBreakdownChart(), and renderTradesBalanceCashflowChart() in charts.js to mutate dataset arrays in-place and call chart.update("none") whenever the chart mode, timeframe, privacy state, and theme match (_renderSig)—eliminating canvas destruction and re-animation across the entire app.',
+        'Updated computeMonthlyPortfolioSeries() so the final month bar dynamically incorporates live stock prices from 30-second auto-sync ticks for real-time in-place updates on both the Dashboard and Trades balance/return charts.'
+      ]
+    },
+    {
+      version: '3.4.9',
+      buildId: '20261112_0958',
+      date: '2026-11-12 09:58 HKT',
+      summary: 'Eliminated screen bounce and chart re-animation during 30-second live price refreshes by updating existing Chart.js datasets in-place with chart.update("none") and preserving table/window scroll positions.',
+      changes: [
+        'Updated renderInlineStockChart() in charts.js to reflect live price changes in the final data point and update existing Chart.js instances in-place via existingChart.update("none") when the same ticker, range, and overlay settings are mounted—avoiding chart.destroy(), canvas height collapse, 400ms grow animations, and legend DOM teardown.',
+        'Preserved window.scrollY and scrollable table container scrollTop/scrollLeft across renderHoldingsTable() in app.js and 30-second background timer ticks in syncAllMarketData() in api.js so the screen never jumps during auto-sync.'
+      ]
+    },
     {
       version: '3.4.8',
       buildId: '20261112_0730',
