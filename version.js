@@ -7,22 +7,32 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.4',
-  buildId: '20261112_2028',
-  releaseDate: '2026-11-12 20:28 HKT',
-  driveFolder: '/myPortfolio/20261112_2028/',
+  appVersion: '3.5.5',
+  buildId: '20261118_1405',
+  releaseDate: '2026-11-18 14:05 HKT',
+  driveFolder: '/myPortfolio/20261118_1405/',
   modules: {
-    'version.js':   { version: '3.5.4', updated: '20261112_2028', role: 'Version manifest, module registry & v3.5.4 changelog history' },
+    'version.js':   { version: '3.5.5', updated: '20261118_1405', role: 'Version manifest, module registry & v3.5.5 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
     'portfolio.js': { version: '3.5.1', updated: '20261112_1325', role: 'Cloudflare Worker ingestion, 2018+ Dividend Auto-Backfill, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.4', updated: '20261112_2028', role: 'Holdings Total Return next to Market Value, Watchlist/Holdings Prev Close tooltip fix, Option 1 Daily Rollover Check' },
+    'app.js':       { version: '3.5.5', updated: '20261118_1405', role: '1D Price Delta Amount under Live Price (Holdings & Watchlist), Trend & RSI + Signal moved after Market Value' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.4', updated: '20261112_2028', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.5.5', updated: '20261118_1405', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.5',
+      buildId: '20261118_1405',
+      date: '2026-11-18 14:05 HKT',
+      summary: 'Displayed 1D price delta amounts (live price minus previous close price) below Live Price in both Holdings and Watchlist tables, and moved the "Trend & RSI" and "Signal" columns immediately after the "Market Value" column in the Holdings table.',
+      changes: [
+        'Updated renderHoldingsTable() and renderWatchlistAndFundamentals() in app.js to display the signed 1D price delta amount (live price minus previous close price in native ticker currency, e.g. 1D -HK$0.30 or 1D +$1.25) below Live Price instead of the percentage change.',
+        'Moved the "Trend & RSI" and "Signal" columns in the Holdings table (#holdings-main-table) to sit immediately after "Market Value" across the table header, Portfolio Total row, Sector Group subtotal rows, and individual holding rows.'
+      ]
+    },
     {
       version: '3.5.4',
       buildId: '20261112_2028',

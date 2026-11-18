@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.5.4-20261112_2028') {
+      if (k !== 'myportfolio-cache-v3.5.5-20261118_1405') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -1376,6 +1376,10 @@ function renderHoldingsTable() {
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-900 dark:text-white">
       ${hideMoney ? '100.0% wt' : Fin.currency(totMarketValueBase, false, baseCurr)}
     </td>
+    <td class="py-1.5 px-3 text-right text-[10px] font-mono text-slate-400">-</td>
+    <td class="py-1.5 px-3 text-center">
+      <span class="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 font-mono font-bold text-[10px]">Avg ${avgSignalScore}/100</span>
+    </td>
     <td class="py-1.5 px-3 text-right num-font ${totRetColor}">
       ${hideMoney
         ? `<div class="font-extrabold">${Fin.percent(totTotalReturnPct, true)}</div>`
@@ -1409,11 +1413,8 @@ function renderHoldingsTable() {
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-cyan-600 dark:text-cyan-400">
       ${totYoCPct.toFixed(2)}%
     </td>
-    <td colspan="7" class="py-1.5 px-3 text-right text-[10px] text-slate-400 font-medium">
+    <td colspan="6" class="py-1.5 px-3 text-right text-[10px] text-slate-400 font-medium col-quant-extra">
       All-Time Portfolio Aggregates (${baseCurr})
-    </td>
-    <td class="py-1.5 px-3 text-center">
-      <span class="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 font-mono font-bold text-[10px]">Avg ${avgSignalScore}/100</span>
     </td>
     <td class="py-1.5 px-3 text-center text-slate-400">-</td>
   `;
@@ -1571,6 +1572,10 @@ function renderHoldingsTable() {
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-extrabold text-slate-900 dark:text-white">
         ${hideMoney ? `${weightPct}% wt` : Fin.currency(group.totalMarketValue, false, group.currency)}
       </td>
+      <td class="py-1 sm:py-1.5 px-3 text-right text-[10px] font-mono text-slate-400">-</td>
+      <td class="py-1 sm:py-1.5 px-3 text-center">
+        <span class="px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 font-mono font-semibold text-[10px]">Avg ${group.items.length > 0 ? Math.round(group.items.reduce((s, item) => s + Number(item.signalScore ?? 50), 0) / group.items.length) : 50}/100</span>
+      </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupRetColor}">
         ${hideMoney
           ? `<div>${Fin.percent(groupTotalReturnPct, true)}</div>`
@@ -1606,8 +1611,7 @@ function renderHoldingsTable() {
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
         ${groupYoC.toFixed(2)}%
       </td>
-      <td colspan="7" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium col-quant-extra"></td>
-      <td class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
+      <td colspan="6" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium col-quant-extra">
         Sector Subtotal (${group.items.length} ${group.items.length === 1 ? 'holding' : 'holdings'})
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-center text-[11px] font-semibold text-brand-600 dark:text-brand-400">
@@ -1654,7 +1658,12 @@ function renderHoldingsTable() {
         const refCostBasisBase = isAct && totalCostBase > 0 ? totalCostBase : Number(h.historicalCostBasisBase ?? toBase(refCostBasis));
         const totalRetPct = refCostBasis > 0 ? Fin.round((((h.unrealizedGain || 0) + Number(h.realizedGain || 0) + Number(h.totalDividends || 0)) / refCostBasis) * 100, 2) : 0;
         const totalRetColor = totalRetValBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
-        const priceChangeColor = h.priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        const prevCloseNative = Number(state.prices[h.ticker]?.prevPrice || h.currentPrice || 0);
+        const rawDeltaNative = (h.currentPrice > 0 && prevCloseNative > 0)
+          ? Fin.round(h.currentPrice - prevCloseNative, 4)
+          : Number(h.priceChange || 0);
+        const priceDeltaNative = Math.abs(h.priceChangePct) > 40 ? 0 : rawDeltaNative;
+        const priceChangeColor = priceDeltaNative >= 0 ? 'text-emerald-500' : 'text-rose-500';
 
         const recBuyNative = (h.recommendedBuyPrice && Number(h.recommendedBuyPrice) > 0) ? Number(h.recommendedBuyPrice) : null;
         const recSellNative = (h.recommendedSellPrice && Number(h.recommendedSellPrice) > 0) ? Number(h.recommendedSellPrice) : null;
@@ -1683,8 +1692,8 @@ function renderHoldingsTable() {
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             <div class="font-bold num-font text-slate-900 dark:text-white" title="${hCurr !== baseCurr && curPriceBase > 0 ? `Equivalent in ${baseCurr}: ${Fin.currency(curPriceBase, false, baseCurr)}` : ''}">${h.currentPrice > 0 ? Fin.currency(h.currentPrice, false, hCurr) : '-'}</div>
-            <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day change vs. previous close (${Fin.currency(state.prices[h.ticker]?.prevPrice || h.currentPrice, false, hCurr)})">
-              <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct)}
+            <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day price delta vs. previous close (${Fin.currency(prevCloseNative, false, hCurr)} · ${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct, true)})">
+              <span class="text-[9px] opacity-75 font-semibold">1D</span> ${h.currentPrice > 0 ? Fin.currency(priceDeltaNative, true, hCurr) : '-'}
             </div>
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
@@ -1701,6 +1710,12 @@ function renderHoldingsTable() {
                   ? `<span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">${portfolio.totalStockMarketValue > 0 ? Fin.round((marketValBase / portfolio.totalStockMarketValue) * 100, 1) + '% wt' : '••••••'}</span>`
                   : Fin.currency(marketValBase, false, baseCurr))
               : '<span class="text-slate-400 font-normal">-</span>'}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right">
+            ${formatTrendRegimeCell(h)}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-center">
+            ${formatSignalBadgeCell(h.ticker, h)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right" title="Total Return = Unrealized P&L + Realized P&L + Accumulated Dividends">
             ${hideMoney
@@ -1769,12 +1784,6 @@ function renderHoldingsTable() {
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
             ${formatPeriodChangeCell(h.yoyPct, 'YoY', h.yoyRefMonth)}
-          </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
-            ${formatTrendRegimeCell(h)}
-          </td>
-          <td class="py-1 sm:py-1.5 px-3 text-center">
-            ${formatSignalBadgeCell(h.ticker, h)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-center">
             <div class="table-action-capsule">
@@ -2345,8 +2354,13 @@ function renderWatchlistAndFundamentals() {
           group.items.forEach(({ w, curPrice, wm, secName, compName }) => {
             const isSelected = selectedWatchlistTicker === w.ticker;
             const priceChangePct = state.prices[w.ticker]?.changePct || 0;
-            const priceChangeColor = (state.prices[w.ticker]?.change || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500';
             const wlCurrency = state.prices[w.ticker]?.currency || state.fundamentals[w.ticker]?.currency || (w.ticker.endsWith('.HK') ? 'HKD' : (w.ticker.endsWith('.L') ? 'GBp' : 'USD'));
+            const wlPrevClose = Number(state.prices[w.ticker]?.prevPrice || curPrice || 0);
+            const rawWlDelta = (curPrice > 0 && wlPrevClose > 0)
+              ? Fin.round(curPrice - wlPrevClose, 4)
+              : Number(state.prices[w.ticker]?.change || 0);
+            const wlPriceDelta = Math.abs(priceChangePct) > 40 ? 0 : rawWlDelta;
+            const priceChangeColor = wlPriceDelta >= 0 ? 'text-emerald-500' : 'text-rose-500';
             const recBuy = wm?.recommendedBuyPrice || 0;
             const recSell = wm?.recommendedSellPrice || 0;
             const recStop = wm?.recommendedStopLoss || 0;
@@ -2380,8 +2394,8 @@ function renderWatchlistAndFundamentals() {
               <td class="py-1 sm:py-1.5 px-3 text-right">
                 ${curPrice > 0
                   ? `<div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(curPrice, false, wlCurrency)}</div>
-                     <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day change vs. previous close (${Fin.currency(state.prices[w.ticker]?.prevPrice || curPrice, false, wlCurrency)})">
-                       <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(priceChangePct) > 40 ? 0 : priceChangePct)}
+                     <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day price delta vs. previous close (${Fin.currency(wlPrevClose, false, wlCurrency)} · ${Fin.percent(Math.abs(priceChangePct) > 40 ? 0 : priceChangePct, true)})">
+                       <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.currency(wlPriceDelta, true, wlCurrency)}
                      </div>`
                   : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
               </td>
@@ -4549,7 +4563,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.5.4 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
+      AppLogger.info('Boot', 'myPortfolio v3.5.5 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

@@ -858,7 +858,7 @@ tr:hover .table-action-capsule {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.5.4 (20261112_2028)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.5.5 (20261118_1405)</span>
             </div>
           </div>
         </div>
@@ -1298,6 +1298,8 @@ tr:hover .table-action-capsule {
                 <th class="py-1.5 px-3 text-right" data-sort-col="price" title="Click to sort by Current Live Price">Live Price <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="dayPnL" title="Click to sort by 1-Day P&L">Day P&amp;L <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="marketValue" title="Click to sort by Market Value">Market Value <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
+                <th class="py-1.5 px-3 text-right" title="6-State Trend Regime, RSI(14) & 12M Benchmark Alpha">Trend &amp; RSI</th>
+                <th class="py-1.5 px-3 text-center" data-sort-col="signalScore" title="Click to sort by 4-Pillar Composite Signal Score">Signal <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="totalReturn" title="Click to sort by Total Return">Total Return <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="unrealizedGain" title="Click to sort by Unrealized P&L">Unrealized P&amp;L <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-sort-col="realizedGain" title="Click to sort by Realized P&L">Realized P&amp;L <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
@@ -1317,8 +1319,6 @@ tr:hover .table-action-capsule {
                 <th class="py-1.5 px-3 text-right col-quant-extra" data-sort-col="mom" title="Click to sort by Month-over-Month Change">MoM <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right col-quant-extra" data-sort-col="qoq" title="Click to sort by Quarter-over-Quarter Change">QoQ <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right col-quant-extra" data-sort-col="yoy" title="Click to sort by Year-over-Year Change">YoY <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
-                <th class="py-1.5 px-3 text-right col-quant-extra" title="6-State Trend Regime, RSI(14) & 12M Benchmark Alpha">Trend &amp; RSI</th>
-                <th class="py-1.5 px-3 text-center" data-sort-col="signalScore" title="Click to sort by 4-Pillar Composite Signal Score">Signal <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-center">Actions</th>
               </tr>
             </thead>
@@ -2286,13 +2286,13 @@ tr:hover .table-action-capsule {
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.5.4 • Build 20261112_2028</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.5.5 • Build 20261118_1405</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261112_2028</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261118_1405</span>/
           </span>
         </div>
 
@@ -2559,7 +2559,7 @@ tr:hover .table-action-capsule {
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 flex flex-col lg:flex-row items-center justify-between gap-2.5">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.5.4 (Build 20261112_2028)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.5.5 (Build 20261118_1405)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
       <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
@@ -3137,22 +3137,32 @@ tr:hover .table-action-capsule {
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.4',
-  buildId: '20261112_2028',
-  releaseDate: '2026-11-12 20:28 HKT',
-  driveFolder: '/myPortfolio/20261112_2028/',
+  appVersion: '3.5.5',
+  buildId: '20261118_1405',
+  releaseDate: '2026-11-18 14:05 HKT',
+  driveFolder: '/myPortfolio/20261118_1405/',
   modules: {
-    'version.js':   { version: '3.5.4', updated: '20261112_2028', role: 'Version manifest, module registry & v3.5.4 changelog history' },
+    'version.js':   { version: '3.5.5', updated: '20261118_1405', role: 'Version manifest, module registry & v3.5.5 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
     'portfolio.js': { version: '3.5.1', updated: '20261112_1325', role: 'Cloudflare Worker ingestion, 2018+ Dividend Auto-Backfill, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.4', updated: '20261112_2028', role: 'Holdings Total Return next to Market Value, Watchlist/Holdings Prev Close tooltip fix, Option 1 Daily Rollover Check' },
+    'app.js':       { version: '3.5.5', updated: '20261118_1405', role: '1D Price Delta Amount under Live Price (Holdings & Watchlist), Trend & RSI + Signal moved after Market Value' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.4', updated: '20261112_2028', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.5.5', updated: '20261118_1405', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.5',
+      buildId: '20261118_1405',
+      date: '2026-11-18 14:05 HKT',
+      summary: 'Displayed 1D price delta amounts (live price minus previous close price) below Live Price in both Holdings and Watchlist tables, and moved the "Trend & RSI" and "Signal" columns immediately after the "Market Value" column in the Holdings table.',
+      changes: [
+        'Updated renderHoldingsTable() and renderWatchlistAndFundamentals() in app.js to display the signed 1D price delta amount (live price minus previous close price in native ticker currency, e.g. 1D -HK$0.30 or 1D +$1.25) below Live Price instead of the percentage change.',
+        'Moved the "Trend & RSI" and "Signal" columns in the Holdings table (#holdings-main-table) to sit immediately after "Market Value" across the table header, Portfolio Total row, Sector Group subtotal rows, and individual holding rows.'
+      ]
+    },
     {
       version: '3.5.4',
       buildId: '20261112_2028',
@@ -11041,7 +11051,7 @@ window.renderTradesBalanceCashflowChart = renderTradesBalanceCashflowChart;
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.5.4-20261112_2028') {
+      if (k !== 'myportfolio-cache-v3.5.5-20261118_1405') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -12414,6 +12424,10 @@ function renderHoldingsTable() {
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-900 dark:text-white">
       ${hideMoney ? '100.0% wt' : Fin.currency(totMarketValueBase, false, baseCurr)}
     </td>
+    <td class="py-1.5 px-3 text-right text-[10px] font-mono text-slate-400">-</td>
+    <td class="py-1.5 px-3 text-center">
+      <span class="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 font-mono font-bold text-[10px]">Avg ${avgSignalScore}/100</span>
+    </td>
     <td class="py-1.5 px-3 text-right num-font ${totRetColor}">
       ${hideMoney
         ? `<div class="font-extrabold">${Fin.percent(totTotalReturnPct, true)}</div>`
@@ -12447,11 +12461,8 @@ function renderHoldingsTable() {
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-cyan-600 dark:text-cyan-400">
       ${totYoCPct.toFixed(2)}%
     </td>
-    <td colspan="7" class="py-1.5 px-3 text-right text-[10px] text-slate-400 font-medium">
+    <td colspan="6" class="py-1.5 px-3 text-right text-[10px] text-slate-400 font-medium col-quant-extra">
       All-Time Portfolio Aggregates (${baseCurr})
-    </td>
-    <td class="py-1.5 px-3 text-center">
-      <span class="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 font-mono font-bold text-[10px]">Avg ${avgSignalScore}/100</span>
     </td>
     <td class="py-1.5 px-3 text-center text-slate-400">-</td>
   `;
@@ -12609,6 +12620,10 @@ function renderHoldingsTable() {
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-extrabold text-slate-900 dark:text-white">
         ${hideMoney ? `${weightPct}% wt` : Fin.currency(group.totalMarketValue, false, group.currency)}
       </td>
+      <td class="py-1 sm:py-1.5 px-3 text-right text-[10px] font-mono text-slate-400">-</td>
+      <td class="py-1 sm:py-1.5 px-3 text-center">
+        <span class="px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 font-mono font-semibold text-[10px]">Avg ${group.items.length > 0 ? Math.round(group.items.reduce((s, item) => s + Number(item.signalScore ?? 50), 0) / group.items.length) : 50}/100</span>
+      </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupRetColor}">
         ${hideMoney
           ? `<div>${Fin.percent(groupTotalReturnPct, true)}</div>`
@@ -12644,8 +12659,7 @@ function renderHoldingsTable() {
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400">
         ${groupYoC.toFixed(2)}%
       </td>
-      <td colspan="7" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium col-quant-extra"></td>
-      <td class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
+      <td colspan="6" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium col-quant-extra">
         Sector Subtotal (${group.items.length} ${group.items.length === 1 ? 'holding' : 'holdings'})
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-center text-[11px] font-semibold text-brand-600 dark:text-brand-400">
@@ -12692,7 +12706,12 @@ function renderHoldingsTable() {
         const refCostBasisBase = isAct && totalCostBase > 0 ? totalCostBase : Number(h.historicalCostBasisBase ?? toBase(refCostBasis));
         const totalRetPct = refCostBasis > 0 ? Fin.round((((h.unrealizedGain || 0) + Number(h.realizedGain || 0) + Number(h.totalDividends || 0)) / refCostBasis) * 100, 2) : 0;
         const totalRetColor = totalRetValBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
-        const priceChangeColor = h.priceChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
+        const prevCloseNative = Number(state.prices[h.ticker]?.prevPrice || h.currentPrice || 0);
+        const rawDeltaNative = (h.currentPrice > 0 && prevCloseNative > 0)
+          ? Fin.round(h.currentPrice - prevCloseNative, 4)
+          : Number(h.priceChange || 0);
+        const priceDeltaNative = Math.abs(h.priceChangePct) > 40 ? 0 : rawDeltaNative;
+        const priceChangeColor = priceDeltaNative >= 0 ? 'text-emerald-500' : 'text-rose-500';
 
         const recBuyNative = (h.recommendedBuyPrice && Number(h.recommendedBuyPrice) > 0) ? Number(h.recommendedBuyPrice) : null;
         const recSellNative = (h.recommendedSellPrice && Number(h.recommendedSellPrice) > 0) ? Number(h.recommendedSellPrice) : null;
@@ -12721,8 +12740,8 @@ function renderHoldingsTable() {
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
             <div class="font-bold num-font text-slate-900 dark:text-white" title="${hCurr !== baseCurr && curPriceBase > 0 ? `Equivalent in ${baseCurr}: ${Fin.currency(curPriceBase, false, baseCurr)}` : ''}">${h.currentPrice > 0 ? Fin.currency(h.currentPrice, false, hCurr) : '-'}</div>
-            <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day change vs. previous close (${Fin.currency(state.prices[h.ticker]?.prevPrice || h.currentPrice, false, hCurr)})">
-              <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct)}
+            <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day price delta vs. previous close (${Fin.currency(prevCloseNative, false, hCurr)} · ${Fin.percent(Math.abs(h.priceChangePct) > 40 ? 0 : h.priceChangePct, true)})">
+              <span class="text-[9px] opacity-75 font-semibold">1D</span> ${h.currentPrice > 0 ? Fin.currency(priceDeltaNative, true, hCurr) : '-'}
             </div>
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right">
@@ -12739,6 +12758,12 @@ function renderHoldingsTable() {
                   ? `<span class="text-[11px] font-mono text-slate-500 dark:text-slate-400">${portfolio.totalStockMarketValue > 0 ? Fin.round((marketValBase / portfolio.totalStockMarketValue) * 100, 1) + '% wt' : '••••••'}</span>`
                   : Fin.currency(marketValBase, false, baseCurr))
               : '<span class="text-slate-400 font-normal">-</span>'}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right">
+            ${formatTrendRegimeCell(h)}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-center">
+            ${formatSignalBadgeCell(h.ticker, h)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right" title="Total Return = Unrealized P&L + Realized P&L + Accumulated Dividends">
             ${hideMoney
@@ -12807,12 +12832,6 @@ function renderHoldingsTable() {
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
             ${formatPeriodChangeCell(h.yoyPct, 'YoY', h.yoyRefMonth)}
-          </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
-            ${formatTrendRegimeCell(h)}
-          </td>
-          <td class="py-1 sm:py-1.5 px-3 text-center">
-            ${formatSignalBadgeCell(h.ticker, h)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-center">
             <div class="table-action-capsule">
@@ -13383,8 +13402,13 @@ function renderWatchlistAndFundamentals() {
           group.items.forEach(({ w, curPrice, wm, secName, compName }) => {
             const isSelected = selectedWatchlistTicker === w.ticker;
             const priceChangePct = state.prices[w.ticker]?.changePct || 0;
-            const priceChangeColor = (state.prices[w.ticker]?.change || 0) >= 0 ? 'text-emerald-500' : 'text-rose-500';
             const wlCurrency = state.prices[w.ticker]?.currency || state.fundamentals[w.ticker]?.currency || (w.ticker.endsWith('.HK') ? 'HKD' : (w.ticker.endsWith('.L') ? 'GBp' : 'USD'));
+            const wlPrevClose = Number(state.prices[w.ticker]?.prevPrice || curPrice || 0);
+            const rawWlDelta = (curPrice > 0 && wlPrevClose > 0)
+              ? Fin.round(curPrice - wlPrevClose, 4)
+              : Number(state.prices[w.ticker]?.change || 0);
+            const wlPriceDelta = Math.abs(priceChangePct) > 40 ? 0 : rawWlDelta;
+            const priceChangeColor = wlPriceDelta >= 0 ? 'text-emerald-500' : 'text-rose-500';
             const recBuy = wm?.recommendedBuyPrice || 0;
             const recSell = wm?.recommendedSellPrice || 0;
             const recStop = wm?.recommendedStopLoss || 0;
@@ -13418,8 +13442,8 @@ function renderWatchlistAndFundamentals() {
               <td class="py-1 sm:py-1.5 px-3 text-right">
                 ${curPrice > 0
                   ? `<div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(curPrice, false, wlCurrency)}</div>
-                     <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day change vs. previous close (${Fin.currency(state.prices[w.ticker]?.prevPrice || curPrice, false, wlCurrency)})">
-                       <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.percent(Math.abs(priceChangePct) > 40 ? 0 : priceChangePct)}
+                     <div class="text-[10px] num-font ${priceChangeColor}" title="1-Day price delta vs. previous close (${Fin.currency(wlPrevClose, false, wlCurrency)} · ${Fin.percent(Math.abs(priceChangePct) > 40 ? 0 : priceChangePct, true)})">
+                       <span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.currency(wlPriceDelta, true, wlCurrency)}
                      </div>`
                   : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
               </td>
@@ -15587,7 +15611,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.5.4 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
+      AppLogger.info('Boot', 'myPortfolio v3.5.5 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;
