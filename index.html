@@ -858,7 +858,7 @@ tr:hover .table-action-capsule {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.5.5 (20261118_1405)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.5.6 (20261121_1038)</span>
             </div>
           </div>
         </div>
@@ -2286,13 +2286,13 @@ tr:hover .table-action-capsule {
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.5.5 • Build 20261118_1405</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.5.6 • Build 20261121_1038</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261118_1405</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261121_1038</span>/
           </span>
         </div>
 
@@ -2559,7 +2559,7 @@ tr:hover .table-action-capsule {
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 flex flex-col lg:flex-row items-center justify-between gap-2.5">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.5.5 (Build 20261118_1405)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.5.6 (Build 20261121_1038)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
       <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
@@ -3137,22 +3137,33 @@ tr:hover .table-action-capsule {
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.5',
-  buildId: '20261118_1405',
-  releaseDate: '2026-11-18 14:05 HKT',
-  driveFolder: '/myPortfolio/20261118_1405/',
+  appVersion: '3.5.6',
+  buildId: '20261121_1038',
+  releaseDate: '2026-11-21 10:38 HKT',
+  driveFolder: '/myPortfolio/20261121_1038/',
   modules: {
-    'version.js':   { version: '3.5.5', updated: '20261118_1405', role: 'Version manifest, module registry & v3.5.5 changelog history' },
+    'version.js':   { version: '3.5.6', updated: '20261121_1038', role: 'Version manifest, module registry & v3.5.6 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
-    'portfolio.js': { version: '3.5.1', updated: '20261112_1325', role: 'Cloudflare Worker ingestion, 2018+ Dividend Auto-Backfill, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
+    'portfolio.js': { version: '3.5.6', updated: '20261121_1038', role: 'Live Dividend Persistence Fix (3077.HK Nov 2026 & future payouts), 2018+ Auto-Backfill, Signal Engine & Excel I/O' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.5', updated: '20261118_1405', role: '1D Price Delta Amount under Live Price (Holdings & Watchlist), Trend & RSI + Signal moved after Market Value' },
+    'app.js':       { version: '3.5.6', updated: '20261121_1038', role: 'Add Trade Modal Native Trading Currency Calculated Total, 1D Price Delta & Holdings Layout' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.5', updated: '20261118_1405', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.5.6', updated: '20261121_1038', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.6',
+      buildId: '20261121_1038',
+      date: '2026-11-21 10:38 HKT',
+      summary: 'Fixed missing 3077.HK Nov 2026 dividend (and all future live-synced dividends for baseline tickers) caused by buildDividendScheduleForTicker() dropping live events during recalculatePortfolio(), and updated the Add Trade modal Calculated Total to display the ticker\'s native trading currency.',
+      changes: [
+        'Fixed buildDividendScheduleForTicker() in portfolio.js so live-synced Cloudflare/Yahoo dividend events stored in state.dividendSchedules[sym].history (newer than the baseline cutoff or tagged source: "live") are always preserved across recalculatePortfolio() runs and page reloads instead of being discarded whenever BASELINE_DIVIDEND_HISTORY_2018_2026 has entries.',
+        'Added the verified official 3077.HK Nov 2026 distribution (Ex-Date 2026-11-05, Pay Date 2026-11-11, HK$41.5565/unit = USD 5.30/unit) to BASELINE_DIVIDEND_HISTORY_2018_2026 in portfolio.js.',
+        'Updated updateTradeCalculatedTotal() in app.js with getTradeTickerCurrency() and live input/change listeners on #trade-ticker so the Calculated Total field in Record BUY/SELL Order displays the ticker\'s native trading currency (e.g. $0.00 (USD) for VWRA.L / VOO / AAPL, HK$0.00 (HKD) for .HK tickers).'
+      ]
+    },
     {
       version: '3.5.5',
       buildId: '20261118_1405',
@@ -6375,6 +6386,7 @@ var BASELINE_DIVIDEND_HISTORY_2018_2026 = {
     ['2026-02-06', 37.66, '2026-02-12'],
     ['2026-05-07', 34.52, '2026-05-13'],
     ['2026-08-05', 32.17, '2026-08-11'],
+    ['2026-11-05', 41.5565, '2026-11-11'],
   ],
   '0002.HK': [
     ['2024-03-08', 1.21, '2024-03-21'],
@@ -6798,26 +6810,34 @@ function buildDividendScheduleForTicker(rawTicker, rawEventsMap = null, fallback
           payDateEstimated: true,
           amount: Fin.round(amt, 6),
           currency,
+          source: 'live',
           _priority: 2
         });
       }
     });
   }
 
-  // Only merge existing schedule history if baseRows is empty (prevents stale/legacy localStorage dates from re-contaminating verified HKEX schedules)
+  // Always preserve live-synced Cloudflare/Yahoo dividends from state.dividendSchedules[sym].history:
+  // Baseline records carry _priority: 3 (winning any same-cycle deduplication), while newer post-baseline
+  // live events (exDate > maxBaseExDate or source === 'live') are retained across recalculatePortfolio() runs.
   const existingHist = state?.dividendSchedules?.[sym]?.history;
-  if (baseRows.length === 0 && Array.isArray(existingHist)) {
+  const maxBaseExDate = baseRows.length > 0
+    ? baseRows.reduce((maxD, r) => (r[0] > maxD ? r[0] : maxD), '')
+    : '';
+  if (Array.isArray(existingHist)) {
     existingHist.forEach(h => {
-      if (h && h.exDate && Number(h.amount) > 0) {
-        candidates.push({
-          exDate: h.exDate,
-          payDate: h.payDate || h.exDate,
-          payDateEstimated: h.payDateEstimated !== false,
-          amount: Fin.round(Number(h.amount), 6),
-          currency: h.currency || currency,
-          _priority: h.payDateEstimated === false ? 2 : 1
-        });
-      }
+      if (!h || !h.exDate || !(Number(h.amount) > 0)) return;
+      const isNewerThanBaseline = baseRows.length === 0 || h.exDate > maxBaseExDate || h.source === 'live';
+      if (!isNewerThanBaseline) return;
+      candidates.push({
+        exDate: h.exDate,
+        payDate: h.payDate || h.exDate,
+        payDateEstimated: h.payDateEstimated !== false,
+        amount: Fin.round(Number(h.amount), 6),
+        currency: h.currency || currency,
+        source: h.source || (h.exDate > maxBaseExDate ? 'live' : undefined),
+        _priority: (h.source === 'live' || h.payDateEstimated === false) ? 2 : 1
+      });
     });
   }
 
@@ -6834,6 +6854,7 @@ function buildDividendScheduleForTicker(rawTicker, rawEventsMap = null, fallback
       payDateEstimated: item.payDateEstimated,
       amount: Fin.round(Number(item.amount), 6),
       currency: item.currency || currency,
+      ...(item.source ? { source: item.source } : {}),
       _priority: item._priority || 1
     };
     if (deduped.length === 0) {
@@ -11051,7 +11072,7 @@ window.renderTradesBalanceCashflowChart = renderTradesBalanceCashflowChart;
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.5.5-20261118_1405') {
+      if (k !== 'myportfolio-cache-v3.5.6-20261121_1038') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -14264,13 +14285,30 @@ function updateHoldingHint(ticker) {
   hint.textContent = `Currently held: ${active ? Fin.shares(active.shares) : 0} shares`;
 }
 
+function getTradeTickerCurrency(rawTicker) {
+  const norm = MarketAPI.normalizeTicker(rawTicker || '');
+  if (!norm) return state?.settings?.currency || 'HKD';
+  const fund = state?.fundamentals?.[norm];
+  if (fund?._userCustomCurrency && fund.currency) return fund.currency;
+  if (state?.prices?.[norm]?.currency) return state.prices[norm].currency;
+  if (fund?.currency) return fund.currency;
+  const staticMeta = MarketAPI.getStaticProfile(norm);
+  if (staticMeta?.currency) return staticMeta.currency;
+  if (norm.endsWith('.HK')) return 'HKD';
+  if (norm.endsWith('.L')) return 'GBp';
+  return 'USD';
+}
+
 function updateTradeCalculatedTotal() {
+  const rawTicker = (document.getElementById('trade-ticker')?.value || '').trim();
+  const tradeCurr = getTradeTickerCurrency(rawTicker);
   const shares = parseFloat(document.getElementById('trade-shares').value) || 0;
   const price = parseFloat(document.getElementById('trade-price').value) || 0;
   const fees = parseFloat(document.getElementById('trade-fees').value) || 0;
   const type = document.getElementById('trade-type-val').value;
   const total = type === 'BUY' ? (shares * price + fees) : Math.max(0, shares * price - fees);
-  document.getElementById('trade-calc-total').textContent = Fin.currency(total);
+  const formatted = Fin.currency(total, false, tradeCurr);
+  document.getElementById('trade-calc-total').textContent = rawTicker ? `${formatted} (${tradeCurr})` : formatted;
 }
 
 async function handleTradeSubmit(e) {
@@ -15341,6 +15379,7 @@ function setupEventListeners() {
       });
       btn.className = 'tx-type-btn py-2 text-xs font-bold rounded-lg border border-brand-500 bg-slate-200 dark:bg-slate-800 text-brand-600 dark:text-brand-400';
       updateTradeModalFields(type);
+      updateTradeCalculatedTotal();
     });
   });
 
@@ -15361,6 +15400,9 @@ function setupEventListeners() {
   on('btn-open-watchlist-modal', 'click', () => openWatchlistModal(null));
   on('form-watchlist', 'submit', handleWatchlistSubmit);
   on('form-edit-holding', 'submit', handleEditHoldingSubmit);
+  on('trade-ticker', 'input', () => {
+    updateTradeCalculatedTotal();
+  });
   on('trade-ticker', 'change', (e) => {
     const val = MarketAPI.normalizeTicker(e.target.value);
     if (val) {
@@ -15372,6 +15414,7 @@ function setupEventListeners() {
         prefillTradeTickerMetadata(val);
       }
     }
+    updateTradeCalculatedTotal();
   });
   on('wl-ticker', 'change', (e) => {
     const val = MarketAPI.normalizeTicker(e.target.value);
@@ -15611,7 +15654,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.5.5 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
+      AppLogger.info('Boot', 'myPortfolio v3.5.6 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

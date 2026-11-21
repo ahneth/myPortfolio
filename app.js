@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.5.5-20261118_1405') {
+      if (k !== 'myportfolio-cache-v3.5.6-20261121_1038') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -3216,13 +3216,30 @@ function updateHoldingHint(ticker) {
   hint.textContent = `Currently held: ${active ? Fin.shares(active.shares) : 0} shares`;
 }
 
+function getTradeTickerCurrency(rawTicker) {
+  const norm = MarketAPI.normalizeTicker(rawTicker || '');
+  if (!norm) return state?.settings?.currency || 'HKD';
+  const fund = state?.fundamentals?.[norm];
+  if (fund?._userCustomCurrency && fund.currency) return fund.currency;
+  if (state?.prices?.[norm]?.currency) return state.prices[norm].currency;
+  if (fund?.currency) return fund.currency;
+  const staticMeta = MarketAPI.getStaticProfile(norm);
+  if (staticMeta?.currency) return staticMeta.currency;
+  if (norm.endsWith('.HK')) return 'HKD';
+  if (norm.endsWith('.L')) return 'GBp';
+  return 'USD';
+}
+
 function updateTradeCalculatedTotal() {
+  const rawTicker = (document.getElementById('trade-ticker')?.value || '').trim();
+  const tradeCurr = getTradeTickerCurrency(rawTicker);
   const shares = parseFloat(document.getElementById('trade-shares').value) || 0;
   const price = parseFloat(document.getElementById('trade-price').value) || 0;
   const fees = parseFloat(document.getElementById('trade-fees').value) || 0;
   const type = document.getElementById('trade-type-val').value;
   const total = type === 'BUY' ? (shares * price + fees) : Math.max(0, shares * price - fees);
-  document.getElementById('trade-calc-total').textContent = Fin.currency(total);
+  const formatted = Fin.currency(total, false, tradeCurr);
+  document.getElementById('trade-calc-total').textContent = rawTicker ? `${formatted} (${tradeCurr})` : formatted;
 }
 
 async function handleTradeSubmit(e) {
@@ -4293,6 +4310,7 @@ function setupEventListeners() {
       });
       btn.className = 'tx-type-btn py-2 text-xs font-bold rounded-lg border border-brand-500 bg-slate-200 dark:bg-slate-800 text-brand-600 dark:text-brand-400';
       updateTradeModalFields(type);
+      updateTradeCalculatedTotal();
     });
   });
 
@@ -4313,6 +4331,9 @@ function setupEventListeners() {
   on('btn-open-watchlist-modal', 'click', () => openWatchlistModal(null));
   on('form-watchlist', 'submit', handleWatchlistSubmit);
   on('form-edit-holding', 'submit', handleEditHoldingSubmit);
+  on('trade-ticker', 'input', () => {
+    updateTradeCalculatedTotal();
+  });
   on('trade-ticker', 'change', (e) => {
     const val = MarketAPI.normalizeTicker(e.target.value);
     if (val) {
@@ -4324,6 +4345,7 @@ function setupEventListeners() {
         prefillTradeTickerMetadata(val);
       }
     }
+    updateTradeCalculatedTotal();
   });
   on('wl-ticker', 'change', (e) => {
     const val = MarketAPI.normalizeTicker(e.target.value);
@@ -4563,7 +4585,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.5.5 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
+      AppLogger.info('Boot', 'myPortfolio v3.5.6 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

@@ -140,6 +140,7 @@ var BASELINE_DIVIDEND_HISTORY_2018_2026 = {
     ['2026-02-06', 37.66, '2026-02-12'],
     ['2026-05-07', 34.52, '2026-05-13'],
     ['2026-08-05', 32.17, '2026-08-11'],
+    ['2026-11-05', 41.5565, '2026-11-11'],
   ],
   '0002.HK': [
     ['2024-03-08', 1.21, '2024-03-21'],
@@ -563,26 +564,34 @@ function buildDividendScheduleForTicker(rawTicker, rawEventsMap = null, fallback
           payDateEstimated: true,
           amount: Fin.round(amt, 6),
           currency,
+          source: 'live',
           _priority: 2
         });
       }
     });
   }
 
-  // Only merge existing schedule history if baseRows is empty (prevents stale/legacy localStorage dates from re-contaminating verified HKEX schedules)
+  // Always preserve live-synced Cloudflare/Yahoo dividends from state.dividendSchedules[sym].history:
+  // Baseline records carry _priority: 3 (winning any same-cycle deduplication), while newer post-baseline
+  // live events (exDate > maxBaseExDate or source === 'live') are retained across recalculatePortfolio() runs.
   const existingHist = state?.dividendSchedules?.[sym]?.history;
-  if (baseRows.length === 0 && Array.isArray(existingHist)) {
+  const maxBaseExDate = baseRows.length > 0
+    ? baseRows.reduce((maxD, r) => (r[0] > maxD ? r[0] : maxD), '')
+    : '';
+  if (Array.isArray(existingHist)) {
     existingHist.forEach(h => {
-      if (h && h.exDate && Number(h.amount) > 0) {
-        candidates.push({
-          exDate: h.exDate,
-          payDate: h.payDate || h.exDate,
-          payDateEstimated: h.payDateEstimated !== false,
-          amount: Fin.round(Number(h.amount), 6),
-          currency: h.currency || currency,
-          _priority: h.payDateEstimated === false ? 2 : 1
-        });
-      }
+      if (!h || !h.exDate || !(Number(h.amount) > 0)) return;
+      const isNewerThanBaseline = baseRows.length === 0 || h.exDate > maxBaseExDate || h.source === 'live';
+      if (!isNewerThanBaseline) return;
+      candidates.push({
+        exDate: h.exDate,
+        payDate: h.payDate || h.exDate,
+        payDateEstimated: h.payDateEstimated !== false,
+        amount: Fin.round(Number(h.amount), 6),
+        currency: h.currency || currency,
+        source: h.source || (h.exDate > maxBaseExDate ? 'live' : undefined),
+        _priority: (h.source === 'live' || h.payDateEstimated === false) ? 2 : 1
+      });
     });
   }
 
@@ -599,6 +608,7 @@ function buildDividendScheduleForTicker(rawTicker, rawEventsMap = null, fallback
       payDateEstimated: item.payDateEstimated,
       amount: Fin.round(Number(item.amount), 6),
       currency: item.currency || currency,
+      ...(item.source ? { source: item.source } : {}),
       _priority: item._priority || 1
     };
     if (deduped.length === 0) {

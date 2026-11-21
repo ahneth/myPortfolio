@@ -7,22 +7,33 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.5',
-  buildId: '20261118_1405',
-  releaseDate: '2026-11-18 14:05 HKT',
-  driveFolder: '/myPortfolio/20261118_1405/',
+  appVersion: '3.5.6',
+  buildId: '20261121_1038',
+  releaseDate: '2026-11-21 10:38 HKT',
+  driveFolder: '/myPortfolio/20261121_1038/',
   modules: {
-    'version.js':   { version: '3.5.5', updated: '20261118_1405', role: 'Version manifest, module registry & v3.5.5 changelog history' },
+    'version.js':   { version: '3.5.6', updated: '20261121_1038', role: 'Version manifest, module registry & v3.5.6 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
-    'portfolio.js': { version: '3.5.1', updated: '20261112_1325', role: 'Cloudflare Worker ingestion, 2018+ Dividend Auto-Backfill, 0-100 Signal Engine, 6-State Trend Regime, 9-Sheet Excel I/O' },
+    'portfolio.js': { version: '3.5.6', updated: '20261121_1038', role: 'Live Dividend Persistence Fix (3077.HK Nov 2026 & future payouts), 2018+ Auto-Backfill, Signal Engine & Excel I/O' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.5', updated: '20261118_1405', role: '1D Price Delta Amount under Live Price (Holdings & Watchlist), Trend & RSI + Signal moved after Market Value' },
+    'app.js':       { version: '3.5.6', updated: '20261121_1038', role: 'Add Trade Modal Native Trading Currency Calculated Total, 1D Price Delta & Holdings Layout' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.5', updated: '20261118_1405', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.5.6', updated: '20261121_1038', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.6',
+      buildId: '20261121_1038',
+      date: '2026-11-21 10:38 HKT',
+      summary: 'Fixed missing 3077.HK Nov 2026 dividend (and all future live-synced dividends for baseline tickers) caused by buildDividendScheduleForTicker() dropping live events during recalculatePortfolio(), and updated the Add Trade modal Calculated Total to display the ticker\'s native trading currency.',
+      changes: [
+        'Fixed buildDividendScheduleForTicker() in portfolio.js so live-synced Cloudflare/Yahoo dividend events stored in state.dividendSchedules[sym].history (newer than the baseline cutoff or tagged source: "live") are always preserved across recalculatePortfolio() runs and page reloads instead of being discarded whenever BASELINE_DIVIDEND_HISTORY_2018_2026 has entries.',
+        'Added the verified official 3077.HK Nov 2026 distribution (Ex-Date 2026-11-05, Pay Date 2026-11-11, HK$41.5565/unit = USD 5.30/unit) to BASELINE_DIVIDEND_HISTORY_2018_2026 in portfolio.js.',
+        'Updated updateTradeCalculatedTotal() in app.js with getTradeTickerCurrency() and live input/change listeners on #trade-ticker so the Calculated Total field in Record BUY/SELL Order displays the ticker\'s native trading currency (e.g. $0.00 (USD) for VWRA.L / VOO / AAPL, HK$0.00 (HKD) for .HK tickers).'
+      ]
+    },
     {
       version: '3.5.5',
       buildId: '20261118_1405',
