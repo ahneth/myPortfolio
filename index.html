@@ -858,7 +858,7 @@ tr:hover .table-action-capsule {
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.5.6 (20261121_1038)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.5.7 (20261123_1400)</span>
             </div>
           </div>
         </div>
@@ -2286,13 +2286,13 @@ tr:hover .table-action-capsule {
             <div>
               <div class="flex items-center gap-2">
                 <h2 class="font-bold text-slate-900 dark:text-white">Compartmentalized JS Modules &amp; Versioning Registry</h2>
-                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.5.6 • Build 20261121_1038</span>
+                <span id="settings-version-pill" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/30">v3.5.7 • Build 20261123_1400</span>
               </div>
               <p class="text-xs text-slate-500 dark:text-slate-400">Modular architecture separating API, Portfolio Engine, Charts, Utilities, UI Controller, and Version Manifest</p>
             </div>
           </div>
           <span class="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261121_1038</span>/
+            <i class="fa-brands fa-google-drive text-brand-500 mr-1"></i> /myPortfolio/<span id="settings-drive-folder-label">20261123_1400</span>/
           </span>
         </div>
 
@@ -2559,7 +2559,7 @@ tr:hover .table-action-capsule {
   <footer class="mt-auto border-t border-slate-200 dark:border-dark-border py-4 text-center text-xs text-slate-500 dark:text-slate-400">
     <div class="w-full max-w-none mx-auto px-2 sm:px-4 lg:px-6 flex flex-col lg:flex-row items-center justify-between gap-2.5">
       <div>
-        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.5.6 (Build 20261121_1038)</span> &bull; Compartmentalized 7-Module Architecture
+        <strong>myPortfolio</strong> <span id="footer-version-text" class="font-mono text-[11px] text-brand-500">v3.5.7 (Build 20261123_1400)</span> &bull; Compartmentalized 7-Module Architecture
       </div>
       <div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 dark:text-slate-400">
         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
@@ -3137,22 +3137,32 @@ tr:hover .table-action-capsule {
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.6',
-  buildId: '20261121_1038',
-  releaseDate: '2026-11-21 10:38 HKT',
-  driveFolder: '/myPortfolio/20261121_1038/',
+  appVersion: '3.5.7',
+  buildId: '20261123_1400',
+  releaseDate: '2026-11-23 14:00 HKT',
+  driveFolder: '/myPortfolio/20261123_1400/',
   modules: {
-    'version.js':   { version: '3.5.6', updated: '20261121_1038', role: 'Version manifest, module registry & v3.5.6 changelog history' },
+    'version.js':   { version: '3.5.7', updated: '20261123_1400', role: 'Version manifest, module registry & v3.5.7 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
-    'portfolio.js': { version: '3.5.6', updated: '20261121_1038', role: 'Live Dividend Persistence Fix (3077.HK Nov 2026 & future payouts), 2018+ Auto-Backfill, Signal Engine & Excel I/O' },
+    'portfolio.js': { version: '3.5.7', updated: '20261123_1400', role: 'Volatility-Adaptive Recommended Sell Target (ATR & 12M Span Cap), Live Dividend Persistence & Signal Engine' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.6', updated: '20261121_1038', role: 'Add Trade Modal Native Trading Currency Calculated Total, 1D Price Delta & Holdings Layout' },
+    'app.js':       { version: '3.5.7', updated: '20261123_1400', role: 'Add Trade Modal Native Trading Currency Calculated Total, 1D Price Delta & Holdings Layout' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.6', updated: '20261121_1038', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.5.7', updated: '20261123_1400', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.7',
+      buildId: '20261123_1400',
+      date: '2026-11-23 14:00 HKT',
+      summary: 'Upgraded Recommended Sell Price formula in portfolio.js to cap gainTarget and the +2% resistance fallback using each ticker\'s actual volatility (12-month high/low span and ATR(14)), giving low-volatility Treasury/money-market ETFs like 3077.HK realistic targets while preserving Settings targets for equities.',
+      changes: [
+        'Computed effectiveSellGainPct = min(recSellTargetGainPct, max(0.75%, 0.90 * span12mPct, 3.0 * atrPct)) in computeStockPriceMetrics() (portfolio.js) so low-volatility bond/floating-rate ETFs scale their upside target to their real trading range instead of a flat +18%.',
+        'Scaled the breakout resistance guard (minResMarginPct = min(2.0%, max(0.5%, 0.40 * effectiveSellGainPct))), ATR extension, and minimum sell floor proportionally to effectiveSellGainPct.'
+      ]
+    },
     {
       version: '3.5.6',
       buildId: '20261121_1038',
@@ -7930,27 +7940,49 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
     const minBuyFloor = prevTrough ? Math.min(prevTrough * 0.92, refCurrent * 0.70) : refCurrent * 0.70;
     recommendedBuyPrice = Fin.round(Math.min(refCurrent, Math.max(minBuyFloor, rawRecBuy)), 2);
 
-    // 2. Recommended Sell Price (Take-Profit / Resistance Target)
+    // 2. Recommended Sell Price (Volatility-Adaptive Take-Profit / Resistance Target)
+    // Cap upside gainTarget and breakout fallback using actual ticker volatility (12M high/low span & ATR)
+    // so ultra-low-volatility Treasury/money-market ETFs (e.g. 3077.HK) get realistic targets within their trading band,
+    // while equities and broad equity ETFs retain the full Settings recSellTargetGainPct (default 18%).
+    const hasVolHistory = hist.length >= 3 && prevPeak > 0 && prevTrough > 0 && prevPeak > prevTrough;
+    const span12mPct = hasVolHistory ? ((prevPeak - prevTrough) / refCurrent) * 100 : null;
+    const atrPct = (atr14 && atr14 > 0) ? (atr14 / refCurrent) * 100 : null;
+    const volCapCandidates = [];
+    if (span12mPct !== null && Number.isFinite(span12mPct)) volCapCandidates.push(span12mPct * 0.90);
+    if (atrPct !== null && Number.isFinite(atrPct)) volCapCandidates.push(atrPct * 3.0);
+    const volGainCapPct = volCapCandidates.length > 0
+      ? Math.max(0.75, Math.max(...volCapCandidates))
+      : recSellTargetGainPct;
+    const effectiveSellGainPct = Math.min(recSellTargetGainPct, volGainCapPct);
+
     const costOrPriceBase = avgCost > 0 ? Math.max(refCurrent, avgCost) : refCurrent;
-    const gainTarget = costOrPriceBase * (1 + recSellTargetGainPct / 100);
+    const gainTarget = costOrPriceBase * (1 + effectiveSellGainPct / 100);
     let peakResistance = (prevPeak && regUpperNow)
       ? Math.max(prevPeak, 0.55 * prevPeak + 0.45 * regUpperNow)
       : (prevPeak || regUpperNow || gainTarget);
-    if (peakResistance <= refCurrent * 1.02) {
-      peakResistance = Math.max(refCurrent * (1 + recSellTargetGainPct / 100), refCurrent + 3.0 * (atr14 || refCurrent * 0.025));
+
+    // Volatility-scaled resistance guard (2.0% for normal equities, tighter for low-volatility ETFs)
+    const minResMarginPct = Math.min(2.0, Math.max(0.5, effectiveSellGainPct * 0.40));
+    if (peakResistance <= refCurrent * (1 + minResMarginPct / 100)) {
+      const atrExtension = (atr14 && atr14 > 0)
+        ? refCurrent + Math.min(3.0 * atr14, refCurrent * (effectiveSellGainPct / 100))
+        : refCurrent * (1 + effectiveSellGainPct / 100);
+      peakResistance = Math.max(refCurrent * (1 + effectiveSellGainPct / 100), atrExtension);
     }
 
     let rawRecSell = (1 - recSellPeakWeight) * gainTarget + recSellPeakWeight * peakResistance;
 
     if (signalLabel.includes('SELL') || (signalLabel.includes('TRIM') && (rsi14 !== null && rsi14 >= rsiHigh))) {
       // Already in overbought / offload territory: set tight take-profit target just above current price
-      rawRecSell = Math.min(rawRecSell, refCurrent * 1.035);
+      const tightMargin = Math.min(0.035, Math.max(0.008, (effectiveSellGainPct / 100) * 0.6));
+      rawRecSell = Math.min(rawRecSell, refCurrent * (1 + tightMargin));
     } else if (regime === 'Stage 2 Strong Uptrend' && signalLabel === 'STRONG BUY') {
-      // Strong uptrend breakout: extend target
-      rawRecSell = Math.max(rawRecSell, costOrPriceBase * (1 + (recSellTargetGainPct * 1.2) / 100));
+      // Strong uptrend breakout: extend target proportionally to effectiveSellGainPct
+      rawRecSell = Math.max(rawRecSell, costOrPriceBase * (1 + (effectiveSellGainPct * 1.2) / 100));
     }
 
-    recommendedSellPrice = Fin.round(Math.max(refCurrent * 1.015, rawRecSell), 2);
+    const minSellFloorMult = 1 + Math.min(0.015, Math.max(0.005, (effectiveSellGainPct / 100) * 0.5));
+    recommendedSellPrice = Fin.round(Math.max(refCurrent * minSellFloorMult, rawRecSell), 2);
 
     // 3. Recommended Stop Loss (ATR Volatility Stop + Swing Trough / SMA Support + Profit Protection)
     const atrStop = atr14 > 0 ? (refCurrent - stopMult * atr14) : (refCurrent * (1 - stopFloorPct / 100));
@@ -11072,7 +11104,7 @@ window.renderTradesBalanceCashflowChart = renderTradesBalanceCashflowChart;
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.5.6-20261121_1038') {
+      if (k !== 'myportfolio-cache-v3.5.7-20261123_1400') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -15654,7 +15686,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.5.6 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
+      AppLogger.info('Boot', 'myPortfolio v3.5.7 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

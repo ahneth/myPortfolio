@@ -1684,27 +1684,49 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
     const minBuyFloor = prevTrough ? Math.min(prevTrough * 0.92, refCurrent * 0.70) : refCurrent * 0.70;
     recommendedBuyPrice = Fin.round(Math.min(refCurrent, Math.max(minBuyFloor, rawRecBuy)), 2);
 
-    // 2. Recommended Sell Price (Take-Profit / Resistance Target)
+    // 2. Recommended Sell Price (Volatility-Adaptive Take-Profit / Resistance Target)
+    // Cap upside gainTarget and breakout fallback using actual ticker volatility (12M high/low span & ATR)
+    // so ultra-low-volatility Treasury/money-market ETFs (e.g. 3077.HK) get realistic targets within their trading band,
+    // while equities and broad equity ETFs retain the full Settings recSellTargetGainPct (default 18%).
+    const hasVolHistory = hist.length >= 3 && prevPeak > 0 && prevTrough > 0 && prevPeak > prevTrough;
+    const span12mPct = hasVolHistory ? ((prevPeak - prevTrough) / refCurrent) * 100 : null;
+    const atrPct = (atr14 && atr14 > 0) ? (atr14 / refCurrent) * 100 : null;
+    const volCapCandidates = [];
+    if (span12mPct !== null && Number.isFinite(span12mPct)) volCapCandidates.push(span12mPct * 0.90);
+    if (atrPct !== null && Number.isFinite(atrPct)) volCapCandidates.push(atrPct * 3.0);
+    const volGainCapPct = volCapCandidates.length > 0
+      ? Math.max(0.75, Math.max(...volCapCandidates))
+      : recSellTargetGainPct;
+    const effectiveSellGainPct = Math.min(recSellTargetGainPct, volGainCapPct);
+
     const costOrPriceBase = avgCost > 0 ? Math.max(refCurrent, avgCost) : refCurrent;
-    const gainTarget = costOrPriceBase * (1 + recSellTargetGainPct / 100);
+    const gainTarget = costOrPriceBase * (1 + effectiveSellGainPct / 100);
     let peakResistance = (prevPeak && regUpperNow)
       ? Math.max(prevPeak, 0.55 * prevPeak + 0.45 * regUpperNow)
       : (prevPeak || regUpperNow || gainTarget);
-    if (peakResistance <= refCurrent * 1.02) {
-      peakResistance = Math.max(refCurrent * (1 + recSellTargetGainPct / 100), refCurrent + 3.0 * (atr14 || refCurrent * 0.025));
+
+    // Volatility-scaled resistance guard (2.0% for normal equities, tighter for low-volatility ETFs)
+    const minResMarginPct = Math.min(2.0, Math.max(0.5, effectiveSellGainPct * 0.40));
+    if (peakResistance <= refCurrent * (1 + minResMarginPct / 100)) {
+      const atrExtension = (atr14 && atr14 > 0)
+        ? refCurrent + Math.min(3.0 * atr14, refCurrent * (effectiveSellGainPct / 100))
+        : refCurrent * (1 + effectiveSellGainPct / 100);
+      peakResistance = Math.max(refCurrent * (1 + effectiveSellGainPct / 100), atrExtension);
     }
 
     let rawRecSell = (1 - recSellPeakWeight) * gainTarget + recSellPeakWeight * peakResistance;
 
     if (signalLabel.includes('SELL') || (signalLabel.includes('TRIM') && (rsi14 !== null && rsi14 >= rsiHigh))) {
       // Already in overbought / offload territory: set tight take-profit target just above current price
-      rawRecSell = Math.min(rawRecSell, refCurrent * 1.035);
+      const tightMargin = Math.min(0.035, Math.max(0.008, (effectiveSellGainPct / 100) * 0.6));
+      rawRecSell = Math.min(rawRecSell, refCurrent * (1 + tightMargin));
     } else if (regime === 'Stage 2 Strong Uptrend' && signalLabel === 'STRONG BUY') {
-      // Strong uptrend breakout: extend target
-      rawRecSell = Math.max(rawRecSell, costOrPriceBase * (1 + (recSellTargetGainPct * 1.2) / 100));
+      // Strong uptrend breakout: extend target proportionally to effectiveSellGainPct
+      rawRecSell = Math.max(rawRecSell, costOrPriceBase * (1 + (effectiveSellGainPct * 1.2) / 100));
     }
 
-    recommendedSellPrice = Fin.round(Math.max(refCurrent * 1.015, rawRecSell), 2);
+    const minSellFloorMult = 1 + Math.min(0.015, Math.max(0.005, (effectiveSellGainPct / 100) * 0.5));
+    recommendedSellPrice = Fin.round(Math.max(refCurrent * minSellFloorMult, rawRecSell), 2);
 
     // 3. Recommended Stop Loss (ATR Volatility Stop + Swing Trough / SMA Support + Profit Protection)
     const atrStop = atr14 > 0 ? (refCurrent - stopMult * atr14) : (refCurrent * (1 - stopFloorPct / 100));

@@ -7,22 +7,32 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.6',
-  buildId: '20261121_1038',
-  releaseDate: '2026-11-21 10:38 HKT',
-  driveFolder: '/myPortfolio/20261121_1038/',
+  appVersion: '3.5.7',
+  buildId: '20261123_1400',
+  releaseDate: '2026-11-23 14:00 HKT',
+  driveFolder: '/myPortfolio/20261123_1400/',
   modules: {
-    'version.js':   { version: '3.5.6', updated: '20261121_1038', role: 'Version manifest, module registry & v3.5.6 changelog history' },
+    'version.js':   { version: '3.5.7', updated: '20261123_1400', role: 'Version manifest, module registry & v3.5.7 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
-    'portfolio.js': { version: '3.5.6', updated: '20261121_1038', role: 'Live Dividend Persistence Fix (3077.HK Nov 2026 & future payouts), 2018+ Auto-Backfill, Signal Engine & Excel I/O' },
+    'portfolio.js': { version: '3.5.7', updated: '20261123_1400', role: 'Volatility-Adaptive Recommended Sell Target (ATR & 12M Span Cap), Live Dividend Persistence & Signal Engine' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.6', updated: '20261121_1038', role: 'Add Trade Modal Native Trading Currency Calculated Total, 1D Price Delta & Holdings Layout' },
+    'app.js':       { version: '3.5.7', updated: '20261123_1400', role: 'Add Trade Modal Native Trading Currency Calculated Total, 1D Price Delta & Holdings Layout' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.6', updated: '20261121_1038', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.5.7', updated: '20261123_1400', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.7',
+      buildId: '20261123_1400',
+      date: '2026-11-23 14:00 HKT',
+      summary: 'Upgraded Recommended Sell Price formula in portfolio.js to cap gainTarget and the +2% resistance fallback using each ticker\'s actual volatility (12-month high/low span and ATR(14)), giving low-volatility Treasury/money-market ETFs like 3077.HK realistic targets while preserving Settings targets for equities.',
+      changes: [
+        'Computed effectiveSellGainPct = min(recSellTargetGainPct, max(0.75%, 0.90 * span12mPct, 3.0 * atrPct)) in computeStockPriceMetrics() (portfolio.js) so low-volatility bond/floating-rate ETFs scale their upside target to their real trading range instead of a flat +18%.',
+        'Scaled the breakout resistance guard (minResMarginPct = min(2.0%, max(0.5%, 0.40 * effectiveSellGainPct))), ATR extension, and minimum sell floor proportionally to effectiveSellGainPct.'
+      ]
+    },
     {
       version: '3.5.6',
       buildId: '20261121_1038',
