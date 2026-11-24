@@ -2182,6 +2182,7 @@ function recalculatePortfolio() {
   const allHoldings = [];
   let totalStockMarketValue = 0;
   let totalStockCostBasis = 0;
+  let totalCumulativeBuyCostBasis = 0;
   let totalDayPnLBase = 0;
   let estimatedAnnualForwardDivBase = 0;
 
@@ -2252,6 +2253,8 @@ function recalculatePortfolio() {
     const dayPnLBase = Fin.convertCurrency(dayPnL, currency, baseCurr);
     const marketValueBase = Fin.convertCurrency(marketValue, currency, baseCurr);
     const costBasisBase = Fin.convertCurrency(h.totalCostBasis, currency, baseCurr);
+    const cumBuyCost = (h.cumulativeBuyCostBasis && h.cumulativeBuyCostBasis > 0) ? h.cumulativeBuyCostBasis : h.totalCostBasis;
+    const cumulativeBuyCostBasisBase = Fin.convertCurrency(cumBuyCost, currency, baseCurr);
     const historicalCostBasis = refCostForYoC;
     const historicalCostBasisBase = Fin.convertCurrency(historicalCostBasis, currency, baseCurr);
     const annualDivBase = Fin.convertCurrency(annualDivNative, currency, baseCurr);
@@ -2311,7 +2314,8 @@ function recalculatePortfolio() {
       avgCost: h.avgCost,
       totalCostBasis: h.totalCostBasis,
       costBasisBase,
-      cumulativeBuyCostBasis: h.cumulativeBuyCostBasis || 0,
+      cumulativeBuyCostBasis: cumBuyCost || 0,
+      cumulativeBuyCostBasisBase,
       historicalCostBasis,
       historicalCostBasisBase,
       currentPrice,
@@ -2369,10 +2373,11 @@ function recalculatePortfolio() {
       realizedGainBase,
       totalReturn: Fin.round(unrealizedGain + (h.realizedGain || 0) + (h.totalDividends || 0), 2),
       totalReturnBase: Fin.round(Fin.convertCurrency(unrealizedGain, currency, baseCurr) + realizedGainBase + totalDividendsBase, 2),
-      totalReturnPct: refCostForYoC > 0 ? Fin.round(((unrealizedGain + (h.realizedGain || 0) + (h.totalDividends || 0)) / refCostForYoC) * 100, 2) : 0
+      totalReturnPct: cumBuyCost > 0 ? Fin.round(((unrealizedGain + (h.realizedGain || 0) + (h.totalDividends || 0)) / cumBuyCost) * 100, 2) : 0
     };
 
     allHoldings.push(holdingRecord);
+    totalCumulativeBuyCostBasis = Fin.round(totalCumulativeBuyCostBasis + cumulativeBuyCostBasisBase, 2);
     if (isActive) {
       activeHoldings.push(holdingRecord);
       totalStockMarketValue = Fin.round(totalStockMarketValue + marketValueBase, 2);
@@ -2429,6 +2434,7 @@ function recalculatePortfolio() {
     cashBalance: state.cashBalance,
     totalStockMarketValue,
     totalStockCostBasis,
+    totalCumulativeBuyCostBasis,
     totalDayPnL: totalDayPnLBase,
     totalDayPnLPct,
     totalUnrealizedGain,

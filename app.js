@@ -3,7 +3,7 @@
 if (typeof window !== 'undefined' && 'caches' in window) {
   caches.keys().then(keys => {
     keys.forEach(k => {
-      if (k !== 'myportfolio-cache-v3.5.7-20261123_1400') {
+      if (k !== 'myportfolio-cache-v3.5.8-20261124_1220') {
         caches.delete(k).catch(() => {});
       }
     });
@@ -422,11 +422,14 @@ function renderKPIs() {
     ? Fin.round(Math.max(0, 100 - cashPct), 1)
     : 0;
   const totReturnBase = (portfolio.totalUnrealizedGain || 0) + (portfolio.totalRealizedPnL || 0) + (portfolio.totalDividendsEarned || 0);
-  const totReturnPct = portfolio.totalStockCostBasis > 0
-    ? Fin.round((totReturnBase / portfolio.totalStockCostBasis) * 100, 2)
+  const kpiCumCostBase = (portfolio.totalCumulativeBuyCostBasis && portfolio.totalCumulativeBuyCostBasis > 0)
+    ? portfolio.totalCumulativeBuyCostBasis
+    : (portfolio.totalStockCostBasis || 0);
+  const totReturnPct = kpiCumCostBase > 0
+    ? Fin.round((totReturnBase / kpiCumCostBase) * 100, 2)
     : 0;
-  const realizedPct = portfolio.totalStockCostBasis > 0
-    ? Fin.round(((portfolio.totalRealizedPnL || 0) / portfolio.totalStockCostBasis) * 100, 2)
+  const realizedPct = kpiCumCostBase > 0
+    ? Fin.round(((portfolio.totalRealizedPnL || 0) / kpiCumCostBase) * 100, 2)
     : 0;
   const avgYocKpi = portfolio.totalStockCostBasis > 0
     ? Fin.round((portfolio.totalDividendsEarned / portfolio.totalStockCostBasis) * 100, 2)
@@ -1298,6 +1301,7 @@ function renderHoldingsTable() {
   let totMarketValueBase = 0;
   let totUnrealizedBase = 0;
   let totCostBasisBase = 0;
+  let totCumulativeBuyCostBase = 0;
   let totHistoricalCostBase = 0;
   let totAccumDivBase = 0;
   let totRealizedBase = 0;
@@ -1318,6 +1322,8 @@ function renderHoldingsTable() {
     totMarketValueBase = Fin.round(totMarketValueBase + (h.marketValueBase ?? Fin.convertCurrency(h.marketValue || 0, hCurr, baseCurr)), 2);
     totUnrealizedBase = Fin.round(totUnrealizedBase + Fin.convertCurrency(h.unrealizedGain || 0, hCurr, baseCurr), 2);
     totCostBasisBase = Fin.round(totCostBasisBase + (h.costBasisBase ?? Fin.convertCurrency(h.totalCostBasis || 0, hCurr, baseCurr)), 2);
+    const hCumBuyCostBase = h.cumulativeBuyCostBasisBase ?? Fin.convertCurrency((h.cumulativeBuyCostBasis > 0 ? h.cumulativeBuyCostBasis : h.totalCostBasis) || 0, hCurr, baseCurr);
+    totCumulativeBuyCostBase = Fin.round(totCumulativeBuyCostBase + hCumBuyCostBase, 2);
     totHistoricalCostBase = Fin.round(totHistoricalCostBase + (h.historicalCostBasisBase ?? Fin.convertCurrency(h.historicalCostBasis || h.totalCostBasis || 0, hCurr, baseCurr)), 2);
     totAccumDivBase = Fin.round(totAccumDivBase + (h.totalDividendsBase ?? Fin.convertCurrency(h.totalDividends || 0, hCurr, baseCurr)), 2);
     totRealizedBase = Fin.round(totRealizedBase + (h.realizedGainBase ?? Fin.convertCurrency(h.realizedGain || 0, hCurr, baseCurr)), 2);
@@ -1346,8 +1352,9 @@ function renderHoldingsTable() {
 
   const hideMoney = Fin.isPrivacyMode();
   const totTotalReturnBase = Fin.round(totUnrealizedBase + totRealizedBase + totAccumDivBase, 2);
-  const totTotalReturnPct = refTotCostForYoC > 0 ? Fin.round((totTotalReturnBase / refTotCostForYoC) * 100, 2) : 0;
-  const totRealizedPct = refTotCostForYoC > 0 ? Fin.round((totRealizedBase / refTotCostForYoC) * 100, 2) : 0;
+  const refTotCostForReturn = totCumulativeBuyCostBase > 0 ? totCumulativeBuyCostBase : refTotCostForYoC;
+  const totTotalReturnPct = refTotCostForReturn > 0 ? Fin.round((totTotalReturnBase / refTotCostForReturn) * 100, 2) : 0;
+  const totRealizedPct = refTotCostForReturn > 0 ? Fin.round((totRealizedBase / refTotCostForReturn) * 100, 2) : 0;
 
   const totDayColor = totDayPnLBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
   const totUnrColor = totUnrealizedBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
@@ -1380,7 +1387,7 @@ function renderHoldingsTable() {
     <td class="py-1.5 px-3 text-center">
       <span class="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 font-mono font-bold text-[10px]">Avg ${avgSignalScore}/100</span>
     </td>
-    <td class="py-1.5 px-3 text-right num-font ${totRetColor}">
+    <td class="py-1.5 px-3 text-right num-font ${totRetColor}" title="All-Time Total Return / Cumulative Buy Cost Basis (${hideMoney ? 'Hidden' : Fin.currency(refTotCostForReturn, false, baseCurr)})">
       ${hideMoney
         ? `<div class="font-extrabold">${Fin.percent(totTotalReturnPct, true)}</div>`
         : `<div class="font-extrabold">${Fin.currency(totTotalReturnBase, true, baseCurr)}</div><div class="text-[10px] font-semibold">${Fin.percent(totTotalReturnPct, true)}</div>`}
@@ -1434,6 +1441,7 @@ function renderHoldingsTable() {
         items: [],
         totalDayPnL: 0,
         totalCostBasis: 0,
+        totalCumulativeBuyCostBasis: 0,
         totalHistoricalCostBasis: 0,
         totalMarketValue: 0,
         totalMarketValueBase: 0,
@@ -1452,6 +1460,8 @@ function renderHoldingsTable() {
     }
     g.totalDayPnL = Fin.round(g.totalDayPnL + (h.dayPnLBase ?? Fin.convertCurrency(h.dayPnL || 0, hCurr, baseCurr)), 2);
     g.totalCostBasis = Fin.round(g.totalCostBasis + Fin.convertCurrency(h.totalCostBasis || 0, hCurr, baseCurr), 2);
+    const gCumCost = (h.cumulativeBuyCostBasis && h.cumulativeBuyCostBasis > 0) ? h.cumulativeBuyCostBasis : (h.totalCostBasis || 0);
+    g.totalCumulativeBuyCostBasis = Fin.round(g.totalCumulativeBuyCostBasis + (h.cumulativeBuyCostBasisBase ?? Fin.convertCurrency(gCumCost, hCurr, baseCurr)), 2);
     g.totalHistoricalCostBasis = Fin.round(g.totalHistoricalCostBasis + Fin.convertCurrency(h.historicalCostBasis || h.totalCostBasis || 0, hCurr, baseCurr), 2);
     g.totalMarketValue = Fin.round(g.totalMarketValue + Fin.convertCurrency(h.marketValue || 0, hCurr, baseCurr), 2);
     g.totalMarketValueBase = Fin.round(g.totalMarketValueBase + (h.marketValueBase || Fin.convertCurrency(h.marketValue || 0, hCurr, baseCurr)), 2);
@@ -1516,8 +1526,9 @@ function renderHoldingsTable() {
       ? Fin.round((group.totalUnrealizedGain / group.totalCostBasis) * 100, 2)
       : 0;
     const refGroupCostYoC = group.totalCostBasis > 0 ? group.totalCostBasis : group.totalHistoricalCostBasis;
+    const refGroupCostForReturn = group.totalCumulativeBuyCostBasis > 0 ? group.totalCumulativeBuyCostBasis : refGroupCostYoC;
     const groupTotalReturn = Fin.round(group.totalUnrealizedGain + group.totalRealizedGain + group.totalDividends, 2);
-    const groupTotalReturnPct = refGroupCostYoC > 0 ? Fin.round((groupTotalReturn / refGroupCostYoC) * 100, 2) : 0;
+    const groupTotalReturnPct = refGroupCostForReturn > 0 ? Fin.round((groupTotalReturn / refGroupCostForReturn) * 100, 2) : 0;
     const groupYoC = refGroupCostYoC > 0
       ? Fin.round((group.totalDividends / refGroupCostYoC) * 100, 2)
       : 0;
@@ -1576,7 +1587,7 @@ function renderHoldingsTable() {
       <td class="py-1 sm:py-1.5 px-3 text-center">
         <span class="px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 font-mono font-semibold text-[10px]">Avg ${group.items.length > 0 ? Math.round(group.items.reduce((s, item) => s + Number(item.signalScore ?? 50), 0) / group.items.length) : 50}/100</span>
       </td>
-      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupRetColor}">
+      <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupRetColor}" title="Sector Total Return / Cumulative Buy Cost Basis (${hideMoney ? 'Hidden' : Fin.currency(refGroupCostForReturn, false, group.currency)})">
         ${hideMoney
           ? `<div>${Fin.percent(groupTotalReturnPct, true)}</div>`
           : `<div>${Fin.currency(groupTotalReturn, true, group.currency)}</div><div class="text-[10px] font-semibold">${Fin.percent(groupTotalReturnPct, true)}</div>`}
@@ -1588,7 +1599,7 @@ function renderHoldingsTable() {
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${group.totalRealizedGain !== 0 ? groupRealColor : 'text-slate-400'}">
         ${hideMoney
-          ? (refGroupCostYoC > 0 ? Fin.percent(Fin.round((group.totalRealizedGain / refGroupCostYoC) * 100, 2), true) : '-')
+          ? (refGroupCostForReturn > 0 ? Fin.percent(Fin.round((group.totalRealizedGain / refGroupCostForReturn) * 100, 2), true) : '-')
           : (group.totalRealizedGain !== 0 ? Fin.currency(group.totalRealizedGain, true, group.currency) : Fin.currency(0, false, group.currency))}
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-cyan-600 dark:text-cyan-400">
@@ -1654,9 +1665,13 @@ function renderHoldingsTable() {
         const dayPnlColor = dayPnlValBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
         const pnlColor = unrealizedValBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
         const realPnlColor = realPnlValBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
-        const refCostBasis = isAct && h.totalCostBasis > 0 ? h.totalCostBasis : (h.historicalCostBasis || h.cumulativeBuyCostBasis || 0);
-        const refCostBasisBase = isAct && totalCostBase > 0 ? totalCostBase : Number(h.historicalCostBasisBase ?? toBase(refCostBasis));
-        const totalRetPct = refCostBasis > 0 ? Fin.round((((h.unrealizedGain || 0) + Number(h.realizedGain || 0) + Number(h.totalDividends || 0)) / refCostBasis) * 100, 2) : 0;
+        const cumBuyCostNative = (h.cumulativeBuyCostBasis && h.cumulativeBuyCostBasis > 0)
+          ? h.cumulativeBuyCostBasis
+          : (h.totalCostBasis || h.historicalCostBasis || 0);
+        const cumBuyCostBase = Number(h.cumulativeBuyCostBasisBase ?? toBase(cumBuyCostNative));
+        const totalRetPct = cumBuyCostNative > 0
+          ? Fin.round((((h.unrealizedGain || 0) + Number(h.realizedGain || 0) + Number(h.totalDividends || 0)) / cumBuyCostNative) * 100, 2)
+          : 0;
         const totalRetColor = totalRetValBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
         const prevCloseNative = Number(state.prices[h.ticker]?.prevPrice || h.currentPrice || 0);
         const rawDeltaNative = (h.currentPrice > 0 && prevCloseNative > 0)
@@ -1717,7 +1732,7 @@ function renderHoldingsTable() {
           <td class="py-1 sm:py-1.5 px-3 text-center">
             ${formatSignalBadgeCell(h.ticker, h)}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right" title="Total Return = Unrealized P&L + Realized P&L + Accumulated Dividends">
+          <td class="py-1 sm:py-1.5 px-3 text-right" title="Total Return (Unrealized + Realized + Dividends) / Cumulative Buy Cost Basis (${hideMoney ? 'Hidden' : Fin.currency(cumBuyCostBase, false, baseCurr)})">
             ${hideMoney
               ? `<div class="font-bold num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.percent(totalRetPct, true)}</div>`
               : `<div class="font-bold num-font ${totalRetValBase !== 0 ? totalRetColor : 'text-slate-400'}">${Fin.currency(totalRetValBase, true, baseCurr)}</div>
@@ -1733,7 +1748,7 @@ function renderHoldingsTable() {
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${realPnlValBase !== 0 ? realPnlColor : 'text-slate-400'}">
             ${hideMoney
-              ? (refCostBasisBase > 0 ? Fin.percent(Fin.round((realPnlValBase / refCostBasisBase) * 100, 2), true) : '-')
+              ? (cumBuyCostBase > 0 ? Fin.percent(Fin.round((realPnlValBase / cumBuyCostBase) * 100, 2), true) : '-')
               : (realPnlValBase !== 0 ? Fin.currency(realPnlValBase, true, baseCurr) : Fin.currency(0, false, baseCurr))}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-bold ${totalDivValBase > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
@@ -4585,7 +4600,7 @@ function bootstrapPortfolioApp() {
   setTimeout(() => {
     if (typeof AppLogger !== 'undefined') {
       AppLogger.runHealthCheck();
-      AppLogger.info('Boot', 'myPortfolio v3.5.7 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
+      AppLogger.info('Boot', 'myPortfolio v3.5.8 boot sequence complete — triggering initial live price sync, Option 1 daily Cloudflare sync (15Y monthly prices, dividends & news), and 30s active-page auto-sync timer.');
     }
     if (!window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ && typeof syncAllMarketData === 'function') {
       window.__INITIAL_LIVE_PRICES_SYNCED_ONCE__ = true;

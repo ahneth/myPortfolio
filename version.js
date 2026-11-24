@@ -7,22 +7,33 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.7',
-  buildId: '20261123_1400',
-  releaseDate: '2026-11-23 14:00 HKT',
-  driveFolder: '/myPortfolio/20261123_1400/',
+  appVersion: '3.5.8',
+  buildId: '20261124_1220',
+  releaseDate: '2026-11-24 12:20 HKT',
+  driveFolder: '/myPortfolio/20261124_1220/',
   modules: {
-    'version.js':   { version: '3.5.7', updated: '20261123_1400', role: 'Version manifest, module registry & v3.5.7 changelog history' },
+    'version.js':   { version: '3.5.8', updated: '20261124_1220', role: 'Version manifest, module registry & v3.5.8 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
-    'portfolio.js': { version: '3.5.7', updated: '20261123_1400', role: 'Volatility-Adaptive Recommended Sell Target (ATR & 12M Span Cap), Live Dividend Persistence & Signal Engine' },
+    'portfolio.js': { version: '3.5.8', updated: '20261124_1220', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.7', updated: '20261123_1400', role: 'Add Trade Modal Native Trading Currency Calculated Total, 1D Price Delta & Holdings Layout' },
+    'app.js':       { version: '3.5.8', updated: '20261124_1220', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.7', updated: '20261123_1400', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.5.8', updated: '20261124_1220', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
+    {
+      version: '3.5.8',
+      buildId: '20261124_1220',
+      date: '2026-11-24 12:20 HKT',
+      summary: 'Fixed Total Return % (and Privacy Mode Realized P&L %) denominator across individual holdings, sector subtotals, Portfolio Total row, and Dashboard KPI to use Cumulative Buy Cost Basis (Active Cost + Sold Cost) instead of remaining active cost alone.',
+      changes: [
+        'Updated recalculatePortfolio() in portfolio.js to compute holdingRecord.totalReturnPct using cumulativeBuyCostBasis and expose cumulativeBuyCostBasisBase and portfolio.totalCumulativeBuyCostBasis.',
+        'Updated renderHoldingsTable() and renderKPIs() in app.js so Total Return % and Privacy Mode Realized P&L % divide by Cumulative Buy Cost Basis across individual rows, sector subtotals, Portfolio Total row, and Dashboard Hero KPI, while keeping Unrealized P&L % on remaining active cost.',
+        'Added the exact Cumulative Buy Cost Basis amount to the Total Return cell hover tooltips.'
+      ]
+    },
     {
       version: '3.5.7',
       buildId: '20261123_1400',
