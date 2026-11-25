@@ -27,6 +27,18 @@ if (typeof Chart !== 'undefined' && !Chart.registry?.plugins?.get('hudCrosshair'
   Chart.register(hudCrosshairPlugin);
 }
 
+// v3.6.1: Global state for Benchmark Comparison Overlay & 12M Projected Dividend Calendar
+var portfolioBenchmarkTicker = 'NONE';
+var projectedDivMode = 'stacked';
+window.setPortfolioBenchmarkTicker = function(sym) {
+  portfolioBenchmarkTicker = sym || 'NONE';
+  if (typeof renderMonthlyHistoryChart === 'function') renderMonthlyHistoryChart();
+};
+window.setProjectedDivMode = function(m) {
+  projectedDivMode = m || 'stacked';
+  if (typeof renderProjectedDividendCalendarChart === 'function') renderProjectedDividendCalendarChart();
+};
+
 /**
  * @file charts.js
  * @module PortfolioChartsModule
@@ -1369,17 +1381,35 @@ function renderInlineStockChart(tabType) {
     }
   }
 
-  // v3.6.0 Ex-Dividend Markers (D) on Inline Stock Chart
+  // v3.6.1 Ex-Dividend & Dividend Payout Markers (D) on Inline Stock Chart
   if (state?.settings?.chartShowDivMarkers !== false && labels.length > 0) {
-    const divHistArr = Array.isArray(state?.dividendHistory?.[ticker]) ? state.dividendHistory[ticker] : [];
+    const schedObj = state?.dividendSchedules?.[ticker]
+      || (typeof buildDividendScheduleForTicker === 'function' ? buildDividendScheduleForTicker(ticker, null, livePrice || 0, currency) : null);
+    const schedHist = Array.isArray(schedObj?.history) ? schedObj.history : [];
     const divByMonth = {};
-    divHistArr.forEach(d => {
-      const m = String(d.exDate || d.date || '').slice(0, 7);
-      const amt = Number(d.amount || 0);
+    schedHist.forEach(d => {
+      const dateStr = String(d.exDate || d.date || d.payDate || '');
+      const m = dateStr.slice(0, 7);
+      const amt = Number(d.amount ?? d.dividend ?? 0);
       if (m && amt > 0) {
-        if (!divByMonth[m]) divByMonth[m] = { exDate: d.exDate || d.date, amount: 0, count: 0 };
+        if (!divByMonth[m]) divByMonth[m] = { exDate: dateStr.slice(0, 10), amount: 0, count: 0, loggedTotal: 0 };
         divByMonth[m].amount = Fin.round(divByMonth[m].amount + amt, 4);
         divByMonth[m].count += 1;
+      }
+    });
+    // Also merge logged cash payouts from state.dividends for this ticker
+    (Array.isArray(state?.dividends) ? state.dividends : []).forEach(d => {
+      if (MarketAPI.normalizeTicker(d.ticker) !== ticker) return;
+      const dateStr = String(d.exDate || d.payDate || '');
+      const m = dateStr.slice(0, 7);
+      if (!m) return;
+      const totalAmt = Number(d.totalAmount || 0);
+      const perSh = Number(d.amountPerShare || d.divPerShare || 0);
+      if (!divByMonth[m]) {
+        divByMonth[m] = { exDate: dateStr.slice(0, 10), amount: perSh > 0 ? Fin.round(perSh, 4) : 0, count: 1, loggedTotal: Fin.round(totalAmt, 2) };
+      } else {
+        divByMonth[m].loggedTotal = Fin.round((divByMonth[m].loggedTotal || 0) + totalAmt, 2);
+        if (divByMonth[m].amount <= 0 && perSh > 0) divByMonth[m].amount = Fin.round(perSh, 4);
       }
     });
     const divMarkerData = labels.map((m, idx) => (divByMonth[m] ? closeData[idx] : null));
@@ -1392,9 +1422,9 @@ function renderInlineStockChart(tabType) {
         pointBorderColor: '#0891b2',
         pointBackgroundColor: '#22d3ee',
         pointStyle: 'rectRot',
-        pointBorderWidth: 1.8,
-        pointRadius: isMobile ? 4.5 : 5.5,
-        pointHoverRadius: isMobile ? 6.5 : 7.5,
+        pointBorderWidth: 2,
+        pointRadius: isMobile ? 5.5 : 6.5,
+        pointHoverRadius: isMobile ? 7.5 : 8.5,
         showLine: false,
         fill: false,
         order: 0,
@@ -1460,6 +1490,7 @@ function renderInlineStockChart(tabType) {
       targetDs.data = ds.data;
       targetDs.label = ds.label;
       if (ds._tradeMeta) targetDs._tradeMeta = ds._tradeMeta;
+      if (ds._divByMonth) targetDs._divByMonth = ds._divByMonth;
     });
     existingChart.update('none');
     return;
@@ -1518,6 +1549,15 @@ function renderInlineStockChart(tabType) {
           callbacks: {
             label: (c) => {
               const ds = c.dataset;
+              if (ds && ds._divByMonth) {
+                const mKey = labels[c.dataIndex];
+                const dm = ds._divByMonth[mKey];
+                if (dm) {
+                  const perShTxt = dm.amount > 0 ? `${Fin.currency(dm.amount, false, currency)}/sh` : '';
+                  const totTxt = (!Fin.isPrivacyMode() && dm.loggedTotal > 0) ? ` · Payout: ${Fin.currency(dm.loggedTotal, false, currency)}` : '';
+                  return ` Dividend (${dm.exDate || mKey}): ${perShTxt}${totTxt}`;
+                }
+              }
               if (ds && ds._tradeMeta && ds._tradeMeta[c.dataIndex]) {
                 const tm = ds._tradeMeta[c.dataIndex];
                 if (Fin.isPrivacyMode()) {
@@ -2161,7 +2201,9 @@ function renderProjectedDividendCalendarChart() {
   active.forEach(h => {
     const hCurr = h.currency || 'HKD';
     const whtRate = Number(h.divInfo?.whtRate ?? 0);
-    const hist = Array.isArray(state?.dividendHistory?.[h.ticker]) ? state.dividendHistory[h.ticker] : [];
+    const schedObj = state?.dividendSchedules?.[h.ticker]
+      || (typeof buildDividendScheduleForTicker === 'function' ? buildDividendScheduleForTicker(h.ticker, null, h.currentPrice || 0, hCurr) : null);
+    const hist = Array.isArray(schedObj?.history) ? schedObj.history : [];
     const cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - 12);
     const recent12m = hist.filter(d => {

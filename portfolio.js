@@ -410,6 +410,7 @@ var watchlistStockRangeMonths = 24;
 var tradesCashflowRangeMonths = 120;
 
 var charts = {
+  projectedDivCalendar: null,
   monthlyHistory: null,
   holdingsStockHistory: null,
   watchlistStockHistory: null,

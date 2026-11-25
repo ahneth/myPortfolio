@@ -872,7 +872,7 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.6.0 (20261125_1720)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.6.1 (20261125_1840)</span>
             </div>
           </div>
         </div>
@@ -3268,25 +3268,25 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.5.8',
-  buildId: '20261125_1720',
-  releaseDate: '2026-11-24 12:20 HKT',
-  driveFolder: '/myPortfolio/20261124_1220/',
+  appVersion: '3.6.1',
+  buildId: '20261125_1840',
+  releaseDate: '2026-11-25 18:40 HKT',
+  driveFolder: '/myPortfolio/20261125_1840/',
   modules: {
-    'version.js':   { version: '3.6.0', updated: '20261124_1220', role: 'Version manifest, module registry & v3.5.8 changelog history' },
+    'version.js':   { version: '3.6.1', updated: '20261125_1840', role: 'Version manifest, module registry & v3.6.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
-    'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
-    'portfolio.js': { version: '3.6.0', updated: '20261124_1220', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
-    'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.6.0', updated: '20261124_1220', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
-    'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.6.0', updated: '20261124_1220', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'api.js':       { version: '3.6.0', updated: '20261125_1720', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
+    'portfolio.js': { version: '3.6.1', updated: '20261125_1840', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
+    'charts.js':    { version: '3.6.1', updated: '20261125_1840', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
+    'app.js':       { version: '3.6.0', updated: '20261125_1720', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
+    'styles.css':   { version: '3.6.0', updated: '20261125_1720', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
+    'index.html':   { version: '3.6.1', updated: '20261125_1840', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
     {
       version: '3.6.0',
-      buildId: '20261125_1720',
+      buildId: '20261125_1840',
       date: '2026-11-25',
       title: 'Quant Risk Analytics, Action Radar, Benchmark Overlay, 12M Dividend Calendar & Holdings Presets',
       highlights: [
@@ -3300,7 +3300,7 @@ var APP_VERSION_MANIFEST = {
 
     {
       version: '3.6.0',
-      buildId: '20261125_1720',
+      buildId: '20261125_1840',
       date: '2026-11-24 12:20 HKT',
       summary: 'Fixed Total Return % (and Privacy Mode Realized P&L %) denominator across individual holdings, sector subtotals, Portfolio Total row, and Dashboard KPI to use Cumulative Buy Cost Basis (Active Cost + Sold Cost) instead of remaining active cost alone.',
       changes: [
@@ -6875,6 +6875,7 @@ var watchlistStockRangeMonths = 24;
 var tradesCashflowRangeMonths = 120;
 
 var charts = {
+  projectedDivCalendar: null,
   monthlyHistory: null,
   holdingsStockHistory: null,
   watchlistStockHistory: null,
@@ -9444,6 +9445,18 @@ if (typeof Chart !== 'undefined' && !Chart.registry?.plugins?.get('hudCrosshair'
   Chart.register(hudCrosshairPlugin);
 }
 
+// v3.6.1: Global state for Benchmark Comparison Overlay & 12M Projected Dividend Calendar
+var portfolioBenchmarkTicker = 'NONE';
+var projectedDivMode = 'stacked';
+window.setPortfolioBenchmarkTicker = function(sym) {
+  portfolioBenchmarkTicker = sym || 'NONE';
+  if (typeof renderMonthlyHistoryChart === 'function') renderMonthlyHistoryChart();
+};
+window.setProjectedDivMode = function(m) {
+  projectedDivMode = m || 'stacked';
+  if (typeof renderProjectedDividendCalendarChart === 'function') renderProjectedDividendCalendarChart();
+};
+
 /**
  * @file charts.js
  * @module PortfolioChartsModule
@@ -10786,17 +10799,35 @@ function renderInlineStockChart(tabType) {
     }
   }
 
-  // v3.6.0 Ex-Dividend Markers (D) on Inline Stock Chart
+  // v3.6.1 Ex-Dividend & Dividend Payout Markers (D) on Inline Stock Chart
   if (state?.settings?.chartShowDivMarkers !== false && labels.length > 0) {
-    const divHistArr = Array.isArray(state?.dividendHistory?.[ticker]) ? state.dividendHistory[ticker] : [];
+    const schedObj = state?.dividendSchedules?.[ticker]
+      || (typeof buildDividendScheduleForTicker === 'function' ? buildDividendScheduleForTicker(ticker, null, livePrice || 0, currency) : null);
+    const schedHist = Array.isArray(schedObj?.history) ? schedObj.history : [];
     const divByMonth = {};
-    divHistArr.forEach(d => {
-      const m = String(d.exDate || d.date || '').slice(0, 7);
-      const amt = Number(d.amount || 0);
+    schedHist.forEach(d => {
+      const dateStr = String(d.exDate || d.date || d.payDate || '');
+      const m = dateStr.slice(0, 7);
+      const amt = Number(d.amount ?? d.dividend ?? 0);
       if (m && amt > 0) {
-        if (!divByMonth[m]) divByMonth[m] = { exDate: d.exDate || d.date, amount: 0, count: 0 };
+        if (!divByMonth[m]) divByMonth[m] = { exDate: dateStr.slice(0, 10), amount: 0, count: 0, loggedTotal: 0 };
         divByMonth[m].amount = Fin.round(divByMonth[m].amount + amt, 4);
         divByMonth[m].count += 1;
+      }
+    });
+    // Also merge logged cash payouts from state.dividends for this ticker
+    (Array.isArray(state?.dividends) ? state.dividends : []).forEach(d => {
+      if (MarketAPI.normalizeTicker(d.ticker) !== ticker) return;
+      const dateStr = String(d.exDate || d.payDate || '');
+      const m = dateStr.slice(0, 7);
+      if (!m) return;
+      const totalAmt = Number(d.totalAmount || 0);
+      const perSh = Number(d.amountPerShare || d.divPerShare || 0);
+      if (!divByMonth[m]) {
+        divByMonth[m] = { exDate: dateStr.slice(0, 10), amount: perSh > 0 ? Fin.round(perSh, 4) : 0, count: 1, loggedTotal: Fin.round(totalAmt, 2) };
+      } else {
+        divByMonth[m].loggedTotal = Fin.round((divByMonth[m].loggedTotal || 0) + totalAmt, 2);
+        if (divByMonth[m].amount <= 0 && perSh > 0) divByMonth[m].amount = Fin.round(perSh, 4);
       }
     });
     const divMarkerData = labels.map((m, idx) => (divByMonth[m] ? closeData[idx] : null));
@@ -10809,9 +10840,9 @@ function renderInlineStockChart(tabType) {
         pointBorderColor: '#0891b2',
         pointBackgroundColor: '#22d3ee',
         pointStyle: 'rectRot',
-        pointBorderWidth: 1.8,
-        pointRadius: isMobile ? 4.5 : 5.5,
-        pointHoverRadius: isMobile ? 6.5 : 7.5,
+        pointBorderWidth: 2,
+        pointRadius: isMobile ? 5.5 : 6.5,
+        pointHoverRadius: isMobile ? 7.5 : 8.5,
         showLine: false,
         fill: false,
         order: 0,
@@ -10877,6 +10908,7 @@ function renderInlineStockChart(tabType) {
       targetDs.data = ds.data;
       targetDs.label = ds.label;
       if (ds._tradeMeta) targetDs._tradeMeta = ds._tradeMeta;
+      if (ds._divByMonth) targetDs._divByMonth = ds._divByMonth;
     });
     existingChart.update('none');
     return;
@@ -10935,6 +10967,15 @@ function renderInlineStockChart(tabType) {
           callbacks: {
             label: (c) => {
               const ds = c.dataset;
+              if (ds && ds._divByMonth) {
+                const mKey = labels[c.dataIndex];
+                const dm = ds._divByMonth[mKey];
+                if (dm) {
+                  const perShTxt = dm.amount > 0 ? `${Fin.currency(dm.amount, false, currency)}/sh` : '';
+                  const totTxt = (!Fin.isPrivacyMode() && dm.loggedTotal > 0) ? ` · Payout: ${Fin.currency(dm.loggedTotal, false, currency)}` : '';
+                  return ` Dividend (${dm.exDate || mKey}): ${perShTxt}${totTxt}`;
+                }
+              }
               if (ds && ds._tradeMeta && ds._tradeMeta[c.dataIndex]) {
                 const tm = ds._tradeMeta[c.dataIndex];
                 if (Fin.isPrivacyMode()) {
@@ -11578,7 +11619,9 @@ function renderProjectedDividendCalendarChart() {
   active.forEach(h => {
     const hCurr = h.currency || 'HKD';
     const whtRate = Number(h.divInfo?.whtRate ?? 0);
-    const hist = Array.isArray(state?.dividendHistory?.[h.ticker]) ? state.dividendHistory[h.ticker] : [];
+    const schedObj = state?.dividendSchedules?.[h.ticker]
+      || (typeof buildDividendScheduleForTicker === 'function' ? buildDividendScheduleForTicker(h.ticker, null, h.currentPrice || 0, hCurr) : null);
+    const hist = Array.isArray(schedObj?.history) ? schedObj.history : [];
     const cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - 12);
     const recent12m = hist.filter(d => {
