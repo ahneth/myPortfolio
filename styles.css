@@ -642,3 +642,17 @@ tr:hover .table-action-capsule {
   border-color: rgba(16, 185, 129, 0.45);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
+
+/* v3.6.0 Holdings Column View Presets */
+table.preset-overview-active th:not(.sticky-col-mobile):not(.col-always):not(.col-g-overview),
+table.preset-overview-active td:not(.sticky-col-mobile):not(.col-always):not(.col-g-overview) {
+  display: none !important;
+}
+table.preset-pnl-active th:not(.sticky-col-mobile):not(.col-always):not(.col-g-pnl),
+table.preset-pnl-active td:not(.sticky-col-mobile):not(.col-always):not(.col-g-pnl) {
+  display: none !important;
+}
+table.preset-targets-active th:not(.sticky-col-mobile):not(.col-always):not(.col-g-targets),
+table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col-g-targets) {
+  display: none !important;
+}

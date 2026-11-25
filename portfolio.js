@@ -1406,11 +1406,20 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
     else regime = 'Range-Bound Consolidation';
   }
 
-  // 4-Pillar Composite Buy/Sell Signal Score (0 - 100) — v3.1.0 with genuine TRIM / OFFLOAD & SELL / AVOID signals
-  const wMom = Number(cfg.weightMomentum ?? 30);
-  const wTrend = Number(cfg.weightTrend ?? 25);
-  const wVal = Number(cfg.weightValuation ?? 25);
-  const wQual = Number(cfg.weightQuality ?? 20);
+  // 4-Pillar Composite Buy/Sell Signal Score (0 - 100) — v3.6.0 with optional per-ticker Asset-Class Profile weights
+  const wlEntryForProfile = (Array.isArray(state?.watchlist) ? state.watchlist.find(w => w.ticker === ticker) : null);
+  const assetProfile = String(fundObj.assetProfile || wlEntryForProfile?.assetProfile || 'auto').toLowerCase();
+  const ASSET_PROFILE_WEIGHTS = {
+    'core-index': { mom: 25, trend: 35, val: 25, qual: 15 },
+    'dividend':   { mom: 15, trend: 20, val: 30, qual: 35 },
+    'growth':     { mom: 35, trend: 35, val: 20, qual: 10 },
+    'cash-bond':  { mom: 15, trend: 15, val: 35, qual: 35 }
+  };
+  const profW = ASSET_PROFILE_WEIGHTS[assetProfile] || null;
+  const wMom = profW ? profW.mom : Number(cfg.weightMomentum ?? 30);
+  const wTrend = profW ? profW.trend : Number(cfg.weightTrend ?? 25);
+  const wVal = profW ? profW.val : Number(cfg.weightValuation ?? 25);
+  const wQual = profW ? profW.qual : Number(cfg.weightQuality ?? 20);
   const wSum = Math.max(1, wMom + wTrend + wVal + wQual);
 
   const rsiLow = Number(cfg.rsiOversold ?? 32);
@@ -1640,18 +1649,52 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
   let recommendedBuyPrice = null;
   let recommendedSellPrice = null;
   let recommendedStopLoss = null;
+  let effectiveBuyPullbackPct = recBuyPullbackPct;
+  let effectiveSellGainPct = recSellTargetGainPct;
+  let effectiveStopFloorPct = stopFloorPct;
 
   if (refCurrent > 0) {
-    // 1. Recommended Buy Price
-    let trendBuyAnchor = refCurrent * (1 - recBuyPullbackPct / 100);
+    // Shared Ticker Volatility Envelope (v3.6.0: applied across Buy, Sell & Stop Loss)
+    // Low-volatility Treasury/money-market ETFs (e.g. 3077.HK) automatically scale within their actual trading band,
+    // while equities and broad equity ETFs retain full Settings defaults (6% / 18% / 8%).
+    const hasVolHistory = hist.length >= 3 && prevPeak > 0 && prevTrough > 0 && prevPeak > prevTrough;
+    const span12mPct = hasVolHistory ? ((prevPeak - prevTrough) / refCurrent) * 100 : null;
+    const atrPct = (atr14 && atr14 > 0) ? (atr14 / refCurrent) * 100 : null;
+
+    const volBuyCapCandidates = [];
+    if (span12mPct !== null && Number.isFinite(span12mPct)) volBuyCapCandidates.push(span12mPct * 0.35);
+    if (atrPct !== null && Number.isFinite(atrPct)) volBuyCapCandidates.push(atrPct * 1.1);
+    const volBuyCapPct = volBuyCapCandidates.length > 0
+      ? Math.max(0.35, Math.max(...volBuyCapCandidates))
+      : recBuyPullbackPct;
+    effectiveBuyPullbackPct = Math.min(recBuyPullbackPct, volBuyCapPct);
+
+    const volCapCandidates = [];
+    if (span12mPct !== null && Number.isFinite(span12mPct)) volCapCandidates.push(span12mPct * 0.90);
+    if (atrPct !== null && Number.isFinite(atrPct)) volCapCandidates.push(atrPct * 3.0);
+    const volGainCapPct = volCapCandidates.length > 0
+      ? Math.max(0.75, Math.max(...volCapCandidates))
+      : recSellTargetGainPct;
+    effectiveSellGainPct = Math.min(recSellTargetGainPct, volGainCapPct);
+
+    const volStopCapCandidates = [];
+    if (span12mPct !== null && Number.isFinite(span12mPct)) volStopCapCandidates.push(span12mPct * 0.65);
+    if (atrPct !== null && Number.isFinite(atrPct)) volStopCapCandidates.push(atrPct * 2.0);
+    const volStopCapPct = volStopCapCandidates.length > 0
+      ? Math.max(0.60, Math.max(...volStopCapCandidates))
+      : stopFloorPct;
+    effectiveStopFloorPct = Math.min(stopFloorPct, volStopCapPct);
+
+    // 1. Recommended Buy Price (Volatility-Adaptive Pullback Support)
+    let trendBuyAnchor = refCurrent * (1 - effectiveBuyPullbackPct / 100);
     if (regime === 'Stage 2 Strong Uptrend' || regime === 'Stage 2 Uptrend (Consolidating)') {
       const maRef = sma50 || sma20 || trendBuyAnchor;
       trendBuyAnchor = 0.55 * trendBuyAnchor + 0.45 * Math.min(refCurrent, maRef);
     } else if (regime === 'Bullish Pullback (Buy-the-Dip)' || regime === 'Stage 1 Bullish Inflection') {
       const dipRef = sma200 || regLowerNow || sma50 || trendBuyAnchor;
-      trendBuyAnchor = 0.50 * (refCurrent * (1 - (recBuyPullbackPct * 0.70) / 100)) + 0.50 * Math.min(refCurrent, dipRef);
+      trendBuyAnchor = 0.50 * (refCurrent * (1 - (effectiveBuyPullbackPct * 0.70) / 100)) + 0.50 * Math.min(refCurrent, dipRef);
     } else if (regime === 'Stage 3 Topping / Distribution' || regime === 'Stage 4 Confirmed Downtrend') {
-      const bearRef = Math.min(sma200 || refCurrent, regLowerNow || refCurrent, refCurrent * (1 - (recBuyPullbackPct * 1.5) / 100));
+      const bearRef = Math.min(sma200 || refCurrent, regLowerNow || refCurrent, refCurrent * (1 - (effectiveBuyPullbackPct * 1.5) / 100));
       trendBuyAnchor = bearRef;
     }
 
@@ -1663,42 +1706,29 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
 
     // Signal conviction adjustment
     if (signalLabel === 'STRONG BUY') {
-      rawRecBuy = Math.max(rawRecBuy, refCurrent * (1 - (recBuyPullbackPct * 0.35) / 100));
+      rawRecBuy = Math.max(rawRecBuy, refCurrent * (1 - (effectiveBuyPullbackPct * 0.35) / 100));
     } else if (signalLabel === 'ACCUMULATE') {
-      rawRecBuy = Math.max(rawRecBuy, refCurrent * (1 - (recBuyPullbackPct * 0.75) / 100));
+      rawRecBuy = Math.max(rawRecBuy, refCurrent * (1 - (effectiveBuyPullbackPct * 0.75) / 100));
     } else if (signalLabel.includes('TRIM') || signalLabel.includes('SELL')) {
-      rawRecBuy = Math.min(rawRecBuy, refCurrent * (1 - (recBuyPullbackPct * 1.35) / 100));
+      rawRecBuy = Math.min(rawRecBuy, refCurrent * (1 - (effectiveBuyPullbackPct * 1.35) / 100));
     }
 
     // Average Cost basis integration for existing holdings
     if (avgCost > 0) {
       if (refCurrent < avgCost && regime !== 'Stage 4 Confirmed Downtrend') {
-        // Position is below average cost: target opportunistic averaging-down level
-        rawRecBuy = 0.70 * rawRecBuy + 0.30 * Math.min(refCurrent, avgCost * 0.96);
+        const avgDownFactor = 1 - Math.min(0.04, (effectiveBuyPullbackPct / 100) * 0.65);
+        rawRecBuy = 0.70 * rawRecBuy + 0.30 * Math.min(refCurrent, avgCost * avgDownFactor);
       } else if (refCurrent >= avgCost) {
-        // Position is in profit: anchor pullback entry between technical support and avgCost
         rawRecBuy = 0.80 * rawRecBuy + 0.20 * Math.min(refCurrent, Math.max(avgCost, troughRef));
       }
     }
 
-    const minBuyFloor = prevTrough ? Math.min(prevTrough * 0.92, refCurrent * 0.70) : refCurrent * 0.70;
+    const minBuyFloor = prevTrough
+      ? Math.min(prevTrough * (1 - Math.min(0.08, (effectiveBuyPullbackPct / 100) * 1.3)), refCurrent * 0.70)
+      : refCurrent * 0.70;
     recommendedBuyPrice = Fin.round(Math.min(refCurrent, Math.max(minBuyFloor, rawRecBuy)), 2);
 
     // 2. Recommended Sell Price (Volatility-Adaptive Take-Profit / Resistance Target)
-    // Cap upside gainTarget and breakout fallback using actual ticker volatility (12M high/low span & ATR)
-    // so ultra-low-volatility Treasury/money-market ETFs (e.g. 3077.HK) get realistic targets within their trading band,
-    // while equities and broad equity ETFs retain the full Settings recSellTargetGainPct (default 18%).
-    const hasVolHistory = hist.length >= 3 && prevPeak > 0 && prevTrough > 0 && prevPeak > prevTrough;
-    const span12mPct = hasVolHistory ? ((prevPeak - prevTrough) / refCurrent) * 100 : null;
-    const atrPct = (atr14 && atr14 > 0) ? (atr14 / refCurrent) * 100 : null;
-    const volCapCandidates = [];
-    if (span12mPct !== null && Number.isFinite(span12mPct)) volCapCandidates.push(span12mPct * 0.90);
-    if (atrPct !== null && Number.isFinite(atrPct)) volCapCandidates.push(atrPct * 3.0);
-    const volGainCapPct = volCapCandidates.length > 0
-      ? Math.max(0.75, Math.max(...volCapCandidates))
-      : recSellTargetGainPct;
-    const effectiveSellGainPct = Math.min(recSellTargetGainPct, volGainCapPct);
-
     const costOrPriceBase = avgCost > 0 ? Math.max(refCurrent, avgCost) : refCurrent;
     const gainTarget = costOrPriceBase * (1 + effectiveSellGainPct / 100);
     let peakResistance = (prevPeak && regUpperNow)
@@ -1717,36 +1747,39 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
     let rawRecSell = (1 - recSellPeakWeight) * gainTarget + recSellPeakWeight * peakResistance;
 
     if (signalLabel.includes('SELL') || (signalLabel.includes('TRIM') && (rsi14 !== null && rsi14 >= rsiHigh))) {
-      // Already in overbought / offload territory: set tight take-profit target just above current price
       const tightMargin = Math.min(0.035, Math.max(0.008, (effectiveSellGainPct / 100) * 0.6));
       rawRecSell = Math.min(rawRecSell, refCurrent * (1 + tightMargin));
     } else if (regime === 'Stage 2 Strong Uptrend' && signalLabel === 'STRONG BUY') {
-      // Strong uptrend breakout: extend target proportionally to effectiveSellGainPct
       rawRecSell = Math.max(rawRecSell, costOrPriceBase * (1 + (effectiveSellGainPct * 1.2) / 100));
     }
 
     const minSellFloorMult = 1 + Math.min(0.015, Math.max(0.005, (effectiveSellGainPct / 100) * 0.5));
     recommendedSellPrice = Fin.round(Math.max(refCurrent * minSellFloorMult, rawRecSell), 2);
 
-    // 3. Recommended Stop Loss (ATR Volatility Stop + Swing Trough / SMA Support + Profit Protection)
-    const atrStop = atr14 > 0 ? (refCurrent - stopMult * atr14) : (refCurrent * (1 - stopFloorPct / 100));
-    const maxDrawdownStop = refCurrent * (1 - stopFloorPct / 100);
+    // 3. Recommended Stop Loss (Volatility-Adaptive ATR Stop + Swing Trough / SMA Support + Profit Protection)
+    const atrStop = atr14 > 0 ? (refCurrent - stopMult * atr14) : (refCurrent * (1 - effectiveStopFloorPct / 100));
+    const maxDrawdownStop = refCurrent * (1 - effectiveStopFloorPct / 100);
+    const supportBuf = 1 - Math.min(0.02, (effectiveStopFloorPct / 100) * 0.25);
     let supportStop = maxDrawdownStop;
     if (prevTrough && prevTrough < refCurrent && prevTrough >= refCurrent * 0.84) {
-      supportStop = prevTrough * 0.98;
+      supportStop = prevTrough * supportBuf;
     } else if (sma50 && sma50 < refCurrent && sma50 >= refCurrent * 0.88) {
-      supportStop = sma50 * 0.98;
+      supportStop = sma50 * supportBuf;
     } else if (sma200 && sma200 < refCurrent && sma200 >= refCurrent * 0.85) {
-      supportStop = sma200 * 0.98;
+      supportStop = sma200 * supportBuf;
     }
 
     let rawStop = 0.65 * Math.max(maxDrawdownStop, atrStop) + 0.35 * supportStop;
     if (avgCost > 0 && refCurrent >= avgCost * 1.14) {
-      // Protect locked-in gain above break-even when unrealized gain >= +14%
       rawStop = Math.max(rawStop, Math.min(refCurrent * 0.96, avgCost * 1.01));
     }
-    // Ensure Stop Loss sits strictly below Recommended Buy Price (or below 97.5% of current price)
-    const stopCeiling = Math.min(refCurrent * 0.975, recommendedBuyPrice > 0 ? recommendedBuyPrice * 0.985 : refCurrent * 0.975);
+    // Dynamic Stop Ceiling strictly below Recommended Buy Price & Current Price
+    const stopGapFromCurrent = Math.min(0.025, (effectiveStopFloorPct / 100) * 0.5);
+    const stopGapFromBuy = Math.min(0.015, (effectiveStopFloorPct / 100) * 0.35);
+    const stopCeiling = Math.min(
+      refCurrent * (1 - stopGapFromCurrent),
+      recommendedBuyPrice > 0 ? recommendedBuyPrice * (1 - stopGapFromBuy) : refCurrent * (1 - stopGapFromCurrent)
+    );
     recommendedStopLoss = Fin.round(Math.max(0.01, Math.min(stopCeiling, rawStop)), 2);
   }
 
@@ -1758,6 +1791,28 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
   const customBuyPrice = (Number.isFinite(rawCustBuy) && rawCustBuy > 0) ? Fin.round(rawCustBuy, 4) : null;
   const customSellPrice = (Number.isFinite(rawCustSell) && rawCustSell > 0) ? Fin.round(rawCustSell, 4) : null;
   const customStopLoss = (Number.isFinite(rawCustStop) && rawCustStop > 0) ? Fin.round(rawCustStop, 4) : null;
+
+  // v3.6.0: Implied Risk/Reward Ratio & Stale Custom Pin Drift (>15% from quant recommended)
+  const activeSellTarget = customSellPrice || recommendedSellPrice;
+  const activeStopTarget = customStopLoss || recommendedStopLoss;
+  let riskRewardRatio = null;
+  if (refCurrent > 0 && activeSellTarget > refCurrent && activeStopTarget > 0 && activeStopTarget < refCurrent) {
+    riskRewardRatio = Fin.round((activeSellTarget - refCurrent) / (refCurrent - activeStopTarget), 2);
+  }
+
+  const staleCustomPins = [];
+  const checkPinDrift = (type, cust, rec) => {
+    if (cust > 0 && rec > 0) {
+      const driftPct = Fin.round(((cust - rec) / rec) * 100, 1);
+      if (Math.abs(driftPct) > 15.0) {
+        staleCustomPins.push({ type, custom: cust, recommended: rec, driftPct });
+      }
+    }
+  };
+  checkPinDrift('BUY', customBuyPrice, recommendedBuyPrice);
+  checkPinDrift('SELL', customSellPrice, recommendedSellPrice);
+  checkPinDrift('STOP', customStopLoss, recommendedStopLoss);
+  const hasStaleCustomPin = staleCustomPins.length > 0;
 
   const _computedResult = {
     low52w,
@@ -1786,6 +1841,13 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
     customSellPrice,
     customStopLoss,
     suggestedStopLoss,
+    assetProfile,
+    effectiveBuyPullbackPct: Fin.round(effectiveBuyPullbackPct, 2),
+    effectiveSellGainPct: Fin.round(effectiveSellGainPct, 2),
+    effectiveStopFloorPct: Fin.round(effectiveStopFloorPct, 2),
+    riskRewardRatio,
+    staleCustomPins,
+    hasStaleCustomPin,
     bbPctB,
     regime,
     regTrendAnnualPct,
@@ -2347,6 +2409,10 @@ function recalculatePortfolio() {
       customSellPrice: priceMetrics.customSellPrice,
       customStopLoss: priceMetrics.customStopLoss,
       suggestedStopLoss: priceMetrics.suggestedStopLoss,
+      assetProfile: priceMetrics.assetProfile || 'auto',
+      riskRewardRatio: priceMetrics.riskRewardRatio,
+      staleCustomPins: priceMetrics.staleCustomPins || [],
+      hasStaleCustomPin: Boolean(priceMetrics.hasStaleCustomPin),
       regime: priceMetrics.regime,
       regTrendAnnualPct: priceMetrics.regTrendAnnualPct,
       regR2: priceMetrics.regR2,

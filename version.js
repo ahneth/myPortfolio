@@ -8,24 +8,38 @@
 
 var APP_VERSION_MANIFEST = {
   appVersion: '3.5.8',
-  buildId: '20261124_1220',
+  buildId: '20261125_1720',
   releaseDate: '2026-11-24 12:20 HKT',
   driveFolder: '/myPortfolio/20261124_1220/',
   modules: {
-    'version.js':   { version: '3.5.8', updated: '20261124_1220', role: 'Version manifest, module registry & v3.5.8 changelog history' },
+    'version.js':   { version: '3.6.0', updated: '20261124_1220', role: 'Version manifest, module registry & v3.5.8 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.5.3', updated: '20261112_1638', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
-    'portfolio.js': { version: '3.5.8', updated: '20261124_1220', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
+    'portfolio.js': { version: '3.6.0', updated: '20261124_1220', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
     'charts.js':    { version: '3.5.0', updated: '20261112_1008', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.5.8', updated: '20261124_1220', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
+    'app.js':       { version: '3.6.0', updated: '20261124_1220', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
     'styles.css':   { version: '3.1.0', updated: '20261031_1650', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.5.8', updated: '20261124_1220', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.6.0', updated: '20261124_1220', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
     {
-      version: '3.5.8',
-      buildId: '20261124_1220',
+      version: '3.6.0',
+      buildId: '20261125_1720',
+      date: '2026-11-25',
+      title: 'Quant Risk Analytics, Action Radar, Benchmark Overlay, 12M Dividend Calendar & Holdings Presets',
+      highlights: [
+        'Dashboard Action Radar: Clickable alert chips surfacing BUY ZONE, TARGET HIT, STOP BREACHED, Ex-Div <=14d, and Stale Custom Pin (>15% drift) tickers that jump directly to each ticker chart.',
+        'Portfolio Risk Analytics & Live FX Strip: Added Max Drawdown, Annualized Volatility, Sharpe Ratio, Top-3 Concentration %, and daily Cloudflare Worker Live FX Auto-Sync (USD/HKD, GBP/USD, GBP/HKD).',
+        'Portfolio vs. Benchmark Overlay & Currency Allocation: Compare cumulative portfolio return against 2800.HK, VOO, or VWRA.L, and slice Asset Allocation by Currency (HKD/USD/GBP).',
+        '12-Month Projected Dividend Cashflow Calendar: Jan–Dec bar chart on the Dividends tab with By Ticker / Total toggle and 12M, Monthly Avg, and Peak Month KPIs.',
+        'Holdings Column View Presets & Quant Upgrades: Added Overview / P&L / Targets & R:R / Full presets, sortable Implied R:R column, Stale Custom Pin drift badges, volatility-adaptive Buy & Stop Loss targets, per-ticker Asset-Class Signal Profile selector, tablet header nowrap fix, and P/L Cushion + Dividend (D) markers on inline stock charts.'
+      ]
+    },
+
+    {
+      version: '3.6.0',
+      buildId: '20261125_1720',
       date: '2026-11-24 12:20 HKT',
       summary: 'Fixed Total Return % (and Privacy Mode Realized P&L %) denominator across individual holdings, sector subtotals, Portfolio Total row, and Dashboard KPI to use Cumulative Buy Cost Basis (Active Cost + Sold Cost) instead of remaining active cost alone.',
       changes: [

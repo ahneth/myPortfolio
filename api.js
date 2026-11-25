@@ -1363,6 +1363,58 @@ window.loadCompanyNewsFromJson = (silent = true) => syncCompanyNewsLive(!silent)
  * or if any active/watchlist ticker is missing 15Y monthly history in localStorage.
  * Triggered on initial page load, on every 30s active-page timer tick, and on tab visibility restore.
  */
+/**
+ * v3.6.0 Live FX Auto-Sync via Cloudflare Worker (HKD=X / USDHKD=X, GBPUSD=X, GBPHKD=X).
+ * Automatically updates state.settings FX rates once per day unless user manually locked custom FX (_userCustomFx).
+ */
+async function syncLiveFxRatesFromCloudflare(manual = false) {
+  if (!state || !state.settings) return false;
+  if (!manual && state.settings._userCustomFx === true) return false;
+  try {
+    const batch = await MarketAPI.fetchCloudflareBatchQuotes(['HKD=X', 'USDHKD=X', 'GBPUSD=X', 'GBPHKD=X'], 6500);
+    if (!batch || typeof batch !== 'object') return false;
+    let updated = 0;
+    const usdHkdQ = batch['USDHKD=X'] || batch['HKD=X'];
+    if (usdHkdQ && Number(usdHkdQ.price) > 6.5 && Number(usdHkdQ.price) < 9.0) {
+      state.settings.fxUsdHkd = Fin.round(Number(usdHkdQ.price), 4);
+      updated++;
+    }
+    const gbpUsdQ = batch['GBPUSD=X'];
+    if (gbpUsdQ && Number(gbpUsdQ.price) > 0.8 && Number(gbpUsdQ.price) < 2.2) {
+      state.settings.fxGbpUsd = Fin.round(Number(gbpUsdQ.price), 4);
+      updated++;
+    }
+    const gbpHkdQ = batch['GBPHKD=X'];
+    if (gbpHkdQ && Number(gbpHkdQ.price) > 7.5 && Number(gbpHkdQ.price) < 15.0) {
+      state.settings.fxGbpHkd = Fin.round(Number(gbpHkdQ.price), 4);
+      updated++;
+    } else if (state.settings.fxUsdHkd > 0 && state.settings.fxGbpUsd > 0) {
+      state.settings.fxGbpHkd = Fin.round(state.settings.fxUsdHkd * state.settings.fxGbpUsd, 4);
+    }
+    if (updated > 0) {
+      state.settings.lastFxUpdate = new Date().toISOString();
+      if (typeof AppLogger !== 'undefined') {
+        AppLogger.info('LiveFX', `Synced live FX via Cloudflare Worker: USD/HKD=${state.settings.fxUsdHkd}, GBP/USD=${state.settings.fxGbpUsd}, GBP/HKD=${state.settings.fxGbpHkd}`);
+      }
+      if (manual) {
+        recalculatePortfolio();
+        saveState();
+        renderAll();
+        if (typeof showToast === 'function') {
+          showToast(`Live FX synced: USD/HKD ${state.settings.fxUsdHkd}, GBP/HKD ${state.settings.fxGbpHkd}`, 'success');
+        }
+      }
+    }
+    return updated > 0;
+  } catch (err) {
+    if (typeof AppLogger !== 'undefined') {
+      AppLogger.warn('LiveFX', `Live FX sync skipped: ${err.message}`);
+    }
+    return false;
+  }
+}
+window.syncLiveFxRatesFromCloudflare = syncLiveFxRatesFromCloudflare;
+
 async function checkAndRunDailyCloudflareSync(forceAll = false) {
   if (!state || !state.settings) return;
   const allTickers = getAllPortfolioAndWatchlistTickers();
@@ -1377,11 +1429,12 @@ async function checkAndRunDailyCloudflareSync(forceAll = false) {
     state.settings.lastDailySyncDate = todayStr;
     saveState();
     if (typeof AppLogger !== 'undefined') {
-      AppLogger.info('DailyAutoSync', `First active session of ${todayStr} — auto-fetching 15Y monthly prices, dividends & news via Cloudflare Worker.`);
+      AppLogger.info('DailyAutoSync', `First active session of ${todayStr} — auto-fetching 15Y monthly prices, dividends, live FX & news via Cloudflare Worker.`);
     }
     await Promise.allSettled([
       syncHistoricalPricesFromCloudflare(false, allTickers),
-      syncCompanyNewsLive(false, allTickers)
+      syncCompanyNewsLive(false, allTickers),
+      syncLiveFxRatesFromCloudflare(false)
     ]);
   } else {
     if (missingHistoryTickers.length > 0) {

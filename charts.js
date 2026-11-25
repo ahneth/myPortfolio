@@ -355,6 +355,110 @@ function computeMonthlyPortfolioSeries(rangeMonths, onlyFromEarliestActivity = f
   };
 }
 
+
+function computeBenchmarkReturnSeries(benchTicker, labels) {
+  if (!benchTicker || benchTicker === 'NONE' || !Array.isArray(labels) || labels.length === 0) return null;
+  const sym = MarketAPI.normalizeTicker(benchTicker);
+  const hist = state?.historicalPrices?.[sym] || [];
+  const priceMap = {};
+  hist.forEach(bar => {
+    const m = String(bar.date || bar.month || '').slice(0, 7);
+    const p = Number(bar.rawClose ?? bar.close ?? bar.adjClose ?? 0);
+    if (m && p > 0) priceMap[m] = p;
+  });
+  const liveP = Number(state?.prices?.[sym]?.price || 0);
+  if (liveP > 0 && labels.length > 0) {
+    priceMap[labels[labels.length - 1]] = liveP;
+  }
+  let basePrice = null;
+  let lastKnown = null;
+  const out = labels.map(m => {
+    if (priceMap[m] > 0) lastKnown = priceMap[m];
+    if (basePrice === null && lastKnown > 0) basePrice = lastKnown;
+    if (basePrice > 0 && lastKnown > 0) {
+      return Fin.round(((lastKnown - basePrice) / basePrice) * 100, 2);
+    }
+    return null;
+  });
+  return out.some(v => v !== null) ? out : null;
+}
+
+function renderDashboardRiskStrip(seriesData) {
+  const maxDdEl = document.getElementById('risk-stat-maxdd');
+  const maxDdSubEl = document.getElementById('risk-stat-maxdd-sub');
+  const volEl = document.getElementById('risk-stat-vol');
+  const sharpeEl = document.getElementById('risk-stat-sharpe');
+  const sharpeSubEl = document.getElementById('risk-stat-sharpe-sub');
+  const top3El = document.getElementById('risk-stat-top3');
+  const top3SubEl = document.getElementById('risk-stat-top3-sub');
+  const fxEl = document.getElementById('risk-stat-fx');
+  const fxSubEl = document.getElementById('risk-stat-fx-sub');
+
+  const retPctArr = Array.isArray(seriesData?.accumReturnPctSeries) ? seriesData.accumReturnPctSeries : [];
+  if (retPctArr.length >= 2) {
+    const wealth = retPctArr.map(r => Math.max(0.01, 1 + (Number(r) || 0) / 100));
+    let peak = wealth[0];
+    let maxDd = 0;
+    const monthlyRets = [];
+    for (let i = 0; i < wealth.length; i++) {
+      if (wealth[i] > peak) peak = wealth[i];
+      const dd = peak > 0 ? ((wealth[i] - peak) / peak) * 100 : 0;
+      if (dd < maxDd) maxDd = dd;
+      if (i > 0 && wealth[i - 1] > 0) {
+        monthlyRets.push((wealth[i] - wealth[i - 1]) / wealth[i - 1]);
+      }
+    }
+    if (maxDdEl) maxDdEl.textContent = `${Fin.round(maxDd, 2).toFixed(2)}%`;
+    if (maxDdSubEl) maxDdSubEl.textContent = `${retPctArr.length}M window`;
+
+    if (monthlyRets.length >= 2) {
+      const meanM = monthlyRets.reduce((a, b) => a + b, 0) / monthlyRets.length;
+      const variance = monthlyRets.reduce((s, r) => s + (r - meanM) ** 2, 0) / (monthlyRets.length - 1);
+      const annVolPct = Math.sqrt(Math.max(0, variance)) * Math.sqrt(12) * 100;
+      const annRetPct = meanM * 12 * 100;
+      const rfPct = Number(state?.settings?.riskFreeRatePct ?? 4.0);
+      const sharpe = annVolPct > 0.1 ? (annRetPct - rfPct) / annVolPct : null;
+
+      if (volEl) volEl.textContent = `${Fin.round(annVolPct, 2).toFixed(2)}%`;
+      if (sharpeEl) {
+        sharpeEl.textContent = sharpe !== null ? sharpe.toFixed(2) : '—';
+        sharpeEl.className = `text-base sm:text-lg font-bold num-font mt-0.5 ${sharpe === null ? 'text-slate-400' : (sharpe >= 1.0 ? 'text-emerald-500' : (sharpe >= 0.4 ? 'text-amber-500' : 'text-rose-500'))}`;
+      }
+      if (sharpeSubEl) sharpeSubEl.textContent = `Rf ${rfPct.toFixed(1)}%`;
+    }
+  }
+
+  // Top-3 Concentration %
+  const active = (portfolio?.activeHoldings || []).slice().sort((a, b) => (b.marketValueBase || 0) - (a.marketValueBase || 0));
+  const totMv = Number(portfolio?.totalStockMarketValue || 0);
+  if (active.length > 0 && totMv > 0) {
+    const top3 = active.slice(0, 3);
+    const top3Sum = top3.reduce((s, h) => s + Number(h.marketValueBase || 0), 0);
+    const top3Pct = Fin.round((top3Sum / totMv) * 100, 1);
+    if (top3El) top3El.textContent = `${top3Pct.toFixed(1)}%`;
+    if (top3SubEl) top3SubEl.textContent = top3.map(h => h.ticker).join(' · ');
+  } else {
+    if (top3El) top3El.textContent = '—';
+    if (top3SubEl) top3SubEl.textContent = 'No active positions';
+  }
+
+  // Live FX Rates
+  const fxUsd = Number(state?.settings?.fxUsdHkd || 7.8453);
+  const fxGbp = Number(state?.settings?.fxGbpHkd || (fxUsd * Number(state?.settings?.fxGbpUsd || 1.275)));
+  if (fxEl) fxEl.textContent = `USD ${fxUsd.toFixed(3)} · GBP ${fxGbp.toFixed(2)}`;
+  if (fxSubEl) {
+    if (state?.settings?._userCustomFx) {
+      fxSubEl.textContent = 'Manual FX override';
+    } else if (state?.settings?.lastFxUpdate) {
+      const dt = new Date(state.settings.lastFxUpdate);
+      fxSubEl.textContent = `Synced ${dt.toLocaleDateString()} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else {
+      fxSubEl.textContent = 'Auto-synced daily';
+    }
+  }
+}
+window.renderDashboardRiskStrip = renderDashboardRiskStrip;
+
 function renderMonthlyHistoryChart() {
   const ctx = document.getElementById('chart-monthly-history');
   const emptyOverlay = document.getElementById('chart-history-empty');
@@ -395,6 +499,8 @@ function renderMonthlyHistoryChart() {
     accumReturnDollarSeries,
     accumReturnPctSeries
   } = seriesData;
+  try { renderDashboardRiskStrip(seriesData); } catch (_) {}
+  const benchSeries = computeBenchmarkReturnSeries(portfolioBenchmarkTicker, labels);
 
   const latestBalance = balanceSeries[balanceSeries.length - 1] || 0;
   const latestReturnDollar = accumReturnDollarSeries[accumReturnDollarSeries.length - 1] || 0;
@@ -417,14 +523,16 @@ function renderMonthlyHistoryChart() {
     const isPositiveEnd = latestReturnPct >= 0;
     const lineColor = isPositiveEnd ? '#10b981' : '#f43f5e';
     const fillColor = isPositiveEnd ? 'rgba(16, 185, 129, 0.14)' : 'rgba(244, 63, 94, 0.14)';
-    const sig = JSON.stringify({ mode: 'privacy', range: historyRangeMonths, isDark, baseCurr, labelsLen: labels.length });
+    const sig = JSON.stringify({ mode: 'privacy', range: historyRangeMonths, isDark, baseCurr, labelsLen: labels.length, bench: benchSeries ? portfolioBenchmarkTicker : 'NONE' });
 
-    if (existingChart && existingChart._renderSig === sig && existingChart.data?.datasets?.length === 1) {
+    const expectedPrivDs = benchSeries ? 2 : 1;
+    if (existingChart && existingChart._renderSig === sig && existingChart.data?.datasets?.length === expectedPrivDs) {
       existingChart.data.labels = labels;
       existingChart.data.datasets[0].data = accumReturnPctSeries;
       existingChart.data.datasets[0].borderColor = lineColor;
       existingChart.data.datasets[0].backgroundColor = fillColor;
       existingChart.data.datasets[0].pointBackgroundColor = lineColor;
+      if (benchSeries && existingChart.data.datasets[1]) existingChart.data.datasets[1].data = benchSeries;
       existingChart.update('none');
       return;
     }
@@ -444,7 +552,17 @@ function renderMonthlyHistoryChart() {
             tension: 0.32,
             pointRadius: isMobile ? 2 : 3.5,
             pointBackgroundColor: lineColor
-          }
+          },
+          ...(benchSeries ? [{
+            label: `Benchmark ${portfolioBenchmarkTicker} (%)`,
+            data: benchSeries,
+            borderColor: '#f59e0b',
+            borderDash: [5, 4],
+            borderWidth: 2,
+            fill: false,
+            tension: 0.3,
+            pointRadius: 0
+          }] : [])
         ]
       },
       options: {
@@ -497,15 +615,17 @@ function renderMonthlyHistoryChart() {
     const isPositiveEnd = latestReturnDollar >= 0;
     const lineColor = isPositiveEnd ? '#10b981' : '#f43f5e';
     const fillColor = isPositiveEnd ? 'rgba(16, 185, 129, 0.14)' : 'rgba(244, 63, 94, 0.14)';
-    const sig = JSON.stringify({ mode: 'return', range: historyRangeMonths, isDark, baseCurr, labelsLen: labels.length });
+    const sig = JSON.stringify({ mode: 'return', range: historyRangeMonths, isDark, baseCurr, labelsLen: labels.length, bench: benchSeries ? portfolioBenchmarkTicker : 'NONE' });
 
-    if (existingChart && existingChart._renderSig === sig && existingChart.data?.datasets?.length === 2) {
+    const expectedRetDs = benchSeries ? 3 : 2;
+    if (existingChart && existingChart._renderSig === sig && existingChart.data?.datasets?.length === expectedRetDs) {
       existingChart.data.labels = labels;
       existingChart.data.datasets[0].data = accumReturnDollarSeries;
       existingChart.data.datasets[0].borderColor = lineColor;
       existingChart.data.datasets[0].backgroundColor = fillColor;
       existingChart.data.datasets[0].pointBackgroundColor = lineColor;
       existingChart.data.datasets[1].data = accumReturnPctSeries;
+      if (benchSeries && existingChart.data.datasets[2]) existingChart.data.datasets[2].data = benchSeries;
       existingChart.update('none');
       return;
     }
@@ -536,7 +656,18 @@ function renderMonthlyHistoryChart() {
             tension: 0.32,
             pointRadius: 0,
             yAxisID: 'y1'
-          }
+          },
+          ...(benchSeries ? [{
+            label: `Benchmark ${portfolioBenchmarkTicker} (%)`,
+            data: benchSeries,
+            borderColor: '#f59e0b',
+            borderDash: [5, 4],
+            borderWidth: 2,
+            fill: false,
+            tension: 0.3,
+            pointRadius: 0,
+            yAxisID: 'y1'
+          }] : [])
         ]
       },
       options: {
@@ -976,8 +1107,10 @@ function renderInlineStockChart(tabType) {
       data: closeData,
       borderColor: mainColor,
       backgroundColor: mainColor,
-      borderWidth: 1.5,
-      fill: false,
+      borderWidth: 1.8,
+      fill: (isHoldings && avgCostValue > 0 && state?.settings?.chartShowCushion !== false)
+        ? { target: { value: avgCostValue }, above: 'rgba(16, 185, 129, 0.14)', below: 'rgba(244, 63, 94, 0.14)' }
+        : false,
       tension: 0.3,
       pointRadius: isMobile ? 1.5 : 2.0,
       pointHoverRadius: isMobile ? 3.5 : 4.5,
@@ -1236,6 +1369,41 @@ function renderInlineStockChart(tabType) {
     }
   }
 
+  // v3.6.0 Ex-Dividend Markers (D) on Inline Stock Chart
+  if (state?.settings?.chartShowDivMarkers !== false && labels.length > 0) {
+    const divHistArr = Array.isArray(state?.dividendHistory?.[ticker]) ? state.dividendHistory[ticker] : [];
+    const divByMonth = {};
+    divHistArr.forEach(d => {
+      const m = String(d.exDate || d.date || '').slice(0, 7);
+      const amt = Number(d.amount || 0);
+      if (m && amt > 0) {
+        if (!divByMonth[m]) divByMonth[m] = { exDate: d.exDate || d.date, amount: 0, count: 0 };
+        divByMonth[m].amount = Fin.round(divByMonth[m].amount + amt, 4);
+        divByMonth[m].count += 1;
+      }
+    });
+    const divMarkerData = labels.map((m, idx) => (divByMonth[m] ? closeData[idx] : null));
+    if (divMarkerData.some(v => v !== null)) {
+      datasets.push({
+        label: 'Ex-Dividend (D)',
+        data: divMarkerData,
+        borderColor: '#06b6d4',
+        backgroundColor: '#22d3ee',
+        pointBorderColor: '#0891b2',
+        pointBackgroundColor: '#22d3ee',
+        pointStyle: 'rectRot',
+        pointBorderWidth: 1.8,
+        pointRadius: isMobile ? 4.5 : 5.5,
+        pointHoverRadius: isMobile ? 6.5 : 7.5,
+        showLine: false,
+        fill: false,
+        order: 0,
+        _legendStyle: 'solid',
+        _divByMonth: divByMonth
+      });
+    }
+  }
+
   const renderClickedTradeMarkerDetail = (metaList) => {
     if (!tradeMarkerBoxEl || !Array.isArray(metaList) || metaList.length === 0) return;
     const isPriv = Fin.isPrivacyMode();
@@ -1451,6 +1619,17 @@ function renderAllocationChart() {
     portfolio.activeHoldings.forEach(h => {
       labels.push(h.ticker);
       data.push(Fin.round(h.marketValueBase || h.marketValue || 0, 2));
+    });
+  } else if (allocationViewMode === 'currency') {
+    const currMap = {};
+    portfolio.activeHoldings.forEach(h => {
+      let c = String(h.currency || 'HKD').trim();
+      if (c === 'GBp' || c === 'GBX') c = 'GBP';
+      currMap[c] = (currMap[c] || 0) + (h.marketValueBase || h.marketValue || 0);
+    });
+    Object.keys(currMap).sort((a, b) => currMap[b] - currMap[a]).forEach(c => {
+      labels.push(c);
+      data.push(Fin.round(currMap[c], 2));
     });
   } else {
     const sectorMap = {};
@@ -1959,3 +2138,158 @@ function renderTradesBalanceCashflowChart() {
 }
 
 window.renderTradesBalanceCashflowChart = renderTradesBalanceCashflowChart;
+
+// =========================================================================
+// v3.6.0: 12-MONTH PROJECTED DIVIDEND CASHFLOW CALENDAR (DIVIDENDS TAB)
+// =========================================================================
+function renderProjectedDividendCalendarChart() {
+  const ctx = document.getElementById('chart-projected-div-calendar');
+  const emptyDiv = document.getElementById('chart-proj-div-empty');
+  const annualBadge = document.getElementById('proj-div-annual-badge');
+  const avgBadge = document.getElementById('proj-div-avg-badge');
+  const peakBadge = document.getElementById('proj-div-peak-badge');
+  if (!ctx) return;
+
+  const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
+  const hideMoney = Fin.isPrivacyMode();
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const active = (portfolio?.activeHoldings || []).filter(h => h.shares > 0.0001);
+
+  const tickerSeriesMap = {};
+  const monthlyTotals = new Array(12).fill(0);
+
+  active.forEach(h => {
+    const hCurr = h.currency || 'HKD';
+    const whtRate = Number(h.divInfo?.whtRate ?? 0);
+    const hist = Array.isArray(state?.dividendHistory?.[h.ticker]) ? state.dividendHistory[h.ticker] : [];
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - 12);
+    const recent12m = hist.filter(d => {
+      const dt = new Date(d.exDate || d.date);
+      return !isNaN(dt.getTime()) && dt >= cutoff && Number(d.amount || 0) > 0;
+    });
+
+    const perMonth = new Array(12).fill(0);
+    if (recent12m.length > 0) {
+      recent12m.forEach(d => {
+        const dt = new Date(d.payDate || d.exDate || d.date);
+        if (!isNaN(dt.getTime())) {
+          const mIdx = dt.getMonth();
+          const netAmtNative = Number(d.amount || 0) * h.shares * (1 - whtRate);
+          const netAmtBase = Fin.convertCurrency(netAmtNative, hCurr, baseCurr);
+          perMonth[mIdx] += netAmtBase;
+        }
+      });
+    } else if (Number(h.annualForwardDivBase || 0) > 0) {
+      const ann = Number(h.annualForwardDivBase);
+      const nextDt = h.divInfo?.nextExDate ? new Date(h.divInfo.nextExDate) : null;
+      const startM = (nextDt && !isNaN(nextDt.getTime())) ? nextDt.getMonth() : 2;
+      const cad = String(h.divInfo?.cadence || 'Quarterly').toLowerCase();
+      if (cad.includes('month')) {
+        for (let i = 0; i < 12; i++) perMonth[i] += ann / 12;
+      } else if (cad.includes('semi')) {
+        perMonth[startM % 12] += ann / 2;
+        perMonth[(startM + 6) % 12] += ann / 2;
+      } else if (cad.includes('annual')) {
+        perMonth[startM % 12] += ann;
+      } else {
+        for (let k = 0; k < 4; k++) perMonth[(startM + k * 3) % 12] += ann / 4;
+      }
+    }
+
+    const totalForTicker = perMonth.reduce((a, b) => a + b, 0);
+    if (totalForTicker > 0.01) {
+      tickerSeriesMap[h.ticker] = perMonth.map(v => Fin.round(v, 2));
+      for (let i = 0; i < 12; i++) monthlyTotals[i] = Fin.round(monthlyTotals[i] + perMonth[i], 2);
+    }
+  });
+
+  const annualTotal = Fin.round(monthlyTotals.reduce((a, b) => a + b, 0), 2);
+  const monthlyAvg = Fin.round(annualTotal / 12, 2);
+  let peakIdx = 0;
+  for (let i = 1; i < 12; i++) {
+    if (monthlyTotals[i] > monthlyTotals[peakIdx]) peakIdx = i;
+  }
+
+  if (annualBadge) annualBadge.textContent = hideMoney ? '12M: ••••' : `12M: ${Fin.currency(annualTotal, false, baseCurr)}`;
+  if (avgBadge) avgBadge.textContent = hideMoney ? 'Avg/mo: ••••' : `Avg/mo: ${Fin.currency(monthlyAvg, false, baseCurr)}`;
+  if (peakBadge) peakBadge.textContent = annualTotal > 0 ? `Peak: ${monthNames[peakIdx]}${hideMoney ? '' : ' (' + Fin.currency(monthlyTotals[peakIdx], false, baseCurr) + ')'}` : 'Peak: —';
+
+  if (annualTotal <= 0) {
+    if (charts.projectedDivCalendar) {
+      charts.projectedDivCalendar.destroy();
+      charts.projectedDivCalendar = null;
+    }
+    if (emptyDiv) emptyDiv.classList.remove('hidden');
+    return;
+  }
+  if (emptyDiv) emptyDiv.classList.add('hidden');
+
+  const isDark = document.documentElement.classList.contains('dark');
+  const palette = ['#10b981', '#06b6d4', '#6366f1', '#f59e0b', '#ec4899', '#8b5cf6', '#3b82f6', '#14b8a6', '#f97316', '#84cc16', '#ef4444', '#a855f7'];
+  const tickers = Object.keys(tickerSeriesMap).sort((a, b) => {
+    const sumA = tickerSeriesMap[a].reduce((x, y) => x + y, 0);
+    const sumB = tickerSeriesMap[b].reduce((x, y) => x + y, 0);
+    return sumB - sumA;
+  });
+
+  const datasets = (projectedDivMode === 'total')
+    ? [{
+        label: hideMoney ? 'Projected Monthly Cash' : `Projected Monthly Cash (${baseCurr})`,
+        data: monthlyTotals,
+        backgroundColor: '#06b6d4',
+        borderRadius: 6
+      }]
+    : tickers.map((sym, idx) => ({
+        label: sym,
+        data: tickerSeriesMap[sym],
+        backgroundColor: palette[idx % palette.length],
+        borderRadius: 3
+      }));
+
+  if (charts.projectedDivCalendar) charts.projectedDivCalendar.destroy();
+  charts.projectedDivCalendar = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: monthNames, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          stacked: projectedDivMode === 'stacked',
+          grid: { display: false },
+          ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 11 } }
+        },
+        y: {
+          stacked: projectedDivMode === 'stacked',
+          grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+          ticks: {
+            color: isDark ? '#94a3b8' : '#64748b',
+            font: { size: 10 },
+            callback: (v) => hideMoney ? '••••' : Fin.currency(v, false, baseCurr)
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: projectedDivMode === 'stacked' && tickers.length <= 12,
+          position: 'bottom',
+          labels: { boxWidth: 10, color: isDark ? '#94a3b8' : '#475569', font: { size: 10 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: (c) => {
+              if (!c.raw) return null;
+              return hideMoney ? ` ${c.dataset.label}: ••••` : ` ${c.dataset.label}: ${Fin.currency(c.raw, false, baseCurr)}`;
+            },
+            footer: (items) => {
+              const tot = items.reduce((s, it) => s + Number(it.raw || 0), 0);
+              return hideMoney ? '' : `Month Total: ${Fin.currency(tot, false, baseCurr)}`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+window.renderProjectedDividendCalendarChart = renderProjectedDividendCalendarChart;
