@@ -1422,12 +1422,13 @@ async function checkAndRunDailyCloudflareSync(forceAll = false) {
   if (allTickers.length === 0) return;
 
   const todayStr = getLocalTodayDateString();
-  const isNewCalendarDay = (state.settings.lastDailySyncDate !== todayStr);
+  const isNewCalendarDay = (state.settings.lastDailySyncDate !== todayStr) || (state.settings.lastHistorySchemaVersion !== '3.6.3');
   const missingHistoryTickers = allTickers.filter(sym => !Array.isArray(state.historicalPrices?.[sym]) || state.historicalPrices[sym].length === 0);
   const hasEmptyNews = !Array.isArray(state.companyNews) || state.companyNews.length === 0;
 
   if (forceAll || isNewCalendarDay) {
     state.settings.lastDailySyncDate = todayStr;
+    state.settings.lastHistorySchemaVersion = '3.6.3';
     saveState();
     if (typeof AppLogger !== 'undefined') {
       AppLogger.info('DailyAutoSync', `First active session of ${todayStr} — auto-fetching 15Y monthly prices, dividends, live FX & news via Cloudflare Worker.`);

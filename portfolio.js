@@ -811,15 +811,16 @@ function ingestHistoricalPricesData(data) {
         const rawL = Number(r.low);
         const hi = (Number.isFinite(rawH) && rawH > 0) ? Fin.round(Math.max(rawH, rawC), 4) : rawC;
         const lo = (Number.isFinite(rawL) && rawL > 0) ? Fin.round(Math.min(rawL, rawC), 4) : rawC;
+        const prevM = byMonthMap[monthStr];
         byMonthMap[monthStr] = {
           month: monthStr,
           date: dateStr,
           close: rawC,
           rawClose: rawC,
           adjClose: adjC,
-          high: hi,
-          low: lo,
-          volume: parseInt(r.volume || 0, 10)
+          high: (prevM && prevM.high > 0) ? Fin.round(Math.max(prevM.high, hi), 4) : hi,
+          low: (prevM && prevM.low > 0) ? Fin.round(Math.min(prevM.low, lo), 4) : lo,
+          volume: (prevM ? (prevM.volume || 0) : 0) + parseInt(r.volume || 0, 10)
         };
       });
 

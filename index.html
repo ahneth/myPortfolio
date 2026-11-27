@@ -872,7 +872,7 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.6.2 (20261127_1520)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.6.3 (20261127_1550)</span>
             </div>
           </div>
         </div>
@@ -3272,25 +3272,25 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.6.2',
-  buildId: '20261127_1520',
-  releaseDate: '2026-11-27 15:20 HKT',
-  driveFolder: '/myPortfolio/20261127_1520/',
+  appVersion: '3.6.3',
+  buildId: '20261127_1550',
+  releaseDate: '2026-11-27 15:50 HKT',
+  driveFolder: '/myPortfolio/20261127_1550/',
   modules: {
-    'version.js':   { version: '3.6.2', updated: '20261127_1520', role: 'Version manifest, module registry & v3.6.2 changelog history' },
+    'version.js':   { version: '3.6.3', updated: '20261127_1550', role: 'Version manifest, module registry & v3.6.3 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
-    'api.js':       { version: '3.6.2', updated: '20261127_1520', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
-    'portfolio.js': { version: '3.6.1', updated: '20261125_1840', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
+    'api.js':       { version: '3.6.3', updated: '20261127_1550', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
+    'portfolio.js': { version: '3.6.3', updated: '20261127_1550', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
     'charts.js':    { version: '3.6.2', updated: '20261127_1520', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.6.2', updated: '20261127_1520', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
+    'app.js':       { version: '3.6.3', updated: '20261127_1550', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
     'styles.css':   { version: '3.6.0', updated: '20261125_1720', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.6.2', updated: '20261127_1520', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.6.3', updated: '20261127_1550', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
     {
       version: '3.6.0',
-      buildId: '20261127_1520',
+      buildId: '20261127_1550',
       date: '2026-11-25',
       title: 'Quant Risk Analytics, Action Radar, Benchmark Overlay, 12M Dividend Calendar & Holdings Presets',
       highlights: [
@@ -3304,7 +3304,7 @@ var APP_VERSION_MANIFEST = {
 
     {
       version: '3.6.0',
-      buildId: '20261127_1520',
+      buildId: '20261127_1550',
       date: '2026-11-24 12:20 HKT',
       summary: 'Fixed Total Return % (and Privacy Mode Realized P&L %) denominator across individual holdings, sector subtotals, Portfolio Total row, and Dashboard KPI to use Cumulative Buy Cost Basis (Active Cost + Sold Cost) instead of remaining active cost alone.',
       changes: [
@@ -6111,12 +6111,13 @@ async function checkAndRunDailyCloudflareSync(forceAll = false) {
   if (allTickers.length === 0) return;
 
   const todayStr = getLocalTodayDateString();
-  const isNewCalendarDay = (state.settings.lastDailySyncDate !== todayStr);
+  const isNewCalendarDay = (state.settings.lastDailySyncDate !== todayStr) || (state.settings.lastHistorySchemaVersion !== '3.6.3');
   const missingHistoryTickers = allTickers.filter(sym => !Array.isArray(state.historicalPrices?.[sym]) || state.historicalPrices[sym].length === 0);
   const hasEmptyNews = !Array.isArray(state.companyNews) || state.companyNews.length === 0;
 
   if (forceAll || isNewCalendarDay) {
     state.settings.lastDailySyncDate = todayStr;
+    state.settings.lastHistorySchemaVersion = '3.6.3';
     saveState();
     if (typeof AppLogger !== 'undefined') {
       AppLogger.info('DailyAutoSync', `First active session of ${todayStr} — auto-fetching 15Y monthly prices, dividends, live FX & news via Cloudflare Worker.`);
@@ -7281,15 +7282,16 @@ function ingestHistoricalPricesData(data) {
         const rawL = Number(r.low);
         const hi = (Number.isFinite(rawH) && rawH > 0) ? Fin.round(Math.max(rawH, rawC), 4) : rawC;
         const lo = (Number.isFinite(rawL) && rawL > 0) ? Fin.round(Math.min(rawL, rawC), 4) : rawC;
+        const prevM = byMonthMap[monthStr];
         byMonthMap[monthStr] = {
           month: monthStr,
           date: dateStr,
           close: rawC,
           rawClose: rawC,
           adjClose: adjC,
-          high: hi,
-          low: lo,
-          volume: parseInt(r.volume || 0, 10)
+          high: (prevM && prevM.high > 0) ? Fin.round(Math.max(prevM.high, hi), 4) : hi,
+          low: (prevM && prevM.low > 0) ? Fin.round(Math.min(prevM.low, lo), 4) : lo,
+          volume: (prevM ? (prevM.volume || 0) : 0) + parseInt(r.volume || 0, 10)
         };
       });
 
@@ -12686,7 +12688,7 @@ function formatPctTo52wCell(targetVal, livePrice, mode = 'low') {
     // % to 52W Low = 52W Low / Live Price - 1 (<= 0%); bar grows right-to-left (-100% = full, 0% = empty)
     const barW = Math.min(100, Math.max(0, Math.abs(Math.min(0, pct))));
     return `
-      <div class="relative overflow-hidden rounded px-2 py-0.5 min-w-[74px] bg-slate-100/60 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50" title="% to 52W Low = (52W Low / Live Price) - 1 = ${Fin.percent(pct, true)}">
+      <div class="relative overflow-hidden rounded px-2 py-0.5 min-w-[78px] text-left bg-slate-100/60 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50" title="% to 52W Low = (52W Low / Live Price) - 1 = ${Fin.percent(pct, true)}">
         <div class="absolute inset-y-0 right-0 bg-rose-500/25 dark:bg-rose-500/30 pointer-events-none transition-all" style="width:${barW.toFixed(1)}%"></div>
         <span class="relative z-10 font-mono font-bold text-[11px] ${pct < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-300'}">${Fin.percent(pct, true)}</span>
       </div>

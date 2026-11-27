@@ -906,7 +906,7 @@ function formatPctTo52wCell(targetVal, livePrice, mode = 'low') {
     // % to 52W Low = 52W Low / Live Price - 1 (<= 0%); bar grows right-to-left (-100% = full, 0% = empty)
     const barW = Math.min(100, Math.max(0, Math.abs(Math.min(0, pct))));
     return `
-      <div class="relative overflow-hidden rounded px-2 py-0.5 min-w-[74px] bg-slate-100/60 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50" title="% to 52W Low = (52W Low / Live Price) - 1 = ${Fin.percent(pct, true)}">
+      <div class="relative overflow-hidden rounded px-2 py-0.5 min-w-[78px] text-left bg-slate-100/60 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50" title="% to 52W Low = (52W Low / Live Price) - 1 = ${Fin.percent(pct, true)}">
         <div class="absolute inset-y-0 right-0 bg-rose-500/25 dark:bg-rose-500/30 pointer-events-none transition-all" style="width:${barW.toFixed(1)}%"></div>
         <span class="relative z-10 font-mono font-bold text-[11px] ${pct < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-300'}">${Fin.percent(pct, true)}</span>
       </div>
