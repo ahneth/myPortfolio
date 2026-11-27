@@ -19,6 +19,29 @@ var OFFICIAL_NAMES_MAP = {
  */
 
 var STORAGE_KEY = 'MYPORTFOLIO_STATE_V1';
+var TRADE_SIM_STORAGE_KEY = 'MYPORTFOLIO_TRADE_SIM_V1';
+
+function saveTradeSimLocal(rows) {
+  try {
+    const clean = Array.isArray(rows) ? rows : [];
+    localStorage.setItem(TRADE_SIM_STORAGE_KEY, JSON.stringify(clean));
+  } catch (e) {
+    console.warn('Could not save Trade Simulation rows to localStorage:', e);
+  }
+}
+window.saveTradeSimLocal = saveTradeSimLocal;
+
+function loadTradeSimLocal() {
+  try {
+    const raw = localStorage.getItem(TRADE_SIM_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (_) {
+    return null;
+  }
+}
+window.loadTradeSimLocal = loadTradeSimLocal;
 
 /**
  * Default customizable parameters exposed in the Settings Page for full manual customization.
@@ -1049,7 +1072,13 @@ function initAppState() {
   if (!state.transactions) state.transactions = [];
   if (!state.dividends) state.dividends = [];
   if (!state.watchlist) state.watchlist = [];
-  if (!Array.isArray(state.tradeSimRows)) state.tradeSimRows = [];
+  const localSimRows = loadTradeSimLocal();
+  if (Array.isArray(localSimRows)) {
+    // Dedicated tiny localStorage key is authoritative (immune to main state quota/debounce)
+    state.tradeSimRows = localSimRows;
+  } else if (!Array.isArray(state.tradeSimRows)) {
+    state.tradeSimRows = [];
+  }
 
   if (!state.settings.yahooDefaultApplied) {
     state.settings.apiProvider = 'yahoo';
@@ -1173,10 +1202,21 @@ function flushSaveState() {
   }
   if (!state) return;
   _saveStatePending = false;
+  if (Array.isArray(state.tradeSimRows)) {
+    saveTradeSimLocal(state.tradeSimRows);
+  }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
-    console.warn('Could not save state to localStorage:', e);
+    // QuotaExceededError fallback: trim cached news & retry so user data never silently fails to save
+    try {
+      if (Array.isArray(state.companyNews) && state.companyNews.length > 30) {
+        state.companyNews = state.companyNews.slice(0, 30);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e2) {
+      console.warn('Could not save state to localStorage:', e2);
+    }
   }
 }
 window.flushSaveState = flushSaveState;
@@ -2965,8 +3005,9 @@ function restorePortfolioFromExcel(file) {
         });
       }
 
+      saveTradeSimLocal(state.tradeSimRows || []);
       recalculatePortfolio();
-      saveState();
+      saveState(true);
       renderAll(true);
       if (typeof checkAndRunDailyCloudflareSync === 'function') {
         checkAndRunDailyCloudflareSync(true);

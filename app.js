@@ -4388,7 +4388,8 @@ function setupEventListeners() {
   on('btn-trade-sim-clear', 'click', () => {
     if (!state) return;
     state.tradeSimRows = [];
-    saveState();
+    if (typeof saveTradeSimLocal === 'function') saveTradeSimLocal([]);
+    saveState(true);
     renderTradeSimulationTable();
   });
   on('btn-holdings-new-trade', 'click', () => openTradeModal());
@@ -5012,7 +5013,8 @@ window.onTradeSimInputChange = function(rowId, field, value) {
   } else if (field === 'shares') {
     row.shares = Math.max(0, parseFloat(value) || 0);
   }
-  saveState();
+  if (typeof saveTradeSimLocal === 'function') saveTradeSimLocal(state.tradeSimRows);
+  saveState(true);
 
   const tr = document.querySelector(`tr[data-sim-row-id="${rowId}"]`);
   if (!tr) {
@@ -5078,7 +5080,8 @@ window.addTradeSimTicker = async function(rawTicker) {
   }
   const row = { id: 'sim_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), ticker: sym, side: 'BUY', shares: 0 };
   state.tradeSimRows.push(row);
-  saveState();
+  if (typeof saveTradeSimLocal === 'function') saveTradeSimLocal(state.tradeSimRows);
+  saveState(true);
   renderTradeSimulationTable();
 
   if (!state.prices?.[sym]?.price && typeof MarketAPI !== 'undefined' && typeof MarketAPI.fetchQuote === 'function') {
@@ -5096,7 +5099,8 @@ window.addTradeSimTicker = async function(rawTicker) {
 window.removeTradeSimRow = function(rowId) {
   if (!Array.isArray(state?.tradeSimRows)) return;
   state.tradeSimRows = state.tradeSimRows.filter(r => r.id !== rowId);
-  saveState();
+  if (typeof saveTradeSimLocal === 'function') saveTradeSimLocal(state.tradeSimRows);
+  saveState(true);
   renderTradeSimulationTable();
 };
 

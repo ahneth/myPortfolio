@@ -7,25 +7,25 @@
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.7.1',
-  buildId: '20261127_2025',
-  releaseDate: '2026-11-27 20:25 HKT',
-  driveFolder: '/myPortfolio/20261127_2025/',
+  appVersion: '3.7.2',
+  buildId: '20261127_2030',
+  releaseDate: '2026-11-27 20:30 HKT',
+  driveFolder: '/myPortfolio/20261127_2030/',
   modules: {
-    'version.js':   { version: '3.7.1', updated: '20261127_2025', role: 'Version manifest, module registry & v3.7.1 changelog history' },
+    'version.js':   { version: '3.7.2', updated: '20261127_2030', role: 'Version manifest, module registry & v3.7.2 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.6.3', updated: '20261127_1550', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
-    'portfolio.js': { version: '3.7.1', updated: '20261127_2025', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
+    'portfolio.js': { version: '3.7.2', updated: '20261127_2030', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
     'charts.js':    { version: '3.6.2', updated: '20261127_1520', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.7.0', updated: '20261127_2000', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
+    'app.js':       { version: '3.7.2', updated: '20261127_2030', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
     'styles.css':   { version: '3.6.0', updated: '20261125_1720', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.7.1', updated: '20261127_2025', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.7.2', updated: '20261127_2030', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
     {
       version: '3.6.0',
-      buildId: '20261127_2025',
+      buildId: '20261127_2030',
       date: '2026-11-25',
       title: 'Quant Risk Analytics, Action Radar, Benchmark Overlay, 12M Dividend Calendar & Holdings Presets',
       highlights: [
@@ -39,7 +39,7 @@ var APP_VERSION_MANIFEST = {
 
     {
       version: '3.6.0',
-      buildId: '20261127_2025',
+      buildId: '20261127_2030',
       date: '2026-11-24 12:20 HKT',
       summary: 'Fixed Total Return % (and Privacy Mode Realized P&L %) denominator across individual holdings, sector subtotals, Portfolio Total row, and Dashboard KPI to use Cumulative Buy Cost Basis (Active Cost + Sold Cost) instead of remaining active cost alone.',
       changes: [
