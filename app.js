@@ -155,6 +155,7 @@ function renderSingleTabContent(tabName) {
       try { renderInlineStockChart('holdings'); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderInlineStockChart(holdings) failed: ${err.message}`, err); }
       break;
     case 'transactions':
+      try { renderTradeSimulationTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderTradeSimulationTable failed: ${err.message}`, err); }
       try { renderTransactionsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderTransactionsTable failed: ${err.message}`, err); }
       try { if (typeof renderTradesBalanceCashflowChart === 'function') renderTradesBalanceCashflowChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderTradesBalanceCashflowChart failed: ${err.message}`, err); }
       break;
@@ -2306,7 +2307,7 @@ function renderWatchlistAndFundamentals() {
     if (filteredWatchlist.length === 0) {
       wlTbody.innerHTML = `
         <tr class="text-xs text-slate-400">
-          <td colspan="20" class="py-8 px-4 text-center">
+          <td colspan="19" class="py-8 px-4 text-center">
             No watchlist tickers currently match signal <strong class="text-slate-700 dark:text-slate-200 font-mono">${selectedSignal}</strong>.
             <button type="button" onclick="const el=document.getElementById('watchlist-filter-signal'); if(el){el.value='ALL'; renderWatchlistAndFundamentals();}" class="ml-2 text-purple-500 hover:underline font-semibold">Show All (${state.watchlist.length})</button>
           </td>
@@ -2360,6 +2361,7 @@ function renderWatchlistAndFundamentals() {
             case 'buyTarget': return Number(w.customBuyPrice || wm?.customBuyPrice || wm?.recommendedBuyPrice || 0);
             case 'sellTarget': return Number(w.customSellPrice || wm?.customSellPrice || wm?.recommendedSellPrice || 0);
             case 'stopLoss': return Number(w.customStopLoss || wm?.customStopLoss || wm?.recommendedStopLoss || 0);
+            case 'riskReward': return Number(wm?.riskRewardRatio ?? -999);
             case 'dist': {
               const activeBuy = Number(w.customBuyPrice || wm?.customBuyPrice || wm?.recommendedBuyPrice || 0);
               return (curP > 0 && activeBuy > 0) ? ((curP - activeBuy) / activeBuy) * 100 : 999;
@@ -2413,10 +2415,10 @@ function renderWatchlistAndFundamentals() {
           <td colspan="2" class="py-1 sm:py-1.5 px-2 text-left text-[10px] font-mono text-slate-500 dark:text-slate-400">
             <span>Avg Signal: <strong class="text-slate-700 dark:text-slate-200">${avgScore}/100</strong></span>
           </td>
-          <td colspan="11" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
+          <td colspan="12" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
             Watchlist Sector Group (${group.items.length} ${group.items.length === 1 ? 'ticker' : 'tickers'})
           </td>
-          <td colspan="5" class="py-1 sm:py-1.5 px-3 text-center">
+          <td colspan="3" class="py-1 sm:py-1.5 px-3 text-center">
             ${group.triggeredCount > 0
               ? `<span class="px-2 py-0.5 rounded-full font-bold bg-emerald-500 text-white text-[10px]">${group.triggeredCount} IN BUY ZONE</span>`
               : `<span class="text-[11px] text-slate-400 font-mono">Monitoring quant levels</span>`}
@@ -2476,39 +2478,14 @@ function renderWatchlistAndFundamentals() {
                      </div>`
                   : '<span class="text-slate-400 text-[11px]">Sync API</span>'}
               </td>
-              <td class="py-1 sm:py-1.5 px-3 text-slate-500 dark:text-slate-400">${secName}</td>
-              <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300 col-quant-extra">
-                ${wm.low52w !== null && wm.low52w !== undefined ? Fin.currency(wm.low52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
-              </td>
-              <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300 col-quant-extra">
-                ${wm.high52w !== null && wm.high52w !== undefined ? Fin.currency(wm.high52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
-              </td>
-              <td class="py-3 px-2 text-right col-quant-extra">
-                ${formatPctTo52wCell(wm.low52w, curPrice, 'low')}
-              </td>
-              <td class="py-3 px-2 text-right col-quant-extra">
-                ${formatPctTo52wCell(wm.high52w, curPrice, 'high')}
-              </td>
-              <td class="py-3 px-3 text-right col-quant-extra">
-                ${format52wPositionCell(wm.low52w, wm.high52w, wm.pos52wPct, wlCurrency)}
-              </td>
-              <td class="py-3 px-3 text-right col-quant-extra">
-                ${formatPeriodChangeCell(wm.momPct, 'MoM', wm.momRefMonth)}
-              </td>
-              <td class="py-3 px-3 text-right col-quant-extra">
-                ${formatPeriodChangeCell(wm.qoqPct, 'QoQ', wm.qoqRefMonth)}
-              </td>
-              <td class="py-3 px-3 text-right col-quant-extra">
-                ${formatPeriodChangeCell(wm.yoyPct, 'YoY', wm.yoyRefMonth)}
-              </td>
-              <td class="py-3 px-3 text-right">
-                ${formatDividendExDateCell(wm.divInfo)}
-              </td>
-              <td class="py-3 px-3 text-right col-quant-extra">
+              <td class="py-1.5 px-3 text-right">
                 ${formatTrendRegimeCell(wm)}
               </td>
-              <td class="py-3 px-3 text-center">
+              <td class="py-1.5 px-3 text-center">
                 ${formatSignalBadgeCell(w.ticker, wm)}
+              </td>
+              <td class="py-1.5 px-3 text-right">
+                ${formatDividendExDateCell(wm.divInfo)}
               </td>
               <td class="py-1.5 px-3 text-right num-font">
                 ${formatTargetLevelCell(custBuy, recBuy, curPrice, wlCurrency, 'text-sky-500', 'Buy Target')}
@@ -2522,10 +2499,34 @@ function renderWatchlistAndFundamentals() {
               <td class="py-1.5 px-3 text-right num-font">
                 ${formatTargetLevelCell(custStop, recStop, curPrice, wlCurrency, 'text-red-700 dark:text-red-500', 'Stop Loss')}
               </td>
-              <td class="py-3 px-3 text-center">
-                ${isTriggered
-                  ? '<span class="px-2.5 py-1 rounded-full font-bold bg-emerald-500 text-white text-[10px] animate-pulse">BUY ZONE HIT</span>'
-                  : '<span class="px-2 py-0.5 rounded font-medium bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px]">WATCHING</span>'}
+              <td class="py-1.5 px-3 text-center num-font" title="Implied Risk/Reward = (Active Sell - Current) / (Current - Active Stop)">
+                ${wm?.riskRewardRatio !== null && wm?.riskRewardRatio !== undefined
+                  ? `<span class="px-1.5 py-0.5 rounded text-[11px] font-bold border ${wm.riskRewardRatio >= 2.0 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : (wm.riskRewardRatio >= 1.0 ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30')}">${wm.riskRewardRatio.toFixed(1)}x</span>`
+                  : '<span class="text-slate-400 text-xs">-</span>'}
+              </td>
+              <td class="py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300 col-quant-extra">
+                ${wm.low52w !== null && wm.low52w !== undefined ? Fin.currency(wm.low52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+              </td>
+              <td class="py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300 col-quant-extra">
+                ${wm.high52w !== null && wm.high52w !== undefined ? Fin.currency(wm.high52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+              </td>
+              <td class="py-1.5 px-2 text-right col-quant-extra">
+                ${formatPctTo52wCell(wm.low52w, curPrice, 'low')}
+              </td>
+              <td class="py-1.5 px-2 text-right col-quant-extra">
+                ${formatPctTo52wCell(wm.high52w, curPrice, 'high')}
+              </td>
+              <td class="py-1.5 px-3 text-right col-quant-extra">
+                ${format52wPositionCell(wm.low52w, wm.high52w, wm.pos52wPct, wlCurrency)}
+              </td>
+              <td class="py-1.5 px-3 text-right col-quant-extra">
+                ${formatPeriodChangeCell(wm.momPct, 'MoM', wm.momRefMonth)}
+              </td>
+              <td class="py-1.5 px-3 text-right col-quant-extra">
+                ${formatPeriodChangeCell(wm.qoqPct, 'QoQ', wm.qoqRefMonth)}
+              </td>
+              <td class="py-1.5 px-3 text-right col-quant-extra">
+                ${formatPeriodChangeCell(wm.yoyPct, 'YoY', wm.yoyRefMonth)}
               </td>
               <td class="py-3 px-3 text-center">
                 <div class="table-action-capsule">
@@ -4364,6 +4365,32 @@ function setupEventListeners() {
   });
 
   on('btn-open-trade-modal', 'click', () => openTradeModal());
+  on('btn-tx-add', 'click', () => openTradeModal('', 'BUY'));
+  on('btn-trade-sim-add', 'click', () => {
+    const inp = document.getElementById('trade-sim-add-input');
+    if (inp && inp.value.trim()) {
+      addTradeSimTicker(inp.value.trim());
+      inp.value = '';
+    }
+  });
+  const simAddInp = document.getElementById('trade-sim-add-input');
+  if (simAddInp) {
+    simAddInp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (simAddInp.value.trim()) {
+          addTradeSimTicker(simAddInp.value.trim());
+          simAddInp.value = '';
+        }
+      }
+    });
+  }
+  on('btn-trade-sim-clear', 'click', () => {
+    if (!state) return;
+    state.tradeSimRows = [];
+    saveState();
+    renderTradeSimulationTable();
+  });
   on('btn-holdings-new-trade', 'click', () => openTradeModal());
   on('holdings-filter-signal', 'change', () => renderHoldingsTable());
   on('holdings-filter-active-only', 'change', (e) => {
@@ -4853,3 +4880,382 @@ function renderDashboardActionRadar() {
   `).join('');
 }
 window.renderDashboardActionRadar = renderDashboardActionRadar;
+
+// =========================================================================
+// v3.7.0: INLINE TRADE SIMULATION TABLE (TOP OF TRADES PAGE)
+// =========================================================================
+function computeTradeSimRowMetrics(row) {
+  const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
+  const sym = MarketAPI.normalizeTicker(row.ticker);
+  const held = (portfolio?.activeHoldings || []).find(h => h.ticker === sym)
+    || (portfolio?.allHoldings || []).find(h => h.ticker === sym);
+  const priceObj = state?.prices?.[sym] || {};
+  const fundObj = state?.fundamentals?.[sym] || {};
+  const staticMeta = MarketAPI.getStaticProfile(sym);
+  const curr = held?.currency || priceObj.currency || fundObj.currency || staticMeta.currency || (sym.endsWith('.HK') ? 'HKD' : (sym.endsWith('.L') ? 'GBp' : 'USD'));
+  const curPrice = Number(priceObj.price || held?.currentPrice || 0);
+  const side = (String(row.side || 'BUY').toUpperCase() === 'SELL') ? 'SELL' : 'BUY';
+  const simShares = Math.max(0, Number(row.shares) || 0);
+
+  const beforeShares = held && held.shares > 0.0001 ? Number(held.shares) : 0;
+  const beforeAvgCost = beforeShares > 0 ? Number(held.avgCost || 0) : 0;
+  const beforeMvNative = beforeShares * curPrice;
+  const beforeMvBase = Fin.convertCurrency(beforeMvNative, curr, baseCurr);
+
+  const effectiveSimShares = side === 'SELL' ? Math.min(simShares, beforeShares) : simShares;
+  const tradeAmountNative = effectiveSimShares * curPrice;
+  const tradeAmountBase = Fin.convertCurrency(tradeAmountNative, curr, baseCurr);
+  const signedCostNative = side === 'BUY' ? tradeAmountNative : -tradeAmountNative;
+  const signedCostBase = side === 'BUY' ? tradeAmountBase : -tradeAmountBase;
+
+  const afterShares = side === 'BUY'
+    ? Fin.round(beforeShares + effectiveSimShares, 4)
+    : Fin.round(Math.max(0, beforeShares - effectiveSimShares), 4);
+  const afterMvNative = afterShares * curPrice;
+  const afterMvBase = Fin.convertCurrency(afterMvNative, curr, baseCurr);
+
+  let afterAvgCost = 0;
+  if (afterShares > 0.0001) {
+    if (side === 'BUY') {
+      afterAvgCost = Fin.round(((beforeShares * beforeAvgCost) + (effectiveSimShares * curPrice)) / afterShares, 4);
+    } else {
+      afterAvgCost = beforeAvgCost;
+    }
+  }
+
+  return {
+    sym, curr, baseCurr, curPrice, side, simShares, effectiveSimShares,
+    beforeShares, afterShares,
+    beforeMvBase: Fin.round(beforeMvBase, 2),
+    afterMvBase: Fin.round(afterMvBase, 2),
+    beforeAvgCost: Fin.round(beforeAvgCost, 4),
+    afterAvgCost: Fin.round(afterAvgCost, 4),
+    tradeAmountNative: Fin.round(tradeAmountNative, 2),
+    tradeAmountBase: Fin.round(tradeAmountBase, 2),
+    signedCostNative: Fin.round(signedCostNative, 2),
+    signedCostBase: Fin.round(signedCostBase, 2),
+    held, priceObj, fundObj, staticMeta
+  };
+}
+window.computeTradeSimRowMetrics = computeTradeSimRowMetrics;
+
+function updateTradeSimTotalsUI() {
+  const tfoot = document.getElementById('trade-sim-table-foot');
+  const badge = document.getElementById('trade-sim-summary-badge');
+  const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
+  const hideMoney = Fin.isPrivacyMode();
+  const rows = Array.isArray(state?.tradeSimRows) ? state.tradeSimRows : [];
+
+  let totalBuyBase = 0;
+  let totalSellBase = 0;
+  let totalBeforeMvBase = 0;
+  let totalAfterMvBase = 0;
+  rows.forEach(r => {
+    const m = computeTradeSimRowMetrics(r);
+    if (m.side === 'BUY') totalBuyBase += m.tradeAmountBase;
+    else totalSellBase += m.tradeAmountBase;
+    totalBeforeMvBase += m.beforeMvBase;
+    totalAfterMvBase += m.afterMvBase;
+  });
+  const netCostBase = Fin.round(totalBuyBase - totalSellBase, 2);
+  const estCashAfter = Fin.round((portfolio?.cashBalance || 0) - netCostBase, 2);
+
+  if (badge) {
+    if (hideMoney) {
+      badge.textContent = `${rows.length} simulated`;
+    } else {
+      badge.textContent = `Total Cost: ${Fin.currency(netCostBase, true, baseCurr)}`;
+      badge.className = netCostBase > 0
+        ? 'text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+        : (netCostBase < 0
+            ? 'text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+            : 'text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30');
+    }
+  }
+
+  if (!tfoot) return;
+  if (rows.length === 0) {
+    tfoot.innerHTML = '';
+    return;
+  }
+
+  const netCls = netCostBase > 0 ? 'text-amber-600 dark:text-amber-400' : (netCostBase < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-200');
+  tfoot.innerHTML = `
+    <tr>
+      <td class="py-2 px-3 sticky-col-mobile bg-indigo-50 dark:bg-slate-900 font-extrabold text-slate-900 dark:text-white">
+        TOTAL COST (${rows.length})
+      </td>
+      <td colspan="2" class="py-2 px-2 text-right font-mono text-[10.5px] text-slate-500 dark:text-slate-400">
+        ${hideMoney ? '••••' : `Buy ${Fin.currency(totalBuyBase, false, baseCurr)} · Sell ${Fin.currency(totalSellBase, false, baseCurr)}`}
+      </td>
+      <td class="py-2 px-3 text-right num-font font-extrabold ${netCls}">
+        ${hideMoney ? '••••••' : Fin.currency(netCostBase, true, baseCurr)}
+      </td>
+      <td class="py-2 px-3 text-right text-[10px] font-mono text-slate-400">Net (${baseCurr})</td>
+      <td class="py-2 px-3 text-right text-[10px] font-mono text-slate-400">-</td>
+      <td class="py-2 px-3 text-right num-font text-[11px] text-slate-800 dark:text-slate-200">
+        ${hideMoney ? '••••••' : `${Fin.currency(totalBeforeMvBase, false, baseCurr)} &rarr; <span class="text-brand-600 dark:text-brand-400">${Fin.currency(totalAfterMvBase, false, baseCurr)}</span>`}
+      </td>
+      <td colspan="18" class="py-2 px-3 text-left text-[11px] font-mono text-slate-500 dark:text-slate-400">
+        ${hideMoney ? '' : `Est. Cash After Sim: <strong class="${estCashAfter >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">${Fin.currency(estCashAfter, false, baseCurr)}</strong>`}
+      </td>
+    </tr>
+  `;
+}
+
+window.onTradeSimInputChange = function(rowId, field, value) {
+  if (!Array.isArray(state?.tradeSimRows)) return;
+  const row = state.tradeSimRows.find(r => r.id === rowId);
+  if (!row) return;
+  if (field === 'side') {
+    row.side = (String(value).toUpperCase() === 'SELL') ? 'SELL' : 'BUY';
+  } else if (field === 'shares') {
+    row.shares = Math.max(0, parseFloat(value) || 0);
+  }
+  saveState();
+
+  const tr = document.querySelector(`tr[data-sim-row-id="${rowId}"]`);
+  if (!tr) {
+    renderTradeSimulationTable();
+    return;
+  }
+  const m = computeTradeSimRowMetrics(row);
+  const hideMoney = Fin.isPrivacyMode();
+
+  const selEl = tr.querySelector('select[data-sim-side]');
+  if (selEl) {
+    selEl.className = m.side === 'BUY'
+      ? 'px-2 py-1 rounded-md text-[11px] font-bold border bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/35 cursor-pointer'
+      : 'px-2 py-1 rounded-md text-[11px] font-bold border bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/35 cursor-pointer';
+  }
+
+  const costCell = tr.querySelector('[data-sim-cost]');
+  if (costCell) {
+    if (hideMoney) {
+      costCell.innerHTML = '<span class="text-slate-400 font-mono">••••</span>';
+    } else if (m.tradeAmountNative > 0) {
+      const signCls = m.side === 'BUY' ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400';
+      const subBase = (m.curr !== m.baseCurr) ? `<div class="text-[9.5px] font-mono text-slate-400">${Fin.currency(m.signedCostBase, true, m.baseCurr)}</div>` : '';
+      costCell.innerHTML = `<div class="font-bold num-font ${signCls}">${Fin.currency(m.signedCostNative, true, m.curr)}</div>${subBase}`;
+    } else {
+      costCell.innerHTML = '<span class="text-slate-400 font-mono">-</span>';
+    }
+  }
+
+  const shCell = tr.querySelector('[data-sim-shares-ba]');
+  if (shCell) {
+    shCell.innerHTML = hideMoney
+      ? '<span class="text-slate-400 font-mono">••••</span>'
+      : `<span class="text-slate-400">${Fin.shares(m.beforeShares)}</span> <span class="text-slate-400 mx-0.5">&rarr;</span> <strong class="text-slate-900 dark:text-white">${Fin.shares(m.afterShares)}</strong>`;
+  }
+
+  const mvCell = tr.querySelector('[data-sim-mv-ba]');
+  if (mvCell) {
+    mvCell.innerHTML = hideMoney
+      ? '<span class="text-slate-400 font-mono">••••••</span>'
+      : `<span class="text-slate-400">${Fin.currency(m.beforeMvBase, false, m.baseCurr)}</span> <span class="text-slate-400 mx-0.5">&rarr;</span> <strong class="text-slate-900 dark:text-white">${Fin.currency(m.afterMvBase, false, m.baseCurr)}</strong>`;
+  }
+
+  const avgCell = tr.querySelector('[data-sim-avg-ba]');
+  if (avgCell) {
+    const bTxt = m.beforeAvgCost > 0 ? Fin.currency(m.beforeAvgCost, false, m.curr) : '-';
+    const aTxt = m.afterAvgCost > 0 ? Fin.currency(m.afterAvgCost, false, m.curr) : '-';
+    avgCell.innerHTML = hideMoney
+      ? '<span class="text-slate-400 font-mono">••••</span>'
+      : `<span class="text-slate-400">${bTxt}</span> <span class="text-slate-400 mx-0.5">&rarr;</span> <strong class="text-slate-900 dark:text-white">${aTxt}</strong>`;
+  }
+
+  updateTradeSimTotalsUI();
+};
+
+window.addTradeSimTicker = async function(rawTicker) {
+  const sym = MarketAPI.normalizeTicker(rawTicker);
+  if (!sym) return;
+  if (!Array.isArray(state.tradeSimRows)) state.tradeSimRows = [];
+  if (state.tradeSimRows.some(r => r.ticker === sym)) {
+    if (typeof showToast === 'function') showToast(`${sym} is already in Trade Simulation.`, 'info');
+    return;
+  }
+  const row = { id: 'sim_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), ticker: sym, side: 'BUY', shares: 0 };
+  state.tradeSimRows.push(row);
+  saveState();
+  renderTradeSimulationTable();
+
+  if (!state.prices?.[sym]?.price && typeof MarketAPI !== 'undefined' && typeof MarketAPI.fetchQuote === 'function') {
+    try {
+      const q = await MarketAPI.fetchQuote(sym);
+      if (q && q.price > 0) {
+        state.prices[sym] = { ...(state.prices[sym] || {}), ...q, lastUpdated: new Date().toISOString() };
+        saveState();
+        renderTradeSimulationTable();
+      }
+    } catch (_) {}
+  }
+};
+
+window.removeTradeSimRow = function(rowId) {
+  if (!Array.isArray(state?.tradeSimRows)) return;
+  state.tradeSimRows = state.tradeSimRows.filter(r => r.id !== rowId);
+  saveState();
+  renderTradeSimulationTable();
+};
+
+window.commitTradeSimRow = function(rowId) {
+  const row = (state?.tradeSimRows || []).find(r => r.id === rowId);
+  if (!row) return;
+  if (typeof openTradeModalForTicker === 'function') {
+    openTradeModalForTicker(row.ticker, row.side || 'BUY');
+    setTimeout(() => {
+      const shEl = document.getElementById('trade-shares');
+      if (shEl && row.shares > 0) {
+        shEl.value = row.shares;
+        shEl.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }, 60);
+  }
+};
+
+function renderTradeSimulationTable() {
+  const tbody = document.getElementById('trade-sim-table-body');
+  const dl = document.getElementById('trade-sim-ticker-datalist');
+  if (!tbody) return;
+
+  // Populate autocomplete datalist with all holdings & watchlist tickers
+  if (dl) {
+    const known = new Set();
+    (portfolio?.allHoldings || []).forEach(h => known.add(h.ticker));
+    (state?.watchlist || []).forEach(w => known.add(w.ticker));
+    dl.innerHTML = Array.from(known).sort().map(t => `<option value="${t}"></option>`).join('');
+  }
+
+  const rows = Array.isArray(state?.tradeSimRows) ? state.tradeSimRows : [];
+  if (rows.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="25" class="py-6 px-4 text-center text-xs text-slate-400">
+          Add any ticker above to simulate Buy/Sell orders inline and preview Before &rarr; After Shares, Market Value, Avg Cost &amp; Total Cost.
+        </td>
+      </tr>
+    `;
+    updateTradeSimTotalsUI();
+    return;
+  }
+
+  const hideMoney = Fin.isPrivacyMode();
+  tbody.innerHTML = '';
+  rows.forEach(row => {
+    const m = computeTradeSimRowMetrics(row);
+    const wm = typeof computeStockPriceMetrics === 'function'
+      ? computeStockPriceMetrics(m.sym, m.curPrice, null, m.beforeAvgCost > 0 ? m.beforeAvgCost : null)
+      : {};
+    const compName = m.held?.companyName || m.fundObj.name || m.staticMeta.name || m.sym;
+    const priceChangePct = m.priceObj.changePct || 0;
+    const prevClose = Number(m.priceObj.prevPrice || m.curPrice || 0);
+    const rawDelta = (m.curPrice > 0 && prevClose > 0) ? Fin.round(m.curPrice - prevClose, 4) : Number(m.priceObj.change || 0);
+    const priceDelta = Math.abs(priceChangePct) > 40 ? 0 : rawDelta;
+    const priceChgCls = priceDelta >= 0 ? 'text-emerald-500' : 'text-rose-500';
+
+    const wlEntry = (state?.watchlist || []).find(w => w.ticker === m.sym);
+    const recBuy = wm?.recommendedBuyPrice || 0;
+    const recSell = wm?.recommendedSellPrice || 0;
+    const recStop = wm?.recommendedStopLoss || 0;
+    const custBuy = Number(wlEntry?.customBuyPrice || wm?.customBuyPrice || 0) || null;
+    const custSell = Number(wlEntry?.customSellPrice || wm?.customSellPrice || 0) || null;
+    const custStop = Number(wlEntry?.customStopLoss || wm?.customStopLoss || 0) || null;
+    const activeBuy = custBuy || recBuy;
+    const distPct = (m.curPrice > 0 && activeBuy > 0) ? ((m.curPrice - activeBuy) / activeBuy) * 100 : 0;
+
+    const sideCls = m.side === 'BUY'
+      ? 'px-2 py-1 rounded-md text-[11px] font-bold border bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/35 cursor-pointer'
+      : 'px-2 py-1 rounded-md text-[11px] font-bold border bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/35 cursor-pointer';
+
+    const costHtml = hideMoney
+      ? '<span class="text-slate-400 font-mono">••••</span>'
+      : (m.tradeAmountNative > 0
+          ? `<div class="font-bold num-font ${m.side === 'BUY' ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}">${Fin.currency(m.signedCostNative, true, m.curr)}</div>${m.curr !== m.baseCurr ? `<div class="text-[9.5px] font-mono text-slate-400">${Fin.currency(m.signedCostBase, true, m.baseCurr)}</div>` : ''}`
+          : '<span class="text-slate-400 font-mono">-</span>');
+
+    const bAvgTxt = m.beforeAvgCost > 0 ? Fin.currency(m.beforeAvgCost, false, m.curr) : '-';
+    const aAvgTxt = m.afterAvgCost > 0 ? Fin.currency(m.afterAvgCost, false, m.curr) : '-';
+
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition';
+    tr.setAttribute('data-sim-row-id', row.id);
+    tr.innerHTML = `
+      <td class="py-1.5 px-3 sticky-col-mobile max-w-[148px] sm:max-w-none bg-white dark:bg-dark-card">
+        <div class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+          <span class="truncate">${m.sym}</span>
+          <span class="text-[9px] px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium shrink-0">${m.curr}</span>
+        </div>
+        <div class="text-[10px] text-slate-400 truncate max-w-[115px] sm:max-w-[165px]">${compName}</div>
+      </td>
+      <td class="py-1.5 px-2 text-center">
+        <select data-sim-side onchange="onTradeSimInputChange('${row.id}', 'side', this.value)" class="${sideCls}">
+          <option value="BUY" ${m.side === 'BUY' ? 'selected' : ''}>BUY</option>
+          <option value="SELL" ${m.side === 'SELL' ? 'selected' : ''}>SELL</option>
+        </select>
+      </td>
+      <td class="py-1.5 px-2 text-right">
+        <input type="number" step="any" min="0" value="${row.shares || ''}" placeholder="0" oninput="onTradeSimInputChange('${row.id}', 'shares', this.value)" class="w-20 sm:w-24 px-2 py-1 text-right text-xs font-bold num-font bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-md text-slate-900 dark:text-white">
+      </td>
+      <td class="py-1.5 px-3 text-right" data-sim-cost>
+        ${costHtml}
+      </td>
+      <td class="py-1.5 px-3 text-right">
+        ${m.curPrice > 0
+          ? `<div class="font-bold num-font text-slate-900 dark:text-white">${Fin.currency(m.curPrice, false, m.curr)}</div>
+             <div class="text-[10px] num-font ${priceChgCls}"><span class="text-[9px] opacity-75 font-semibold">1D</span> ${Fin.currency(priceDelta, true, m.curr)}</div>`
+          : '<span class="text-slate-400 text-[11px]">No Quote</span>'}
+      </td>
+      <td class="py-1.5 px-3 text-right num-font" data-sim-shares-ba>
+        ${hideMoney ? '<span class="text-slate-400 font-mono">••••</span>' : `<span class="text-slate-400">${Fin.shares(m.beforeShares)}</span> <span class="text-slate-400 mx-0.5">&rarr;</span> <strong class="text-slate-900 dark:text-white">${Fin.shares(m.afterShares)}</strong>`}
+      </td>
+      <td class="py-1.5 px-3 text-right num-font" data-sim-mv-ba>
+        ${hideMoney ? '<span class="text-slate-400 font-mono">••••••</span>' : `<span class="text-slate-400">${Fin.currency(m.beforeMvBase, false, m.baseCurr)}</span> <span class="text-slate-400 mx-0.5">&rarr;</span> <strong class="text-slate-900 dark:text-white">${Fin.currency(m.afterMvBase, false, m.baseCurr)}</strong>`}
+      </td>
+      <td class="py-1.5 px-3 text-right num-font" data-sim-avg-ba>
+        ${hideMoney ? '<span class="text-slate-400 font-mono">••••</span>' : `<span class="text-slate-400">${bAvgTxt}</span> <span class="text-slate-400 mx-0.5">&rarr;</span> <strong class="text-slate-900 dark:text-white">${aAvgTxt}</strong>`}
+      </td>
+      <td class="py-1.5 px-3 text-right">${formatTrendRegimeCell(wm)}</td>
+      <td class="py-1.5 px-3 text-center">${formatSignalBadgeCell(m.sym, wm)}</td>
+      <td class="py-1.5 px-3 text-right">${formatDividendExDateCell(wm.divInfo)}</td>
+      <td class="py-1.5 px-3 text-right num-font">${formatTargetLevelCell(custBuy, recBuy, m.curPrice, m.curr, 'text-sky-500', 'Buy Target')}</td>
+      <td class="py-1.5 px-3 text-right num-font font-medium ${distPct <= 0.5 && m.curPrice > 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}">
+        ${m.curPrice > 0 && activeBuy > 0 ? (distPct <= 0.5 ? 'In Buy Zone' : `+${distPct.toFixed(1)}% above`) : '-'}
+      </td>
+      <td class="py-1.5 px-3 text-right num-font">${formatTargetLevelCell(custSell, recSell, m.curPrice, m.curr, 'text-pink-500', 'Sell Target')}</td>
+      <td class="py-1.5 px-3 text-right num-font">${formatTargetLevelCell(custStop, recStop, m.curPrice, m.curr, 'text-red-700 dark:text-red-500', 'Stop Loss')}</td>
+      <td class="py-1.5 px-3 text-center num-font">
+        ${wm?.riskRewardRatio !== null && wm?.riskRewardRatio !== undefined
+          ? `<span class="px-1.5 py-0.5 rounded text-[11px] font-bold border ${wm.riskRewardRatio >= 2.0 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : (wm.riskRewardRatio >= 1.0 ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30')}">${wm.riskRewardRatio.toFixed(1)}x</span>`
+          : '<span class="text-slate-400 text-xs">-</span>'}
+      </td>
+      <td class="py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">
+        ${wm.low52w !== null && wm.low52w !== undefined ? Fin.currency(wm.low52w, false, m.curr) : '<span class="text-slate-400 text-[11px]">-</span>'}
+      </td>
+      <td class="py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300">
+        ${wm.high52w !== null && wm.high52w !== undefined ? Fin.currency(wm.high52w, false, m.curr) : '<span class="text-slate-400 text-[11px]">-</span>'}
+      </td>
+      <td class="py-1.5 px-2 text-right">${formatPctTo52wCell(wm.low52w, m.curPrice, 'low')}</td>
+      <td class="py-1.5 px-2 text-right">${formatPctTo52wCell(wm.high52w, m.curPrice, 'high')}</td>
+      <td class="py-1.5 px-3 text-right">${format52wPositionCell(wm.low52w, wm.high52w, wm.pos52wPct, m.curr)}</td>
+      <td class="py-1.5 px-3 text-right">${formatPeriodChangeCell(wm.momPct, 'MoM', wm.momRefMonth)}</td>
+      <td class="py-1.5 px-3 text-right">${formatPeriodChangeCell(wm.qoqPct, 'QoQ', wm.qoqRefMonth)}</td>
+      <td class="py-1.5 px-3 text-right">${formatPeriodChangeCell(wm.yoyPct, 'YoY', wm.yoyRefMonth)}</td>
+      <td class="py-1.5 px-3 text-center">
+        <div class="inline-flex items-center gap-1">
+          <button type="button" onclick="commitTradeSimRow('${row.id}')" class="p-1.5 text-xs text-brand-600 dark:text-brand-400 hover:bg-brand-500/15 rounded transition" title="Record this simulated trade in ledger">
+            <i class="fa-solid fa-check"></i>
+          </button>
+          <button type="button" onclick="removeTradeSimRow('${row.id}')" class="p-1.5 text-xs text-rose-500 hover:bg-rose-500/15 rounded transition" title="Remove row">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  updateTradeSimTotalsUI();
+}
+window.renderTradeSimulationTable = renderTradeSimulationTable;

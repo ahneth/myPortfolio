@@ -392,6 +392,7 @@ function createEmptyState() {
     technicals: {},
     companyNews: [],
     watchlist: [],
+    tradeSimRows: [],
     fundamentals: {}
   };
 }
