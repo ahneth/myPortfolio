@@ -582,15 +582,16 @@ var MarketAPI = {
         : rawClose;
       const vol = parseInt(volumes[i] || 0, 10);
 
+      const prevBar = byMonth[monthStr];
       byMonth[monthStr] = {
         month: monthStr,
         date: dateStr,
         close: rawClose,
         rawClose,
         adjClose,
-        high: rawHigh,
-        low: rawLow,
-        volume: isNaN(vol) ? 0 : vol
+        high: (prevBar && prevBar.high > 0) ? Fin.round(Math.max(prevBar.high, rawHigh), 4) : rawHigh,
+        low: (prevBar && prevBar.low > 0) ? Fin.round(Math.min(prevBar.low, rawLow), 4) : rawLow,
+        volume: (prevBar ? (prevBar.volume || 0) : 0) + (isNaN(vol) ? 0 : vol)
       };
     }
 

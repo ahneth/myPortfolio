@@ -343,13 +343,14 @@ function computeMonthlyPortfolioSeries(rangeMonths, onlyFromEarliestActivity = f
   });
 
   let filteredRecords = fullRecords;
-  if (onlyFromEarliestActivity && earliestActivityMonth) {
-    const activeFiltered = fullRecords.filter(r => r.month >= earliestActivityMonth);
+  const startMonthBound = earliestTxMonth || earliestActivityMonth;
+  if (onlyFromEarliestActivity && startMonthBound) {
+    const activeFiltered = fullRecords.filter(r => r.month >= startMonthBound);
     if (activeFiltered.length > 0) {
       filteredRecords = activeFiltered;
     }
   }
-  const sliced = filteredRecords.slice(-rangeMonths);
+  const sliced = (rangeMonths >= 120) ? filteredRecords : filteredRecords.slice(-rangeMonths);
 
   return {
     labels: sliced.map(r => r.month),
@@ -484,7 +485,7 @@ function renderMonthlyHistoryChart() {
   const isDark = document.documentElement.classList.contains('dark');
   const isMobile = DeviceDetector.profile.effectiveMode === 'mobile';
 
-  const seriesData = computeMonthlyPortfolioSeries(historyRangeMonths);
+  const seriesData = computeMonthlyPortfolioSeries(historyRangeMonths, true);
   if (!seriesData || seriesData.labels.length === 0 || (portfolio.activeHoldings.length === 0 && state.transactions.length === 0)) {
     if (charts.monthlyHistory) {
       charts.monthlyHistory.destroy();
@@ -932,13 +933,28 @@ function renderInlineStockChart(tabType) {
     return (Number.isFinite(l) && l > 0) ? Math.min(l, c) : c;
   });
 
-  // Reflect current live price in the very last data point so 30s live refreshes update the latest point smoothly
+  // Reflect current live price & month-to-date High/Low in the very last data point
   const livePx = Number(priceObj.price);
-  if (Number.isFinite(livePx) && livePx > 0 && closeData.length > 0) {
+  const dayHi = Number(priceObj.dayHigh || priceObj.regularMarketDayHigh || 0);
+  const dayLo = Number(priceObj.dayLow || priceObj.regularMarketDayLow || 0);
+  const prevPx = Number(priceObj.prevPrice || 0);
+  if (closeData.length > 0) {
     const lastIdx = closeData.length - 1;
-    closeData[lastIdx] = livePx;
-    highData[lastIdx] = Math.max(highData[lastIdx], livePx);
-    lowData[lastIdx] = Math.min(lowData[lastIdx], livePx);
+    if (Number.isFinite(livePx) && livePx > 0) {
+      closeData[lastIdx] = livePx;
+      highData[lastIdx] = Math.max(highData[lastIdx], livePx);
+      lowData[lastIdx] = Math.min(lowData[lastIdx], livePx);
+    }
+    if (Number.isFinite(dayHi) && dayHi > 0) {
+      highData[lastIdx] = Math.max(highData[lastIdx], dayHi);
+    }
+    if (Number.isFinite(dayLo) && dayLo > 0) {
+      lowData[lastIdx] = Math.min(lowData[lastIdx], dayLo);
+    }
+    if (Number.isFinite(prevPx) && prevPx > 0 && highData[lastIdx] === lowData[lastIdx]) {
+      highData[lastIdx] = Math.max(highData[lastIdx], prevPx);
+      lowData[lastIdx] = Math.min(lowData[lastIdx], prevPx);
+    }
   }
 
   const firstClose = closeData[0] || 0;

@@ -872,7 +872,7 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.6.1 (20261125_1840)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.6.2 (20261127_1520)</span>
             </div>
           </div>
         </div>
@@ -1400,12 +1400,14 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <th class="py-1.5 px-3 text-center col-g-targets" data-sort-col="riskReward" title="Implied Risk/Reward Ratio = (Active Sell - Current) / (Current - Active Stop)">R:R <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right col-g-pnl" data-sort-col="xirr" title="Click to sort by Money-Weighted XIRR">XIRR (p.a.) <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right col-g-pnl" data-sort-col="yoc" title="Click to sort by Yield on Cost">Yield on Cost <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
-                <th class="py-1.5 px-3 text-right col-quant-extra" title="52-Week Low Price">52W Low</th>
-                <th class="py-1.5 px-3 text-right col-quant-extra" title="52-Week High Price">52W High</th>
-                <th class="py-1.5 px-3 text-right col-quant-extra" data-sort-col="52wPos" title="Click to sort by 52W Position %">52W Pos (%) <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
-                <th class="py-1.5 px-3 text-right col-quant-extra" data-sort-col="mom" title="Click to sort by Month-over-Month Change">MoM <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
-                <th class="py-1.5 px-3 text-right col-quant-extra" data-sort-col="qoq" title="Click to sort by Quarter-over-Quarter Change">QoQ <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
-                <th class="py-1.5 px-3 text-right col-quant-extra" data-sort-col="yoy" title="Click to sort by Year-over-Year Change">YoY <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
+                <th class="py-1.5 px-3 text-right col-quant-extra col-g-targets" title="52-Week Low Price">52W Low</th>
+                <th class="py-1.5 px-3 text-right col-quant-extra col-g-targets" title="52-Week High Price">52W High</th>
+                <th class="py-1.5 px-3 text-right col-quant-extra col-g-targets" data-sort-col="pctTo52wLow" title="Distance to 52W Low = (52W Low / Live Price) - 1 (Right-to-Left bar)">% to 52W Low <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
+                <th class="py-1.5 px-3 text-right col-quant-extra col-g-targets" data-sort-col="pctTo52wHigh" title="Upside to 52W High = (52W High / Live Price) - 1 (Left-to-Right bar)">% to 52W High <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
+                <th class="py-1.5 px-3 text-right col-quant-extra col-g-targets" data-sort-col="52wPos" title="Click to sort by 52W Position %">52W Pos (%) <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
+                <th class="py-1.5 px-3 text-right col-quant-extra col-g-targets" data-sort-col="mom" title="Click to sort by Month-over-Month Change">MoM <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
+                <th class="py-1.5 px-3 text-right col-quant-extra col-g-targets" data-sort-col="qoq" title="Click to sort by Quarter-over-Quarter Change">QoQ <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
+                <th class="py-1.5 px-3 text-right col-quant-extra col-g-targets" data-sort-col="yoy" title="Click to sort by Year-over-Year Change">YoY <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-center col-always">Actions</th>
               </tr>
             </thead>
@@ -1783,6 +1785,8 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <th class="py-1.5 px-3" data-wl-sort-col="sector" title="Click to sort by Sector">Sector <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right col-quant-extra" title="52-Week Low Price">52W Low</th>
                 <th class="py-1.5 px-3 text-right col-quant-extra" title="52-Week High Price">52W High</th>
+                <th class="py-1.5 px-3 text-right col-quant-extra" data-wl-sort-col="pctTo52wLow" title="Distance to 52W Low = (52W Low / Live Price) - 1 (Right-to-Left bar)">% to 52W Low <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
+                <th class="py-1.5 px-3 text-right col-quant-extra" data-wl-sort-col="pctTo52wHigh" title="Upside to 52W High = (52W High / Live Price) - 1 (Left-to-Right bar)">% to 52W High <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right col-quant-extra" data-wl-sort-col="52wPos" title="Click to sort by 52W Position %">52W Pos (%) <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right col-quant-extra" data-wl-sort-col="mom" title="Click to sort by Month-over-Month Change">MoM <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right col-quant-extra" data-wl-sort-col="qoq" title="Click to sort by Quarter-over-Quarter Change">QoQ <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
@@ -3268,25 +3272,25 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.6.1',
-  buildId: '20261125_1840',
-  releaseDate: '2026-11-25 18:40 HKT',
-  driveFolder: '/myPortfolio/20261125_1840/',
+  appVersion: '3.6.2',
+  buildId: '20261127_1520',
+  releaseDate: '2026-11-27 15:20 HKT',
+  driveFolder: '/myPortfolio/20261127_1520/',
   modules: {
-    'version.js':   { version: '3.6.1', updated: '20261125_1840', role: 'Version manifest, module registry & v3.6.1 changelog history' },
+    'version.js':   { version: '3.6.2', updated: '20261127_1520', role: 'Version manifest, module registry & v3.6.2 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
-    'api.js':       { version: '3.6.0', updated: '20261125_1720', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
+    'api.js':       { version: '3.6.2', updated: '20261127_1520', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
     'portfolio.js': { version: '3.6.1', updated: '20261125_1840', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
-    'charts.js':    { version: '3.6.1', updated: '20261125_1840', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.6.0', updated: '20261125_1720', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
+    'charts.js':    { version: '3.6.2', updated: '20261127_1520', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
+    'app.js':       { version: '3.6.2', updated: '20261127_1520', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
     'styles.css':   { version: '3.6.0', updated: '20261125_1720', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.6.1', updated: '20261125_1840', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.6.2', updated: '20261127_1520', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
     {
       version: '3.6.0',
-      buildId: '20261125_1840',
+      buildId: '20261127_1520',
       date: '2026-11-25',
       title: 'Quant Risk Analytics, Action Radar, Benchmark Overlay, 12M Dividend Calendar & Holdings Presets',
       highlights: [
@@ -3300,7 +3304,7 @@ var APP_VERSION_MANIFEST = {
 
     {
       version: '3.6.0',
-      buildId: '20261125_1840',
+      buildId: '20261127_1520',
       date: '2026-11-24 12:20 HKT',
       summary: 'Fixed Total Return % (and Privacy Mode Realized P&L %) denominator across individual holdings, sector subtotals, Portfolio Total row, and Dashboard KPI to use Cumulative Buy Cost Basis (Active Cost + Sold Cost) instead of remaining active cost alone.',
       changes: [
@@ -5267,15 +5271,16 @@ var MarketAPI = {
         : rawClose;
       const vol = parseInt(volumes[i] || 0, 10);
 
+      const prevBar = byMonth[monthStr];
       byMonth[monthStr] = {
         month: monthStr,
         date: dateStr,
         close: rawClose,
         rawClose,
         adjClose,
-        high: rawHigh,
-        low: rawLow,
-        volume: isNaN(vol) ? 0 : vol
+        high: (prevBar && prevBar.high > 0) ? Fin.round(Math.max(prevBar.high, rawHigh), 4) : rawHigh,
+        low: (prevBar && prevBar.low > 0) ? Fin.round(Math.min(prevBar.low, rawLow), 4) : rawLow,
+        volume: (prevBar ? (prevBar.volume || 0) : 0) + (isNaN(vol) ? 0 : vol)
       };
     }
 
@@ -9761,13 +9766,14 @@ function computeMonthlyPortfolioSeries(rangeMonths, onlyFromEarliestActivity = f
   });
 
   let filteredRecords = fullRecords;
-  if (onlyFromEarliestActivity && earliestActivityMonth) {
-    const activeFiltered = fullRecords.filter(r => r.month >= earliestActivityMonth);
+  const startMonthBound = earliestTxMonth || earliestActivityMonth;
+  if (onlyFromEarliestActivity && startMonthBound) {
+    const activeFiltered = fullRecords.filter(r => r.month >= startMonthBound);
     if (activeFiltered.length > 0) {
       filteredRecords = activeFiltered;
     }
   }
-  const sliced = filteredRecords.slice(-rangeMonths);
+  const sliced = (rangeMonths >= 120) ? filteredRecords : filteredRecords.slice(-rangeMonths);
 
   return {
     labels: sliced.map(r => r.month),
@@ -9902,7 +9908,7 @@ function renderMonthlyHistoryChart() {
   const isDark = document.documentElement.classList.contains('dark');
   const isMobile = DeviceDetector.profile.effectiveMode === 'mobile';
 
-  const seriesData = computeMonthlyPortfolioSeries(historyRangeMonths);
+  const seriesData = computeMonthlyPortfolioSeries(historyRangeMonths, true);
   if (!seriesData || seriesData.labels.length === 0 || (portfolio.activeHoldings.length === 0 && state.transactions.length === 0)) {
     if (charts.monthlyHistory) {
       charts.monthlyHistory.destroy();
@@ -10350,13 +10356,28 @@ function renderInlineStockChart(tabType) {
     return (Number.isFinite(l) && l > 0) ? Math.min(l, c) : c;
   });
 
-  // Reflect current live price in the very last data point so 30s live refreshes update the latest point smoothly
+  // Reflect current live price & month-to-date High/Low in the very last data point
   const livePx = Number(priceObj.price);
-  if (Number.isFinite(livePx) && livePx > 0 && closeData.length > 0) {
+  const dayHi = Number(priceObj.dayHigh || priceObj.regularMarketDayHigh || 0);
+  const dayLo = Number(priceObj.dayLow || priceObj.regularMarketDayLow || 0);
+  const prevPx = Number(priceObj.prevPrice || 0);
+  if (closeData.length > 0) {
     const lastIdx = closeData.length - 1;
-    closeData[lastIdx] = livePx;
-    highData[lastIdx] = Math.max(highData[lastIdx], livePx);
-    lowData[lastIdx] = Math.min(lowData[lastIdx], livePx);
+    if (Number.isFinite(livePx) && livePx > 0) {
+      closeData[lastIdx] = livePx;
+      highData[lastIdx] = Math.max(highData[lastIdx], livePx);
+      lowData[lastIdx] = Math.min(lowData[lastIdx], livePx);
+    }
+    if (Number.isFinite(dayHi) && dayHi > 0) {
+      highData[lastIdx] = Math.max(highData[lastIdx], dayHi);
+    }
+    if (Number.isFinite(dayLo) && dayLo > 0) {
+      lowData[lastIdx] = Math.min(lowData[lastIdx], dayLo);
+    }
+    if (Number.isFinite(prevPx) && prevPx > 0 && highData[lastIdx] === lowData[lastIdx]) {
+      highData[lastIdx] = Math.max(highData[lastIdx], prevPx);
+      lowData[lastIdx] = Math.min(lowData[lastIdx], prevPx);
+    }
   }
 
   const firstClose = closeData[0] || 0;
@@ -12653,6 +12674,35 @@ function populateSignalFilterDropdown(selectEl, signalLabelsList) {
   return prevVal;
 }
 
+
+function formatPctTo52wCell(targetVal, livePrice, mode = 'low') {
+  const tVal = Number(targetVal);
+  const pVal = Number(livePrice);
+  if (!Number.isFinite(tVal) || tVal <= 0 || !Number.isFinite(pVal) || pVal <= 0) {
+    return '<span class="text-slate-400 text-[11px]">-</span>';
+  }
+  const pct = Fin.round(((tVal / pVal) - 1) * 100, 1);
+  if (mode === 'low') {
+    // % to 52W Low = 52W Low / Live Price - 1 (<= 0%); bar grows right-to-left (-100% = full, 0% = empty)
+    const barW = Math.min(100, Math.max(0, Math.abs(Math.min(0, pct))));
+    return `
+      <div class="relative overflow-hidden rounded px-2 py-0.5 min-w-[74px] bg-slate-100/60 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50" title="% to 52W Low = (52W Low / Live Price) - 1 = ${Fin.percent(pct, true)}">
+        <div class="absolute inset-y-0 right-0 bg-rose-500/25 dark:bg-rose-500/30 pointer-events-none transition-all" style="width:${barW.toFixed(1)}%"></div>
+        <span class="relative z-10 font-mono font-bold text-[11px] ${pct < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-300'}">${Fin.percent(pct, true)}</span>
+      </div>
+    `;
+  }
+  // % to 52W High = 52W High / Live Price - 1 (>= 0%); bar grows left-to-right (0% = empty, 100% = full)
+  const barW = Math.min(100, Math.max(0, pct));
+  return `
+    <div class="relative overflow-hidden rounded px-2 py-0.5 min-w-[74px] bg-slate-100/60 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50" title="% to 52W High = (52W High / Live Price) - 1 = ${Fin.percent(pct, true)}">
+      <div class="absolute inset-y-0 left-0 bg-emerald-500/25 dark:bg-emerald-500/30 pointer-events-none transition-all" style="width:${barW.toFixed(1)}%"></div>
+      <span class="relative z-10 font-mono font-bold text-[11px] ${pct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-300'}">${Fin.percent(pct, true)}</span>
+    </div>
+  `;
+}
+window.formatPctTo52wCell = formatPctTo52wCell;
+
 function format52wPositionCell(low52w, high52w, pos52wPct, currency) {
   if (pos52wPct === null || pos52wPct === undefined || isNaN(pos52wPct)) {
     return '<span class="text-slate-400 text-[11px]" title="Sync market data to calculate 52W range position">-</span>';
@@ -13195,7 +13245,7 @@ function renderHoldingsTable() {
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-cyan-600 dark:text-cyan-400 col-g-pnl">
       ${totYoCPct.toFixed(2)}%
     </td>
-    <td colspan="6" class="py-1.5 px-3 text-right text-[10px] text-slate-400 font-medium col-quant-extra">
+    <td colspan="8" class="py-1.5 px-3 text-right text-[10px] text-slate-400 font-medium col-quant-extra col-g-targets">
       All-Time Portfolio Aggregates (${baseCurr})
     </td>
     <td class="py-1.5 px-3 text-center text-slate-400 col-always">-</td>
@@ -13274,6 +13324,8 @@ function renderHoldingsTable() {
         case 'riskReward': return Number(h.riskRewardRatio ?? -999);
         case 'xirr': return Number(h.xirrPct ?? -999);
         case 'yoc': return Number(h.yieldOnCost || 0);
+        case 'pctTo52wLow': return (h.low52w > 0 && h.currentPrice > 0) ? ((h.low52w / h.currentPrice) - 1) * 100 : -999;
+        case 'pctTo52wHigh': return (h.high52w > 0 && h.currentPrice > 0) ? ((h.high52w / h.currentPrice) - 1) * 100 : -999;
         case '52wPos': return Number(h.pos52wPct || 0);
         case 'mom': return Number(h.momPct || 0);
         case 'qoq': return Number(h.qoqPct || 0);
@@ -13399,7 +13451,7 @@ function renderHoldingsTable() {
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-semibold text-cyan-600 dark:text-cyan-400 col-g-pnl">
         ${groupYoC.toFixed(2)}%
       </td>
-      <td colspan="6" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium col-quant-extra">
+      <td colspan="8" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium col-quant-extra col-g-targets">
         Sector Subtotal (${group.items.length} ${group.items.length === 1 ? 'holding' : 'holdings'})
       </td>
       <td class="py-1 sm:py-1.5 px-3 text-center text-[11px] font-semibold text-brand-600 dark:text-brand-400 col-always">
@@ -13564,22 +13616,28 @@ function renderHoldingsTable() {
               ${h.yieldOnCost.toFixed(2)}%
             </span>
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300 col-quant-extra">
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300 col-quant-extra col-g-targets">
             ${low52wNative !== null ? Fin.currency(low52wNative, false, hCurr) : '<span class="text-slate-400 text-[11px]">-</span>'}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300 col-quant-extra">
+          <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs text-slate-600 dark:text-slate-300 col-quant-extra col-g-targets">
             ${high52wNative !== null ? Fin.currency(high52wNative, false, hCurr) : '<span class="text-slate-400 text-[11px]">-</span>'}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
+          <td class="py-1 sm:py-1.5 px-2 text-right col-quant-extra col-g-targets">
+            ${formatPctTo52wCell(low52wNative, h.currentPrice, 'low')}
+          </td>
+          <td class="py-1 sm:py-1.5 px-2 text-right col-quant-extra col-g-targets">
+            ${formatPctTo52wCell(high52wNative, h.currentPrice, 'high')}
+          </td>
+          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra col-g-targets">
             ${format52wPositionCell(low52wNative, high52wNative, h.pos52wPct, hCurr)}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
+          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra col-g-targets">
             ${formatPeriodChangeCell(h.momPct, 'MoM', h.momRefMonth)}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
+          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra col-g-targets">
             ${formatPeriodChangeCell(h.qoqPct, 'QoQ', h.qoqRefMonth)}
           </td>
-          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra">
+          <td class="py-1 sm:py-1.5 px-3 text-right col-quant-extra col-g-targets">
             ${formatPeriodChangeCell(h.yoyPct, 'YoY', h.yoyRefMonth)}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-center col-always">
@@ -14028,7 +14086,7 @@ function renderWatchlistAndFundamentals() {
     if (filteredWatchlist.length === 0) {
       wlTbody.innerHTML = `
         <tr class="text-xs text-slate-400">
-          <td colspan="16" class="py-8 px-4 text-center">
+          <td colspan="20" class="py-8 px-4 text-center">
             No watchlist tickers currently match signal <strong class="text-slate-700 dark:text-slate-200 font-mono">${selectedSignal}</strong>.
             <button type="button" onclick="const el=document.getElementById('watchlist-filter-signal'); if(el){el.value='ALL'; renderWatchlistAndFundamentals();}" class="ml-2 text-purple-500 hover:underline font-semibold">Show All (${state.watchlist.length})</button>
           </td>
@@ -14072,6 +14130,8 @@ function renderWatchlistAndFundamentals() {
             case 'ticker': return w.ticker || '';
             case 'price': return curP;
             case 'sector': return item.secName || '';
+            case 'pctTo52wLow': return (wm?.low52w > 0 && curP > 0) ? ((wm.low52w / curP) - 1) * 100 : -999;
+            case 'pctTo52wHigh': return (wm?.high52w > 0 && curP > 0) ? ((wm.high52w / curP) - 1) * 100 : -999;
             case '52wPos': return Number(wm?.pos52wPct || 0);
             case 'mom': return Number(wm?.momPct || 0);
             case 'qoq': return Number(wm?.qoqPct || 0);
@@ -14133,7 +14193,7 @@ function renderWatchlistAndFundamentals() {
           <td colspan="2" class="py-1 sm:py-1.5 px-2 text-left text-[10px] font-mono text-slate-500 dark:text-slate-400">
             <span>Avg Signal: <strong class="text-slate-700 dark:text-slate-200">${avgScore}/100</strong></span>
           </td>
-          <td colspan="9" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
+          <td colspan="11" class="py-1 sm:py-1.5 px-3 text-right text-[11px] text-slate-400 font-medium">
             Watchlist Sector Group (${group.items.length} ${group.items.length === 1 ? 'ticker' : 'tickers'})
           </td>
           <td colspan="5" class="py-1 sm:py-1.5 px-3 text-center">
@@ -14202,6 +14262,12 @@ function renderWatchlistAndFundamentals() {
               </td>
               <td class="py-3 px-3 text-right num-font text-slate-600 dark:text-slate-300 col-quant-extra">
                 ${wm.high52w !== null && wm.high52w !== undefined ? Fin.currency(wm.high52w, false, wlCurrency) : '<span class="text-slate-400 text-[11px]">-</span>'}
+              </td>
+              <td class="py-3 px-2 text-right col-quant-extra">
+                ${formatPctTo52wCell(wm.low52w, curPrice, 'low')}
+              </td>
+              <td class="py-3 px-2 text-right col-quant-extra">
+                ${formatPctTo52wCell(wm.high52w, curPrice, 'high')}
               </td>
               <td class="py-3 px-3 text-right col-quant-extra">
                 ${format52wPositionCell(wm.low52w, wm.high52w, wm.pos52wPct, wlCurrency)}
