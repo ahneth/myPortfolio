@@ -1049,6 +1049,7 @@ function initAppState() {
   if (!state.transactions) state.transactions = [];
   if (!state.dividends) state.dividends = [];
   if (!state.watchlist) state.watchlist = [];
+  if (!Array.isArray(state.tradeSimRows)) state.tradeSimRows = [];
 
   if (!state.settings.yahooDefaultApplied) {
     state.settings.apiProvider = 'yahoo';
@@ -1069,6 +1070,17 @@ function initAppState() {
     w.ticker = MarketAPI.normalizeTicker(w.ticker);
     if (seenWl.has(w.ticker)) return false;
     seenWl.add(w.ticker);
+    return true;
+  });
+  const seenSim = new Set();
+  state.tradeSimRows = (state.tradeSimRows || []).filter(r => {
+    if (!r || !r.ticker) return false;
+    r.ticker = MarketAPI.normalizeTicker(r.ticker);
+    if (!r.ticker || seenSim.has(r.ticker)) return false;
+    seenSim.add(r.ticker);
+    r.id = r.id || ('sim_' + r.ticker);
+    r.side = (String(r.side || 'BUY').toUpperCase() === 'SELL') ? 'SELL' : 'BUY';
+    r.shares = Math.max(0, Number(r.shares) || 0);
     return true;
   });
 
@@ -1098,7 +1110,8 @@ function initAppState() {
   const allKnownTickers = Array.from(new Set([
     ...Object.keys(BASELINE_DIVIDEND_HISTORY_2018_2026),
     ...state.transactions.map(t => t.ticker).filter(Boolean),
-    ...state.watchlist.map(w => w.ticker).filter(Boolean)
+    ...state.watchlist.map(w => w.ticker).filter(Boolean),
+    ...(state.tradeSimRows || []).map(r => r.ticker).filter(Boolean)
   ]));
   allKnownTickers.forEach(sym => {
     const staticProfile = MarketAPI.getStaticProfile(sym);
@@ -2727,9 +2740,32 @@ function exportPortfolioToExcel() {
     }
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(quantRows), 'Quant_Settings');
 
+    // 10. Trade_Simulation (v3.7.1: lossless round-trip of inline Trade Simulation rows)
+    const simRows = (state.tradeSimRows || []).map((r, idx) => {
+      const m = (typeof computeTradeSimRowMetrics === 'function') ? computeTradeSimRowMetrics(r) : null;
+      return {
+        'Row ID': r.id || `SIM-${idx + 1}`,
+        'Ticker': r.ticker,
+        'Action': (String(r.side || 'BUY').toUpperCase() === 'SELL') ? 'SELL' : 'BUY',
+        'Sim Shares': Number(r.shares) || 0,
+        'Currency': m ? m.curr : '',
+        'Live Price': m ? m.curPrice : '',
+        'Est. Cost (Native)': m ? m.signedCostNative : '',
+        'Est. Cost (Base)': m ? m.signedCostBase : '',
+        'Before Shares': m ? m.beforeShares : '',
+        'After Shares': m ? m.afterShares : '',
+        'Before Avg Cost': m ? m.beforeAvgCost : '',
+        'After Avg Cost': m ? m.afterAvgCost : ''
+      };
+    });
+    const simSheetData = simRows.length > 0
+      ? simRows
+      : [{ 'Row ID': '', 'Ticker': '', 'Action': '', 'Sim Shares': '' }];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(simSheetData), 'Trade_Simulation');
+
     const dateStr = new Date().toISOString().split('T')[0];
     XLSX.writeFile(wb, `myPortfolio_Backup_${dateStr}.xlsx`);
-    showToast('Exported 9-sheet myPortfolio v3.1.0 backup (.xlsx)!', 'success');
+    showToast('Exported 10-sheet myPortfolio backup (.xlsx) including Trade Simulation!', 'success');
   } catch (err) {
     console.error('Excel export failed:', err);
     showToast('Export failed: ' + err.message, 'error');
@@ -2910,9 +2946,28 @@ function restorePortfolioFromExcel(file) {
         });
       }
 
+      if (wb.SheetNames.includes('Trade_Simulation')) {
+        const rawSim = XLSX.utils.sheet_to_json(wb.Sheets['Trade_Simulation']);
+        const seenImportSim = new Set();
+        state.tradeSimRows = [];
+        rawSim.forEach((row, idx) => {
+          const sym = MarketAPI.normalizeTicker(row['Ticker'] || '');
+          if (!sym || seenImportSim.has(sym)) return;
+          seenImportSim.add(sym);
+          const side = (String(row['Action'] || row['Side'] || 'BUY').trim().toUpperCase() === 'SELL') ? 'SELL' : 'BUY';
+          const shares = Math.max(0, Number(row['Sim Shares'] ?? row['Shares'] ?? 0) || 0);
+          state.tradeSimRows.push({
+            id: String(row['Row ID'] || `sim_${Date.now()}_${idx}`),
+            ticker: sym,
+            side,
+            shares
+          });
+        });
+      }
+
       recalculatePortfolio();
       saveState();
-      renderAll();
+      renderAll(true);
       if (typeof checkAndRunDailyCloudflareSync === 'function') {
         checkAndRunDailyCloudflareSync(true);
       }
