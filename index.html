@@ -872,7 +872,7 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.9.0 (20261128_1450)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.9.1 (20261128_1500)</span>
             </div>
           </div>
         </div>
@@ -3530,25 +3530,25 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.9.0',
-  buildId: '20261128_1450',
-  releaseDate: '2026-11-28 14:50 HKT',
-  driveFolder: '/myPortfolio/20261128_1450/',
+  appVersion: '3.9.1',
+  buildId: '20261128_1500',
+  releaseDate: '2026-11-28 15:00 HKT',
+  driveFolder: '/myPortfolio/20261128_1500/',
   modules: {
-    'version.js':   { version: '3.9.0', updated: '20261128_1450', role: 'Version manifest, module registry & v3.9.0 changelog history' },
+    'version.js':   { version: '3.9.1', updated: '20261128_1500', role: 'Version manifest, module registry & v3.9.1 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.7.4', updated: '20261128_1250', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
     'portfolio.js': { version: '3.9.0', updated: '20261128_1450', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
     'charts.js':    { version: '3.8.0', updated: '20261128_1440', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.9.0', updated: '20261128_1450', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
+    'app.js':       { version: '3.9.1', updated: '20261128_1500', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
     'styles.css':   { version: '3.6.0', updated: '20261125_1720', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.9.0', updated: '20261128_1450', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.9.1', updated: '20261128_1500', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
     {
       version: '3.6.0',
-      buildId: '20261128_1450',
+      buildId: '20261128_1500',
       date: '2026-11-25',
       title: 'Quant Risk Analytics, Action Radar, Benchmark Overlay, 12M Dividend Calendar & Holdings Presets',
       highlights: [
@@ -3562,7 +3562,7 @@ var APP_VERSION_MANIFEST = {
 
     {
       version: '3.6.0',
-      buildId: '20261128_1450',
+      buildId: '20261128_1500',
       date: '2026-11-24 12:20 HKT',
       summary: 'Fixed Total Return % (and Privacy Mode Realized P&L %) denominator across individual holdings, sector subtotals, Portfolio Total row, and Dashboard KPI to use Cumulative Buy Cost Basis (Active Cost + Sold Cost) instead of remaining active cost alone.',
       changes: [
@@ -18324,20 +18324,20 @@ function renderAnnualTradeScorecard() {
         <td class="py-1.5 px-3 text-right num-font font-semibold ${r.sellAmountBase > 0 ? 'text-rose-500' : 'text-slate-400'}">
           ${hideMoney ? '••••' : (r.sellAmountBase > 0 ? Fin.currency(r.sellAmountBase, false, baseCurr) : '-')}
         </td>
-        <td class="py-1.5 px-3 text-right num-font font-bold ${r.unrealizedPnlBase !== 0 ? uCls : 'text-slate-400'}">
-          ${hideMoney ? '••••••' : Fin.currency(r.unrealizedPnlBase, true, baseCurr)}
+        <td class="py-1.5 px-3 text-right num-font font-bold ${Math.abs(r.unrealizedPnlBase) >= 0.005 ? uCls : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : (Math.abs(r.unrealizedPnlBase) >= 0.005 ? Fin.currency(r.unrealizedPnlBase, true, baseCurr) : '-')}
         </td>
-        <td class="py-1.5 px-3 text-right num-font font-bold ${r.realizedPnlBase !== 0 ? rCls : 'text-slate-400'}">
-          ${hideMoney ? '••••••' : Fin.currency(r.realizedPnlBase, true, baseCurr)}
+        <td class="py-1.5 px-3 text-right num-font font-bold ${Math.abs(r.realizedPnlBase) >= 0.005 ? rCls : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : (Math.abs(r.realizedPnlBase) >= 0.005 ? Fin.currency(r.realizedPnlBase, true, baseCurr) : '-')}
         </td>
-        <td class="py-1.5 px-3 text-right num-font font-bold ${r.dividendsBase > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
-          ${hideMoney ? '••••••' : (r.dividendsBase > 0 ? '+' + Fin.currency(r.dividendsBase, false, baseCurr) : Fin.currency(0, false, baseCurr))}
+        <td class="py-1.5 px-3 text-right num-font font-bold ${r.dividendsBase >= 0.005 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : (r.dividendsBase >= 0.005 ? '+' + Fin.currency(r.dividendsBase, false, baseCurr) : '-')}
         </td>
-        <td class="py-1.5 px-3 text-right num-font font-extrabold ${totCls}">
-          ${hideMoney ? '••••••' : Fin.currency(r.totalCashGainBase, true, baseCurr)}
+        <td class="py-1.5 px-3 text-right num-font font-extrabold ${Math.abs(r.totalCashGainBase) >= 0.005 ? totCls : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : (Math.abs(r.totalCashGainBase) >= 0.005 ? Fin.currency(r.totalCashGainBase, true, baseCurr) : '-')}
         </td>
         <td class="py-1.5 px-3 text-right num-font text-slate-500 dark:text-slate-400">
-          ${hideMoney ? '••••' : Fin.currency(r.feesBase, false, baseCurr)}
+          ${hideMoney ? '••••' : (r.feesBase >= 0.005 ? Fin.currency(r.feesBase, false, baseCurr) : '-')}
         </td>
         <td class="py-1.5 px-3 text-center">
           ${r.winRatePct !== null
@@ -18356,13 +18356,13 @@ function renderAnnualTradeScorecard() {
       <tr>
         <td class="py-2 px-3 sticky-col-mobile bg-indigo-50 dark:bg-slate-900 font-extrabold text-slate-900 dark:text-white">ALL-TIME</td>
         <td class="py-2 px-3 text-center font-mono">${totals.buys}B / ${totals.sells}S</td>
-        <td class="py-2 px-3 text-right num-font text-emerald-600 dark:text-emerald-400">${hideMoney ? '••••' : Fin.currency(totals.buyAmountBase, false, baseCurr)}</td>
-        <td class="py-2 px-3 text-right num-font text-rose-500">${hideMoney ? '••••' : Fin.currency(totals.sellAmountBase, false, baseCurr)}</td>
-        <td class="py-2 px-3 text-right num-font ${totUCls}" title="Current live Unrealized P&amp;L">${hideMoney ? '••••••' : Fin.currency(totals.unrealizedPnlBase, true, baseCurr)}</td>
-        <td class="py-2 px-3 text-right num-font ${totRCls}">${hideMoney ? '••••••' : Fin.currency(totals.realizedPnlBase, true, baseCurr)}</td>
-        <td class="py-2 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">${hideMoney ? '••••••' : ('+' + Fin.currency(totals.dividendsBase, false, baseCurr))}</td>
-        <td class="py-2 px-3 text-right num-font font-extrabold ${totGCls}">${hideMoney ? '••••••' : Fin.currency(totals.totalCashGainBase, true, baseCurr)}</td>
-        <td class="py-2 px-3 text-right num-font text-slate-500 dark:text-slate-400">${hideMoney ? '••••' : Fin.currency(totals.feesBase, false, baseCurr)}</td>
+        <td class="py-2 px-3 text-right num-font text-emerald-600 dark:text-emerald-400">${hideMoney ? '••••' : (totals.buyAmountBase >= 0.005 ? Fin.currency(totals.buyAmountBase, false, baseCurr) : '-')}</td>
+        <td class="py-2 px-3 text-right num-font text-rose-500">${hideMoney ? '••••' : (totals.sellAmountBase >= 0.005 ? Fin.currency(totals.sellAmountBase, false, baseCurr) : '-')}</td>
+        <td class="py-2 px-3 text-right num-font ${Math.abs(totals.unrealizedPnlBase) >= 0.005 ? totUCls : 'text-slate-400'}" title="Current live Unrealized P&amp;L">${hideMoney ? '••••••' : (Math.abs(totals.unrealizedPnlBase) >= 0.005 ? Fin.currency(totals.unrealizedPnlBase, true, baseCurr) : '-')}</td>
+        <td class="py-2 px-3 text-right num-font ${Math.abs(totals.realizedPnlBase) >= 0.005 ? totRCls : 'text-slate-400'}">${hideMoney ? '••••••' : (Math.abs(totals.realizedPnlBase) >= 0.005 ? Fin.currency(totals.realizedPnlBase, true, baseCurr) : '-')}</td>
+        <td class="py-2 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">${hideMoney ? '••••••' : (totals.dividendsBase >= 0.005 ? '+' + Fin.currency(totals.dividendsBase, false, baseCurr) : '-')}</td>
+        <td class="py-2 px-3 text-right num-font font-extrabold ${Math.abs(totals.totalCashGainBase) >= 0.005 ? totGCls : 'text-slate-400'}">${hideMoney ? '••••••' : (Math.abs(totals.totalCashGainBase) >= 0.005 ? Fin.currency(totals.totalCashGainBase, true, baseCurr) : '-')}</td>
+        <td class="py-2 px-3 text-right num-font text-slate-500 dark:text-slate-400">${hideMoney ? '••••' : (totals.feesBase >= 0.005 ? Fin.currency(totals.feesBase, false, baseCurr) : '-')}</td>
         <td class="py-2 px-3 text-center font-mono">${totals.winRatePct !== null ? `${totals.winRatePct.toFixed(0)}% (${totals.wins}/${totals.wins + totals.losses})` : '-'}</td>
       </tr>
     `;
@@ -18405,10 +18405,10 @@ function renderMonthlyTradeMatrix() {
   const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
   const hideMoney = Fin.isPrivacyMode();
 
-  // Build trailing N calendar months ending at current month
+  // Build trailing N calendar months in antichronological order (latest month on the left)
   const months = [];
   const now = new Date();
-  for (let i = tradeMatrixMonths - 1; i >= 0; i--) {
+  for (let i = 0; i < tradeMatrixMonths; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   }

@@ -5454,20 +5454,20 @@ function renderAnnualTradeScorecard() {
         <td class="py-1.5 px-3 text-right num-font font-semibold ${r.sellAmountBase > 0 ? 'text-rose-500' : 'text-slate-400'}">
           ${hideMoney ? '••••' : (r.sellAmountBase > 0 ? Fin.currency(r.sellAmountBase, false, baseCurr) : '-')}
         </td>
-        <td class="py-1.5 px-3 text-right num-font font-bold ${r.unrealizedPnlBase !== 0 ? uCls : 'text-slate-400'}">
-          ${hideMoney ? '••••••' : Fin.currency(r.unrealizedPnlBase, true, baseCurr)}
+        <td class="py-1.5 px-3 text-right num-font font-bold ${Math.abs(r.unrealizedPnlBase) >= 0.005 ? uCls : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : (Math.abs(r.unrealizedPnlBase) >= 0.005 ? Fin.currency(r.unrealizedPnlBase, true, baseCurr) : '-')}
         </td>
-        <td class="py-1.5 px-3 text-right num-font font-bold ${r.realizedPnlBase !== 0 ? rCls : 'text-slate-400'}">
-          ${hideMoney ? '••••••' : Fin.currency(r.realizedPnlBase, true, baseCurr)}
+        <td class="py-1.5 px-3 text-right num-font font-bold ${Math.abs(r.realizedPnlBase) >= 0.005 ? rCls : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : (Math.abs(r.realizedPnlBase) >= 0.005 ? Fin.currency(r.realizedPnlBase, true, baseCurr) : '-')}
         </td>
-        <td class="py-1.5 px-3 text-right num-font font-bold ${r.dividendsBase > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
-          ${hideMoney ? '••••••' : (r.dividendsBase > 0 ? '+' + Fin.currency(r.dividendsBase, false, baseCurr) : Fin.currency(0, false, baseCurr))}
+        <td class="py-1.5 px-3 text-right num-font font-bold ${r.dividendsBase >= 0.005 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : (r.dividendsBase >= 0.005 ? '+' + Fin.currency(r.dividendsBase, false, baseCurr) : '-')}
         </td>
-        <td class="py-1.5 px-3 text-right num-font font-extrabold ${totCls}">
-          ${hideMoney ? '••••••' : Fin.currency(r.totalCashGainBase, true, baseCurr)}
+        <td class="py-1.5 px-3 text-right num-font font-extrabold ${Math.abs(r.totalCashGainBase) >= 0.005 ? totCls : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : (Math.abs(r.totalCashGainBase) >= 0.005 ? Fin.currency(r.totalCashGainBase, true, baseCurr) : '-')}
         </td>
         <td class="py-1.5 px-3 text-right num-font text-slate-500 dark:text-slate-400">
-          ${hideMoney ? '••••' : Fin.currency(r.feesBase, false, baseCurr)}
+          ${hideMoney ? '••••' : (r.feesBase >= 0.005 ? Fin.currency(r.feesBase, false, baseCurr) : '-')}
         </td>
         <td class="py-1.5 px-3 text-center">
           ${r.winRatePct !== null
@@ -5486,13 +5486,13 @@ function renderAnnualTradeScorecard() {
       <tr>
         <td class="py-2 px-3 sticky-col-mobile bg-indigo-50 dark:bg-slate-900 font-extrabold text-slate-900 dark:text-white">ALL-TIME</td>
         <td class="py-2 px-3 text-center font-mono">${totals.buys}B / ${totals.sells}S</td>
-        <td class="py-2 px-3 text-right num-font text-emerald-600 dark:text-emerald-400">${hideMoney ? '••••' : Fin.currency(totals.buyAmountBase, false, baseCurr)}</td>
-        <td class="py-2 px-3 text-right num-font text-rose-500">${hideMoney ? '••••' : Fin.currency(totals.sellAmountBase, false, baseCurr)}</td>
-        <td class="py-2 px-3 text-right num-font ${totUCls}" title="Current live Unrealized P&amp;L">${hideMoney ? '••••••' : Fin.currency(totals.unrealizedPnlBase, true, baseCurr)}</td>
-        <td class="py-2 px-3 text-right num-font ${totRCls}">${hideMoney ? '••••••' : Fin.currency(totals.realizedPnlBase, true, baseCurr)}</td>
-        <td class="py-2 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">${hideMoney ? '••••••' : ('+' + Fin.currency(totals.dividendsBase, false, baseCurr))}</td>
-        <td class="py-2 px-3 text-right num-font font-extrabold ${totGCls}">${hideMoney ? '••••••' : Fin.currency(totals.totalCashGainBase, true, baseCurr)}</td>
-        <td class="py-2 px-3 text-right num-font text-slate-500 dark:text-slate-400">${hideMoney ? '••••' : Fin.currency(totals.feesBase, false, baseCurr)}</td>
+        <td class="py-2 px-3 text-right num-font text-emerald-600 dark:text-emerald-400">${hideMoney ? '••••' : (totals.buyAmountBase >= 0.005 ? Fin.currency(totals.buyAmountBase, false, baseCurr) : '-')}</td>
+        <td class="py-2 px-3 text-right num-font text-rose-500">${hideMoney ? '••••' : (totals.sellAmountBase >= 0.005 ? Fin.currency(totals.sellAmountBase, false, baseCurr) : '-')}</td>
+        <td class="py-2 px-3 text-right num-font ${Math.abs(totals.unrealizedPnlBase) >= 0.005 ? totUCls : 'text-slate-400'}" title="Current live Unrealized P&amp;L">${hideMoney ? '••••••' : (Math.abs(totals.unrealizedPnlBase) >= 0.005 ? Fin.currency(totals.unrealizedPnlBase, true, baseCurr) : '-')}</td>
+        <td class="py-2 px-3 text-right num-font ${Math.abs(totals.realizedPnlBase) >= 0.005 ? totRCls : 'text-slate-400'}">${hideMoney ? '••••••' : (Math.abs(totals.realizedPnlBase) >= 0.005 ? Fin.currency(totals.realizedPnlBase, true, baseCurr) : '-')}</td>
+        <td class="py-2 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">${hideMoney ? '••••••' : (totals.dividendsBase >= 0.005 ? '+' + Fin.currency(totals.dividendsBase, false, baseCurr) : '-')}</td>
+        <td class="py-2 px-3 text-right num-font font-extrabold ${Math.abs(totals.totalCashGainBase) >= 0.005 ? totGCls : 'text-slate-400'}">${hideMoney ? '••••••' : (Math.abs(totals.totalCashGainBase) >= 0.005 ? Fin.currency(totals.totalCashGainBase, true, baseCurr) : '-')}</td>
+        <td class="py-2 px-3 text-right num-font text-slate-500 dark:text-slate-400">${hideMoney ? '••••' : (totals.feesBase >= 0.005 ? Fin.currency(totals.feesBase, false, baseCurr) : '-')}</td>
         <td class="py-2 px-3 text-center font-mono">${totals.winRatePct !== null ? `${totals.winRatePct.toFixed(0)}% (${totals.wins}/${totals.wins + totals.losses})` : '-'}</td>
       </tr>
     `;
@@ -5535,10 +5535,10 @@ function renderMonthlyTradeMatrix() {
   const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
   const hideMoney = Fin.isPrivacyMode();
 
-  // Build trailing N calendar months ending at current month
+  // Build trailing N calendar months in antichronological order (latest month on the left)
   const months = [];
   const now = new Date();
-  for (let i = tradeMatrixMonths - 1; i >= 0; i--) {
+  for (let i = 0; i < tradeMatrixMonths; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   }
