@@ -5501,10 +5501,22 @@ function renderAnnualTradeScorecard() {
 window.renderAnnualTradeScorecard = renderAnnualTradeScorecard;
 
 // =========================================================================
-// v3.9.0: MONTHLY BUY & SELL ACTIVITY MATRIX (BY TICKER / BY SECTOR)
+// v3.9.3: PERIODIC BUY & SELL ACTIVITY MATRIX (MONTHLY / QUARTERLY / YEARLY · BY TICKER / BY SECTOR)
 // =========================================================================
+var tradeMatrixPeriod = 'monthly';
 var tradeMatrixGroup = 'ticker';
 var tradeMatrixMonths = 12;
+
+window.setTradeMatrixPeriod = function(per) {
+  tradeMatrixPeriod = (per === 'quarterly' || per === 'yearly') ? per : 'monthly';
+  document.querySelectorAll('.matrix-period-btn').forEach(b => {
+    const act = b.getAttribute('data-matrix-period') === tradeMatrixPeriod;
+    b.className = act
+      ? 'matrix-period-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition'
+      : 'matrix-period-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+  });
+  renderMonthlyTradeMatrix();
+};
 
 window.setTradeMatrixGroup = function(grp) {
   tradeMatrixGroup = (grp === 'sector') ? 'sector' : 'ticker';
@@ -5518,7 +5530,8 @@ window.setTradeMatrixGroup = function(grp) {
 };
 
 window.setTradeMatrixMonths = function(mos) {
-  tradeMatrixMonths = Number(mos) || 12;
+  const n = Number(mos);
+  tradeMatrixMonths = (n === 0 || n === 12 || n === 24 || n === 36) ? n : 12;
   document.querySelectorAll('.matrix-range-btn').forEach(b => {
     const act = Number(b.getAttribute('data-matrix-range')) === tradeMatrixMonths;
     b.className = act
@@ -5534,19 +5547,76 @@ function renderMonthlyTradeMatrix() {
 
   const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
   const hideMoney = Fin.isPrivacyMode();
+  const mode = (tradeMatrixPeriod === 'quarterly' || tradeMatrixPeriod === 'yearly') ? tradeMatrixPeriod : 'monthly';
+  const allTxs = (state?.transactions || []).filter(tx => {
+    const t = String(tx.type || '').toUpperCase();
+    return (t === 'BUY' || t === 'SELL') && tx.date && String(tx.date).length >= 7;
+  });
 
-  // Build trailing N calendar months in antichronological order (latest month on the left)
-  const months = [];
+  // Determine earliest Buy/Sell date when ALL (0) range is selected
   const now = new Date();
-  for (let i = 0; i < tradeMatrixMonths; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  let earliestYear = now.getFullYear();
+  let earliestMonthIdx = now.getMonth(); // 0-based
+  if (allTxs.length > 0) {
+    allTxs.forEach(tx => {
+      const y = Number(String(tx.date).slice(0, 4));
+      const m = Number(String(tx.date).slice(5, 7)) - 1;
+      if (Number.isFinite(y) && Number.isFinite(m) && m >= 0 && m <= 11) {
+        if (y < earliestYear || (y === earliestYear && m < earliestMonthIdx)) {
+          earliestYear = y;
+          earliestMonthIdx = m;
+        }
+      }
+    });
   }
-  const monthSet = new Set(months);
+
+  // Helper to convert YYYY-MM-DD -> period key
+  const toPeriodKey = (dateStr) => {
+    const s = String(dateStr || '');
+    const y = s.slice(0, 4);
+    const m = Number(s.slice(5, 7));
+    if (!y || !Number.isFinite(m) || m < 1 || m > 12) return '';
+    if (mode === 'yearly') return y;
+    if (mode === 'quarterly') return `${y} Q${Math.floor((m - 1) / 3) + 1}`;
+    return `${y}-${String(m).padStart(2, '0')}`;
+  };
+
+  // Build period columns in antichronological order (latest period on the left)
+  const periods = [];
+  if (mode === 'monthly') {
+    const count = tradeMatrixMonths > 0
+      ? tradeMatrixMonths
+      : Math.max(1, (now.getFullYear() - earliestYear) * 12 + (now.getMonth() - earliestMonthIdx) + 1);
+    for (let i = 0; i < count; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      periods.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+  } else if (mode === 'quarterly') {
+    const curQIdx = now.getFullYear() * 4 + Math.floor(now.getMonth() / 3);
+    const earliestQIdx = earliestYear * 4 + Math.floor(earliestMonthIdx / 3);
+    const count = tradeMatrixMonths > 0
+      ? Math.max(1, Math.round(tradeMatrixMonths / 3))
+      : Math.max(1, curQIdx - earliestQIdx + 1);
+    for (let i = 0; i < count; i++) {
+      const qIdx = curQIdx - i;
+      const y = Math.floor(qIdx / 4);
+      const q = (qIdx % 4) + 1;
+      periods.push(`${y} Q${q}`);
+    }
+  } else {
+    const curY = now.getFullYear();
+    const count = tradeMatrixMonths > 0
+      ? Math.max(1, Math.round(tradeMatrixMonths / 12))
+      : Math.max(1, curY - earliestYear + 1);
+    for (let i = 0; i < count; i++) {
+      periods.push(String(curY - i));
+    }
+  }
+  const periodSet = new Set(periods);
 
   const rowMap = {};
-  const monthTotals = {};
-  months.forEach(m => { monthTotals[m] = { buy: 0, sell: 0, buyCnt: 0, sellCnt: 0 }; });
+  const periodTotals = {};
+  periods.forEach(p => { periodTotals[p] = { buy: 0, sell: 0, buyCnt: 0, sellCnt: 0 }; });
 
   const resolveSectorForTicker = (sym) => {
     const h = (portfolio?.allHoldings || []).find(x => x.ticker === sym);
@@ -5554,11 +5624,10 @@ function renderMonthlyTradeMatrix() {
     return state?.fundamentals?.[sym]?.sector || MarketAPI.getStaticProfile(sym).sector || 'Equities';
   };
 
-  (state?.transactions || []).forEach(tx => {
+  allTxs.forEach(tx => {
     const type = String(tx.type || '').toUpperCase();
-    if (type !== 'BUY' && type !== 'SELL') return;
-    const ym = String(tx.date || '').slice(0, 7);
-    if (!monthSet.has(ym)) return;
+    const pk = toPeriodKey(tx.date);
+    if (!pk || !periodSet.has(pk)) return;
     const sym = MarketAPI.normalizeTicker(tx.ticker);
     if (!sym) return;
 
@@ -5573,31 +5642,32 @@ function renderMonthlyTradeMatrix() {
     if (!rowMap[key]) {
       rowMap[key] = { key, totalBuy: 0, totalSell: 0, totalVol: 0, cells: {} };
     }
-    if (!rowMap[key].cells[ym]) {
-      rowMap[key].cells[ym] = { buy: 0, sell: 0, buyCnt: 0, sellCnt: 0, buySh: 0, sellSh: 0 };
+    if (!rowMap[key].cells[pk]) {
+      rowMap[key].cells[pk] = { buy: 0, sell: 0, buyCnt: 0, sellCnt: 0, buySh: 0, sellSh: 0 };
     }
-    const cell = rowMap[key].cells[ym];
+    const cell = rowMap[key].cells[pk];
     if (type === 'BUY') {
       cell.buy = Fin.round(cell.buy + amtBase, 2);
       cell.buyCnt++;
       cell.buySh = Fin.round(cell.buySh + shares, 4);
       rowMap[key].totalBuy = Fin.round(rowMap[key].totalBuy + amtBase, 2);
-      monthTotals[ym].buy = Fin.round(monthTotals[ym].buy + amtBase, 2);
-      monthTotals[ym].buyCnt++;
+      periodTotals[pk].buy = Fin.round(periodTotals[pk].buy + amtBase, 2);
+      periodTotals[pk].buyCnt++;
     } else {
       cell.sell = Fin.round(cell.sell + amtBase, 2);
       cell.sellCnt++;
       cell.sellSh = Fin.round(cell.sellSh + shares, 4);
       rowMap[key].totalSell = Fin.round(rowMap[key].totalSell + amtBase, 2);
-      monthTotals[ym].sell = Fin.round(monthTotals[ym].sell + amtBase, 2);
-      monthTotals[ym].sellCnt++;
+      periodTotals[pk].sell = Fin.round(periodTotals[pk].sell + amtBase, 2);
+      periodTotals[pk].sellCnt++;
     }
     rowMap[key].totalVol = Fin.round(rowMap[key].totalBuy + rowMap[key].totalSell, 2);
   });
 
   const rows = Object.values(rowMap).sort((a, b) => b.totalVol - a.totalVol);
   if (rows.length === 0) {
-    box.innerHTML = `<div class="py-8 px-4 text-center text-xs text-slate-400">No Buy or Sell transactions found in the last ${tradeMatrixMonths / 12} year(s).</div>`;
+    const rangeMsg = tradeMatrixMonths > 0 ? ` in the last ${tradeMatrixMonths / 12} year(s)` : '';
+    box.innerHTML = `<div class="py-8 px-4 text-center text-xs text-slate-400">No Buy or Sell transactions found${rangeMsg}.</div>`;
     return;
   }
 
@@ -5608,31 +5678,39 @@ function renderMonthlyTradeMatrix() {
     return abs.toFixed(0);
   };
 
+  const fmtHeader = (p) => {
+    if (mode === 'yearly') return p;
+    if (mode === 'quarterly') return p.slice(2); // e.g. '26 Q4'
+    return p.slice(2); // e.g. '26-11'
+  };
+
+  const footerLabel = mode === 'yearly' ? 'YEARLY TOTAL' : (mode === 'quarterly' ? 'QUARTERLY TOTAL' : 'MONTHLY TOTAL');
+
   let htmlStr = `<table class="w-full text-left text-[11px] whitespace-nowrap compact-log-table border-collapse">
     <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] uppercase font-semibold border-b border-slate-200 dark:border-dark-border">
       <tr>
         <th class="py-1.5 px-3 sticky left-0 z-20 bg-slate-50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700">${tradeMatrixGroup === 'sector' ? 'Sector' : 'Ticker'}</th>`;
-  months.forEach(m => {
-    htmlStr += `<th class="py-1.5 px-2 text-center font-mono">${m.slice(2)}</th>`;
+  periods.forEach(p => {
+    htmlStr += `<th class="py-1.5 px-2 text-center font-mono">${fmtHeader(p)}</th>`;
   });
   htmlStr += `<th class="py-1.5 px-3 text-right font-mono border-l border-slate-200 dark:border-slate-700">Period Total</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">`;
 
   rows.forEach(r => {
     htmlStr += `<tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/35">
       <td class="py-1.5 px-3 sticky left-0 z-10 bg-white dark:bg-dark-card font-bold text-slate-900 dark:text-white border-r border-slate-100 dark:border-slate-800">${r.key}</td>`;
-    months.forEach(m => {
-      const c = r.cells[m];
+    periods.forEach(p => {
+      const c = r.cells[p];
       if (!c) {
         htmlStr += `<td class="py-1.5 px-2 text-center text-slate-300 dark:text-slate-700">·</td>`;
       } else {
         const parts = [];
         if (c.buy > 0) {
           const lbl = hideMoney ? `${c.buyCnt}B` : `+${fmtCompact(c.buy)}`;
-          parts.push(`<div class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono font-bold text-[10px]" title="BUY ${r.key} (${m}): ${hideMoney ? c.buyCnt + ' order(s)' : Fin.currency(c.buy, false, baseCurr) + ' · ' + Fin.shares(c.buySh) + ' sh'}">${lbl}</div>`);
+          parts.push(`<div class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono font-bold text-[10px]" title="BUY ${r.key} (${p}): ${hideMoney ? c.buyCnt + ' order(s)' : Fin.currency(c.buy, false, baseCurr) + ' · ' + Fin.shares(c.buySh) + ' sh'}">${lbl}</div>`);
         }
         if (c.sell > 0) {
           const lbl = hideMoney ? `${c.sellCnt}S` : `-${fmtCompact(c.sell)}`;
-          parts.push(`<div class="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-[10px]" title="SELL ${r.key} (${m}): ${hideMoney ? c.sellCnt + ' order(s)' : Fin.currency(c.sell, false, baseCurr) + ' · ' + Fin.shares(c.sellSh) + ' sh'}">${lbl}</div>`);
+          parts.push(`<div class="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-[10px]" title="SELL ${r.key} (${p}): ${hideMoney ? c.sellCnt + ' order(s)' : Fin.currency(c.sell, false, baseCurr) + ' · ' + Fin.shares(c.sellSh) + ' sh'}">${lbl}</div>`);
         }
         htmlStr += `<td class="py-1 px-1.5 text-center"><div class="flex flex-col gap-0.5 items-center">${parts.join('')}</div></td>`;
       }
@@ -5643,17 +5721,17 @@ function renderMonthlyTradeMatrix() {
     htmlStr += `<td class="py-1.5 px-3 text-right font-mono text-[10.5px] border-l border-slate-100 dark:border-slate-800">${totParts.join('')}</td></tr>`;
   });
 
-  // Footer monthly totals
+  // Footer period totals
   let grandBuy = 0, grandSell = 0;
   htmlStr += `</tbody><tfoot class="sticky bottom-0 z-10 bg-indigo-50/95 dark:bg-slate-900/95 border-t-2 border-indigo-500/30 font-mono text-[10px] font-bold">
-    <tr><td class="py-2 px-3 sticky left-0 z-20 bg-indigo-50 dark:bg-slate-900 text-slate-900 dark:text-white border-r border-slate-200 dark:border-slate-700">MONTHLY TOTAL</td>`;
-  months.forEach(m => {
-    const mt = monthTotals[m];
-    grandBuy = Fin.round(grandBuy + mt.buy, 2);
-    grandSell = Fin.round(grandSell + mt.sell, 2);
+    <tr><td class="py-2 px-3 sticky left-0 z-20 bg-indigo-50 dark:bg-slate-900 text-slate-900 dark:text-white border-r border-slate-200 dark:border-slate-700">${footerLabel}</td>`;
+  periods.forEach(p => {
+    const pt = periodTotals[p];
+    grandBuy = Fin.round(grandBuy + pt.buy, 2);
+    grandSell = Fin.round(grandSell + pt.sell, 2);
     const parts = [];
-    if (mt.buy > 0) parts.push(`<div class="text-emerald-600 dark:text-emerald-400">${hideMoney ? mt.buyCnt + 'B' : '+' + fmtCompact(mt.buy)}</div>`);
-    if (mt.sell > 0) parts.push(`<div class="text-rose-500">${hideMoney ? mt.sellCnt + 'S' : '-' + fmtCompact(mt.sell)}</div>`);
+    if (pt.buy > 0) parts.push(`<div class="text-emerald-600 dark:text-emerald-400">${hideMoney ? pt.buyCnt + 'B' : '+' + fmtCompact(pt.buy)}</div>`);
+    if (pt.sell > 0) parts.push(`<div class="text-rose-500">${hideMoney ? pt.sellCnt + 'S' : '-' + fmtCompact(pt.sell)}</div>`);
     htmlStr += `<td class="py-1.5 px-1.5 text-center">${parts.length > 0 ? parts.join('') : '<span class="text-slate-400">-</span>'}</td>`;
   });
   htmlStr += `<td class="py-1.5 px-3 text-right border-l border-slate-200 dark:border-slate-700">
@@ -5664,6 +5742,7 @@ function renderMonthlyTradeMatrix() {
   box.innerHTML = htmlStr;
 }
 window.renderMonthlyTradeMatrix = renderMonthlyTradeMatrix;
+window.renderTradeMatrix = renderMonthlyTradeMatrix;
 
 function updateBackupAgeBadge() {
   const pill = document.getElementById('backup-age-pill');
