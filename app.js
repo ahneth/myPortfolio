@@ -5454,7 +5454,7 @@ function renderAnnualTradeScorecard() {
         <td class="py-1.5 px-3 text-right num-font font-semibold ${r.sellAmountBase > 0 ? 'text-rose-500' : 'text-slate-400'}">
           ${hideMoney ? '••••' : (r.sellAmountBase > 0 ? Fin.currency(r.sellAmountBase, false, baseCurr) : '-')}
         </td>
-        <td class="py-1.5 px-3 text-right num-font font-bold ${Math.abs(r.unrealizedPnlBase) >= 0.005 ? uCls : 'text-slate-400'}">
+        <td class="py-1.5 px-3 text-right num-font font-bold ${Math.abs(r.unrealizedPnlBase) >= 0.005 ? uCls : 'text-slate-400'}" title="Unrealized P&amp;L change in ${r.period} (Closing balance: ${hideMoney ? 'Hidden' : Fin.currency(r.closingUnrealizedBase || 0, true, baseCurr)})">
           ${hideMoney ? '••••••' : (Math.abs(r.unrealizedPnlBase) >= 0.005 ? Fin.currency(r.unrealizedPnlBase, true, baseCurr) : '-')}
         </td>
         <td class="py-1.5 px-3 text-right num-font font-bold ${Math.abs(r.realizedPnlBase) >= 0.005 ? rCls : 'text-slate-400'}">

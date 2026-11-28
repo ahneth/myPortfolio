@@ -3217,14 +3217,25 @@ function computePeriodicTradeScorecard(granularity = 'yearly') {
     });
     if (periodMap[pKey] || activeCount > 0 || monthHadActivity) {
       const pRow = ensurePeriod(pKey);
-      pRow.unrealizedPnlBase = isLatestMonth && Number.isFinite(Number(portfolio?.totalUnrealizedGain))
+      pRow.closingUnrealizedBase = isLatestMonth && Number.isFinite(Number(portfolio?.totalUnrealizedGain))
         ? Fin.round(Number(portfolio.totalUnrealizedGain), 2)
         : Fin.round(unrBase, 2);
     }
   });
 
-  const rows = Object.values(periodMap)
-    .sort((a, b) => b.period.localeCompare(a.period))
+  // Compute period-specific Unrealized P&L change (closingUnrealized - priorClosingUnrealized)
+  // so Monthly sums cleanly to Quarterly, Quarterly to Yearly, and Yearly to ALL-TIME.
+  const chronoRows = Object.values(periodMap).sort((a, b) => a.period.localeCompare(b.period));
+  let prevClosingUnr = 0;
+  chronoRows.forEach(r => {
+    const closingUnr = Number(r.closingUnrealizedBase || 0);
+    r.unrealizedPnlBase = Fin.round(closingUnr - prevClosingUnr, 2);
+    prevClosingUnr = closingUnr;
+  });
+
+  const rows = chronoRows
+    .slice()
+    .reverse()
     .map(r => {
       const closed = r.wins + r.losses;
       return {
