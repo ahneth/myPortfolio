@@ -1687,23 +1687,6 @@ function renderInlineStockChart(tabType) {
           const fn = chart._renderMonthInspector || renderHoveredMonthInspector;
           fn(activeElements[0].index);
         }
-        if (!isHoldings) return;
-        const pts = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
-        const matchedMetas = [];
-        pts.forEach(pt => {
-          const ds = chart.data.datasets[pt.datasetIndex];
-          const meta = ds && ds._tradeMeta ? ds._tradeMeta[pt.index] : null;
-          if (meta) matchedMetas.push(meta);
-        });
-        // If user clicked anywhere along a month column that has a Buy or Sell marker, also surface it
-        if (matchedMetas.length === 0 && activeElements && activeElements.length > 0) {
-          const idx = activeElements[0].index;
-          if (buyMetaByIndex[idx]) matchedMetas.push(buyMetaByIndex[idx]);
-          if (sellMetaByIndex[idx]) matchedMetas.push(sellMetaByIndex[idx]);
-        }
-        if (matchedMetas.length > 0) {
-          renderClickedTradeMarkerDetail(matchedMetas);
-        }
       },
       scales: {
         x: {
