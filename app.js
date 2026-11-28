@@ -156,6 +156,8 @@ function renderSingleTabContent(tabName) {
       break;
     case 'transactions':
       try { renderTradeSimulationTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderTradeSimulationTable failed: ${err.message}`, err); }
+      try { renderAnnualTradeScorecard(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderAnnualTradeScorecard failed: ${err.message}`, err); }
+      try { renderMonthlyTradeMatrix(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderMonthlyTradeMatrix failed: ${err.message}`, err); }
       try { renderTransactionsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderTransactionsTable failed: ${err.message}`, err); }
       try { if (typeof renderTradesBalanceCashflowChart === 'function') renderTradesBalanceCashflowChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderTradesBalanceCashflowChart failed: ${err.message}`, err); }
       break;
@@ -195,6 +197,7 @@ function renderAll(forceAll = false) {
   try { updateThemeUI(); } catch (_) {}
   try { renderApiStatusUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderApiStatusUI failed: ${err.message}`, err); }
   try { updateTabCounters(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `updateTabCounters failed: ${err.message}`, err); }
+  try { updateBackupAgeBadge(); } catch (_) {}
   try { if (typeof refreshSectorDatalist === 'function') refreshSectorDatalist(); } catch (_) {}
   try {
     if (typeof AppLogger !== 'undefined') {
@@ -4385,6 +4388,60 @@ function setupEventListeners() {
       }
     });
   }
+  // v3.8.0 Multi-Ticker Compare Add & Cross-Device Sync Code Listeners
+  on('btn-multi-compare-add', 'click', () => {
+    const inp = document.getElementById('multi-compare-add-input');
+    if (inp && inp.value.trim() && typeof addMultiCompareTicker === 'function') {
+      addMultiCompareTicker(inp.value.trim());
+      inp.value = '';
+    }
+  });
+  const cmpInp = document.getElementById('multi-compare-add-input');
+  if (cmpInp) {
+    cmpInp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (cmpInp.value.trim() && typeof addMultiCompareTicker === 'function') {
+          addMultiCompareTicker(cmpInp.value.trim());
+          cmpInp.value = '';
+        }
+      }
+    });
+  }
+  on('btn-generate-sync-code', 'click', () => {
+    const prevEl = document.getElementById('sync-code-export-preview');
+    const msgEl = document.getElementById('sync-code-status-msg');
+    try {
+      const code = generateCrossDeviceSyncCode();
+      if (prevEl) prevEl.value = code;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).catch(() => {});
+      }
+      const kb = (code.length / 1024).toFixed(1);
+      if (msgEl) msgEl.innerHTML = `<span class="text-emerald-500"><i class="fa-solid fa-circle-check mr-1"></i>Sync Code generated &amp; copied to clipboard (${kb} KB). Paste it on your other device to sync.</span>`;
+      if (typeof showToast === 'function') showToast(`Sync Code copied (${kb} KB)!`, 'success');
+    } catch (err) {
+      if (msgEl) msgEl.innerHTML = `<span class="text-rose-500">Failed to generate Sync Code: ${err.message}</span>`;
+    }
+  });
+  on('btn-restore-sync-code', 'click', () => {
+    const inpEl = document.getElementById('sync-code-restore-input');
+    const msgEl = document.getElementById('sync-code-status-msg');
+    const raw = inpEl ? inpEl.value.trim() : '';
+    if (!raw) {
+      if (msgEl) msgEl.innerHTML = '<span class="text-amber-500">Please paste a Sync Code (MP38:...) first.</span>';
+      return;
+    }
+    try {
+      const res = restoreFromCrossDeviceSyncCode(raw);
+      if (inpEl) inpEl.value = '';
+      if (msgEl) msgEl.innerHTML = `<span class="text-emerald-500"><i class="fa-solid fa-circle-check mr-1"></i>Restored ${res.txCount} transactions, ${res.divCount} dividends, ${res.wlCount} watchlist tickers &amp; ${res.simCount} simulated trades! Syncing live market data...</span>`;
+      if (typeof showToast === 'function') showToast('Portfolio restored from Sync Code!', 'success');
+    } catch (err) {
+      if (msgEl) msgEl.innerHTML = `<span class="text-rose-500"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${err.message}</span>`;
+    }
+  });
+
   on('btn-trade-sim-clear', 'click', () => {
     if (!state) return;
     state.tradeSimRows = [];
@@ -5263,3 +5320,383 @@ function renderTradeSimulationTable() {
   updateTradeSimTotalsUI();
 }
 window.renderTradeSimulationTable = renderTradeSimulationTable;
+
+// =========================================================================
+// v3.8.0: INLINE CHART QUICK-PIN BAR, ANNUAL SCORECARD & BACKUP AGE PILL
+// =========================================================================
+window.populateInlineQuickPinBar = function(tabType, ticker, pm) {
+  const prefix = tabType === 'watchlist' ? 'watchlist' : 'holdings';
+  const bEl = document.getElementById(`${prefix}-qpin-buy`);
+  const sEl = document.getElementById(`${prefix}-qpin-sell`);
+  const stEl = document.getElementById(`${prefix}-qpin-stop`);
+  if (!bEl || !sEl || !stEl) return;
+  const fund = state?.fundamentals?.[ticker] || {};
+  const wl = (state?.watchlist || []).find(w => w.ticker === ticker);
+  bEl.value = (fund.customBuyPrice ?? wl?.customBuyPrice ?? '') || '';
+  sEl.value = (fund.customSellPrice ?? wl?.customSellPrice ?? '') || '';
+  stEl.value = (fund.customStopLoss ?? wl?.customStopLoss ?? '') || '';
+  bEl.placeholder = pm?.recommendedBuyPrice ? `Rec ${pm.recommendedBuyPrice}` : 'Auto';
+  sEl.placeholder = pm?.recommendedSellPrice ? `Rec ${pm.recommendedSellPrice}` : 'Auto';
+  stEl.placeholder = pm?.recommendedStopLoss ? `Rec ${pm.recommendedStopLoss}` : 'Auto';
+};
+
+window.saveInlineQuickPins = function(tabType) {
+  const isWl = tabType === 'watchlist';
+  const ticker = isWl ? selectedWatchlistTicker : selectedHoldingsTicker;
+  if (!ticker) return;
+  const prefix = isWl ? 'watchlist' : 'holdings';
+  const rawB = parseFloat(document.getElementById(`${prefix}-qpin-buy`)?.value);
+  const rawS = parseFloat(document.getElementById(`${prefix}-qpin-sell`)?.value);
+  const rawSt = parseFloat(document.getElementById(`${prefix}-qpin-stop`)?.value);
+  const cBuy = (Number.isFinite(rawB) && rawB > 0) ? Fin.round(rawB, 4) : null;
+  const cSell = (Number.isFinite(rawS) && rawS > 0) ? Fin.round(rawS, 4) : null;
+  const cStop = (Number.isFinite(rawSt) && rawSt > 0) ? Fin.round(rawSt, 4) : null;
+
+  if (!state.fundamentals) state.fundamentals = {};
+  state.fundamentals[ticker] = {
+    ...(state.fundamentals[ticker] || {}),
+    customBuyPrice: cBuy,
+    customSellPrice: cSell,
+    customStopLoss: cStop
+  };
+  const wl = (state.watchlist || []).find(w => w.ticker === ticker);
+  if (wl) {
+    wl.customBuyPrice = cBuy;
+    wl.customSellPrice = cSell;
+    wl.customStopLoss = cStop;
+    if (cBuy) wl.targetBuyPrice = cBuy;
+  }
+  if (typeof invalidateStockMetricsCache === 'function') invalidateStockMetricsCache();
+  recalculatePortfolio();
+  saveState(true);
+  renderAll(true);
+  if (typeof showToast === 'function') showToast(`Saved custom pins for ${ticker}`, 'success');
+};
+
+window.snapInlineQuickPinsToRec = function(tabType) {
+  const isWl = tabType === 'watchlist';
+  const ticker = isWl ? selectedWatchlistTicker : selectedHoldingsTicker;
+  if (!ticker) return;
+  const prefix = isWl ? 'watchlist' : 'holdings';
+  const h = (portfolio?.activeHoldings || []).find(x => x.ticker === ticker);
+  const curP = Number(state?.prices?.[ticker]?.price || h?.currentPrice || 0);
+  const pm = typeof computeStockPriceMetrics === 'function' ? computeStockPriceMetrics(ticker, curP, null, h?.avgCost || null) : null;
+  if (!pm) return;
+  const bEl = document.getElementById(`${prefix}-qpin-buy`);
+  const sEl = document.getElementById(`${prefix}-qpin-sell`);
+  const stEl = document.getElementById(`${prefix}-qpin-stop`);
+  if (bEl && pm.recommendedBuyPrice) bEl.value = pm.recommendedBuyPrice;
+  if (sEl && pm.recommendedSellPrice) sEl.value = pm.recommendedSellPrice;
+  if (stEl && pm.recommendedStopLoss) stEl.value = pm.recommendedStopLoss;
+  saveInlineQuickPins(tabType);
+};
+
+window.clearInlineQuickPins = function(tabType) {
+  const prefix = tabType === 'watchlist' ? 'watchlist' : 'holdings';
+  ['buy', 'sell', 'stop'].forEach(k => {
+    const el = document.getElementById(`${prefix}-qpin-${k}`);
+    if (el) el.value = '';
+  });
+  saveInlineQuickPins(tabType);
+};
+
+var scorecardGranularity = 'yearly';
+window.setScorecardGranularity = function(mode) {
+  scorecardGranularity = ['monthly', 'quarterly', 'yearly'].includes(mode) ? mode : 'yearly';
+  document.querySelectorAll('.scorecard-mode-btn').forEach(b => {
+    const act = b.getAttribute('data-scorecard-mode') === scorecardGranularity;
+    b.className = act
+      ? 'scorecard-mode-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition'
+      : 'scorecard-mode-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+  });
+  renderAnnualTradeScorecard();
+};
+
+function renderAnnualTradeScorecard() {
+  const tbody = document.getElementById('annual-scorecard-tbody');
+  const tfoot = document.getElementById('annual-scorecard-tfoot');
+  const badge = document.getElementById('annual-scorecard-summary-badge');
+  const hdrEl = document.getElementById('scorecard-period-col-hdr');
+  if (!tbody || typeof computePeriodicTradeScorecard !== 'function') return;
+
+  const { mode, baseCurr, rows, totals } = computePeriodicTradeScorecard(scorecardGranularity);
+  const hideMoney = Fin.isPrivacyMode();
+
+  if (hdrEl) {
+    hdrEl.textContent = mode === 'monthly' ? 'Month' : (mode === 'quarterly' ? 'Quarter' : 'Year');
+  }
+  if (badge) {
+    badge.textContent = hideMoney
+      ? `${totals.buys + totals.sells} Trades · ${totals.winRatePct !== null ? totals.winRatePct + '% Win' : '—'}`
+      : `All-Time Realized + Div: ${Fin.currency(totals.totalCashGainBase, true, baseCurr)}`;
+  }
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" class="py-6 px-4 text-center text-slate-400">Record buy/sell trades or dividends to see your periodic scorecard.</td></tr>';
+    if (tfoot) tfoot.innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const uCls = r.unrealizedPnlBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
+    const rCls = r.realizedPnlBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
+    const totCls = r.totalCashGainBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500';
+    const wrCls = r.winRatePct === null ? 'text-slate-400' : (r.winRatePct >= 60 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : (r.winRatePct >= 40 ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'));
+    return `
+      <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+        <td class="py-1.5 px-3 sticky-col-mobile bg-white dark:bg-dark-card font-mono font-bold text-slate-900 dark:text-white">${r.period}</td>
+        <td class="py-1.5 px-3 text-center font-mono text-slate-600 dark:text-slate-300">
+          <span class="text-emerald-500 font-semibold">${r.buys}B</span> / <span class="text-rose-500 font-semibold">${r.sells}S</span>
+        </td>
+        <td class="py-1.5 px-3 text-right num-font font-semibold ${r.buyAmountBase > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
+          ${hideMoney ? '••••' : (r.buyAmountBase > 0 ? Fin.currency(r.buyAmountBase, false, baseCurr) : '-')}
+        </td>
+        <td class="py-1.5 px-3 text-right num-font font-semibold ${r.sellAmountBase > 0 ? 'text-rose-500' : 'text-slate-400'}">
+          ${hideMoney ? '••••' : (r.sellAmountBase > 0 ? Fin.currency(r.sellAmountBase, false, baseCurr) : '-')}
+        </td>
+        <td class="py-1.5 px-3 text-right num-font font-bold ${r.unrealizedPnlBase !== 0 ? uCls : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : Fin.currency(r.unrealizedPnlBase, true, baseCurr)}
+        </td>
+        <td class="py-1.5 px-3 text-right num-font font-bold ${r.realizedPnlBase !== 0 ? rCls : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : Fin.currency(r.realizedPnlBase, true, baseCurr)}
+        </td>
+        <td class="py-1.5 px-3 text-right num-font font-bold ${r.dividendsBase > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : (r.dividendsBase > 0 ? '+' + Fin.currency(r.dividendsBase, false, baseCurr) : Fin.currency(0, false, baseCurr))}
+        </td>
+        <td class="py-1.5 px-3 text-right num-font font-extrabold ${totCls}">
+          ${hideMoney ? '••••••' : Fin.currency(r.totalCashGainBase, true, baseCurr)}
+        </td>
+        <td class="py-1.5 px-3 text-right num-font text-slate-500 dark:text-slate-400">
+          ${hideMoney ? '••••' : Fin.currency(r.feesBase, false, baseCurr)}
+        </td>
+        <td class="py-1.5 px-3 text-center">
+          ${r.winRatePct !== null
+            ? `<span class="px-2 py-0.5 rounded text-[10.5px] font-mono font-bold border ${wrCls}" title="${r.wins} profitable / ${r.wins + r.losses} closed sells">${r.winRatePct.toFixed(0)}% (${r.wins}/${r.wins + r.losses})</span>`
+            : '<span class="text-slate-400">-</span>'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  if (tfoot) {
+    const totUCls = totals.unrealizedPnlBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500';
+    const totRCls = totals.realizedPnlBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500';
+    const totGCls = totals.totalCashGainBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500';
+    tfoot.innerHTML = `
+      <tr>
+        <td class="py-2 px-3 sticky-col-mobile bg-indigo-50 dark:bg-slate-900 font-extrabold text-slate-900 dark:text-white">ALL-TIME</td>
+        <td class="py-2 px-3 text-center font-mono">${totals.buys}B / ${totals.sells}S</td>
+        <td class="py-2 px-3 text-right num-font text-emerald-600 dark:text-emerald-400">${hideMoney ? '••••' : Fin.currency(totals.buyAmountBase, false, baseCurr)}</td>
+        <td class="py-2 px-3 text-right num-font text-rose-500">${hideMoney ? '••••' : Fin.currency(totals.sellAmountBase, false, baseCurr)}</td>
+        <td class="py-2 px-3 text-right num-font ${totUCls}" title="Current live Unrealized P&amp;L">${hideMoney ? '••••••' : Fin.currency(totals.unrealizedPnlBase, true, baseCurr)}</td>
+        <td class="py-2 px-3 text-right num-font ${totRCls}">${hideMoney ? '••••••' : Fin.currency(totals.realizedPnlBase, true, baseCurr)}</td>
+        <td class="py-2 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">${hideMoney ? '••••••' : ('+' + Fin.currency(totals.dividendsBase, false, baseCurr))}</td>
+        <td class="py-2 px-3 text-right num-font font-extrabold ${totGCls}">${hideMoney ? '••••••' : Fin.currency(totals.totalCashGainBase, true, baseCurr)}</td>
+        <td class="py-2 px-3 text-right num-font text-slate-500 dark:text-slate-400">${hideMoney ? '••••' : Fin.currency(totals.feesBase, false, baseCurr)}</td>
+        <td class="py-2 px-3 text-center font-mono">${totals.winRatePct !== null ? `${totals.winRatePct.toFixed(0)}% (${totals.wins}/${totals.wins + totals.losses})` : '-'}</td>
+      </tr>
+    `;
+  }
+}
+window.renderAnnualTradeScorecard = renderAnnualTradeScorecard;
+
+// =========================================================================
+// v3.9.0: MONTHLY BUY & SELL ACTIVITY MATRIX (BY TICKER / BY SECTOR)
+// =========================================================================
+var tradeMatrixGroup = 'ticker';
+var tradeMatrixMonths = 12;
+
+window.setTradeMatrixGroup = function(grp) {
+  tradeMatrixGroup = (grp === 'sector') ? 'sector' : 'ticker';
+  document.querySelectorAll('.matrix-group-btn').forEach(b => {
+    const act = b.getAttribute('data-matrix-group') === tradeMatrixGroup;
+    b.className = act
+      ? 'matrix-group-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition'
+      : 'matrix-group-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+  });
+  renderMonthlyTradeMatrix();
+};
+
+window.setTradeMatrixMonths = function(mos) {
+  tradeMatrixMonths = Number(mos) || 12;
+  document.querySelectorAll('.matrix-range-btn').forEach(b => {
+    const act = Number(b.getAttribute('data-matrix-range')) === tradeMatrixMonths;
+    b.className = act
+      ? 'matrix-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition'
+      : 'matrix-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+  });
+  renderMonthlyTradeMatrix();
+};
+
+function renderMonthlyTradeMatrix() {
+  const box = document.getElementById('monthly-trade-matrix-box');
+  if (!box) return;
+
+  const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
+  const hideMoney = Fin.isPrivacyMode();
+
+  // Build trailing N calendar months ending at current month
+  const months = [];
+  const now = new Date();
+  for (let i = tradeMatrixMonths - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  const monthSet = new Set(months);
+
+  const rowMap = {};
+  const monthTotals = {};
+  months.forEach(m => { monthTotals[m] = { buy: 0, sell: 0, buyCnt: 0, sellCnt: 0 }; });
+
+  const resolveSectorForTicker = (sym) => {
+    const h = (portfolio?.allHoldings || []).find(x => x.ticker === sym);
+    if (h && typeof getCanonicalHoldingsSector === 'function') return getCanonicalHoldingsSector(h);
+    return state?.fundamentals?.[sym]?.sector || MarketAPI.getStaticProfile(sym).sector || 'Equities';
+  };
+
+  (state?.transactions || []).forEach(tx => {
+    const type = String(tx.type || '').toUpperCase();
+    if (type !== 'BUY' && type !== 'SELL') return;
+    const ym = String(tx.date || '').slice(0, 7);
+    if (!monthSet.has(ym)) return;
+    const sym = MarketAPI.normalizeTicker(tx.ticker);
+    if (!sym) return;
+
+    const curr = tx.currency || state?.prices?.[sym]?.currency || state?.fundamentals?.[sym]?.currency || MarketAPI.getStaticProfile(sym).currency || baseCurr;
+    const shares = Number(tx.shares || 0);
+    const price = Number(tx.price || 0);
+    const fees = Number(tx.fees || 0);
+    const amtNative = type === 'BUY' ? (shares * price + fees) : Math.max(0, shares * price - fees);
+    const amtBase = Fin.round(Fin.convertCurrency(amtNative, curr, baseCurr), 2);
+    const key = tradeMatrixGroup === 'sector' ? resolveSectorForTicker(sym) : sym;
+
+    if (!rowMap[key]) {
+      rowMap[key] = { key, totalBuy: 0, totalSell: 0, totalVol: 0, cells: {} };
+    }
+    if (!rowMap[key].cells[ym]) {
+      rowMap[key].cells[ym] = { buy: 0, sell: 0, buyCnt: 0, sellCnt: 0, buySh: 0, sellSh: 0 };
+    }
+    const cell = rowMap[key].cells[ym];
+    if (type === 'BUY') {
+      cell.buy = Fin.round(cell.buy + amtBase, 2);
+      cell.buyCnt++;
+      cell.buySh = Fin.round(cell.buySh + shares, 4);
+      rowMap[key].totalBuy = Fin.round(rowMap[key].totalBuy + amtBase, 2);
+      monthTotals[ym].buy = Fin.round(monthTotals[ym].buy + amtBase, 2);
+      monthTotals[ym].buyCnt++;
+    } else {
+      cell.sell = Fin.round(cell.sell + amtBase, 2);
+      cell.sellCnt++;
+      cell.sellSh = Fin.round(cell.sellSh + shares, 4);
+      rowMap[key].totalSell = Fin.round(rowMap[key].totalSell + amtBase, 2);
+      monthTotals[ym].sell = Fin.round(monthTotals[ym].sell + amtBase, 2);
+      monthTotals[ym].sellCnt++;
+    }
+    rowMap[key].totalVol = Fin.round(rowMap[key].totalBuy + rowMap[key].totalSell, 2);
+  });
+
+  const rows = Object.values(rowMap).sort((a, b) => b.totalVol - a.totalVol);
+  if (rows.length === 0) {
+    box.innerHTML = `<div class="py-8 px-4 text-center text-xs text-slate-400">No Buy or Sell transactions found in the last ${tradeMatrixMonths / 12} year(s).</div>`;
+    return;
+  }
+
+  const fmtCompact = (val) => {
+    const abs = Math.abs(val);
+    if (abs >= 1000000) return `${(abs / 1000000).toFixed(2)}M`;
+    if (abs >= 1000) return `${(abs / 1000).toFixed(1)}k`;
+    return abs.toFixed(0);
+  };
+
+  let htmlStr = `<table class="w-full text-left text-[11px] whitespace-nowrap compact-log-table border-collapse">
+    <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] uppercase font-semibold border-b border-slate-200 dark:border-dark-border">
+      <tr>
+        <th class="py-1.5 px-3 sticky left-0 z-20 bg-slate-50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700">${tradeMatrixGroup === 'sector' ? 'Sector' : 'Ticker'}</th>`;
+  months.forEach(m => {
+    htmlStr += `<th class="py-1.5 px-2 text-center font-mono">${m.slice(2)}</th>`;
+  });
+  htmlStr += `<th class="py-1.5 px-3 text-right font-mono border-l border-slate-200 dark:border-slate-700">Period Total</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">`;
+
+  rows.forEach(r => {
+    htmlStr += `<tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/35">
+      <td class="py-1.5 px-3 sticky left-0 z-10 bg-white dark:bg-dark-card font-bold text-slate-900 dark:text-white border-r border-slate-100 dark:border-slate-800">${r.key}</td>`;
+    months.forEach(m => {
+      const c = r.cells[m];
+      if (!c) {
+        htmlStr += `<td class="py-1.5 px-2 text-center text-slate-300 dark:text-slate-700">·</td>`;
+      } else {
+        const parts = [];
+        if (c.buy > 0) {
+          const lbl = hideMoney ? `${c.buyCnt}B` : `+${fmtCompact(c.buy)}`;
+          parts.push(`<div class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono font-bold text-[10px]" title="BUY ${r.key} (${m}): ${hideMoney ? c.buyCnt + ' order(s)' : Fin.currency(c.buy, false, baseCurr) + ' · ' + Fin.shares(c.buySh) + ' sh'}">${lbl}</div>`);
+        }
+        if (c.sell > 0) {
+          const lbl = hideMoney ? `${c.sellCnt}S` : `-${fmtCompact(c.sell)}`;
+          parts.push(`<div class="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-[10px]" title="SELL ${r.key} (${m}): ${hideMoney ? c.sellCnt + ' order(s)' : Fin.currency(c.sell, false, baseCurr) + ' · ' + Fin.shares(c.sellSh) + ' sh'}">${lbl}</div>`);
+        }
+        htmlStr += `<td class="py-1 px-1.5 text-center"><div class="flex flex-col gap-0.5 items-center">${parts.join('')}</div></td>`;
+      }
+    });
+    const totParts = [];
+    if (r.totalBuy > 0) totParts.push(`<div class="text-emerald-600 dark:text-emerald-400 font-bold">${hideMoney ? 'BUY' : '+' + Fin.currency(r.totalBuy, false, baseCurr)}</div>`);
+    if (r.totalSell > 0) totParts.push(`<div class="text-rose-500 font-bold">${hideMoney ? 'SELL' : '-' + Fin.currency(r.totalSell, false, baseCurr)}</div>`);
+    htmlStr += `<td class="py-1.5 px-3 text-right font-mono text-[10.5px] border-l border-slate-100 dark:border-slate-800">${totParts.join('')}</td></tr>`;
+  });
+
+  // Footer monthly totals
+  let grandBuy = 0, grandSell = 0;
+  htmlStr += `</tbody><tfoot class="sticky bottom-0 z-10 bg-indigo-50/95 dark:bg-slate-900/95 border-t-2 border-indigo-500/30 font-mono text-[10px] font-bold">
+    <tr><td class="py-2 px-3 sticky left-0 z-20 bg-indigo-50 dark:bg-slate-900 text-slate-900 dark:text-white border-r border-slate-200 dark:border-slate-700">MONTHLY TOTAL</td>`;
+  months.forEach(m => {
+    const mt = monthTotals[m];
+    grandBuy = Fin.round(grandBuy + mt.buy, 2);
+    grandSell = Fin.round(grandSell + mt.sell, 2);
+    const parts = [];
+    if (mt.buy > 0) parts.push(`<div class="text-emerald-600 dark:text-emerald-400">${hideMoney ? mt.buyCnt + 'B' : '+' + fmtCompact(mt.buy)}</div>`);
+    if (mt.sell > 0) parts.push(`<div class="text-rose-500">${hideMoney ? mt.sellCnt + 'S' : '-' + fmtCompact(mt.sell)}</div>`);
+    htmlStr += `<td class="py-1.5 px-1.5 text-center">${parts.length > 0 ? parts.join('') : '<span class="text-slate-400">-</span>'}</td>`;
+  });
+  htmlStr += `<td class="py-1.5 px-3 text-right border-l border-slate-200 dark:border-slate-700">
+    ${grandBuy > 0 ? `<div class="text-emerald-600 dark:text-emerald-400">${hideMoney ? '••••' : '+' + Fin.currency(grandBuy, false, baseCurr)}</div>` : ''}
+    ${grandSell > 0 ? `<div class="text-rose-500">${hideMoney ? '••••' : '-' + Fin.currency(grandSell, false, baseCurr)}</div>` : ''}
+  </td></tr></tfoot></table>`;
+
+  box.innerHTML = htmlStr;
+}
+window.renderMonthlyTradeMatrix = renderMonthlyTradeMatrix;
+
+function updateBackupAgeBadge() {
+  const pill = document.getElementById('backup-age-pill');
+  const txt = document.getElementById('backup-age-text');
+  const icon = document.getElementById('backup-age-icon');
+  const settingsBadge = document.getElementById('settings-last-backup-badge');
+  const iso = state?.settings?.lastBackupAt || null;
+
+  let label = 'No Backup';
+  let fullLabel = 'Last Backup: Never';
+  let stale = true;
+  if (iso) {
+    const dt = new Date(iso);
+    if (!isNaN(dt.getTime())) {
+      const days = Math.max(0, Math.floor((Date.now() - dt.getTime()) / 86400000));
+      stale = days > 14;
+      label = days === 0 ? 'Backed up' : `Backup ${days}d`;
+      fullLabel = `Last Backup: ${dt.toLocaleDateString()} (${days === 0 ? 'Today' : days + 'd ago'})`;
+    }
+  }
+
+  if (txt) txt.textContent = label;
+  if (icon) icon.className = stale ? 'fa-solid fa-cloud-arrow-up text-amber-500' : 'fa-solid fa-circle-check text-emerald-500';
+  if (pill) {
+    pill.className = stale
+      ? 'hidden sm:inline-flex items-center gap-1.5 h-7 sm:h-9 px-2.5 rounded-lg border border-amber-500/35 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 text-[11px] font-semibold transition whitespace-nowrap'
+      : 'hidden sm:inline-flex items-center gap-1.5 h-7 sm:h-9 px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 text-[11px] font-semibold transition whitespace-nowrap';
+  }
+  if (settingsBadge) {
+    settingsBadge.textContent = fullLabel;
+    settingsBadge.className = stale
+      ? 'text-xs font-mono font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 self-start sm:self-auto whitespace-nowrap'
+      : 'text-xs font-mono font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 self-start sm:self-auto whitespace-nowrap';
+  }
+}
+window.updateBackupAgeBadge = updateBackupAgeBadge;

@@ -63,6 +63,8 @@ function renderCharts() {
     try { renderMonthlyHistoryChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderMonthlyHistoryChart failed: ${err.message}`, err); }
     try { renderAllocationChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderAllocationChart failed: ${err.message}`, err); }
     try { renderDividendsChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderDividendsChart failed: ${err.message}`, err); }
+    try { renderHoldingsCorrelationHeatmap(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderHoldingsCorrelationHeatmap failed: ${err.message}`, err); }
+    try { renderMultiTickerCompareChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderMultiTickerCompareChart failed: ${err.message}`, err); }
     try { renderPnlBreakdownChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderPnlBreakdownChart failed: ${err.message}`, err); }
   } else if (typeof window.markTabDirty === 'function') {
     window.markTabDirty('dashboard');
@@ -1009,6 +1011,7 @@ function renderInlineStockChart(tabType) {
     subEl.textContent = `${pm?.regime || 'Trend Analysis'} • RSI: ${pm?.rsi14 ?? '-'} • 12M Reg R²: ${pm?.regR2 ?? '-'} • (${sliced.length} months shown • ${currency})`;
   }
 
+  if (typeof populateInlineQuickPinBar === 'function') populateInlineQuickPinBar(tabType, ticker, pm);
   if (statsEl) {
     const chgColor = periodChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
     const cBuy = pm?.customBuyPrice || null;
@@ -1527,6 +1530,8 @@ function renderInlineStockChart(tabType) {
     rangeMonths,
     showSma: Boolean(state?.settings?.chartShowSma !== false),
     showReg: Boolean(state?.settings?.chartShowRegChannel !== false),
+    showCushion: Boolean(state?.settings?.chartShowCushion !== false),
+    showDiv: Boolean(state?.settings?.chartShowDivMarkers !== false),
     hideMoney,
     isDark,
     labelsLen: labels.length,
@@ -1543,6 +1548,7 @@ function renderInlineStockChart(tabType) {
       const targetDs = existingChart.data.datasets[idx];
       targetDs.data = ds.data;
       targetDs.label = ds.label;
+      targetDs.fill = ds.fill;
       if (ds._tradeMeta) targetDs._tradeMeta = ds._tradeMeta;
       if (ds._divByMonth) targetDs._divByMonth = ds._divByMonth;
     });
@@ -2389,3 +2395,310 @@ function renderProjectedDividendCalendarChart() {
   });
 }
 window.renderProjectedDividendCalendarChart = renderProjectedDividendCalendarChart;
+
+// =========================================================================
+// v3.8.0: HOLDINGS CORRELATION HEATMAP (DASHBOARD)
+// =========================================================================
+var corrHeatmapMonths = 36;
+window.setCorrHeatmapMonths = function(m) {
+  corrHeatmapMonths = Number(m) || 36;
+  document.querySelectorAll('.corr-range-btn').forEach(b => {
+    const act = Number(b.getAttribute('data-corr-range')) === corrHeatmapMonths;
+    b.className = act
+      ? 'corr-range-btn px-2 py-0.5 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition'
+      : 'corr-range-btn px-2 py-0.5 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+  });
+  renderHoldingsCorrelationHeatmap();
+};
+
+function renderHoldingsCorrelationHeatmap() {
+  const box = document.getElementById('dashboard-corr-heatmap-box');
+  const insightsEl = document.getElementById('corr-heatmap-insights');
+  if (!box) return;
+
+  const active = (portfolio?.activeHoldings || [])
+    .filter(h => h.shares > 0.0001 && Array.isArray(state?.historicalPrices?.[h.ticker]) && state.historicalPrices[h.ticker].length >= 5)
+    .slice()
+    .sort((a, b) => (b.marketValueBase || 0) - (a.marketValueBase || 0))
+    .slice(0, 12);
+
+  if (active.length < 2) {
+    box.innerHTML = '<div class="py-8 text-center text-xs text-slate-400">Need at least 2 active holdings with monthly history to compute pairwise correlations.</div>';
+    if (insightsEl) insightsEl.innerHTML = '';
+    return;
+  }
+
+  // Build monthly return map per ticker over corrHeatmapMonths window
+  const retMaps = {};
+  active.forEach(h => {
+    const bars = (state.historicalPrices[h.ticker] || []).slice(-(corrHeatmapMonths + 1));
+    const map = {};
+    for (let i = 1; i < bars.length; i++) {
+      const p0 = Number(bars[i - 1].rawClose ?? bars[i - 1].close ?? 0);
+      const p1 = Number(bars[i].rawClose ?? bars[i].close ?? 0);
+      const m = String(bars[i].month || bars[i].date || '').slice(0, 7);
+      if (p0 > 0 && p1 > 0 && m) {
+        map[m] = (p1 - p0) / p0;
+      }
+    }
+    retMaps[h.ticker] = map;
+  });
+
+  const pearson = (mA, mB) => {
+    const xs = [], ys = [];
+    Object.keys(mA).forEach(k => {
+      if (mB[k] !== undefined) { xs.push(mA[k]); ys.push(mB[k]); }
+    });
+    const n = xs.length;
+    if (n < 4) return null;
+    const mx = xs.reduce((a, b) => a + b, 0) / n;
+    const my = ys.reduce((a, b) => a + b, 0) / n;
+    let num = 0, dx = 0, dy = 0;
+    for (let i = 0; i < n; i++) {
+      const ax = xs[i] - mx, ay = ys[i] - my;
+      num += ax * ay; dx += ax * ax; dy += ay * ay;
+    }
+    const den = Math.sqrt(dx * dy);
+    return den > 1e-12 ? Fin.round(num / den, 2) : 0;
+  };
+
+  let maxPair = null;
+  let minPair = null;
+  const tickers = active.map(h => h.ticker);
+  const matrix = tickers.map((tA, i) => tickers.map((tB, j) => {
+    if (i === j) return 1.0;
+    const r = pearson(retMaps[tA], retMaps[tB]);
+    if (j > i && r !== null) {
+      if (!maxPair || r > maxPair.r) maxPair = { a: tA, b: tB, r };
+      if (!minPair || r < minPair.r) minPair = { a: tA, b: tB, r };
+    }
+    return r;
+  }));
+
+  if (insightsEl) {
+    const chips = [];
+    if (maxPair) {
+      chips.push(`<span class="px-2 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono text-[10.5px]">Highest Overlap: <strong>${maxPair.a} / ${maxPair.b}</strong> (${maxPair.r.toFixed(2)})</span>`);
+    }
+    if (minPair) {
+      chips.push(`<span class="px-2 py-0.5 rounded bg-teal-500/15 text-teal-600 dark:text-teal-400 border border-teal-500/30 font-mono text-[10.5px]">Best Diversifier: <strong>${minPair.a} / ${minPair.b}</strong> (${minPair.r.toFixed(2)})</span>`);
+    }
+    insightsEl.innerHTML = chips.join(' ');
+  }
+
+  const cellColor = (r, isDiag) => {
+    if (isDiag) return 'bg-slate-200/80 dark:bg-slate-700/80 text-slate-500 dark:text-slate-300';
+    if (r === null) return 'bg-slate-100/50 dark:bg-slate-800/40 text-slate-400';
+    if (r >= 0.75) return 'bg-rose-500/35 text-rose-700 dark:text-rose-200 font-bold';
+    if (r >= 0.45) return 'bg-amber-500/25 text-amber-700 dark:text-amber-200';
+    if (r >= 0.15) return 'bg-slate-500/15 text-slate-700 dark:text-slate-300';
+    if (r >= -0.15) return 'bg-sky-500/15 text-sky-700 dark:text-sky-300';
+    return 'bg-teal-500/30 text-teal-700 dark:text-teal-200 font-bold';
+  };
+
+  const shortLbl = (t) => t.replace(/\.HK$|\.L$/i, '');
+  let tbl = '<table class="w-full text-[10.5px] font-mono border-collapse whitespace-nowrap"><thead><tr><th class="p-1.5 text-left text-slate-400 sticky left-0 bg-white dark:bg-dark-card z-10">Ticker</th>';
+  tickers.forEach(t => {
+    tbl += `<th class="p-1.5 text-center text-slate-500 dark:text-slate-400" title="${t}">${shortLbl(t)}</th>`;
+  });
+  tbl += '</tr></thead><tbody>';
+  tickers.forEach((tA, i) => {
+    tbl += `<tr><td class="p-1.5 font-bold text-slate-700 dark:text-slate-200 sticky left-0 bg-white dark:bg-dark-card z-10 border-r border-slate-100 dark:border-slate-800" title="${tA}">${shortLbl(tA)}</td>`;
+    tickers.forEach((tB, j) => {
+      const r = matrix[i][j];
+      const cls = cellColor(r, i === j);
+      const txt = r === null ? '—' : r.toFixed(2);
+      tbl += `<td class="p-1 text-center"><div class="rounded px-1.5 py-1 ${cls}" title="${tA} vs ${tB}: r = ${txt}">${txt}</div></td>`;
+    });
+    tbl += '</tr>';
+  });
+  tbl += '</tbody></table>';
+  box.innerHTML = tbl;
+}
+window.renderHoldingsCorrelationHeatmap = renderHoldingsCorrelationHeatmap;
+
+// =========================================================================
+// v3.8.0: MULTI-TICKER RELATIVE PERFORMANCE OVERLAY (DASHBOARD)
+// =========================================================================
+var multiCompareMonths = 24;
+window.setMultiCompareMonths = function(m) {
+  multiCompareMonths = Number(m) || 24;
+  document.querySelectorAll('.compare-range-btn').forEach(b => {
+    const act = Number(b.getAttribute('data-compare-range')) === multiCompareMonths;
+    b.className = act
+      ? 'compare-range-btn px-2 py-0.5 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition'
+      : 'compare-range-btn px-2 py-0.5 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+  });
+  renderMultiTickerCompareChart();
+};
+
+window.addMultiCompareTicker = function(rawTicker) {
+  const sym = MarketAPI.normalizeTicker(rawTicker);
+  if (!sym) return;
+  if (!state.settings) state.settings = {};
+  if (!Array.isArray(state.settings.compareTickers)) state.settings.compareTickers = [];
+  if (state.settings.compareTickers.includes(sym)) return;
+  if (state.settings.compareTickers.length >= 6) {
+    if (typeof showToast === 'function') showToast('Compare up to 6 tickers at a time.', 'info');
+    return;
+  }
+  state.settings.compareTickers.push(sym);
+  saveState();
+  renderMultiTickerCompareChart();
+};
+
+window.removeMultiCompareTicker = function(sym) {
+  if (!Array.isArray(state?.settings?.compareTickers)) return;
+  state.settings.compareTickers = state.settings.compareTickers.filter(t => t !== sym);
+  saveState();
+  renderMultiTickerCompareChart();
+};
+
+function renderMultiTickerCompareChart() {
+  const ctx = document.getElementById('chart-multi-compare');
+  const chipsEl = document.getElementById('multi-compare-chips');
+  const dl = document.getElementById('multi-compare-datalist');
+  const summaryEl = document.getElementById('multi-compare-summary');
+  const emptyEl = document.getElementById('chart-multi-compare-empty');
+  if (!ctx) return;
+
+  // Populate autocomplete datalist
+  if (dl) {
+    const known = new Set(['2800.HK', 'VOO', 'VWRA.L']);
+    (portfolio?.allHoldings || []).forEach(h => known.add(h.ticker));
+    (state?.watchlist || []).forEach(w => known.add(w.ticker));
+    dl.innerHTML = Array.from(known).sort().map(t => `<option value="${t}"></option>`).join('');
+  }
+
+  if (!state.settings) state.settings = {};
+  if (!Array.isArray(state.settings.compareTickers) || state.settings.compareTickers.length === 0) {
+    const defaults = (portfolio?.activeHoldings || [])
+      .slice()
+      .sort((a, b) => (b.marketValueBase || 0) - (a.marketValueBase || 0))
+      .slice(0, 4)
+      .map(h => h.ticker);
+    if (defaults.length > 0) state.settings.compareTickers = defaults;
+  }
+  const syms = Array.isArray(state.settings.compareTickers) ? state.settings.compareTickers : [];
+  const palette = ['#10b981', '#6366f1', '#f59e0b', '#ec4899', '#06b6d4', '#a855f7'];
+
+  if (chipsEl) {
+    chipsEl.innerHTML = syms.map((sym, idx) => `
+      <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+        <span class="w-2 h-2 rounded-full" style="background:${palette[idx % palette.length]}"></span>
+        <span>${sym}</span>
+        <button type="button" onclick="removeMultiCompareTicker('${sym}')" class="text-slate-400 hover:text-rose-500 ml-0.5" title="Remove ${sym}">&times;</button>
+      </span>
+    `).join('');
+  }
+
+  // Gather union of months across selected tickers
+  const monthSet = new Set();
+  const priceMaps = {};
+  syms.forEach(sym => {
+    const hist = state?.historicalPrices?.[sym] || [];
+    const map = {};
+    hist.forEach(b => {
+      const m = String(b.month || b.date || '').slice(0, 7);
+      const p = Number(b.rawClose ?? b.close ?? 0);
+      if (m && p > 0) { map[m] = p; monthSet.add(m); }
+    });
+    priceMaps[sym] = map;
+  });
+
+  const allMonths = Array.from(monthSet).sort();
+  const labels = allMonths.slice(-multiCompareMonths);
+  if (syms.length === 0 || labels.length < 2) {
+    if (charts.multiCompare) { charts.multiCompare.destroy(); charts.multiCompare = null; }
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    if (summaryEl) summaryEl.innerHTML = '';
+    return;
+  }
+  if (emptyEl) emptyEl.classList.add('hidden');
+
+  const perfSummary = [];
+  const datasets = syms.map((sym, idx) => {
+    const map = priceMaps[sym] || {};
+    const liveP = Number(state?.prices?.[sym]?.price || 0);
+    if (liveP > 0) map[labels[labels.length - 1]] = liveP;
+
+    let lastKnown = null;
+    const sortedM = Object.keys(map).sort();
+    for (let i = 0; i < sortedM.length; i++) {
+      if (sortedM[i] <= labels[0]) lastKnown = map[sortedM[i]];
+      else break;
+    }
+    let baseP = null;
+    const series = labels.map(m => {
+      if (map[m] > 0) lastKnown = map[m];
+      if (baseP === null && lastKnown > 0) baseP = lastKnown;
+      if (baseP > 0 && lastKnown > 0) return Fin.round(((lastKnown - baseP) / baseP) * 100, 2);
+      return null;
+    });
+    const endVal = series.slice().reverse().find(v => v !== null);
+    if (endVal !== undefined) perfSummary.push({ sym, pct: endVal });
+
+    return {
+      label: sym,
+      data: series,
+      borderColor: palette[idx % palette.length],
+      borderWidth: 1.75,
+      fill: false,
+      tension: 0.28,
+      pointRadius: 0,
+      pointHoverRadius: 4
+    };
+  });
+
+  if (summaryEl) {
+    perfSummary.sort((a, b) => b.pct - a.pct);
+    if (perfSummary.length >= 2) {
+      const lead = perfSummary[0];
+      const lag = perfSummary[perfSummary.length - 1];
+      summaryEl.innerHTML = `
+        <span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono text-[10.5px]">Leader: <strong>${lead.sym}</strong> (${Fin.percent(lead.pct, true)})</span>
+        <span class="px-2 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono text-[10.5px]">Laggard: <strong>${lag.sym}</strong> (${Fin.percent(lag.pct, true)})</span>
+      `;
+    } else {
+      summaryEl.innerHTML = '';
+    }
+  }
+
+  const isDark = document.documentElement.classList.contains('dark');
+  if (charts.multiCompare) charts.multiCompare.destroy();
+  charts.multiCompare = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
+          ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 }, maxTicksLimit: 10 }
+        },
+        y: {
+          grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+          ticks: {
+            color: isDark ? '#94a3b8' : '#64748b',
+            font: { size: 10 },
+            callback: (v) => (v >= 0 ? '+' : '') + Number(v).toFixed(0) + '%'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 10, color: isDark ? '#cbd5e1' : '#334155', font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: (c) => ` ${c.dataset.label}: ${Fin.percent(c.raw, true)}`
+          }
+        }
+      }
+    }
+  });
+}
+window.renderMultiTickerCompareChart = renderMultiTickerCompareChart;

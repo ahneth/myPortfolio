@@ -435,6 +435,7 @@ var tradesCashflowRangeMonths = 120;
 
 var charts = {
   projectedDivCalendar: null,
+  multiCompare: null,
   monthlyHistory: null,
   holdingsStockHistory: null,
   watchlistStockHistory: null,
@@ -2805,6 +2806,11 @@ function exportPortfolioToExcel() {
 
     const dateStr = new Date().toISOString().split('T')[0];
     XLSX.writeFile(wb, `myPortfolio_Backup_${dateStr}.xlsx`);
+    if (state && state.settings) {
+      state.settings.lastBackupAt = new Date().toISOString();
+      saveState(true);
+      if (typeof updateBackupAgeBadge === 'function') updateBackupAgeBadge();
+    }
     showToast('Exported 10-sheet myPortfolio backup (.xlsx) including Trade Simulation!', 'success');
   } catch (err) {
     console.error('Excel export failed:', err);
@@ -3045,3 +3051,291 @@ window.restorePortfolioFromExcel = restorePortfolioFromExcel;
 window.ingestHistoricalPricesData = ingestHistoricalPricesData;
 window.ingestCompanyNewsData = ingestCompanyNewsData;
 window.normalizeNewsArticleSchema = normalizeNewsArticleSchema;
+
+// =========================================================================
+// v3.9.0: PERIODIC REALIZED & UNREALIZED P&L, DIVIDENDS, BUY/SELL & FEES SCORECARD
+// Supports 'monthly' (YYYY-MM), 'quarterly' (YYYY Q#), and 'yearly' (YYYY)
+// =========================================================================
+function computePeriodicTradeScorecard(granularity = 'yearly') {
+  const mode = ['monthly', 'quarterly', 'yearly'].includes(granularity) ? granularity : 'yearly';
+  const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
+  const toPeriodKey = (ym) => {
+    const y = ym.slice(0, 4);
+    if (mode === 'yearly') return y;
+    if (mode === 'quarterly') {
+      const m = parseInt(ym.slice(5, 7), 10) || 1;
+      return `${y} Q${Math.ceil(m / 3)}`;
+    }
+    return ym;
+  };
+
+  const periodMap = {};
+  const ensurePeriod = (key) => {
+    if (!periodMap[key]) {
+      periodMap[key] = {
+        period: key,
+        year: key,
+        buys: 0,
+        sells: 0,
+        wins: 0,
+        losses: 0,
+        buyAmountBase: 0,
+        sellAmountBase: 0,
+        unrealizedPnlBase: 0,
+        realizedPnlBase: 0,
+        dividendsBase: 0,
+        feesBase: 0
+      };
+    }
+    return periodMap[key];
+  };
+
+  const sortedTx = [...(state?.transactions || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const sortedDiv = [...(state?.dividends || [])].sort((a, b) => new Date(a.payDate || a.exDate) - new Date(b.payDate || b.exDate));
+
+  // Build ordered list of months from earliest activity through current month
+  const allMonthSet = new Set();
+  sortedTx.forEach(tx => { const m = String(tx.date || '').slice(0, 7); if (/^\d{4}-\d{2}$/.test(m)) allMonthSet.add(m); });
+  sortedDiv.forEach(d => { const m = String(d.payDate || d.exDate || '').slice(0, 7); if (/^\d{4}-\d{2}$/.test(m)) allMonthSet.add(m); });
+  const nowMonth = new Date().toISOString().slice(0, 7);
+  if (allMonthSet.size > 0) allMonthSet.add(nowMonth);
+
+  const sortedMonths = Array.from(allMonthSet).sort();
+  // Also fill contiguous months between first and last for accurate quarter/year-end unrealized snapshots
+  const fullMonths = [];
+  if (sortedMonths.length > 0) {
+    let [y, m] = sortedMonths[0].split('-').map(Number);
+    const [endY, endM] = sortedMonths[sortedMonths.length - 1].split('-').map(Number);
+    while (y < endY || (y === endY && m <= endM)) {
+      fullMonths.push(`${y}-${String(m).padStart(2, '0')}`);
+      m++;
+      if (m > 12) { m = 1; y++; }
+    }
+  }
+
+  // Build fast price lookup per ticker per month
+  const priceLookupCache = {};
+  const resolveMonthPrice = (sym, ym, isCurrentMonth) => {
+    if (isCurrentMonth) {
+      const lp = Number(state?.prices?.[sym]?.price || 0);
+      if (lp > 0) return lp;
+    }
+    if (!priceLookupCache[sym]) {
+      const arr = Array.isArray(state?.historicalPrices?.[sym]) ? state.historicalPrices[sym] : [];
+      const map = {};
+      arr.forEach(b => {
+        const bm = String(b.month || b.date || '').slice(0, 7);
+        const bp = Number(b.rawClose ?? b.close ?? 0);
+        if (bm && bp > 0) map[bm] = bp;
+      });
+      priceLookupCache[sym] = { map, months: Object.keys(map).sort() };
+    }
+    const entry = priceLookupCache[sym];
+    if (entry.map[ym]) return entry.map[ym];
+    let fallback = 0;
+    for (let i = 0; i < entry.months.length; i++) {
+      if (entry.months[i] <= ym) fallback = entry.map[entry.months[i]];
+      else break;
+    }
+    return fallback || Number(state?.prices?.[sym]?.price || 0);
+  };
+
+  const posMap = {};
+  let txPtr = 0;
+  let divPtr = 0;
+
+  fullMonths.forEach((ym, mIdx) => {
+    const isLatestMonth = (mIdx === fullMonths.length - 1);
+    const pKey = toPeriodKey(ym);
+    let monthHadActivity = false;
+
+    while (txPtr < sortedTx.length && String(sortedTx[txPtr].date || '').slice(0, 7) <= ym) {
+      const tx = sortedTx[txPtr++];
+      const type = String(tx.type || '').toUpperCase();
+      if (type !== 'BUY' && type !== 'SELL') continue;
+      const sym = MarketAPI.normalizeTicker(tx.ticker);
+      if (!sym) continue;
+      const curr = tx.currency || state?.prices?.[sym]?.currency || state?.fundamentals?.[sym]?.currency || MarketAPI.getStaticProfile(sym).currency || baseCurr;
+      const shares = Number(tx.shares || 0);
+      const price = Number(tx.price || 0);
+      const fees = Number(tx.fees || 0);
+      if (shares <= 0) continue;
+
+      const pRow = ensurePeriod(pKey);
+      monthHadActivity = true;
+      if (!posMap[sym]) posMap[sym] = { shares: 0, cost: 0, curr };
+      const pos = posMap[sym];
+      pos.curr = curr;
+
+      const feesBase = Fin.convertCurrency(fees, curr, baseCurr);
+      pRow.feesBase = Fin.round(pRow.feesBase + feesBase, 2);
+
+      if (type === 'BUY') {
+        pRow.buys++;
+        const buyGrossNative = shares * price + fees;
+        pRow.buyAmountBase = Fin.round(pRow.buyAmountBase + Fin.convertCurrency(buyGrossNative, curr, baseCurr), 2);
+        pos.cost += buyGrossNative;
+        pos.shares += shares;
+      } else if (type === 'SELL') {
+        pRow.sells++;
+        const avgC = pos.shares > 0 ? (pos.cost / pos.shares) : 0;
+        const sellShares = Math.min(shares, pos.shares > 0 ? pos.shares : shares);
+        const costRemoved = sellShares * avgC;
+        const proceedsNet = shares * price - fees;
+        pRow.sellAmountBase = Fin.round(pRow.sellAmountBase + Fin.convertCurrency(proceedsNet, curr, baseCurr), 2);
+        const realNative = proceedsNet - costRemoved;
+        const realBase = Fin.convertCurrency(realNative, curr, baseCurr);
+        pRow.realizedPnlBase = Fin.round(pRow.realizedPnlBase + realBase, 2);
+        if (realNative > 0.005) pRow.wins++;
+        else if (realNative < -0.005) pRow.losses++;
+        pos.shares = Math.max(0, pos.shares - sellShares);
+        pos.cost = Math.max(0, pos.cost - costRemoved);
+        if (pos.shares < 0.0001) { pos.shares = 0; pos.cost = 0; }
+      }
+    }
+
+    while (divPtr < sortedDiv.length && String(sortedDiv[divPtr].payDate || sortedDiv[divPtr].exDate || '').slice(0, 7) <= ym) {
+      const d = sortedDiv[divPtr++];
+      const sym = MarketAPI.normalizeTicker(d.ticker || '');
+      const curr = d.currency || state?.prices?.[sym]?.currency || state?.fundamentals?.[sym]?.currency || (sym ? MarketAPI.getStaticProfile(sym).currency : baseCurr) || baseCurr;
+      const amtBase = Fin.convertCurrency(Number(d.totalAmount || 0), curr, baseCurr);
+      const pRow = ensurePeriod(pKey);
+      monthHadActivity = true;
+      pRow.dividendsBase = Fin.round(pRow.dividendsBase + amtBase, 2);
+    }
+
+    // Compute period-end Unrealized P&L across active positions at end of ym
+    let activeCount = 0;
+    let unrBase = 0;
+    Object.entries(posMap).forEach(([sym, pos]) => {
+      if (pos.shares > 0.0001) {
+        activeCount++;
+        const px = resolveMonthPrice(sym, ym, isLatestMonth);
+        const mvNative = pos.shares * (px > 0 ? px : (pos.cost / pos.shares));
+        unrBase += Fin.convertCurrency(mvNative - pos.cost, pos.curr, baseCurr);
+      }
+    });
+    if (periodMap[pKey] || activeCount > 0 || monthHadActivity) {
+      const pRow = ensurePeriod(pKey);
+      pRow.unrealizedPnlBase = isLatestMonth && Number.isFinite(Number(portfolio?.totalUnrealizedGain))
+        ? Fin.round(Number(portfolio.totalUnrealizedGain), 2)
+        : Fin.round(unrBase, 2);
+    }
+  });
+
+  const rows = Object.values(periodMap)
+    .sort((a, b) => b.period.localeCompare(a.period))
+    .map(r => {
+      const closed = r.wins + r.losses;
+      return {
+        ...r,
+        winRatePct: closed > 0 ? Fin.round((r.wins / closed) * 100, 1) : null,
+        totalCashGainBase: Fin.round(r.realizedPnlBase + r.dividendsBase, 2)
+      };
+    });
+
+  const totals = rows.reduce((acc, r) => {
+    acc.buys += r.buys;
+    acc.sells += r.sells;
+    acc.wins += r.wins;
+    acc.losses += r.losses;
+    acc.buyAmountBase = Fin.round(acc.buyAmountBase + r.buyAmountBase, 2);
+    acc.sellAmountBase = Fin.round(acc.sellAmountBase + r.sellAmountBase, 2);
+    acc.realizedPnlBase = Fin.round(acc.realizedPnlBase + r.realizedPnlBase, 2);
+    acc.dividendsBase = Fin.round(acc.dividendsBase + r.dividendsBase, 2);
+    acc.feesBase = Fin.round(acc.feesBase + r.feesBase, 2);
+    acc.totalCashGainBase = Fin.round(acc.totalCashGainBase + r.totalCashGainBase, 2);
+    return acc;
+  }, { buys: 0, sells: 0, wins: 0, losses: 0, buyAmountBase: 0, sellAmountBase: 0, unrealizedPnlBase: Fin.round(Number(portfolio?.totalUnrealizedGain ?? (rows[0]?.unrealizedPnlBase || 0)), 2), realizedPnlBase: 0, dividendsBase: 0, feesBase: 0, totalCashGainBase: 0 });
+  const totClosed = totals.wins + totals.losses;
+  totals.winRatePct = totClosed > 0 ? Fin.round((totals.wins / totClosed) * 100, 1) : null;
+
+  return { mode, baseCurr, rows, years: rows, totals };
+}
+window.computePeriodicTradeScorecard = computePeriodicTradeScorecard;
+window.computeAnnualTradeScorecard = () => computePeriodicTradeScorecard('yearly');
+
+// =========================================================================
+// v3.8.0: CROSS-DEVICE COMPACT SYNC CODE (EXPORT & RESTORE)
+// =========================================================================
+function generateCrossDeviceSyncCode() {
+  if (!state) return '';
+  const slimFunds = {};
+  Object.entries(state.fundamentals || {}).forEach(([sym, f]) => {
+    if (!f || typeof f !== 'object') return;
+    const entry = {};
+    ['name', 'sector', 'currency', 'assetProfile', 'customBuyPrice', 'customSellPrice', 'customStopLoss', '_userCustomName', '_userCustomSector', '_userCustomCurrency'].forEach(k => {
+      if (f[k] !== undefined && f[k] !== null && f[k] !== '') entry[k] = f[k];
+    });
+    if (Object.keys(entry).length > 0) slimFunds[sym] = entry;
+  });
+  const safeSettings = { ...(state.settings || {}) };
+  delete safeSettings.githubPat;
+
+  const payload = {
+    v: '3.8',
+    ts: new Date().toISOString(),
+    initialCash: Number(state.initialCash || 0),
+    transactions: state.transactions || [],
+    dividends: state.dividends || [],
+    watchlist: state.watchlist || [],
+    tradeSimRows: state.tradeSimRows || [],
+    fundamentals: slimFunds,
+    settings: safeSettings
+  };
+  const jsonStr = JSON.stringify(payload);
+  const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+  if (state.settings) {
+    state.settings.lastBackupAt = new Date().toISOString();
+    saveState(true);
+    if (typeof updateBackupAgeBadge === 'function') updateBackupAgeBadge();
+  }
+  return 'MP38:' + b64;
+}
+window.generateCrossDeviceSyncCode = generateCrossDeviceSyncCode;
+
+function restoreFromCrossDeviceSyncCode(rawCode) {
+  const trimmed = String(rawCode || '').trim();
+  if (!trimmed.startsWith('MP38:')) {
+    throw new Error('Invalid Sync Code format (must start with MP38:).');
+  }
+  const b64 = trimmed.slice(5).replace(/\s+/g, '');
+  const jsonStr = decodeURIComponent(escape(atob(b64)));
+  const payload = JSON.parse(jsonStr);
+  if (!payload || typeof payload !== 'object' || !Array.isArray(payload.transactions)) {
+    throw new Error('Sync Code payload is corrupted or incomplete.');
+  }
+
+  const prevPat = state?.settings?.githubPat || '';
+  state.initialCash = Number(payload.initialCash || 0);
+  state.transactions = payload.transactions || [];
+  state.dividends = Array.isArray(payload.dividends) ? payload.dividends : [];
+  state.watchlist = Array.isArray(payload.watchlist) ? payload.watchlist : [];
+  state.tradeSimRows = Array.isArray(payload.tradeSimRows) ? payload.tradeSimRows : [];
+  if (payload.fundamentals && typeof payload.fundamentals === 'object') {
+    Object.entries(payload.fundamentals).forEach(([sym, f]) => {
+      state.fundamentals[sym] = { ...(state.fundamentals[sym] || {}), ...f };
+    });
+  }
+  if (payload.settings && typeof payload.settings === 'object') {
+    state.settings = {
+      ...DEFAULT_QUANT_SETTINGS,
+      ...(state.settings || {}),
+      ...payload.settings,
+      githubPat: prevPat
+    };
+  }
+  saveTradeSimLocal(state.tradeSimRows);
+  if (typeof invalidateStockMetricsCache === 'function') invalidateStockMetricsCache();
+  recalculatePortfolio();
+  saveState(true);
+  if (typeof renderAll === 'function') renderAll(true);
+  if (typeof checkAndRunDailyCloudflareSync === 'function') checkAndRunDailyCloudflareSync(true);
+  return {
+    txCount: state.transactions.length,
+    divCount: state.dividends.length,
+    wlCount: state.watchlist.length,
+    simCount: state.tradeSimRows.length
+  };
+}
+window.restoreFromCrossDeviceSyncCode = restoreFromCrossDeviceSyncCode;

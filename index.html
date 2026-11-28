@@ -872,7 +872,7 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.7.4 (20261128_1250)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.9.0 (20261128_1450)</span>
             </div>
           </div>
         </div>
@@ -909,6 +909,12 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
             <i class="fa-solid fa-circle-notch fa-spin text-xs"></i>
             <span id="gh-sync-live-text">Python Syncing...</span>
           </div>
+
+          <!-- v3.8.0 Backup Age Reminder Pill -->
+          <button id="backup-age-pill" type="button" onclick="switchTab('settings')" class="hidden sm:inline-flex items-center gap-1.5 h-7 sm:h-9 px-2.5 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-[11px] font-semibold transition whitespace-nowrap" title="Last backup age — click to open Excel Backup &amp; Cross-Device Sync">
+            <i id="backup-age-icon" class="fa-solid fa-cloud-arrow-up text-amber-500"></i>
+            <span id="backup-age-text">Backup</span>
+          </button>
 
           <!-- Privacy / Show-Hide Monetary Values Toggle -->
           <button id="privacy-toggle-btn" type="button" class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg border border-slate-200 dark:border-dark-border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold transition" title="Click to hide all monetary values, number of shares, and average cost (show % &amp; market prices only)" aria-label="Toggle Monetary Values Visibility" aria-pressed="false">
@@ -1314,6 +1320,62 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
           </div>
         </div>
       </div>
+
+      <!-- v3.8.0 Charts Grid 4: Multi-Ticker Relative Performance & Holdings Correlation Heatmap -->
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <!-- Multi-Ticker Relative Performance Overlay -->
+        <div class="xl:col-span-6 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h2 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm sm:text-base">
+                <i class="fa-solid fa-chart-line text-indigo-500"></i> Multi-Ticker Relative Performance
+              </h2>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Compare normalized % returns (up to 6 tickers from Holdings, Watchlist or Benchmarks)</p>
+            </div>
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-[11px] self-start sm:self-auto">
+              <button type="button" data-compare-range="12" onclick="setMultiCompareMonths(12)" class="compare-range-btn px-2 py-0.5 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1-Y</button>
+              <button type="button" data-compare-range="24" onclick="setMultiCompareMonths(24)" class="compare-range-btn px-2 py-0.5 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">2-Y</button>
+              <button type="button" data-compare-range="36" onclick="setMultiCompareMonths(36)" class="compare-range-btn px-2 py-0.5 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">3-Y</button>
+              <button type="button" data-compare-range="60" onclick="setMultiCompareMonths(60)" class="compare-range-btn px-2 py-0.5 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">5-Y</button>
+            </div>
+          </div>
+          <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5" id="multi-compare-chips"></div>
+            <div class="flex items-center gap-1.5">
+              <input type="text" id="multi-compare-add-input" list="multi-compare-datalist" placeholder="+ Add ticker..." class="px-2.5 py-1 text-xs uppercase placeholder:normal-case bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white w-28 sm:w-32">
+              <datalist id="multi-compare-datalist"></datalist>
+              <button type="button" id="btn-multi-compare-add" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition">Add</button>
+            </div>
+          </div>
+          <div id="multi-compare-summary" class="mt-2 flex flex-wrap items-center gap-1.5"></div>
+          <div class="relative pt-3 chart-container h-[270px] sm:h-[300px] min-h-[270px] sm:min-h-[300px]">
+            <canvas id="chart-multi-compare"></canvas>
+            <div id="chart-multi-compare-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-xs">
+              <i class="fa-solid fa-chart-line text-3xl mb-2 opacity-40"></i>
+              <span>Add 2+ tickers with monthly history to compare relative performance</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Holdings Correlation Heatmap -->
+        <div class="xl:col-span-6 bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <h2 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm sm:text-base">
+                <i class="fa-solid fa-table-cells text-teal-500"></i> Holdings Correlation Heatmap
+              </h2>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Pairwise monthly return correlation (top 12 active holdings) &bull; Rose = high overlap, Teal = diversifier</p>
+            </div>
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-[11px] self-start sm:self-auto">
+              <button type="button" data-corr-range="12" onclick="setCorrHeatmapMonths(12)" class="corr-range-btn px-2 py-0.5 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1-Y</button>
+              <button type="button" data-corr-range="36" onclick="setCorrHeatmapMonths(36)" class="corr-range-btn px-2 py-0.5 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">3-Y</button>
+              <button type="button" data-corr-range="60" onclick="setCorrHeatmapMonths(60)" class="corr-range-btn px-2 py-0.5 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">5-Y</button>
+            </div>
+          </div>
+          <div id="corr-heatmap-insights" class="mt-2.5 flex flex-wrap items-center gap-1.5"></div>
+          <div id="dashboard-corr-heatmap-box" class="mt-2.5 overflow-x-auto flex-1"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ==================== TAB 2: HOLDINGS & INVENTORY ==================== -->
@@ -1461,6 +1523,16 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
           </div>
         </div>
         <div id="holdings-chart-period-stats" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 text-[11px] font-mono"></div>
+        <!-- v3.8.0 Inline Quick-Pin Bar -->
+        <div id="holdings-quick-pin-bar" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-2 text-[11px]">
+          <span class="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1"><i class="fa-solid fa-thumbtack text-amber-500"></i> Quick Pins:</span>
+          <label class="inline-flex items-center gap-1 text-sky-500 font-semibold">Buy <input type="number" step="any" min="0" id="holdings-qpin-buy" placeholder="Auto" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
+          <label class="inline-flex items-center gap-1 text-pink-500 font-semibold">Sell <input type="number" step="any" min="0" id="holdings-qpin-sell" placeholder="Auto" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
+          <label class="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold">Stop <input type="number" step="any" min="0" id="holdings-qpin-stop" placeholder="Auto" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
+          <button type="button" onclick="saveInlineQuickPins('holdings')" class="px-2.5 py-0.5 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold transition">Save Pins</button>
+          <button type="button" onclick="snapInlineQuickPinsToRec('holdings')" class="px-2 py-0.5 rounded bg-sky-500/15 hover:bg-sky-500/25 text-sky-600 dark:text-sky-400 border border-sky-500/30 font-semibold transition" title="Fill with current quant recommended levels">Snap Rec</button>
+          <button type="button" onclick="clearInlineQuickPins('holdings')" class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 font-semibold transition">Clear</button>
+        </div>
         <div id="holdings-chart-legend" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 text-[10.5px]"></div>
       </div>
     </div>
@@ -1532,6 +1604,72 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
             </tfoot>
           </table>
         </div>
+      </div>
+
+      <!-- v3.9.0 PERIODIC P&L, DIVIDENDS, BUY/SELL & FEES SCORECARD -->
+      <div id="annual-scorecard-card" class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-award text-amber-500"></i> P&amp;L, Dividends, Buy/Sell &amp; Fees Scorecard
+              </h2>
+              <span id="annual-scorecard-summary-badge" class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">—</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Buy/Sell volume, period-end Unrealized P&amp;L, Realized P&amp;L, Dividends, Fees &amp; Win Rate</p>
+          </div>
+          <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs self-start sm:self-auto">
+            <button type="button" data-scorecard-mode="monthly" onclick="setScorecardGranularity('monthly')" class="scorecard-mode-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">Monthly</button>
+            <button type="button" data-scorecard-mode="quarterly" onclick="setScorecardGranularity('quarterly')" class="scorecard-mode-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">Quarterly</button>
+            <button type="button" data-scorecard-mode="yearly" onclick="setScorecardGranularity('yearly')" class="scorecard-mode-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">Yearly</button>
+          </div>
+        </div>
+        <div class="table-responsive-wrapper max-h-[420px] overflow-y-auto">
+          <table class="w-full text-left text-xs whitespace-nowrap compact-log-table">
+            <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider font-semibold border-b border-slate-200 dark:border-dark-border">
+              <tr>
+                <th class="py-1.5 px-3 sticky-col-mobile bg-slate-50 dark:bg-slate-800" id="scorecard-period-col-hdr">Year</th>
+                <th class="py-1.5 px-3 text-center">Trades (B/S)</th>
+                <th class="py-1.5 px-3 text-right text-emerald-600 dark:text-emerald-400">Buy Amount</th>
+                <th class="py-1.5 px-3 text-right text-rose-500">Sell Amount</th>
+                <th class="py-1.5 px-3 text-right">Unrealized P&amp;L</th>
+                <th class="py-1.5 px-3 text-right">Realized P&amp;L</th>
+                <th class="py-1.5 px-3 text-right">Dividends</th>
+                <th class="py-1.5 px-3 text-right">Realized + Div</th>
+                <th class="py-1.5 px-3 text-right">Fees Paid</th>
+                <th class="py-1.5 px-3 text-center">Win Rate</th>
+              </tr>
+            </thead>
+            <tbody id="annual-scorecard-tbody" class="divide-y divide-slate-100 dark:divide-slate-800/80"></tbody>
+            <tfoot id="annual-scorecard-tfoot" class="sticky bottom-0 z-10 bg-indigo-50/95 dark:bg-slate-900/95 border-t-2 border-indigo-500/30 font-bold text-xs"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- v3.9.0 MONTHLY BUY & SELL ACTIVITY MATRIX (BY TICKER / BY SECTOR) -->
+      <div id="monthly-trade-matrix-card" class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-dark-border flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+          <div>
+            <h2 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-table-cells-large text-emerald-500"></i> Monthly Buy &amp; Sell Matrix
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <span class="text-emerald-500 font-semibold">Green = Buys</span> &bull; <span class="text-rose-500 font-semibold">Red = Sells</span> per month across tickers or sectors
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs">
+              <button type="button" data-matrix-group="ticker" onclick="setTradeMatrixGroup('ticker')" class="matrix-group-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">By Ticker</button>
+              <button type="button" data-matrix-group="sector" onclick="setTradeMatrixGroup('sector')" class="matrix-group-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">By Sector</button>
+            </div>
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs">
+              <button type="button" data-matrix-range="12" onclick="setTradeMatrixMonths(12)" class="matrix-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">1-Y</button>
+              <button type="button" data-matrix-range="24" onclick="setTradeMatrixMonths(24)" class="matrix-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">2-Y</button>
+              <button type="button" data-matrix-range="36" onclick="setTradeMatrixMonths(36)" class="matrix-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">3-Y</button>
+            </div>
+          </div>
+        </div>
+        <div id="monthly-trade-matrix-box" class="table-responsive-wrapper max-h-[460px] overflow-auto"></div>
       </div>
 
       <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border rounded-2xl shadow-sm overflow-hidden">
@@ -1914,6 +2052,16 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
           </div>
         </div>
         <div id="watchlist-chart-period-stats" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 text-[11px] font-mono"></div>
+        <!-- v3.8.0 Inline Quick-Pin Bar -->
+        <div id="watchlist-quick-pin-bar" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-2 text-[11px]">
+          <span class="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1"><i class="fa-solid fa-thumbtack text-amber-500"></i> Quick Pins:</span>
+          <label class="inline-flex items-center gap-1 text-sky-500 font-semibold">Buy <input type="number" step="any" min="0" id="watchlist-qpin-buy" placeholder="Auto" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
+          <label class="inline-flex items-center gap-1 text-pink-500 font-semibold">Sell <input type="number" step="any" min="0" id="watchlist-qpin-sell" placeholder="Auto" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
+          <label class="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold">Stop <input type="number" step="any" min="0" id="watchlist-qpin-stop" placeholder="Auto" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
+          <button type="button" onclick="saveInlineQuickPins('watchlist')" class="px-2.5 py-0.5 rounded bg-purple-600 hover:bg-purple-500 text-white font-semibold transition">Save Pins</button>
+          <button type="button" onclick="snapInlineQuickPinsToRec('watchlist')" class="px-2 py-0.5 rounded bg-sky-500/15 hover:bg-sky-500/25 text-sky-600 dark:text-sky-400 border border-sky-500/30 font-semibold transition" title="Fill with current quant recommended levels">Snap Rec</button>
+          <button type="button" onclick="clearInlineQuickPins('watchlist')" class="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 font-semibold transition">Clear</button>
+        </div>
         <div id="watchlist-chart-legend" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 text-[10.5px]"></div>
       </div>
 
@@ -2012,6 +2160,50 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
 
     <!-- ==================== TAB 6: API, DEVICE & BACKUP SETTINGS ==================== -->
     <div id="tab-content-settings" class="tab-pane hidden space-y-6">
+      <!-- v3.8.0 CROSS-DEVICE QUICK SYNC & BACKUP STATUS -->
+      <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-5 sm:p-6 rounded-2xl shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-xl shrink-0">
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </div>
+            <div>
+              <h2 class="font-bold text-slate-900 dark:text-white">Cross-Device Quick Sync &amp; Backup Status</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Transfer your transactions, dividends, watchlist, custom pins &amp; Trade Simulation between phone, tablet, and desktop in 1 click</p>
+            </div>
+          </div>
+          <span id="settings-last-backup-badge" class="text-xs font-mono font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 self-start sm:self-auto whitespace-nowrap">Last Backup: Never</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between gap-3">
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-1">1. Export Sync Code (From This Device)</h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Generates a compact portable code (`MP38:...`) containing all portfolio data &amp; Trade Simulation rows (excludes API secrets).</p>
+            </div>
+            <div class="space-y-2">
+              <button type="button" id="btn-generate-sync-code" class="w-full py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-sm">
+                <i class="fa-solid fa-copy"></i> Generate &amp; Copy Sync Code
+              </button>
+              <textarea id="sync-code-export-preview" readonly rows="2" placeholder="Click 'Generate &amp; Copy Sync Code' to produce your portable code..." class="w-full px-2.5 py-1.5 text-[10.5px] font-mono bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300"></textarea>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between gap-3">
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-1">2. Restore Sync Code (On Target Device)</h3>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">Paste a Sync Code (`MP38:...`) from another device to restore all holdings, watchlist, settings &amp; Trade Simulation rows.</p>
+            </div>
+            <div class="space-y-2">
+              <textarea id="sync-code-restore-input" rows="2" placeholder="Paste MP38:... Sync Code here..." class="w-full px-2.5 py-1.5 text-[10.5px] font-mono bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"></textarea>
+              <button type="button" id="btn-restore-sync-code" class="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-sm">
+                <i class="fa-solid fa-cloud-arrow-down"></i> Restore From Sync Code
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="sync-code-status-msg" class="mt-2.5 text-xs font-medium"></div>
+      </div>
 
       <!-- 1. Stock Market API Configuration (Live Quotes, Monthly Historicals & Fundamentals) -->
       <div class="bg-white dark:bg-dark-card border border-slate-200 dark:border-dark-border p-5 sm:p-6 rounded-2xl shadow-sm">
@@ -3338,25 +3530,25 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.7.4',
-  buildId: '20261128_1250',
-  releaseDate: '2026-11-28 12:50 HKT',
-  driveFolder: '/myPortfolio/20261128_1250/',
+  appVersion: '3.9.0',
+  buildId: '20261128_1450',
+  releaseDate: '2026-11-28 14:50 HKT',
+  driveFolder: '/myPortfolio/20261128_1450/',
   modules: {
-    'version.js':   { version: '3.7.4', updated: '20261128_1250', role: 'Version manifest, module registry & v3.7.4 changelog history' },
+    'version.js':   { version: '3.9.0', updated: '20261128_1450', role: 'Version manifest, module registry & v3.9.0 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.7.4', updated: '20261128_1250', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
-    'portfolio.js': { version: '3.7.2', updated: '20261127_2030', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
-    'charts.js':    { version: '3.7.4', updated: '20261128_1250', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.7.2', updated: '20261127_2030', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
+    'portfolio.js': { version: '3.9.0', updated: '20261128_1450', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
+    'charts.js':    { version: '3.8.0', updated: '20261128_1440', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
+    'app.js':       { version: '3.9.0', updated: '20261128_1450', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
     'styles.css':   { version: '3.6.0', updated: '20261125_1720', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.7.4', updated: '20261128_1250', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.9.0', updated: '20261128_1450', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
     {
       version: '3.6.0',
-      buildId: '20261128_1250',
+      buildId: '20261128_1450',
       date: '2026-11-25',
       title: 'Quant Risk Analytics, Action Radar, Benchmark Overlay, 12M Dividend Calendar & Holdings Presets',
       highlights: [
@@ -3370,7 +3562,7 @@ var APP_VERSION_MANIFEST = {
 
     {
       version: '3.6.0',
-      buildId: '20261128_1250',
+      buildId: '20261128_1450',
       date: '2026-11-24 12:20 HKT',
       summary: 'Fixed Total Return % (and Privacy Mode Realized P&L %) denominator across individual holdings, sector subtotals, Portfolio Total row, and Dashboard KPI to use Cumulative Buy Cost Basis (Active Cost + Sold Cost) instead of remaining active cost alone.',
       changes: [
@@ -7060,6 +7252,7 @@ var tradesCashflowRangeMonths = 120;
 
 var charts = {
   projectedDivCalendar: null,
+  multiCompare: null,
   monthlyHistory: null,
   holdingsStockHistory: null,
   watchlistStockHistory: null,
@@ -9430,6 +9623,11 @@ function exportPortfolioToExcel() {
 
     const dateStr = new Date().toISOString().split('T')[0];
     XLSX.writeFile(wb, `myPortfolio_Backup_${dateStr}.xlsx`);
+    if (state && state.settings) {
+      state.settings.lastBackupAt = new Date().toISOString();
+      saveState(true);
+      if (typeof updateBackupAgeBadge === 'function') updateBackupAgeBadge();
+    }
     showToast('Exported 10-sheet myPortfolio backup (.xlsx) including Trade Simulation!', 'success');
   } catch (err) {
     console.error('Excel export failed:', err);
@@ -9671,6 +9869,294 @@ window.ingestHistoricalPricesData = ingestHistoricalPricesData;
 window.ingestCompanyNewsData = ingestCompanyNewsData;
 window.normalizeNewsArticleSchema = normalizeNewsArticleSchema;
 
+// =========================================================================
+// v3.9.0: PERIODIC REALIZED & UNREALIZED P&L, DIVIDENDS, BUY/SELL & FEES SCORECARD
+// Supports 'monthly' (YYYY-MM), 'quarterly' (YYYY Q#), and 'yearly' (YYYY)
+// =========================================================================
+function computePeriodicTradeScorecard(granularity = 'yearly') {
+  const mode = ['monthly', 'quarterly', 'yearly'].includes(granularity) ? granularity : 'yearly';
+  const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
+  const toPeriodKey = (ym) => {
+    const y = ym.slice(0, 4);
+    if (mode === 'yearly') return y;
+    if (mode === 'quarterly') {
+      const m = parseInt(ym.slice(5, 7), 10) || 1;
+      return `${y} Q${Math.ceil(m / 3)}`;
+    }
+    return ym;
+  };
+
+  const periodMap = {};
+  const ensurePeriod = (key) => {
+    if (!periodMap[key]) {
+      periodMap[key] = {
+        period: key,
+        year: key,
+        buys: 0,
+        sells: 0,
+        wins: 0,
+        losses: 0,
+        buyAmountBase: 0,
+        sellAmountBase: 0,
+        unrealizedPnlBase: 0,
+        realizedPnlBase: 0,
+        dividendsBase: 0,
+        feesBase: 0
+      };
+    }
+    return periodMap[key];
+  };
+
+  const sortedTx = [...(state?.transactions || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const sortedDiv = [...(state?.dividends || [])].sort((a, b) => new Date(a.payDate || a.exDate) - new Date(b.payDate || b.exDate));
+
+  // Build ordered list of months from earliest activity through current month
+  const allMonthSet = new Set();
+  sortedTx.forEach(tx => { const m = String(tx.date || '').slice(0, 7); if (/^\d{4}-\d{2}$/.test(m)) allMonthSet.add(m); });
+  sortedDiv.forEach(d => { const m = String(d.payDate || d.exDate || '').slice(0, 7); if (/^\d{4}-\d{2}$/.test(m)) allMonthSet.add(m); });
+  const nowMonth = new Date().toISOString().slice(0, 7);
+  if (allMonthSet.size > 0) allMonthSet.add(nowMonth);
+
+  const sortedMonths = Array.from(allMonthSet).sort();
+  // Also fill contiguous months between first and last for accurate quarter/year-end unrealized snapshots
+  const fullMonths = [];
+  if (sortedMonths.length > 0) {
+    let [y, m] = sortedMonths[0].split('-').map(Number);
+    const [endY, endM] = sortedMonths[sortedMonths.length - 1].split('-').map(Number);
+    while (y < endY || (y === endY && m <= endM)) {
+      fullMonths.push(`${y}-${String(m).padStart(2, '0')}`);
+      m++;
+      if (m > 12) { m = 1; y++; }
+    }
+  }
+
+  // Build fast price lookup per ticker per month
+  const priceLookupCache = {};
+  const resolveMonthPrice = (sym, ym, isCurrentMonth) => {
+    if (isCurrentMonth) {
+      const lp = Number(state?.prices?.[sym]?.price || 0);
+      if (lp > 0) return lp;
+    }
+    if (!priceLookupCache[sym]) {
+      const arr = Array.isArray(state?.historicalPrices?.[sym]) ? state.historicalPrices[sym] : [];
+      const map = {};
+      arr.forEach(b => {
+        const bm = String(b.month || b.date || '').slice(0, 7);
+        const bp = Number(b.rawClose ?? b.close ?? 0);
+        if (bm && bp > 0) map[bm] = bp;
+      });
+      priceLookupCache[sym] = { map, months: Object.keys(map).sort() };
+    }
+    const entry = priceLookupCache[sym];
+    if (entry.map[ym]) return entry.map[ym];
+    let fallback = 0;
+    for (let i = 0; i < entry.months.length; i++) {
+      if (entry.months[i] <= ym) fallback = entry.map[entry.months[i]];
+      else break;
+    }
+    return fallback || Number(state?.prices?.[sym]?.price || 0);
+  };
+
+  const posMap = {};
+  let txPtr = 0;
+  let divPtr = 0;
+
+  fullMonths.forEach((ym, mIdx) => {
+    const isLatestMonth = (mIdx === fullMonths.length - 1);
+    const pKey = toPeriodKey(ym);
+    let monthHadActivity = false;
+
+    while (txPtr < sortedTx.length && String(sortedTx[txPtr].date || '').slice(0, 7) <= ym) {
+      const tx = sortedTx[txPtr++];
+      const type = String(tx.type || '').toUpperCase();
+      if (type !== 'BUY' && type !== 'SELL') continue;
+      const sym = MarketAPI.normalizeTicker(tx.ticker);
+      if (!sym) continue;
+      const curr = tx.currency || state?.prices?.[sym]?.currency || state?.fundamentals?.[sym]?.currency || MarketAPI.getStaticProfile(sym).currency || baseCurr;
+      const shares = Number(tx.shares || 0);
+      const price = Number(tx.price || 0);
+      const fees = Number(tx.fees || 0);
+      if (shares <= 0) continue;
+
+      const pRow = ensurePeriod(pKey);
+      monthHadActivity = true;
+      if (!posMap[sym]) posMap[sym] = { shares: 0, cost: 0, curr };
+      const pos = posMap[sym];
+      pos.curr = curr;
+
+      const feesBase = Fin.convertCurrency(fees, curr, baseCurr);
+      pRow.feesBase = Fin.round(pRow.feesBase + feesBase, 2);
+
+      if (type === 'BUY') {
+        pRow.buys++;
+        const buyGrossNative = shares * price + fees;
+        pRow.buyAmountBase = Fin.round(pRow.buyAmountBase + Fin.convertCurrency(buyGrossNative, curr, baseCurr), 2);
+        pos.cost += buyGrossNative;
+        pos.shares += shares;
+      } else if (type === 'SELL') {
+        pRow.sells++;
+        const avgC = pos.shares > 0 ? (pos.cost / pos.shares) : 0;
+        const sellShares = Math.min(shares, pos.shares > 0 ? pos.shares : shares);
+        const costRemoved = sellShares * avgC;
+        const proceedsNet = shares * price - fees;
+        pRow.sellAmountBase = Fin.round(pRow.sellAmountBase + Fin.convertCurrency(proceedsNet, curr, baseCurr), 2);
+        const realNative = proceedsNet - costRemoved;
+        const realBase = Fin.convertCurrency(realNative, curr, baseCurr);
+        pRow.realizedPnlBase = Fin.round(pRow.realizedPnlBase + realBase, 2);
+        if (realNative > 0.005) pRow.wins++;
+        else if (realNative < -0.005) pRow.losses++;
+        pos.shares = Math.max(0, pos.shares - sellShares);
+        pos.cost = Math.max(0, pos.cost - costRemoved);
+        if (pos.shares < 0.0001) { pos.shares = 0; pos.cost = 0; }
+      }
+    }
+
+    while (divPtr < sortedDiv.length && String(sortedDiv[divPtr].payDate || sortedDiv[divPtr].exDate || '').slice(0, 7) <= ym) {
+      const d = sortedDiv[divPtr++];
+      const sym = MarketAPI.normalizeTicker(d.ticker || '');
+      const curr = d.currency || state?.prices?.[sym]?.currency || state?.fundamentals?.[sym]?.currency || (sym ? MarketAPI.getStaticProfile(sym).currency : baseCurr) || baseCurr;
+      const amtBase = Fin.convertCurrency(Number(d.totalAmount || 0), curr, baseCurr);
+      const pRow = ensurePeriod(pKey);
+      monthHadActivity = true;
+      pRow.dividendsBase = Fin.round(pRow.dividendsBase + amtBase, 2);
+    }
+
+    // Compute period-end Unrealized P&L across active positions at end of ym
+    let activeCount = 0;
+    let unrBase = 0;
+    Object.entries(posMap).forEach(([sym, pos]) => {
+      if (pos.shares > 0.0001) {
+        activeCount++;
+        const px = resolveMonthPrice(sym, ym, isLatestMonth);
+        const mvNative = pos.shares * (px > 0 ? px : (pos.cost / pos.shares));
+        unrBase += Fin.convertCurrency(mvNative - pos.cost, pos.curr, baseCurr);
+      }
+    });
+    if (periodMap[pKey] || activeCount > 0 || monthHadActivity) {
+      const pRow = ensurePeriod(pKey);
+      pRow.unrealizedPnlBase = isLatestMonth && Number.isFinite(Number(portfolio?.totalUnrealizedGain))
+        ? Fin.round(Number(portfolio.totalUnrealizedGain), 2)
+        : Fin.round(unrBase, 2);
+    }
+  });
+
+  const rows = Object.values(periodMap)
+    .sort((a, b) => b.period.localeCompare(a.period))
+    .map(r => {
+      const closed = r.wins + r.losses;
+      return {
+        ...r,
+        winRatePct: closed > 0 ? Fin.round((r.wins / closed) * 100, 1) : null,
+        totalCashGainBase: Fin.round(r.realizedPnlBase + r.dividendsBase, 2)
+      };
+    });
+
+  const totals = rows.reduce((acc, r) => {
+    acc.buys += r.buys;
+    acc.sells += r.sells;
+    acc.wins += r.wins;
+    acc.losses += r.losses;
+    acc.buyAmountBase = Fin.round(acc.buyAmountBase + r.buyAmountBase, 2);
+    acc.sellAmountBase = Fin.round(acc.sellAmountBase + r.sellAmountBase, 2);
+    acc.realizedPnlBase = Fin.round(acc.realizedPnlBase + r.realizedPnlBase, 2);
+    acc.dividendsBase = Fin.round(acc.dividendsBase + r.dividendsBase, 2);
+    acc.feesBase = Fin.round(acc.feesBase + r.feesBase, 2);
+    acc.totalCashGainBase = Fin.round(acc.totalCashGainBase + r.totalCashGainBase, 2);
+    return acc;
+  }, { buys: 0, sells: 0, wins: 0, losses: 0, buyAmountBase: 0, sellAmountBase: 0, unrealizedPnlBase: Fin.round(Number(portfolio?.totalUnrealizedGain ?? (rows[0]?.unrealizedPnlBase || 0)), 2), realizedPnlBase: 0, dividendsBase: 0, feesBase: 0, totalCashGainBase: 0 });
+  const totClosed = totals.wins + totals.losses;
+  totals.winRatePct = totClosed > 0 ? Fin.round((totals.wins / totClosed) * 100, 1) : null;
+
+  return { mode, baseCurr, rows, years: rows, totals };
+}
+window.computePeriodicTradeScorecard = computePeriodicTradeScorecard;
+window.computeAnnualTradeScorecard = () => computePeriodicTradeScorecard('yearly');
+
+// =========================================================================
+// v3.8.0: CROSS-DEVICE COMPACT SYNC CODE (EXPORT & RESTORE)
+// =========================================================================
+function generateCrossDeviceSyncCode() {
+  if (!state) return '';
+  const slimFunds = {};
+  Object.entries(state.fundamentals || {}).forEach(([sym, f]) => {
+    if (!f || typeof f !== 'object') return;
+    const entry = {};
+    ['name', 'sector', 'currency', 'assetProfile', 'customBuyPrice', 'customSellPrice', 'customStopLoss', '_userCustomName', '_userCustomSector', '_userCustomCurrency'].forEach(k => {
+      if (f[k] !== undefined && f[k] !== null && f[k] !== '') entry[k] = f[k];
+    });
+    if (Object.keys(entry).length > 0) slimFunds[sym] = entry;
+  });
+  const safeSettings = { ...(state.settings || {}) };
+  delete safeSettings.githubPat;
+
+  const payload = {
+    v: '3.8',
+    ts: new Date().toISOString(),
+    initialCash: Number(state.initialCash || 0),
+    transactions: state.transactions || [],
+    dividends: state.dividends || [],
+    watchlist: state.watchlist || [],
+    tradeSimRows: state.tradeSimRows || [],
+    fundamentals: slimFunds,
+    settings: safeSettings
+  };
+  const jsonStr = JSON.stringify(payload);
+  const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+  if (state.settings) {
+    state.settings.lastBackupAt = new Date().toISOString();
+    saveState(true);
+    if (typeof updateBackupAgeBadge === 'function') updateBackupAgeBadge();
+  }
+  return 'MP38:' + b64;
+}
+window.generateCrossDeviceSyncCode = generateCrossDeviceSyncCode;
+
+function restoreFromCrossDeviceSyncCode(rawCode) {
+  const trimmed = String(rawCode || '').trim();
+  if (!trimmed.startsWith('MP38:')) {
+    throw new Error('Invalid Sync Code format (must start with MP38:).');
+  }
+  const b64 = trimmed.slice(5).replace(/\s+/g, '');
+  const jsonStr = decodeURIComponent(escape(atob(b64)));
+  const payload = JSON.parse(jsonStr);
+  if (!payload || typeof payload !== 'object' || !Array.isArray(payload.transactions)) {
+    throw new Error('Sync Code payload is corrupted or incomplete.');
+  }
+
+  const prevPat = state?.settings?.githubPat || '';
+  state.initialCash = Number(payload.initialCash || 0);
+  state.transactions = payload.transactions || [];
+  state.dividends = Array.isArray(payload.dividends) ? payload.dividends : [];
+  state.watchlist = Array.isArray(payload.watchlist) ? payload.watchlist : [];
+  state.tradeSimRows = Array.isArray(payload.tradeSimRows) ? payload.tradeSimRows : [];
+  if (payload.fundamentals && typeof payload.fundamentals === 'object') {
+    Object.entries(payload.fundamentals).forEach(([sym, f]) => {
+      state.fundamentals[sym] = { ...(state.fundamentals[sym] || {}), ...f };
+    });
+  }
+  if (payload.settings && typeof payload.settings === 'object') {
+    state.settings = {
+      ...DEFAULT_QUANT_SETTINGS,
+      ...(state.settings || {}),
+      ...payload.settings,
+      githubPat: prevPat
+    };
+  }
+  saveTradeSimLocal(state.tradeSimRows);
+  if (typeof invalidateStockMetricsCache === 'function') invalidateStockMetricsCache();
+  recalculatePortfolio();
+  saveState(true);
+  if (typeof renderAll === 'function') renderAll(true);
+  if (typeof checkAndRunDailyCloudflareSync === 'function') checkAndRunDailyCloudflareSync(true);
+  return {
+    txCount: state.transactions.length,
+    divCount: state.dividends.length,
+    wlCount: state.watchlist.length,
+    simCount: state.tradeSimRows.length
+  };
+}
+window.restoreFromCrossDeviceSyncCode = restoreFromCrossDeviceSyncCode;
+
 </script>
   <!-- Module: charts.js -->
   <script data-module="charts.js">
@@ -9739,6 +10225,8 @@ function renderCharts() {
     try { renderMonthlyHistoryChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderMonthlyHistoryChart failed: ${err.message}`, err); }
     try { renderAllocationChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderAllocationChart failed: ${err.message}`, err); }
     try { renderDividendsChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderDividendsChart failed: ${err.message}`, err); }
+    try { renderHoldingsCorrelationHeatmap(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderHoldingsCorrelationHeatmap failed: ${err.message}`, err); }
+    try { renderMultiTickerCompareChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderMultiTickerCompareChart failed: ${err.message}`, err); }
     try { renderPnlBreakdownChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderPnlBreakdownChart failed: ${err.message}`, err); }
   } else if (typeof window.markTabDirty === 'function') {
     window.markTabDirty('dashboard');
@@ -10685,6 +11173,7 @@ function renderInlineStockChart(tabType) {
     subEl.textContent = `${pm?.regime || 'Trend Analysis'} • RSI: ${pm?.rsi14 ?? '-'} • 12M Reg R²: ${pm?.regR2 ?? '-'} • (${sliced.length} months shown • ${currency})`;
   }
 
+  if (typeof populateInlineQuickPinBar === 'function') populateInlineQuickPinBar(tabType, ticker, pm);
   if (statsEl) {
     const chgColor = periodChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
     const cBuy = pm?.customBuyPrice || null;
@@ -11203,6 +11692,8 @@ function renderInlineStockChart(tabType) {
     rangeMonths,
     showSma: Boolean(state?.settings?.chartShowSma !== false),
     showReg: Boolean(state?.settings?.chartShowRegChannel !== false),
+    showCushion: Boolean(state?.settings?.chartShowCushion !== false),
+    showDiv: Boolean(state?.settings?.chartShowDivMarkers !== false),
     hideMoney,
     isDark,
     labelsLen: labels.length,
@@ -11219,6 +11710,7 @@ function renderInlineStockChart(tabType) {
       const targetDs = existingChart.data.datasets[idx];
       targetDs.data = ds.data;
       targetDs.label = ds.label;
+      targetDs.fill = ds.fill;
       if (ds._tradeMeta) targetDs._tradeMeta = ds._tradeMeta;
       if (ds._divByMonth) targetDs._divByMonth = ds._divByMonth;
     });
@@ -12066,6 +12558,313 @@ function renderProjectedDividendCalendarChart() {
 }
 window.renderProjectedDividendCalendarChart = renderProjectedDividendCalendarChart;
 
+// =========================================================================
+// v3.8.0: HOLDINGS CORRELATION HEATMAP (DASHBOARD)
+// =========================================================================
+var corrHeatmapMonths = 36;
+window.setCorrHeatmapMonths = function(m) {
+  corrHeatmapMonths = Number(m) || 36;
+  document.querySelectorAll('.corr-range-btn').forEach(b => {
+    const act = Number(b.getAttribute('data-corr-range')) === corrHeatmapMonths;
+    b.className = act
+      ? 'corr-range-btn px-2 py-0.5 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition'
+      : 'corr-range-btn px-2 py-0.5 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+  });
+  renderHoldingsCorrelationHeatmap();
+};
+
+function renderHoldingsCorrelationHeatmap() {
+  const box = document.getElementById('dashboard-corr-heatmap-box');
+  const insightsEl = document.getElementById('corr-heatmap-insights');
+  if (!box) return;
+
+  const active = (portfolio?.activeHoldings || [])
+    .filter(h => h.shares > 0.0001 && Array.isArray(state?.historicalPrices?.[h.ticker]) && state.historicalPrices[h.ticker].length >= 5)
+    .slice()
+    .sort((a, b) => (b.marketValueBase || 0) - (a.marketValueBase || 0))
+    .slice(0, 12);
+
+  if (active.length < 2) {
+    box.innerHTML = '<div class="py-8 text-center text-xs text-slate-400">Need at least 2 active holdings with monthly history to compute pairwise correlations.</div>';
+    if (insightsEl) insightsEl.innerHTML = '';
+    return;
+  }
+
+  // Build monthly return map per ticker over corrHeatmapMonths window
+  const retMaps = {};
+  active.forEach(h => {
+    const bars = (state.historicalPrices[h.ticker] || []).slice(-(corrHeatmapMonths + 1));
+    const map = {};
+    for (let i = 1; i < bars.length; i++) {
+      const p0 = Number(bars[i - 1].rawClose ?? bars[i - 1].close ?? 0);
+      const p1 = Number(bars[i].rawClose ?? bars[i].close ?? 0);
+      const m = String(bars[i].month || bars[i].date || '').slice(0, 7);
+      if (p0 > 0 && p1 > 0 && m) {
+        map[m] = (p1 - p0) / p0;
+      }
+    }
+    retMaps[h.ticker] = map;
+  });
+
+  const pearson = (mA, mB) => {
+    const xs = [], ys = [];
+    Object.keys(mA).forEach(k => {
+      if (mB[k] !== undefined) { xs.push(mA[k]); ys.push(mB[k]); }
+    });
+    const n = xs.length;
+    if (n < 4) return null;
+    const mx = xs.reduce((a, b) => a + b, 0) / n;
+    const my = ys.reduce((a, b) => a + b, 0) / n;
+    let num = 0, dx = 0, dy = 0;
+    for (let i = 0; i < n; i++) {
+      const ax = xs[i] - mx, ay = ys[i] - my;
+      num += ax * ay; dx += ax * ax; dy += ay * ay;
+    }
+    const den = Math.sqrt(dx * dy);
+    return den > 1e-12 ? Fin.round(num / den, 2) : 0;
+  };
+
+  let maxPair = null;
+  let minPair = null;
+  const tickers = active.map(h => h.ticker);
+  const matrix = tickers.map((tA, i) => tickers.map((tB, j) => {
+    if (i === j) return 1.0;
+    const r = pearson(retMaps[tA], retMaps[tB]);
+    if (j > i && r !== null) {
+      if (!maxPair || r > maxPair.r) maxPair = { a: tA, b: tB, r };
+      if (!minPair || r < minPair.r) minPair = { a: tA, b: tB, r };
+    }
+    return r;
+  }));
+
+  if (insightsEl) {
+    const chips = [];
+    if (maxPair) {
+      chips.push(`<span class="px-2 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono text-[10.5px]">Highest Overlap: <strong>${maxPair.a} / ${maxPair.b}</strong> (${maxPair.r.toFixed(2)})</span>`);
+    }
+    if (minPair) {
+      chips.push(`<span class="px-2 py-0.5 rounded bg-teal-500/15 text-teal-600 dark:text-teal-400 border border-teal-500/30 font-mono text-[10.5px]">Best Diversifier: <strong>${minPair.a} / ${minPair.b}</strong> (${minPair.r.toFixed(2)})</span>`);
+    }
+    insightsEl.innerHTML = chips.join(' ');
+  }
+
+  const cellColor = (r, isDiag) => {
+    if (isDiag) return 'bg-slate-200/80 dark:bg-slate-700/80 text-slate-500 dark:text-slate-300';
+    if (r === null) return 'bg-slate-100/50 dark:bg-slate-800/40 text-slate-400';
+    if (r >= 0.75) return 'bg-rose-500/35 text-rose-700 dark:text-rose-200 font-bold';
+    if (r >= 0.45) return 'bg-amber-500/25 text-amber-700 dark:text-amber-200';
+    if (r >= 0.15) return 'bg-slate-500/15 text-slate-700 dark:text-slate-300';
+    if (r >= -0.15) return 'bg-sky-500/15 text-sky-700 dark:text-sky-300';
+    return 'bg-teal-500/30 text-teal-700 dark:text-teal-200 font-bold';
+  };
+
+  const shortLbl = (t) => t.replace(/\.HK$|\.L$/i, '');
+  let tbl = '<table class="w-full text-[10.5px] font-mono border-collapse whitespace-nowrap"><thead><tr><th class="p-1.5 text-left text-slate-400 sticky left-0 bg-white dark:bg-dark-card z-10">Ticker</th>';
+  tickers.forEach(t => {
+    tbl += `<th class="p-1.5 text-center text-slate-500 dark:text-slate-400" title="${t}">${shortLbl(t)}</th>`;
+  });
+  tbl += '</tr></thead><tbody>';
+  tickers.forEach((tA, i) => {
+    tbl += `<tr><td class="p-1.5 font-bold text-slate-700 dark:text-slate-200 sticky left-0 bg-white dark:bg-dark-card z-10 border-r border-slate-100 dark:border-slate-800" title="${tA}">${shortLbl(tA)}</td>`;
+    tickers.forEach((tB, j) => {
+      const r = matrix[i][j];
+      const cls = cellColor(r, i === j);
+      const txt = r === null ? '—' : r.toFixed(2);
+      tbl += `<td class="p-1 text-center"><div class="rounded px-1.5 py-1 ${cls}" title="${tA} vs ${tB}: r = ${txt}">${txt}</div></td>`;
+    });
+    tbl += '</tr>';
+  });
+  tbl += '</tbody></table>';
+  box.innerHTML = tbl;
+}
+window.renderHoldingsCorrelationHeatmap = renderHoldingsCorrelationHeatmap;
+
+// =========================================================================
+// v3.8.0: MULTI-TICKER RELATIVE PERFORMANCE OVERLAY (DASHBOARD)
+// =========================================================================
+var multiCompareMonths = 24;
+window.setMultiCompareMonths = function(m) {
+  multiCompareMonths = Number(m) || 24;
+  document.querySelectorAll('.compare-range-btn').forEach(b => {
+    const act = Number(b.getAttribute('data-compare-range')) === multiCompareMonths;
+    b.className = act
+      ? 'compare-range-btn px-2 py-0.5 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition'
+      : 'compare-range-btn px-2 py-0.5 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+  });
+  renderMultiTickerCompareChart();
+};
+
+window.addMultiCompareTicker = function(rawTicker) {
+  const sym = MarketAPI.normalizeTicker(rawTicker);
+  if (!sym) return;
+  if (!state.settings) state.settings = {};
+  if (!Array.isArray(state.settings.compareTickers)) state.settings.compareTickers = [];
+  if (state.settings.compareTickers.includes(sym)) return;
+  if (state.settings.compareTickers.length >= 6) {
+    if (typeof showToast === 'function') showToast('Compare up to 6 tickers at a time.', 'info');
+    return;
+  }
+  state.settings.compareTickers.push(sym);
+  saveState();
+  renderMultiTickerCompareChart();
+};
+
+window.removeMultiCompareTicker = function(sym) {
+  if (!Array.isArray(state?.settings?.compareTickers)) return;
+  state.settings.compareTickers = state.settings.compareTickers.filter(t => t !== sym);
+  saveState();
+  renderMultiTickerCompareChart();
+};
+
+function renderMultiTickerCompareChart() {
+  const ctx = document.getElementById('chart-multi-compare');
+  const chipsEl = document.getElementById('multi-compare-chips');
+  const dl = document.getElementById('multi-compare-datalist');
+  const summaryEl = document.getElementById('multi-compare-summary');
+  const emptyEl = document.getElementById('chart-multi-compare-empty');
+  if (!ctx) return;
+
+  // Populate autocomplete datalist
+  if (dl) {
+    const known = new Set(['2800.HK', 'VOO', 'VWRA.L']);
+    (portfolio?.allHoldings || []).forEach(h => known.add(h.ticker));
+    (state?.watchlist || []).forEach(w => known.add(w.ticker));
+    dl.innerHTML = Array.from(known).sort().map(t => `<option value="${t}"></option>`).join('');
+  }
+
+  if (!state.settings) state.settings = {};
+  if (!Array.isArray(state.settings.compareTickers) || state.settings.compareTickers.length === 0) {
+    const defaults = (portfolio?.activeHoldings || [])
+      .slice()
+      .sort((a, b) => (b.marketValueBase || 0) - (a.marketValueBase || 0))
+      .slice(0, 4)
+      .map(h => h.ticker);
+    if (defaults.length > 0) state.settings.compareTickers = defaults;
+  }
+  const syms = Array.isArray(state.settings.compareTickers) ? state.settings.compareTickers : [];
+  const palette = ['#10b981', '#6366f1', '#f59e0b', '#ec4899', '#06b6d4', '#a855f7'];
+
+  if (chipsEl) {
+    chipsEl.innerHTML = syms.map((sym, idx) => `
+      <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+        <span class="w-2 h-2 rounded-full" style="background:${palette[idx % palette.length]}"></span>
+        <span>${sym}</span>
+        <button type="button" onclick="removeMultiCompareTicker('${sym}')" class="text-slate-400 hover:text-rose-500 ml-0.5" title="Remove ${sym}">&times;</button>
+      </span>
+    `).join('');
+  }
+
+  // Gather union of months across selected tickers
+  const monthSet = new Set();
+  const priceMaps = {};
+  syms.forEach(sym => {
+    const hist = state?.historicalPrices?.[sym] || [];
+    const map = {};
+    hist.forEach(b => {
+      const m = String(b.month || b.date || '').slice(0, 7);
+      const p = Number(b.rawClose ?? b.close ?? 0);
+      if (m && p > 0) { map[m] = p; monthSet.add(m); }
+    });
+    priceMaps[sym] = map;
+  });
+
+  const allMonths = Array.from(monthSet).sort();
+  const labels = allMonths.slice(-multiCompareMonths);
+  if (syms.length === 0 || labels.length < 2) {
+    if (charts.multiCompare) { charts.multiCompare.destroy(); charts.multiCompare = null; }
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    if (summaryEl) summaryEl.innerHTML = '';
+    return;
+  }
+  if (emptyEl) emptyEl.classList.add('hidden');
+
+  const perfSummary = [];
+  const datasets = syms.map((sym, idx) => {
+    const map = priceMaps[sym] || {};
+    const liveP = Number(state?.prices?.[sym]?.price || 0);
+    if (liveP > 0) map[labels[labels.length - 1]] = liveP;
+
+    let lastKnown = null;
+    const sortedM = Object.keys(map).sort();
+    for (let i = 0; i < sortedM.length; i++) {
+      if (sortedM[i] <= labels[0]) lastKnown = map[sortedM[i]];
+      else break;
+    }
+    let baseP = null;
+    const series = labels.map(m => {
+      if (map[m] > 0) lastKnown = map[m];
+      if (baseP === null && lastKnown > 0) baseP = lastKnown;
+      if (baseP > 0 && lastKnown > 0) return Fin.round(((lastKnown - baseP) / baseP) * 100, 2);
+      return null;
+    });
+    const endVal = series.slice().reverse().find(v => v !== null);
+    if (endVal !== undefined) perfSummary.push({ sym, pct: endVal });
+
+    return {
+      label: sym,
+      data: series,
+      borderColor: palette[idx % palette.length],
+      borderWidth: 1.75,
+      fill: false,
+      tension: 0.28,
+      pointRadius: 0,
+      pointHoverRadius: 4
+    };
+  });
+
+  if (summaryEl) {
+    perfSummary.sort((a, b) => b.pct - a.pct);
+    if (perfSummary.length >= 2) {
+      const lead = perfSummary[0];
+      const lag = perfSummary[perfSummary.length - 1];
+      summaryEl.innerHTML = `
+        <span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono text-[10.5px]">Leader: <strong>${lead.sym}</strong> (${Fin.percent(lead.pct, true)})</span>
+        <span class="px-2 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono text-[10.5px]">Laggard: <strong>${lag.sym}</strong> (${Fin.percent(lag.pct, true)})</span>
+      `;
+    } else {
+      summaryEl.innerHTML = '';
+    }
+  }
+
+  const isDark = document.documentElement.classList.contains('dark');
+  if (charts.multiCompare) charts.multiCompare.destroy();
+  charts.multiCompare = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: {
+          grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' },
+          ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 }, maxTicksLimit: 10 }
+        },
+        y: {
+          grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+          ticks: {
+            color: isDark ? '#94a3b8' : '#64748b',
+            font: { size: 10 },
+            callback: (v) => (v >= 0 ? '+' : '') + Number(v).toFixed(0) + '%'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 10, color: isDark ? '#cbd5e1' : '#334155', font: { size: 11 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: (c) => ` ${c.dataset.label}: ${Fin.percent(c.raw, true)}`
+          }
+        }
+      }
+    }
+  });
+}
+window.renderMultiTickerCompareChart = renderMultiTickerCompareChart;
+
 </script>
   <!-- Module: app.js -->
   <script data-module="app.js">
@@ -12227,6 +13026,8 @@ function renderSingleTabContent(tabName) {
       break;
     case 'transactions':
       try { renderTradeSimulationTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderTradeSimulationTable failed: ${err.message}`, err); }
+      try { renderAnnualTradeScorecard(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderAnnualTradeScorecard failed: ${err.message}`, err); }
+      try { renderMonthlyTradeMatrix(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderMonthlyTradeMatrix failed: ${err.message}`, err); }
       try { renderTransactionsTable(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderTransactionsTable failed: ${err.message}`, err); }
       try { if (typeof renderTradesBalanceCashflowChart === 'function') renderTradesBalanceCashflowChart(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('Charts', `renderTradesBalanceCashflowChart failed: ${err.message}`, err); }
       break;
@@ -12266,6 +13067,7 @@ function renderAll(forceAll = false) {
   try { updateThemeUI(); } catch (_) {}
   try { renderApiStatusUI(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `renderApiStatusUI failed: ${err.message}`, err); }
   try { updateTabCounters(); } catch (err) { if (typeof AppLogger !== 'undefined') AppLogger.error('UI', `updateTabCounters failed: ${err.message}`, err); }
+  try { updateBackupAgeBadge(); } catch (_) {}
   try { if (typeof refreshSectorDatalist === 'function') refreshSectorDatalist(); } catch (_) {}
   try {
     if (typeof AppLogger !== 'undefined') {
@@ -16456,6 +17258,60 @@ function setupEventListeners() {
       }
     });
   }
+  // v3.8.0 Multi-Ticker Compare Add & Cross-Device Sync Code Listeners
+  on('btn-multi-compare-add', 'click', () => {
+    const inp = document.getElementById('multi-compare-add-input');
+    if (inp && inp.value.trim() && typeof addMultiCompareTicker === 'function') {
+      addMultiCompareTicker(inp.value.trim());
+      inp.value = '';
+    }
+  });
+  const cmpInp = document.getElementById('multi-compare-add-input');
+  if (cmpInp) {
+    cmpInp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (cmpInp.value.trim() && typeof addMultiCompareTicker === 'function') {
+          addMultiCompareTicker(cmpInp.value.trim());
+          cmpInp.value = '';
+        }
+      }
+    });
+  }
+  on('btn-generate-sync-code', 'click', () => {
+    const prevEl = document.getElementById('sync-code-export-preview');
+    const msgEl = document.getElementById('sync-code-status-msg');
+    try {
+      const code = generateCrossDeviceSyncCode();
+      if (prevEl) prevEl.value = code;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).catch(() => {});
+      }
+      const kb = (code.length / 1024).toFixed(1);
+      if (msgEl) msgEl.innerHTML = `<span class="text-emerald-500"><i class="fa-solid fa-circle-check mr-1"></i>Sync Code generated &amp; copied to clipboard (${kb} KB). Paste it on your other device to sync.</span>`;
+      if (typeof showToast === 'function') showToast(`Sync Code copied (${kb} KB)!`, 'success');
+    } catch (err) {
+      if (msgEl) msgEl.innerHTML = `<span class="text-rose-500">Failed to generate Sync Code: ${err.message}</span>`;
+    }
+  });
+  on('btn-restore-sync-code', 'click', () => {
+    const inpEl = document.getElementById('sync-code-restore-input');
+    const msgEl = document.getElementById('sync-code-status-msg');
+    const raw = inpEl ? inpEl.value.trim() : '';
+    if (!raw) {
+      if (msgEl) msgEl.innerHTML = '<span class="text-amber-500">Please paste a Sync Code (MP38:...) first.</span>';
+      return;
+    }
+    try {
+      const res = restoreFromCrossDeviceSyncCode(raw);
+      if (inpEl) inpEl.value = '';
+      if (msgEl) msgEl.innerHTML = `<span class="text-emerald-500"><i class="fa-solid fa-circle-check mr-1"></i>Restored ${res.txCount} transactions, ${res.divCount} dividends, ${res.wlCount} watchlist tickers &amp; ${res.simCount} simulated trades! Syncing live market data...</span>`;
+      if (typeof showToast === 'function') showToast('Portfolio restored from Sync Code!', 'success');
+    } catch (err) {
+      if (msgEl) msgEl.innerHTML = `<span class="text-rose-500"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${err.message}</span>`;
+    }
+  });
+
   on('btn-trade-sim-clear', 'click', () => {
     if (!state) return;
     state.tradeSimRows = [];
@@ -17334,6 +18190,386 @@ function renderTradeSimulationTable() {
   updateTradeSimTotalsUI();
 }
 window.renderTradeSimulationTable = renderTradeSimulationTable;
+
+// =========================================================================
+// v3.8.0: INLINE CHART QUICK-PIN BAR, ANNUAL SCORECARD & BACKUP AGE PILL
+// =========================================================================
+window.populateInlineQuickPinBar = function(tabType, ticker, pm) {
+  const prefix = tabType === 'watchlist' ? 'watchlist' : 'holdings';
+  const bEl = document.getElementById(`${prefix}-qpin-buy`);
+  const sEl = document.getElementById(`${prefix}-qpin-sell`);
+  const stEl = document.getElementById(`${prefix}-qpin-stop`);
+  if (!bEl || !sEl || !stEl) return;
+  const fund = state?.fundamentals?.[ticker] || {};
+  const wl = (state?.watchlist || []).find(w => w.ticker === ticker);
+  bEl.value = (fund.customBuyPrice ?? wl?.customBuyPrice ?? '') || '';
+  sEl.value = (fund.customSellPrice ?? wl?.customSellPrice ?? '') || '';
+  stEl.value = (fund.customStopLoss ?? wl?.customStopLoss ?? '') || '';
+  bEl.placeholder = pm?.recommendedBuyPrice ? `Rec ${pm.recommendedBuyPrice}` : 'Auto';
+  sEl.placeholder = pm?.recommendedSellPrice ? `Rec ${pm.recommendedSellPrice}` : 'Auto';
+  stEl.placeholder = pm?.recommendedStopLoss ? `Rec ${pm.recommendedStopLoss}` : 'Auto';
+};
+
+window.saveInlineQuickPins = function(tabType) {
+  const isWl = tabType === 'watchlist';
+  const ticker = isWl ? selectedWatchlistTicker : selectedHoldingsTicker;
+  if (!ticker) return;
+  const prefix = isWl ? 'watchlist' : 'holdings';
+  const rawB = parseFloat(document.getElementById(`${prefix}-qpin-buy`)?.value);
+  const rawS = parseFloat(document.getElementById(`${prefix}-qpin-sell`)?.value);
+  const rawSt = parseFloat(document.getElementById(`${prefix}-qpin-stop`)?.value);
+  const cBuy = (Number.isFinite(rawB) && rawB > 0) ? Fin.round(rawB, 4) : null;
+  const cSell = (Number.isFinite(rawS) && rawS > 0) ? Fin.round(rawS, 4) : null;
+  const cStop = (Number.isFinite(rawSt) && rawSt > 0) ? Fin.round(rawSt, 4) : null;
+
+  if (!state.fundamentals) state.fundamentals = {};
+  state.fundamentals[ticker] = {
+    ...(state.fundamentals[ticker] || {}),
+    customBuyPrice: cBuy,
+    customSellPrice: cSell,
+    customStopLoss: cStop
+  };
+  const wl = (state.watchlist || []).find(w => w.ticker === ticker);
+  if (wl) {
+    wl.customBuyPrice = cBuy;
+    wl.customSellPrice = cSell;
+    wl.customStopLoss = cStop;
+    if (cBuy) wl.targetBuyPrice = cBuy;
+  }
+  if (typeof invalidateStockMetricsCache === 'function') invalidateStockMetricsCache();
+  recalculatePortfolio();
+  saveState(true);
+  renderAll(true);
+  if (typeof showToast === 'function') showToast(`Saved custom pins for ${ticker}`, 'success');
+};
+
+window.snapInlineQuickPinsToRec = function(tabType) {
+  const isWl = tabType === 'watchlist';
+  const ticker = isWl ? selectedWatchlistTicker : selectedHoldingsTicker;
+  if (!ticker) return;
+  const prefix = isWl ? 'watchlist' : 'holdings';
+  const h = (portfolio?.activeHoldings || []).find(x => x.ticker === ticker);
+  const curP = Number(state?.prices?.[ticker]?.price || h?.currentPrice || 0);
+  const pm = typeof computeStockPriceMetrics === 'function' ? computeStockPriceMetrics(ticker, curP, null, h?.avgCost || null) : null;
+  if (!pm) return;
+  const bEl = document.getElementById(`${prefix}-qpin-buy`);
+  const sEl = document.getElementById(`${prefix}-qpin-sell`);
+  const stEl = document.getElementById(`${prefix}-qpin-stop`);
+  if (bEl && pm.recommendedBuyPrice) bEl.value = pm.recommendedBuyPrice;
+  if (sEl && pm.recommendedSellPrice) sEl.value = pm.recommendedSellPrice;
+  if (stEl && pm.recommendedStopLoss) stEl.value = pm.recommendedStopLoss;
+  saveInlineQuickPins(tabType);
+};
+
+window.clearInlineQuickPins = function(tabType) {
+  const prefix = tabType === 'watchlist' ? 'watchlist' : 'holdings';
+  ['buy', 'sell', 'stop'].forEach(k => {
+    const el = document.getElementById(`${prefix}-qpin-${k}`);
+    if (el) el.value = '';
+  });
+  saveInlineQuickPins(tabType);
+};
+
+var scorecardGranularity = 'yearly';
+window.setScorecardGranularity = function(mode) {
+  scorecardGranularity = ['monthly', 'quarterly', 'yearly'].includes(mode) ? mode : 'yearly';
+  document.querySelectorAll('.scorecard-mode-btn').forEach(b => {
+    const act = b.getAttribute('data-scorecard-mode') === scorecardGranularity;
+    b.className = act
+      ? 'scorecard-mode-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition'
+      : 'scorecard-mode-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+  });
+  renderAnnualTradeScorecard();
+};
+
+function renderAnnualTradeScorecard() {
+  const tbody = document.getElementById('annual-scorecard-tbody');
+  const tfoot = document.getElementById('annual-scorecard-tfoot');
+  const badge = document.getElementById('annual-scorecard-summary-badge');
+  const hdrEl = document.getElementById('scorecard-period-col-hdr');
+  if (!tbody || typeof computePeriodicTradeScorecard !== 'function') return;
+
+  const { mode, baseCurr, rows, totals } = computePeriodicTradeScorecard(scorecardGranularity);
+  const hideMoney = Fin.isPrivacyMode();
+
+  if (hdrEl) {
+    hdrEl.textContent = mode === 'monthly' ? 'Month' : (mode === 'quarterly' ? 'Quarter' : 'Year');
+  }
+  if (badge) {
+    badge.textContent = hideMoney
+      ? `${totals.buys + totals.sells} Trades · ${totals.winRatePct !== null ? totals.winRatePct + '% Win' : '—'}`
+      : `All-Time Realized + Div: ${Fin.currency(totals.totalCashGainBase, true, baseCurr)}`;
+  }
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" class="py-6 px-4 text-center text-slate-400">Record buy/sell trades or dividends to see your periodic scorecard.</td></tr>';
+    if (tfoot) tfoot.innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const uCls = r.unrealizedPnlBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
+    const rCls = r.realizedPnlBase >= 0 ? 'text-emerald-500' : 'text-rose-500';
+    const totCls = r.totalCashGainBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500';
+    const wrCls = r.winRatePct === null ? 'text-slate-400' : (r.winRatePct >= 60 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : (r.winRatePct >= 40 ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'));
+    return `
+      <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+        <td class="py-1.5 px-3 sticky-col-mobile bg-white dark:bg-dark-card font-mono font-bold text-slate-900 dark:text-white">${r.period}</td>
+        <td class="py-1.5 px-3 text-center font-mono text-slate-600 dark:text-slate-300">
+          <span class="text-emerald-500 font-semibold">${r.buys}B</span> / <span class="text-rose-500 font-semibold">${r.sells}S</span>
+        </td>
+        <td class="py-1.5 px-3 text-right num-font font-semibold ${r.buyAmountBase > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}">
+          ${hideMoney ? '••••' : (r.buyAmountBase > 0 ? Fin.currency(r.buyAmountBase, false, baseCurr) : '-')}
+        </td>
+        <td class="py-1.5 px-3 text-right num-font font-semibold ${r.sellAmountBase > 0 ? 'text-rose-500' : 'text-slate-400'}">
+          ${hideMoney ? '••••' : (r.sellAmountBase > 0 ? Fin.currency(r.sellAmountBase, false, baseCurr) : '-')}
+        </td>
+        <td class="py-1.5 px-3 text-right num-font font-bold ${r.unrealizedPnlBase !== 0 ? uCls : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : Fin.currency(r.unrealizedPnlBase, true, baseCurr)}
+        </td>
+        <td class="py-1.5 px-3 text-right num-font font-bold ${r.realizedPnlBase !== 0 ? rCls : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : Fin.currency(r.realizedPnlBase, true, baseCurr)}
+        </td>
+        <td class="py-1.5 px-3 text-right num-font font-bold ${r.dividendsBase > 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}">
+          ${hideMoney ? '••••••' : (r.dividendsBase > 0 ? '+' + Fin.currency(r.dividendsBase, false, baseCurr) : Fin.currency(0, false, baseCurr))}
+        </td>
+        <td class="py-1.5 px-3 text-right num-font font-extrabold ${totCls}">
+          ${hideMoney ? '••••••' : Fin.currency(r.totalCashGainBase, true, baseCurr)}
+        </td>
+        <td class="py-1.5 px-3 text-right num-font text-slate-500 dark:text-slate-400">
+          ${hideMoney ? '••••' : Fin.currency(r.feesBase, false, baseCurr)}
+        </td>
+        <td class="py-1.5 px-3 text-center">
+          ${r.winRatePct !== null
+            ? `<span class="px-2 py-0.5 rounded text-[10.5px] font-mono font-bold border ${wrCls}" title="${r.wins} profitable / ${r.wins + r.losses} closed sells">${r.winRatePct.toFixed(0)}% (${r.wins}/${r.wins + r.losses})</span>`
+            : '<span class="text-slate-400">-</span>'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  if (tfoot) {
+    const totUCls = totals.unrealizedPnlBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500';
+    const totRCls = totals.realizedPnlBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500';
+    const totGCls = totals.totalCashGainBase >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500';
+    tfoot.innerHTML = `
+      <tr>
+        <td class="py-2 px-3 sticky-col-mobile bg-indigo-50 dark:bg-slate-900 font-extrabold text-slate-900 dark:text-white">ALL-TIME</td>
+        <td class="py-2 px-3 text-center font-mono">${totals.buys}B / ${totals.sells}S</td>
+        <td class="py-2 px-3 text-right num-font text-emerald-600 dark:text-emerald-400">${hideMoney ? '••••' : Fin.currency(totals.buyAmountBase, false, baseCurr)}</td>
+        <td class="py-2 px-3 text-right num-font text-rose-500">${hideMoney ? '••••' : Fin.currency(totals.sellAmountBase, false, baseCurr)}</td>
+        <td class="py-2 px-3 text-right num-font ${totUCls}" title="Current live Unrealized P&amp;L">${hideMoney ? '••••••' : Fin.currency(totals.unrealizedPnlBase, true, baseCurr)}</td>
+        <td class="py-2 px-3 text-right num-font ${totRCls}">${hideMoney ? '••••••' : Fin.currency(totals.realizedPnlBase, true, baseCurr)}</td>
+        <td class="py-2 px-3 text-right num-font text-cyan-600 dark:text-cyan-400">${hideMoney ? '••••••' : ('+' + Fin.currency(totals.dividendsBase, false, baseCurr))}</td>
+        <td class="py-2 px-3 text-right num-font font-extrabold ${totGCls}">${hideMoney ? '••••••' : Fin.currency(totals.totalCashGainBase, true, baseCurr)}</td>
+        <td class="py-2 px-3 text-right num-font text-slate-500 dark:text-slate-400">${hideMoney ? '••••' : Fin.currency(totals.feesBase, false, baseCurr)}</td>
+        <td class="py-2 px-3 text-center font-mono">${totals.winRatePct !== null ? `${totals.winRatePct.toFixed(0)}% (${totals.wins}/${totals.wins + totals.losses})` : '-'}</td>
+      </tr>
+    `;
+  }
+}
+window.renderAnnualTradeScorecard = renderAnnualTradeScorecard;
+
+// =========================================================================
+// v3.9.0: MONTHLY BUY & SELL ACTIVITY MATRIX (BY TICKER / BY SECTOR)
+// =========================================================================
+var tradeMatrixGroup = 'ticker';
+var tradeMatrixMonths = 12;
+
+window.setTradeMatrixGroup = function(grp) {
+  tradeMatrixGroup = (grp === 'sector') ? 'sector' : 'ticker';
+  document.querySelectorAll('.matrix-group-btn').forEach(b => {
+    const act = b.getAttribute('data-matrix-group') === tradeMatrixGroup;
+    b.className = act
+      ? 'matrix-group-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition'
+      : 'matrix-group-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+  });
+  renderMonthlyTradeMatrix();
+};
+
+window.setTradeMatrixMonths = function(mos) {
+  tradeMatrixMonths = Number(mos) || 12;
+  document.querySelectorAll('.matrix-range-btn').forEach(b => {
+    const act = Number(b.getAttribute('data-matrix-range')) === tradeMatrixMonths;
+    b.className = act
+      ? 'matrix-range-btn px-2.5 py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition'
+      : 'matrix-range-btn px-2.5 py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition';
+  });
+  renderMonthlyTradeMatrix();
+};
+
+function renderMonthlyTradeMatrix() {
+  const box = document.getElementById('monthly-trade-matrix-box');
+  if (!box) return;
+
+  const baseCurr = portfolio?.baseCurrency || state?.settings?.currency || 'HKD';
+  const hideMoney = Fin.isPrivacyMode();
+
+  // Build trailing N calendar months ending at current month
+  const months = [];
+  const now = new Date();
+  for (let i = tradeMatrixMonths - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  const monthSet = new Set(months);
+
+  const rowMap = {};
+  const monthTotals = {};
+  months.forEach(m => { monthTotals[m] = { buy: 0, sell: 0, buyCnt: 0, sellCnt: 0 }; });
+
+  const resolveSectorForTicker = (sym) => {
+    const h = (portfolio?.allHoldings || []).find(x => x.ticker === sym);
+    if (h && typeof getCanonicalHoldingsSector === 'function') return getCanonicalHoldingsSector(h);
+    return state?.fundamentals?.[sym]?.sector || MarketAPI.getStaticProfile(sym).sector || 'Equities';
+  };
+
+  (state?.transactions || []).forEach(tx => {
+    const type = String(tx.type || '').toUpperCase();
+    if (type !== 'BUY' && type !== 'SELL') return;
+    const ym = String(tx.date || '').slice(0, 7);
+    if (!monthSet.has(ym)) return;
+    const sym = MarketAPI.normalizeTicker(tx.ticker);
+    if (!sym) return;
+
+    const curr = tx.currency || state?.prices?.[sym]?.currency || state?.fundamentals?.[sym]?.currency || MarketAPI.getStaticProfile(sym).currency || baseCurr;
+    const shares = Number(tx.shares || 0);
+    const price = Number(tx.price || 0);
+    const fees = Number(tx.fees || 0);
+    const amtNative = type === 'BUY' ? (shares * price + fees) : Math.max(0, shares * price - fees);
+    const amtBase = Fin.round(Fin.convertCurrency(amtNative, curr, baseCurr), 2);
+    const key = tradeMatrixGroup === 'sector' ? resolveSectorForTicker(sym) : sym;
+
+    if (!rowMap[key]) {
+      rowMap[key] = { key, totalBuy: 0, totalSell: 0, totalVol: 0, cells: {} };
+    }
+    if (!rowMap[key].cells[ym]) {
+      rowMap[key].cells[ym] = { buy: 0, sell: 0, buyCnt: 0, sellCnt: 0, buySh: 0, sellSh: 0 };
+    }
+    const cell = rowMap[key].cells[ym];
+    if (type === 'BUY') {
+      cell.buy = Fin.round(cell.buy + amtBase, 2);
+      cell.buyCnt++;
+      cell.buySh = Fin.round(cell.buySh + shares, 4);
+      rowMap[key].totalBuy = Fin.round(rowMap[key].totalBuy + amtBase, 2);
+      monthTotals[ym].buy = Fin.round(monthTotals[ym].buy + amtBase, 2);
+      monthTotals[ym].buyCnt++;
+    } else {
+      cell.sell = Fin.round(cell.sell + amtBase, 2);
+      cell.sellCnt++;
+      cell.sellSh = Fin.round(cell.sellSh + shares, 4);
+      rowMap[key].totalSell = Fin.round(rowMap[key].totalSell + amtBase, 2);
+      monthTotals[ym].sell = Fin.round(monthTotals[ym].sell + amtBase, 2);
+      monthTotals[ym].sellCnt++;
+    }
+    rowMap[key].totalVol = Fin.round(rowMap[key].totalBuy + rowMap[key].totalSell, 2);
+  });
+
+  const rows = Object.values(rowMap).sort((a, b) => b.totalVol - a.totalVol);
+  if (rows.length === 0) {
+    box.innerHTML = `<div class="py-8 px-4 text-center text-xs text-slate-400">No Buy or Sell transactions found in the last ${tradeMatrixMonths / 12} year(s).</div>`;
+    return;
+  }
+
+  const fmtCompact = (val) => {
+    const abs = Math.abs(val);
+    if (abs >= 1000000) return `${(abs / 1000000).toFixed(2)}M`;
+    if (abs >= 1000) return `${(abs / 1000).toFixed(1)}k`;
+    return abs.toFixed(0);
+  };
+
+  let htmlStr = `<table class="w-full text-left text-[11px] whitespace-nowrap compact-log-table border-collapse">
+    <thead class="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] uppercase font-semibold border-b border-slate-200 dark:border-dark-border">
+      <tr>
+        <th class="py-1.5 px-3 sticky left-0 z-20 bg-slate-50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700">${tradeMatrixGroup === 'sector' ? 'Sector' : 'Ticker'}</th>`;
+  months.forEach(m => {
+    htmlStr += `<th class="py-1.5 px-2 text-center font-mono">${m.slice(2)}</th>`;
+  });
+  htmlStr += `<th class="py-1.5 px-3 text-right font-mono border-l border-slate-200 dark:border-slate-700">Period Total</th></tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">`;
+
+  rows.forEach(r => {
+    htmlStr += `<tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/35">
+      <td class="py-1.5 px-3 sticky left-0 z-10 bg-white dark:bg-dark-card font-bold text-slate-900 dark:text-white border-r border-slate-100 dark:border-slate-800">${r.key}</td>`;
+    months.forEach(m => {
+      const c = r.cells[m];
+      if (!c) {
+        htmlStr += `<td class="py-1.5 px-2 text-center text-slate-300 dark:text-slate-700">·</td>`;
+      } else {
+        const parts = [];
+        if (c.buy > 0) {
+          const lbl = hideMoney ? `${c.buyCnt}B` : `+${fmtCompact(c.buy)}`;
+          parts.push(`<div class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono font-bold text-[10px]" title="BUY ${r.key} (${m}): ${hideMoney ? c.buyCnt + ' order(s)' : Fin.currency(c.buy, false, baseCurr) + ' · ' + Fin.shares(c.buySh) + ' sh'}">${lbl}</div>`);
+        }
+        if (c.sell > 0) {
+          const lbl = hideMoney ? `${c.sellCnt}S` : `-${fmtCompact(c.sell)}`;
+          parts.push(`<div class="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-mono font-bold text-[10px]" title="SELL ${r.key} (${m}): ${hideMoney ? c.sellCnt + ' order(s)' : Fin.currency(c.sell, false, baseCurr) + ' · ' + Fin.shares(c.sellSh) + ' sh'}">${lbl}</div>`);
+        }
+        htmlStr += `<td class="py-1 px-1.5 text-center"><div class="flex flex-col gap-0.5 items-center">${parts.join('')}</div></td>`;
+      }
+    });
+    const totParts = [];
+    if (r.totalBuy > 0) totParts.push(`<div class="text-emerald-600 dark:text-emerald-400 font-bold">${hideMoney ? 'BUY' : '+' + Fin.currency(r.totalBuy, false, baseCurr)}</div>`);
+    if (r.totalSell > 0) totParts.push(`<div class="text-rose-500 font-bold">${hideMoney ? 'SELL' : '-' + Fin.currency(r.totalSell, false, baseCurr)}</div>`);
+    htmlStr += `<td class="py-1.5 px-3 text-right font-mono text-[10.5px] border-l border-slate-100 dark:border-slate-800">${totParts.join('')}</td></tr>`;
+  });
+
+  // Footer monthly totals
+  let grandBuy = 0, grandSell = 0;
+  htmlStr += `</tbody><tfoot class="sticky bottom-0 z-10 bg-indigo-50/95 dark:bg-slate-900/95 border-t-2 border-indigo-500/30 font-mono text-[10px] font-bold">
+    <tr><td class="py-2 px-3 sticky left-0 z-20 bg-indigo-50 dark:bg-slate-900 text-slate-900 dark:text-white border-r border-slate-200 dark:border-slate-700">MONTHLY TOTAL</td>`;
+  months.forEach(m => {
+    const mt = monthTotals[m];
+    grandBuy = Fin.round(grandBuy + mt.buy, 2);
+    grandSell = Fin.round(grandSell + mt.sell, 2);
+    const parts = [];
+    if (mt.buy > 0) parts.push(`<div class="text-emerald-600 dark:text-emerald-400">${hideMoney ? mt.buyCnt + 'B' : '+' + fmtCompact(mt.buy)}</div>`);
+    if (mt.sell > 0) parts.push(`<div class="text-rose-500">${hideMoney ? mt.sellCnt + 'S' : '-' + fmtCompact(mt.sell)}</div>`);
+    htmlStr += `<td class="py-1.5 px-1.5 text-center">${parts.length > 0 ? parts.join('') : '<span class="text-slate-400">-</span>'}</td>`;
+  });
+  htmlStr += `<td class="py-1.5 px-3 text-right border-l border-slate-200 dark:border-slate-700">
+    ${grandBuy > 0 ? `<div class="text-emerald-600 dark:text-emerald-400">${hideMoney ? '••••' : '+' + Fin.currency(grandBuy, false, baseCurr)}</div>` : ''}
+    ${grandSell > 0 ? `<div class="text-rose-500">${hideMoney ? '••••' : '-' + Fin.currency(grandSell, false, baseCurr)}</div>` : ''}
+  </td></tr></tfoot></table>`;
+
+  box.innerHTML = htmlStr;
+}
+window.renderMonthlyTradeMatrix = renderMonthlyTradeMatrix;
+
+function updateBackupAgeBadge() {
+  const pill = document.getElementById('backup-age-pill');
+  const txt = document.getElementById('backup-age-text');
+  const icon = document.getElementById('backup-age-icon');
+  const settingsBadge = document.getElementById('settings-last-backup-badge');
+  const iso = state?.settings?.lastBackupAt || null;
+
+  let label = 'No Backup';
+  let fullLabel = 'Last Backup: Never';
+  let stale = true;
+  if (iso) {
+    const dt = new Date(iso);
+    if (!isNaN(dt.getTime())) {
+      const days = Math.max(0, Math.floor((Date.now() - dt.getTime()) / 86400000));
+      stale = days > 14;
+      label = days === 0 ? 'Backed up' : `Backup ${days}d`;
+      fullLabel = `Last Backup: ${dt.toLocaleDateString()} (${days === 0 ? 'Today' : days + 'd ago'})`;
+    }
+  }
+
+  if (txt) txt.textContent = label;
+  if (icon) icon.className = stale ? 'fa-solid fa-cloud-arrow-up text-amber-500' : 'fa-solid fa-circle-check text-emerald-500';
+  if (pill) {
+    pill.className = stale
+      ? 'hidden sm:inline-flex items-center gap-1.5 h-7 sm:h-9 px-2.5 rounded-lg border border-amber-500/35 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 text-[11px] font-semibold transition whitespace-nowrap'
+      : 'hidden sm:inline-flex items-center gap-1.5 h-7 sm:h-9 px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 text-[11px] font-semibold transition whitespace-nowrap';
+  }
+  if (settingsBadge) {
+    settingsBadge.textContent = fullLabel;
+    settingsBadge.className = stale
+      ? 'text-xs font-mono font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 self-start sm:self-auto whitespace-nowrap'
+      : 'text-xs font-mono font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 self-start sm:self-auto whitespace-nowrap';
+  }
+}
+window.updateBackupAgeBadge = updateBackupAgeBadge;
 
 </script>
 </body>
