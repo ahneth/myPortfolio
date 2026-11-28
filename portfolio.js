@@ -1742,48 +1742,8 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
       : stopFloorPct;
     effectiveStopFloorPct = Math.min(stopFloorPct, volStopCapPct);
 
-    // 1. Recommended Buy Price (Volatility-Adaptive Pullback Support)
-    let trendBuyAnchor = refCurrent * (1 - effectiveBuyPullbackPct / 100);
-    if (regime === 'Stage 2 Strong Uptrend' || regime === 'Stage 2 Uptrend (Consolidating)') {
-      const maRef = sma50 || sma20 || trendBuyAnchor;
-      trendBuyAnchor = 0.55 * trendBuyAnchor + 0.45 * Math.min(refCurrent, maRef);
-    } else if (regime === 'Bullish Pullback (Buy-the-Dip)' || regime === 'Stage 1 Bullish Inflection') {
-      const dipRef = sma200 || regLowerNow || sma50 || trendBuyAnchor;
-      trendBuyAnchor = 0.50 * (refCurrent * (1 - (effectiveBuyPullbackPct * 0.70) / 100)) + 0.50 * Math.min(refCurrent, dipRef);
-    } else if (regime === 'Stage 3 Topping / Distribution' || regime === 'Stage 4 Confirmed Downtrend') {
-      const bearRef = Math.min(sma200 || refCurrent, regLowerNow || refCurrent, refCurrent * (1 - (effectiveBuyPullbackPct * 1.5) / 100));
-      trendBuyAnchor = bearRef;
-    }
-
-    const troughRef = (prevTrough && regLowerNow)
-      ? (0.60 * prevTrough + 0.40 * regLowerNow)
-      : (prevTrough || regLowerNow || trendBuyAnchor);
-
-    let rawRecBuy = (1 - recBuyTroughWeight) * trendBuyAnchor + recBuyTroughWeight * troughRef;
-
-    // Signal conviction adjustment
-    if (signalLabel === 'STRONG BUY') {
-      rawRecBuy = Math.max(rawRecBuy, refCurrent * (1 - (effectiveBuyPullbackPct * 0.35) / 100));
-    } else if (signalLabel === 'ACCUMULATE') {
-      rawRecBuy = Math.max(rawRecBuy, refCurrent * (1 - (effectiveBuyPullbackPct * 0.75) / 100));
-    } else if (signalLabel.includes('TRIM') || signalLabel.includes('SELL')) {
-      rawRecBuy = Math.min(rawRecBuy, refCurrent * (1 - (effectiveBuyPullbackPct * 1.35) / 100));
-    }
-
-    // Average Cost basis integration for existing holdings
-    if (avgCost > 0) {
-      if (refCurrent < avgCost && regime !== 'Stage 4 Confirmed Downtrend') {
-        const avgDownFactor = 1 - Math.min(0.04, (effectiveBuyPullbackPct / 100) * 0.65);
-        rawRecBuy = 0.70 * rawRecBuy + 0.30 * Math.min(refCurrent, avgCost * avgDownFactor);
-      } else if (refCurrent >= avgCost) {
-        rawRecBuy = 0.80 * rawRecBuy + 0.20 * Math.min(refCurrent, Math.max(avgCost, troughRef));
-      }
-    }
-
-    const minBuyFloor = prevTrough
-      ? Math.min(prevTrough * (1 - Math.min(0.08, (effectiveBuyPullbackPct / 100) * 1.3)), refCurrent * 0.70)
-      : refCurrent * 0.70;
-    recommendedBuyPrice = Fin.round(Math.min(refCurrent, Math.max(minBuyFloor, rawRecBuy)), 2);
+    // 1. Recommended Buy Price removed in v3.10.0 (Option 2: manual Watchlist Entry Alert only)
+    recommendedBuyPrice = null;
 
     // 2. Recommended Sell Price (Volatility-Adaptive Take-Profit / Resistance Target)
     const costOrPriceBase = avgCost > 0 ? Math.max(refCurrent, avgCost) : refCurrent;
@@ -1830,19 +1790,15 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
     if (avgCost > 0 && refCurrent >= avgCost * 1.14) {
       rawStop = Math.max(rawStop, Math.min(refCurrent * 0.96, avgCost * 1.01));
     }
-    // Dynamic Stop Ceiling strictly below Recommended Buy Price & Current Price
+    // Dynamic Stop Ceiling strictly below Current Price (v3.10.0: independent of removed Recommended Buy)
     const stopGapFromCurrent = Math.min(0.025, (effectiveStopFloorPct / 100) * 0.5);
-    const stopGapFromBuy = Math.min(0.015, (effectiveStopFloorPct / 100) * 0.35);
-    const stopCeiling = Math.min(
-      refCurrent * (1 - stopGapFromCurrent),
-      recommendedBuyPrice > 0 ? recommendedBuyPrice * (1 - stopGapFromBuy) : refCurrent * (1 - stopGapFromCurrent)
-    );
+    const stopCeiling = refCurrent * (1 - stopGapFromCurrent);
     recommendedStopLoss = Fin.round(Math.max(0.01, Math.min(stopCeiling, rawStop)), 2);
   }
 
   const suggestedStopLoss = recommendedStopLoss;
   const wlEntryForCustom = (Array.isArray(state?.watchlist) ? state.watchlist.find(w => w.ticker === ticker) : null);
-  const rawCustBuy = Number(fundObj.customBuyPrice ?? wlEntryForCustom?.customBuyPrice ?? 0);
+  const rawCustBuy = Number(wlEntryForCustom?.customBuyPrice ?? 0);
   const rawCustSell = Number(fundObj.customSellPrice ?? wlEntryForCustom?.customSellPrice ?? 0);
   const rawCustStop = Number(fundObj.customStopLoss ?? wlEntryForCustom?.customStopLoss ?? 0);
   const customBuyPrice = (Number.isFinite(rawCustBuy) && rawCustBuy > 0) ? Fin.round(rawCustBuy, 4) : null;
@@ -1866,7 +1822,7 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
       }
     }
   };
-  checkPinDrift('BUY', customBuyPrice, recommendedBuyPrice);
+  // v3.10.0: BUY drift check removed (Watchlist Entry Alert is strictly manual)
   checkPinDrift('SELL', customSellPrice, recommendedSellPrice);
   checkPinDrift('STOP', customStopLoss, recommendedStopLoss);
   const hasStaleCustomPin = staleCustomPins.length > 0;

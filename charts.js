@@ -1014,10 +1014,10 @@ function renderInlineStockChart(tabType) {
   if (typeof populateInlineQuickPinBar === 'function') populateInlineQuickPinBar(tabType, ticker, pm);
   if (statsEl) {
     const chgColor = periodChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
-    const cBuy = pm?.customBuyPrice || null;
+    const wlMatchForStats = !isHoldings ? (state?.watchlist || []).find(w => w.ticker === ticker) : null;
+    const cBuy = !isHoldings ? (Number(wlMatchForStats?.customBuyPrice || pm?.customBuyPrice || 0) || null) : null;
     const cSell = pm?.customSellPrice || null;
     const cStop = pm?.customStopLoss || null;
-    const rBuy = pm?.recommendedBuyPrice || null;
     const rSell = pm?.recommendedSellPrice || null;
     const rStop = pm?.recommendedStopLoss || null;
 
@@ -1038,9 +1038,10 @@ function renderInlineStockChart(tabType) {
         <div class="font-bold ${chgColor} whitespace-nowrap">${periodTag}: ${Fin.percent(periodChangePct, true)} (${Fin.currency(periodChange, true, currency)})</div>
       </div>
       <div class="col-span-2 sm:col-span-3 lg:col-span-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300">
-        <span class="whitespace-nowrap">Buy: ${fmtPair(cBuy, rBuy, 'text-sky-500')}</span>
+        ${!isHoldings ? `<span class="whitespace-nowrap">Entry: ${cBuy ? `<strong class="text-sky-500" title="Manual Watchlist Entry Alert"><i class="fa-solid fa-bell text-[9px] mr-0.5"></i>${Fin.currency(cBuy, false, currency)}</strong>` : '<strong class="text-slate-400">-</strong>'}</span>` : ''}
         <span class="whitespace-nowrap">Sell: ${fmtPair(cSell, rSell, 'text-pink-500')}</span>
         <span class="whitespace-nowrap">Stop: ${fmtPair(cStop, rStop, 'text-rose-500')}</span>
+        ${isHoldings && pm?.riskRewardRatio != null ? `<span class="whitespace-nowrap">R:R: <strong class="${pm.riskRewardRatio >= 2 ? 'text-emerald-500' : (pm.riskRewardRatio >= 1 ? 'text-amber-500' : 'text-rose-500')}">${pm.riskRewardRatio.toFixed(1)}x</strong></span>` : ''}
       </div>
       <div class="col-span-1 sm:col-span-1 lg:col-span-1 flex flex-col justify-center px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 text-[10px]">
         <div class="truncate"><span class="text-slate-400">${periodTag} H/L:</span> <strong>${Fin.currency(periodHigh, false, currency)}</strong> / <strong>${Fin.currency(periodLow, false, currency)}</strong></div>
@@ -1056,10 +1057,10 @@ function renderInlineStockChart(tabType) {
   const holding = (portfolio.allHoldings || portfolio.activeHoldings || []).find(h => h.ticker === ticker);
   const hideMoney = Fin.isPrivacyMode();
   const avgCostValue = (!hideMoney && isHoldings && holding && holding.isActive !== false && holding.avgCost > 0) ? holding.avgCost : null;
-  const customBuyVal = pm?.customBuyPrice || holding?.customBuyPrice || null;
+  const wlMatchForChart = !isHoldings ? (state?.watchlist || []).find(w => w.ticker === ticker) : null;
+  const customBuyVal = !isHoldings ? (Number(wlMatchForChart?.customBuyPrice || pm?.customBuyPrice || 0) || null) : null;
   const customSellVal = pm?.customSellPrice || holding?.customSellPrice || null;
   const customStopVal = pm?.customStopLoss || holding?.customStopLoss || null;
-  const recBuyVal = pm?.recommendedBuyPrice || holding?.recommendedBuyPrice || null;
   const recSellVal = pm?.recommendedSellPrice || holding?.recommendedSellPrice || null;
   const recStopVal = pm?.recommendedStopLoss || holding?.recommendedStopLoss || null;
 
@@ -1185,7 +1186,8 @@ function renderInlineStockChart(tabType) {
       pointHoverRadius: isMobile ? 3.5 : 4.5,
       pointBackgroundColor: mainColor,
       order: 1,
-      _legendStyle: 'solid'
+      _legendStyle: 'solid',
+      _isCloseSeries: true
     }
   ];
 
@@ -1280,13 +1282,11 @@ function renderInlineStockChart(tabType) {
     return labels.map((_, idx) => (idx === nL - 1 ? r : 0));
   };
 
-  // 1. BUY LEVEL(S) — Light Blue (#38bdf8)
-  const fullBuyLineVal = customBuyVal || recBuyVal;
-  const fullBuyIsCustom = Boolean(customBuyVal);
-  if (fullBuyLineVal && fullBuyLineVal > 0) {
+  // 1. MANUAL ENTRY ALERT (Watchlist only, v3.10.0) — Light Blue (#38bdf8)
+  if (!isHoldings && customBuyVal && customBuyVal > 0) {
     datasets.push({
-      label: `${fullBuyIsCustom ? 'Custom Buy Target' : 'Target Buy Price'} (${Fin.currency(fullBuyLineVal, false, currency)})`,
-      data: labels.map(() => fullBuyLineVal),
+      label: `Entry Alert (${Fin.currency(customBuyVal, false, currency)})`,
+      data: labels.map(() => customBuyVal),
       borderColor: '#38bdf8',
       borderDash: [3, 3],
       borderWidth: 2.2,
@@ -1294,27 +1294,6 @@ function renderInlineStockChart(tabType) {
       fill: false,
       order: 2,
       _legendStyle: 'dashed'
-    });
-  }
-  if (recBuyVal && recBuyVal > 0 && (fullBuyIsCustom || labels.length >= 2)) {
-    datasets.push({
-      label: `Rec. Buy Pin (${Fin.currency(recBuyVal, false, currency)})`,
-      data: buildRightEdgeTickSeries(recBuyVal),
-      borderColor: '#0284c7',
-      backgroundColor: '#38bdf8',
-      borderDash: [2, 2],
-      borderWidth: 2.4,
-      pointStyle: 'triangle',
-      pointRadius: buildRightEdgePointRadii(isMobile ? 5.5 : 6.5),
-      pointHoverRadius: isMobile ? 7 : 8,
-      pointBackgroundColor: '#38bdf8',
-      pointBorderColor: '#0284c7',
-      pointBorderWidth: 1.8,
-      spanGaps: false,
-      fill: false,
-      order: 1,
-      _legendStyle: 'dashed',
-      _hideFromExternalLegend: !fullBuyIsCustom || Math.abs((customBuyVal || 0) - (recBuyVal || 0)) < 0.005
     });
   }
 
@@ -1491,6 +1470,53 @@ function renderInlineStockChart(tabType) {
     }
   }
 
+  // v3.10.1: Monthly Total Trade Volume Bars (bottom-pinned transparent green/red bars on hidden yVol axis)
+  const volData = sliced.map(b => {
+    const v = Number(b?.volume || 0);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  });
+  const maxVol = volData.reduce((m, v) => (v > m ? v : m), 0);
+  const showVol = Boolean(state?.settings?.chartShowVolume !== false) && maxVol > 0;
+  if (showVol) {
+    const fullStartIdx = Math.max(0, (bars?.length || 0) - sliced.length);
+    const prevBarBeforeSlice = fullStartIdx > 0 ? bars[fullStartIdx - 1] : null;
+    const volBgColors = sliced.map((b, i) => {
+      const curC = Number(b?.close || 0);
+      const prevC = i > 0
+        ? Number(sliced[i - 1]?.close || 0)
+        : Number(prevBarBeforeSlice?.close || b?.open || curC);
+      const isUp = curC >= prevC;
+      return isUp
+        ? (isDark ? 'rgba(16, 185, 129, 0.24)' : 'rgba(16, 185, 129, 0.20)')
+        : (isDark ? 'rgba(244, 63, 94, 0.24)' : 'rgba(244, 63, 94, 0.20)');
+    });
+    const volBorderColors = sliced.map((b, i) => {
+      const curC = Number(b?.close || 0);
+      const prevC = i > 0
+        ? Number(sliced[i - 1]?.close || 0)
+        : Number(prevBarBeforeSlice?.close || b?.open || curC);
+      const isUp = curC >= prevC;
+      return isUp
+        ? (isDark ? 'rgba(52, 211, 153, 0.45)' : 'rgba(16, 185, 129, 0.40)')
+        : (isDark ? 'rgba(251, 113, 133, 0.45)' : 'rgba(244, 63, 94, 0.40)');
+    });
+    datasets.push({
+      type: 'bar',
+      label: 'Monthly Volume',
+      data: volData,
+      yAxisID: 'yVol',
+      backgroundColor: volBgColors,
+      borderColor: volBorderColors,
+      borderWidth: 1,
+      borderRadius: 2,
+      barPercentage: 0.72,
+      categoryPercentage: 0.85,
+      order: 20,
+      _isVolume: true,
+      _legendStyle: 'vol'
+    });
+  }
+
   const renderClickedTradeMarkerDetail = (metaList) => {
     if (!tradeMarkerBoxEl || !Array.isArray(metaList) || metaList.length === 0) return;
     const isPriv = Fin.isPrivacyMode();
@@ -1525,6 +1551,84 @@ function renderInlineStockChart(tabType) {
     }).join('');
   };
 
+  const hoverDetailEl = document.getElementById(isHoldings ? 'holdings-chart-hover-detail' : 'watchlist-chart-hover-detail');
+  const formatCompactVol = (v) => {
+    const n = Number(v || 0);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+    if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+    if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+    return String(Math.round(n));
+  };
+  let lastInspectedIdx = -1;
+  const renderHoveredMonthInspector = (idx) => {
+    if (!hoverDetailEl || !labels.length) return;
+    const safeIdx = Math.max(0, Math.min(labels.length - 1, Number(idx)));
+    if (safeIdx === lastInspectedIdx && hoverDetailEl.innerHTML) return;
+    lastInspectedIdx = safeIdx;
+
+    const mKey = labels[safeIdx];
+    const cVal = Number(closeData[safeIdx] || 0);
+    const hVal = Number(highData[safeIdx] || 0);
+    const lVal = Number(lowData[safeIdx] || 0);
+    const vVal = Number(volData[safeIdx] || 0);
+    const fullStartIdx = Math.max(0, (bars?.length || 0) - sliced.length);
+    const prevC = safeIdx > 0
+      ? Number(closeData[safeIdx - 1] || 0)
+      : Number((fullStartIdx > 0 ? bars[fullStartIdx - 1]?.close : 0) || 0);
+    const momChgPct = (prevC > 0 && cVal > 0) ? ((cVal - prevC) / prevC) * 100 : null;
+    const curYm = new Date().toISOString().slice(0, 7);
+    const mtdTag = (safeIdx === labels.length - 1 && mKey === curYm) ? ' (MTD)' : '';
+
+    const parts = [];
+    parts.push(`<span class="px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-700/80 text-slate-800 dark:text-white font-bold">${mKey}</span>`);
+    parts.push(`<span>Close: <strong class="text-slate-900 dark:text-white">${Fin.currency(cVal, false, currency)}</strong>${momChgPct !== null ? ` <span class="${momChgPct >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-semibold">(${Fin.percent(momChgPct, true)})</span>` : ''}</span>`);
+    if (hVal > 0 && lVal > 0) {
+      parts.push(`<span>H/L: <strong class="text-emerald-600 dark:text-emerald-400">${Fin.currency(hVal, false, currency)}</strong> / <strong class="text-rose-500">${Fin.currency(lVal, false, currency)}</strong></span>`);
+    }
+    const fmtV = formatCompactVol(vVal);
+    if (fmtV) {
+      parts.push(`<span>Vol${mtdTag}: <strong class="text-teal-600 dark:text-teal-400">${fmtV}</strong></span>`);
+    }
+
+    // Active overlays at this month index (3M SMA, 12M Reg Channel)
+    const smaDs = datasets.find(d => d.label === '3M SMA');
+    if (smaDs && Number.isFinite(Number(smaDs.data?.[safeIdx]))) {
+      parts.push(`<span>3M SMA: <strong class="text-sky-500">${Fin.currency(smaDs.data[safeIdx], false, currency)}</strong></span>`);
+    }
+    const regUpDs = datasets.find(d => String(d.label || '').startsWith('12M Reg Upper'));
+    const regLoDs = datasets.find(d => String(d.label || '').startsWith('12M Reg Lower'));
+    if (regUpDs && regLoDs && regUpDs.data?.[safeIdx] != null && regLoDs.data?.[safeIdx] != null) {
+      parts.push(`<span>12M Reg: <strong class="text-purple-500">${Fin.currency(regLoDs.data[safeIdx], false, currency)}&ndash;${Fin.currency(regUpDs.data[safeIdx], false, currency)}</strong></span>`);
+    }
+    if (isHoldings && avgCostValue > 0 && !Fin.isPrivacyMode()) {
+      const cushionPct = ((cVal - avgCostValue) / avgCostValue) * 100;
+      parts.push(`<span>Avg Cost: <strong class="text-amber-500">${Fin.currency(avgCostValue, false, currency)}</strong> <span class="${cushionPct >= 0 ? 'text-emerald-500' : 'text-rose-500'}">(${Fin.percent(cushionPct, true)})</span></span>`);
+    }
+
+    // Ex-Dividend marker for this month
+    const divDs = datasets.find(d => d._divByMonth);
+    const dm = divDs?._divByMonth?.[mKey];
+    if (dm) {
+      const perSh = dm.amount > 0 ? `${Fin.currency(dm.amount, false, currency)}/sh` : '';
+      const payout = (!Fin.isPrivacyMode() && dm.loggedTotal > 0) ? ` · ${Fin.currency(dm.loggedTotal, false, currency)}` : '';
+      parts.push(`<span class="px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 font-semibold">Div: ${perSh}${payout}</span>`);
+    }
+
+    // Buy / Sell trade markers for this month
+    const isPriv = Fin.isPrivacyMode();
+    if (buyMetaByIndex[safeIdx]) {
+      const bm = buyMetaByIndex[safeIdx];
+      parts.push(`<span class="px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-semibold">BUY @ ${Fin.currency(bm.avgPrice, false, currency)}${isPriv ? '' : ` · ${Fin.shares(bm.shares)} sh (${Fin.currency(bm.amount, false, currency)})`}</span>`);
+    }
+    if (sellMetaByIndex[safeIdx]) {
+      const sm = sellMetaByIndex[safeIdx];
+      parts.push(`<span class="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-semibold">SELL @ ${Fin.currency(sm.avgPrice, false, currency)}${isPriv ? '' : ` · ${Fin.shares(sm.shares)} sh (${Fin.currency(sm.amount, false, currency)})`}</span>`);
+    }
+
+    hoverDetailEl.innerHTML = parts.join('');
+  };
+
   const renderSig = JSON.stringify({
     ticker,
     rangeMonths,
@@ -1532,12 +1636,13 @@ function renderInlineStockChart(tabType) {
     showReg: Boolean(state?.settings?.chartShowRegChannel !== false),
     showCushion: Boolean(state?.settings?.chartShowCushion !== false),
     showDiv: Boolean(state?.settings?.chartShowDivMarkers !== false),
+    showVol,
     hideMoney,
     isDark,
     labelsLen: labels.length,
     dsCount: datasets.length,
     avgCostValue: avgCostValue || 0,
-    fullBuyLineVal: fullBuyLineVal || 0,
+    entryAlertVal: (!isHoldings && customBuyVal) ? customBuyVal : 0,
     fullSellLineVal: fullSellLineVal || 0,
     fullStopLineVal: fullStopLineVal || 0
   });
@@ -1549,10 +1654,19 @@ function renderInlineStockChart(tabType) {
       targetDs.data = ds.data;
       targetDs.label = ds.label;
       targetDs.fill = ds.fill;
+      if (ds._isVolume) {
+        targetDs.backgroundColor = ds.backgroundColor;
+        targetDs.borderColor = ds.borderColor;
+      }
       if (ds._tradeMeta) targetDs._tradeMeta = ds._tradeMeta;
       if (ds._divByMonth) targetDs._divByMonth = ds._divByMonth;
     });
+    if (existingChart.options?.scales?.yVol && maxVol > 0) {
+      existingChart.options.scales.yVol.max = maxVol * 4.8;
+    }
+    existingChart._renderMonthInspector = renderHoveredMonthInspector;
     existingChart.update('none');
+    renderHoveredMonthInspector(labels.length - 1);
     return;
   }
 
@@ -1569,6 +1683,10 @@ function renderInlineStockChart(tabType) {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       onClick: (evt, activeElements, chart) => {
+        if (activeElements && activeElements.length > 0) {
+          const fn = chart._renderMonthInspector || renderHoveredMonthInspector;
+          fn(activeElements[0].index);
+        }
         if (!isHoldings) return;
         const pts = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
         const matchedMetas = [];
@@ -1599,6 +1717,15 @@ function renderInlineStockChart(tabType) {
             font: { size: isMobile ? 9 : 10 },
             callback: (v) => Fin.currency(v, false, currency)
           }
+        },
+        yVol: {
+          type: 'linear',
+          display: false,
+          position: 'right',
+          beginAtZero: true,
+          min: 0,
+          max: maxVol > 0 ? maxVol * 4.8 : 1,
+          grid: { display: false }
         }
       },
       plugins: {
@@ -1606,40 +1733,25 @@ function renderInlineStockChart(tabType) {
           display: false
         },
         tooltip: {
+          filter: (item) => Boolean(item?.dataset?._isCloseSeries),
+          displayColors: false,
+          padding: { x: 8, y: 4 },
+          cornerRadius: 6,
+          caretSize: 5,
+          backgroundColor: isDark ? 'rgba(15, 23, 42, 0.90)' : 'rgba(15, 23, 42, 0.88)',
+          titleFont: { size: 9, weight: '600' },
+          bodyFont: { size: 11, weight: 'bold' },
           callbacks: {
-            label: (c) => {
-              const ds = c.dataset;
-              if (ds && ds._divByMonth) {
-                const mKey = labels[c.dataIndex];
-                const dm = ds._divByMonth[mKey];
-                if (dm) {
-                  const perShTxt = dm.amount > 0 ? `${Fin.currency(dm.amount, false, currency)}/sh` : '';
-                  const totTxt = (!Fin.isPrivacyMode() && dm.loggedTotal > 0) ? ` · Payout: ${Fin.currency(dm.loggedTotal, false, currency)}` : '';
-                  return ` Dividend (${dm.exDate || mKey}): ${perShTxt}${totTxt}`;
-                }
+            title: (items) => {
+              if (items && items.length > 0) {
+                const idx = items[0].dataIndex;
+                const fn = items[0].chart?._renderMonthInspector || renderHoveredMonthInspector;
+                fn(idx);
+                return items[0].label || '';
               }
-              if (ds && ds._tradeMeta && ds._tradeMeta[c.dataIndex]) {
-                const tm = ds._tradeMeta[c.dataIndex];
-                if (Fin.isPrivacyMode()) {
-                  const lines = [` ${tm.type} (${tm.month}): ${tm.trades && tm.trades.length > 1 ? 'Avg ' : ''}Price ${Fin.currency(tm.avgPrice, false, currency)}`];
-                  if (tm.trades && tm.trades.length > 1) {
-                    lines.push(`   • ${tm.trades.length} ${tm.type} orders @ ${tm.trades.map(t => Fin.currency(t.price, false, currency)).join(', ')}`);
-                  }
-                  return lines;
-                }
-                return [
-                  ` ${tm.type} Marker (${tm.month}): Avg Price ${Fin.currency(tm.avgPrice, false, currency)}`,
-                  `   • Action: ${tm.type} | Shares: ${Fin.shares(tm.shares)} | ${tm.type === 'BUY' ? 'Buy' : 'Sell'} Amount: ${Fin.currency(tm.amount, false, currency)}`
-                ];
-              }
-              if (c.datasetIndex === 0) {
-                return ` Monthly High: ${Fin.currency(c.raw, false, currency)}`;
-              }
-              if (c.datasetIndex === 1) {
-                return ` Monthly Low: ${Fin.currency(c.raw, false, currency)}`;
-              }
-              return ` ${c.dataset.label}: ${Fin.currency(c.raw, false, currency)}`;
-            }
+              return '';
+            },
+            label: (c) => Fin.currency(c.raw, false, currency)
           }
         }
       }
@@ -1647,7 +1759,9 @@ function renderInlineStockChart(tabType) {
   });
   chartInstance._renderSig = renderSig;
   chartInstance._mountedTicker = ticker;
+  chartInstance._renderMonthInspector = renderHoveredMonthInspector;
   charts[chartKey] = chartInstance;
+  renderHoveredMonthInspector(labels.length - 1);
 
   // Render external HTML legend below the chart in a tidy multi-column grid
   if (legendEl) {
@@ -1668,6 +1782,8 @@ function renderInlineStockChart(tabType) {
         let swatchHtml = '';
         if (ds._legendStyle === 'band') {
           swatchHtml = `<span class="inline-block w-3.5 h-2 rounded-sm border shrink-0" style="background: rgba(16, 185, 129, 0.28); border-color: rgba(52, 211, 153, 0.75);"></span>`;
+        } else if (ds._legendStyle === 'vol') {
+          swatchHtml = `<span class="inline-flex items-end gap-0.5 h-2.5 shrink-0"><span class="inline-block w-1.5 h-2.5 rounded-t-sm" style="background: rgba(16, 185, 129, 0.55);"></span><span class="inline-block w-1.5 h-1.5 rounded-t-sm" style="background: rgba(244, 63, 94, 0.55);"></span></span>`;
         } else if (ds._legendStyle === 'cross-blue') {
           swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-xs leading-none shrink-0" style="color: #2563eb;">✕</span>`;
         } else if (ds._legendStyle === 'cross-red') {

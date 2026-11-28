@@ -579,7 +579,7 @@ function renderKPIs() {
   const targetHits = state.watchlist.filter(w => {
     const cur = state.prices[w.ticker]?.price || 0;
     const wm = cur > 0 ? computeStockPriceMetrics(w.ticker, cur) : null;
-    const activeBuyTarget = Number(w.customBuyPrice || wm?.customBuyPrice || wm?.recommendedBuyPrice || 0);
+    const activeBuyTarget = Number(w.customBuyPrice || 0);
     return cur > 0 && activeBuyTarget > 0 && cur <= activeBuyTarget * 1.005;
   });
   const strongBuys = portfolio.activeHoldings.filter(h => h.signalScore >= Number(state.settings?.signalStrongBuyMin ?? 78));
@@ -1017,14 +1017,14 @@ function formatTargetLevelCell(customVal, recVal, currentPrice, currency, colorC
 
   // U2: Target Buy / Sell / Stop-Loss Proximity Badges
   let proximityBadge = '';
-  const isBuy = labelTitle.toLowerCase().includes('buy');
+  const isBuy = labelTitle.toLowerCase().includes('buy') || labelTitle.toLowerCase().includes('entry');
   const isSell = labelTitle.toLowerCase().includes('sell');
   const isStop = labelTitle.toLowerCase().includes('stop');
 
   if (currentPrice > 0 && activeVal > 0) {
     if (isBuy) {
       if (currentPrice <= activeVal * 1.002) {
-        proximityBadge = '<span class="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-bold bg-sky-500/20 text-sky-600 dark:text-sky-300 border border-sky-500/40 leading-tight">BUY ZONE</span>';
+        proximityBadge = '<span class="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-bold bg-sky-500/20 text-sky-600 dark:text-sky-300 border border-sky-500/40 leading-tight">ENTRY HIT</span>';
       } else if (((currentPrice - activeVal) / activeVal) <= 0.025) {
         const away = (((currentPrice - activeVal) / activeVal) * 100).toFixed(1);
         proximityBadge = `<span class="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 leading-tight">+${away}% away</span>`;
@@ -1143,9 +1143,9 @@ window.openSignalDetailModal = function(rawTicker) {
     </div>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-      <div class="p-2.5 rounded-lg border border-sky-500/30 bg-sky-500/5">
-        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-semibold block">Recommended Buy Price</span>
-        <span class="font-mono font-bold text-sky-600 dark:text-sky-400 text-sm">${m.recommendedBuyPrice ? Fin.currency(m.recommendedBuyPrice, false, curr) : '-'}</span>
+      <div class="p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
+        <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block">Implied Risk / Reward</span>
+        <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">${m.riskRewardRatio != null ? m.riskRewardRatio.toFixed(1) + 'x' : '-'}</span>
         <span class="text-[10px] text-slate-400 block">Prev Trough: ${m.prevTrough ? Fin.currency(m.prevTrough, false, curr) : '-'}</span>
       </div>
       <div class="p-2.5 rounded-lg border border-pink-500/30 bg-pink-500/5">
@@ -1461,7 +1461,7 @@ function renderHoldingsTable() {
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-800 dark:text-slate-200 col-g-pnl">
       ${hideMoney ? '••••••' : Fin.currency(totCostBasisBase, false, baseCurr)}
     </td>
-    <td colspan="4" class="py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono col-g-targets">Quant Levels &amp; R:R</td>
+    <td colspan="3" class="py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono col-g-targets">Sell, Stop &amp; R:R</td>
     <td class="py-1.5 px-3 text-right num-font ${totXirrColor} col-g-pnl">
       <div class="font-extrabold">${totXirrPct !== null ? Fin.percent(totXirrPct, true) : '-'}</div>
       ${totRealXirrPct !== null ? `<div class="text-[9.5px] font-normal text-slate-400">Real ${Fin.percent(totRealXirrPct, true)}</div>` : ''}
@@ -1542,7 +1542,6 @@ function renderHoldingsTable() {
         case 'shares': return Number(h.shares || 0);
         case 'avgCost': return toBase(h.avgCost || 0);
         case 'totalCost': return Number(h.costBasisBase ?? toBase(h.totalCostBasis || 0));
-        case 'buyTarget': return toBase(h.customBuyPrice || h.recommendedBuyPrice || 0);
         case 'sellTarget': return toBase(h.customSellPrice || h.recommendedSellPrice || 0);
         case 'stopLoss': return toBase(h.customStopLoss || h.recommendedStopLoss || 0);
         case 'riskReward': return Number(h.riskRewardRatio ?? -999);
@@ -1667,7 +1666,7 @@ function renderHoldingsTable() {
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-slate-700 dark:text-slate-300 col-g-pnl">
         ${hideMoney ? '••••••' : Fin.currency(group.totalCostBasis, false, group.currency)}
       </td>
-      <td colspan="4" class="py-1 sm:py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono col-g-targets">-</td>
+      <td colspan="3" class="py-1 sm:py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono col-g-targets">-</td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupXirrColor} col-g-pnl" title="${groupXirrPct !== null ? `Sector Money-Weighted Annualized XIRR: ${Fin.percent(groupXirrPct, true)} p.a. (Real Inflation-Adjusted: ${Fin.percent(groupRealXirrPct, true)} p.a.)` : 'Insufficient cash flow span'}">
         <div>${groupXirrPct !== null ? Fin.percent(groupXirrPct, true) : '-'}</div>
         ${groupRealXirrPct !== null ? `<div class="text-[9.5px] font-normal text-slate-400">Real ${Fin.percent(groupRealXirrPct, true)}</div>` : ''}
@@ -1733,10 +1732,8 @@ function renderHoldingsTable() {
         const priceDeltaNative = Math.abs(h.priceChangePct) > 40 ? 0 : rawDeltaNative;
         const priceChangeColor = priceDeltaNative >= 0 ? 'text-emerald-500' : 'text-rose-500';
 
-        const recBuyNative = (h.recommendedBuyPrice && Number(h.recommendedBuyPrice) > 0) ? Number(h.recommendedBuyPrice) : null;
         const recSellNative = (h.recommendedSellPrice && Number(h.recommendedSellPrice) > 0) ? Number(h.recommendedSellPrice) : null;
         const recStopNative = ((h.recommendedStopLoss || h.suggestedStopLoss) && Number(h.recommendedStopLoss || h.suggestedStopLoss) > 0) ? Number(h.recommendedStopLoss || h.suggestedStopLoss) : null;
-        const custBuyNative = ((h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice) && Number(h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice) > 0) ? Number(h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice) : null;
         const custSellNative = ((h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice) && Number(h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice) > 0) ? Number(h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice) : null;
         const custStopNative = ((h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss) && Number(h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss) > 0) ? Number(h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss) : null;
         const low52wNative = (h.low52w && Number(h.low52w) > 0) ? Number(h.low52w) : null;
@@ -1815,9 +1812,6 @@ function renderHoldingsTable() {
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium ${isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'} col-g-pnl">${hideMoney ? '••••' : Fin.shares(h.shares)}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300 col-g-pnl col-g-targets" title="${hCurr !== baseCurr && avgCostBase > 0 ? `Equivalent in ${baseCurr}: ${Fin.currency(avgCostBase, false, baseCurr)}` : ''}">${isAct ? (hideMoney ? '••••••' : Fin.currency(h.avgCost, false, hCurr)) : '<span class="text-slate-400">-</span>'}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300 col-g-pnl">${isAct ? (hideMoney ? '••••••' : Fin.currency(totalCostBase, false, baseCurr)) : `<span class="text-slate-400 text-[10px]">-</span>`}</td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font col-g-targets">
-            ${formatTargetLevelCell(custBuyNative, recBuyNative, h.currentPrice, hCurr, 'text-sky-500', 'Buy Target')}
-          </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font col-g-targets">
             ${formatTargetLevelCell(custSellNative, recSellNative, h.currentPrice, hCurr, 'text-pink-500', 'Sell Target')}
           </td>
@@ -2334,7 +2328,7 @@ function renderWatchlistAndFundamentals() {
         const g = groupsMap[sec];
         g.items.push(item);
         g.scoreSum += item.signalScore;
-        const activeBuyVal = Number(item.w?.customBuyPrice || item.wm?.customBuyPrice || item.wm?.recommendedBuyPrice || 0);
+        const activeBuyVal = Number(item.w?.customBuyPrice || 0);
         if (item.curPrice > 0 && activeBuyVal > 0 && item.curPrice <= activeBuyVal * 1.005) {
           g.triggeredCount += 1;
         }
@@ -2361,12 +2355,12 @@ function renderWatchlistAndFundamentals() {
             case 'qoq': return Number(wm?.qoqPct || 0);
             case 'yoy': return Number(wm?.yoyPct || 0);
             case 'divYield': return Number(wm?.divInfo?.netYieldPct || wm?.divInfo?.trailingYieldPct || 0);
-            case 'buyTarget': return Number(w.customBuyPrice || wm?.customBuyPrice || wm?.recommendedBuyPrice || 0);
+            case 'buyTarget': return Number(w.customBuyPrice || 0);
             case 'sellTarget': return Number(w.customSellPrice || wm?.customSellPrice || wm?.recommendedSellPrice || 0);
             case 'stopLoss': return Number(w.customStopLoss || wm?.customStopLoss || wm?.recommendedStopLoss || 0);
             case 'riskReward': return Number(wm?.riskRewardRatio ?? -999);
             case 'dist': {
-              const activeBuy = Number(w.customBuyPrice || wm?.customBuyPrice || wm?.recommendedBuyPrice || 0);
+              const activeBuy = Number(w.customBuyPrice || 0);
               return (curP > 0 && activeBuy > 0) ? ((curP - activeBuy) / activeBuy) * 100 : 999;
             }
             case 'signalScore': return Number(item.signalScore ?? 50);
@@ -2423,7 +2417,7 @@ function renderWatchlistAndFundamentals() {
           </td>
           <td colspan="3" class="py-1 sm:py-1.5 px-3 text-center">
             ${group.triggeredCount > 0
-              ? `<span class="px-2 py-0.5 rounded-full font-bold bg-emerald-500 text-white text-[10px]">${group.triggeredCount} IN BUY ZONE</span>`
+              ? `<span class="px-2 py-0.5 rounded-full font-bold bg-sky-500 text-white text-[10px]">${group.triggeredCount} ENTRY HIT</span>`
               : `<span class="text-[11px] text-slate-400 font-mono">Monitoring quant levels</span>`}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-center text-[11px] font-semibold text-purple-600 dark:text-purple-400">
@@ -2443,13 +2437,12 @@ function renderWatchlistAndFundamentals() {
               : Number(state.prices[w.ticker]?.change || 0);
             const wlPriceDelta = Math.abs(priceChangePct) > 40 ? 0 : rawWlDelta;
             const priceChangeColor = wlPriceDelta >= 0 ? 'text-emerald-500' : 'text-rose-500';
-            const recBuy = wm?.recommendedBuyPrice || 0;
             const recSell = wm?.recommendedSellPrice || 0;
             const recStop = wm?.recommendedStopLoss || 0;
-            const custBuy = Number(w.customBuyPrice || wm?.customBuyPrice || 0) || null;
+            const custBuy = Number(w.customBuyPrice || 0) || null;
             const custSell = Number(w.customSellPrice || wm?.customSellPrice || 0) || null;
             const custStop = Number(w.customStopLoss || wm?.customStopLoss || 0) || null;
-            const activeBuy = custBuy || recBuy;
+            const activeBuy = custBuy || 0;
             const distPct = (curPrice > 0 && activeBuy > 0) ? ((curPrice - activeBuy) / activeBuy) * 100 : 0;
             const isTriggered = curPrice > 0 && activeBuy > 0 && curPrice <= activeBuy * 1.005;
 
@@ -2491,10 +2484,10 @@ function renderWatchlistAndFundamentals() {
                 ${formatDividendExDateCell(wm.divInfo)}
               </td>
               <td class="py-1.5 px-3 text-right num-font">
-                ${formatTargetLevelCell(custBuy, recBuy, curPrice, wlCurrency, 'text-sky-500', 'Buy Target')}
+                ${formatTargetLevelCell(custBuy, null, curPrice, wlCurrency, 'text-sky-500', 'Entry Alert')}
               </td>
-              <td class="py-1.5 px-3 text-right num-font font-medium ${distPct <= 0.5 && curPrice > 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}">
-                ${curPrice > 0 && activeBuy > 0 ? (distPct <= 0.5 ? 'In Buy Zone' : `+${distPct.toFixed(1)}% above`) : '-'}
+              <td class="py-1.5 px-3 text-right num-font font-medium ${curPrice > 0 && activeBuy > 0 && distPct <= 0.5 ? 'text-sky-500 font-bold' : 'text-slate-400'}">
+                ${curPrice > 0 && activeBuy > 0 ? (distPct <= 0.5 ? 'Entry Hit' : `+${distPct.toFixed(1)}% above`) : '-'}
               </td>
               <td class="py-1.5 px-3 text-right num-font">
                 ${formatTargetLevelCell(custSell, recSell, curPrice, wlCurrency, 'text-pink-500', 'Sell Target')}
@@ -2539,7 +2532,7 @@ function renderWatchlistAndFundamentals() {
                   <button onclick="event.stopPropagation(); openEditWatchlistModal('${w.ticker}')" class="p-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded transition" title="Edit Watchlist Ticker (Symbol, Name, Sector)">
                     <i class="fa-solid fa-pen-to-square text-xs"></i>
                   </button>
-                  <button onclick="event.stopPropagation(); openTradeModalForTicker('${w.ticker}', 'BUY', ${curPrice || recBuy})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold text-[11px]">
+                  <button onclick="event.stopPropagation(); openTradeModalForTicker('${w.ticker}', 'BUY', ${curPrice || custBuy || 0})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold text-[11px]">
                     Buy
                   </button>
                   <button onclick="event.stopPropagation(); deleteFromWatchlist('${w.ticker}')" class="p-1.5 text-slate-400 hover:text-rose-500 transition" title="Remove from Watchlist">
@@ -2938,8 +2931,6 @@ function renderQuantSettingsUI() {
   setVal('setting-atr-mult', cfg.atrStopMultiplier ?? 2.0);
   setVal('setting-stop-floor-pct', cfg.stopLossFloorPct ?? 8.0);
   setVal('setting-peak-trough-months', cfg.peakTroughLookbackMonths ?? 12);
-  setVal('setting-rec-buy-pullback', cfg.recBuyPullbackPct ?? 6.0);
-  setVal('setting-rec-buy-trough-wt', cfg.recBuyTroughWeightPct ?? 40.0);
   setVal('setting-rec-sell-gain', cfg.recSellTargetGainPct ?? 18.0);
   setVal('setting-rec-sell-peak-wt', cfg.recSellPeakWeightPct ?? 45.0);
   setVal('setting-sig-strong-buy', cfg.signalStrongBuyMin ?? 78);
@@ -2991,8 +2982,6 @@ function saveQuantSettingsFromUI() {
   state.settings.atrStopMultiplier = num('setting-atr-mult', 2.0);
   state.settings.stopLossFloorPct = num('setting-stop-floor-pct', 8.0);
   state.settings.peakTroughLookbackMonths = num('setting-peak-trough-months', 12);
-  state.settings.recBuyPullbackPct = num('setting-rec-buy-pullback', 6.0);
-  state.settings.recBuyTroughWeightPct = num('setting-rec-buy-trough-wt', 40.0);
   state.settings.recSellTargetGainPct = num('setting-rec-sell-gain', 18.0);
   state.settings.recSellPeakWeightPct = num('setting-rec-sell-peak-wt', 45.0);
   state.settings.signalStrongBuyMin = num('setting-sig-strong-buy', 78);
@@ -3543,20 +3532,19 @@ function updateWatchlistModalRecPreview(rawTicker) {
   const previewEl = document.getElementById('wl-rec-levels-preview');
   if (!previewEl) return;
   if (!sym) {
-    previewEl.innerHTML = 'Enter a ticker symbol above to preview calculated Recommended Buy, Sell &amp; Stop-Loss levels.';
+    previewEl.innerHTML = 'Enter a ticker symbol above to preview calculated Recommended Sell &amp; Stop-Loss levels.';
     return;
   }
   const curP = state?.prices?.[sym]?.price || 0;
   const curr = state?.prices?.[sym]?.currency || state?.fundamentals?.[sym]?.currency || MarketAPI.getStaticProfile(sym).currency || 'HKD';
   const pm = computeStockPriceMetrics(sym, curP);
-  if (!pm || (!pm.recommendedBuyPrice && !pm.recommendedSellPrice && !pm.recommendedStopLoss)) {
+  if (!pm || (!pm.recommendedSellPrice && !pm.recommendedStopLoss)) {
     previewEl.innerHTML = `<span class="text-slate-400">Live price / history will be fetched on save to compute Recommended levels for <strong>${sym}</strong>.</span>`;
     return;
   }
   previewEl.innerHTML = `
     <span>Quant Recommended (${curr}):</span>
-    <strong class="text-sky-500 ml-1">Buy ${pm.recommendedBuyPrice ? Fin.currency(pm.recommendedBuyPrice, false, curr) : '-'}</strong> &bull;
-    <strong class="text-pink-500">Sell ${pm.recommendedSellPrice ? Fin.currency(pm.recommendedSellPrice, false, curr) : '-'}</strong> &bull;
+    <strong class="text-pink-500 ml-1">Sell ${pm.recommendedSellPrice ? Fin.currency(pm.recommendedSellPrice, false, curr) : '-'}</strong> &bull;
     <strong class="text-red-700 dark:text-red-500">Stop ${pm.recommendedStopLoss ? Fin.currency(pm.recommendedStopLoss, false, curr) : '-'}</strong>
   `;
 }
@@ -3569,16 +3557,14 @@ window.copyRecommendedToCustomInModal = function(mode) {
     const curP = state?.prices?.[sym]?.price || h?.currentPrice || 0;
     const avgC = parseFloat(document.getElementById('edit-holding-avg-cost')?.value) || h?.avgCost || null;
     const pm = computeStockPriceMetrics(sym, curP, null, avgC);
-    if (pm?.recommendedBuyPrice) document.getElementById('edit-holding-custom-buy').value = pm.recommendedBuyPrice;
     if (pm?.recommendedSellPrice) document.getElementById('edit-holding-custom-sell').value = pm.recommendedSellPrice;
     if (pm?.recommendedStopLoss) document.getElementById('edit-holding-custom-stop').value = pm.recommendedStopLoss;
-    showToast(`Copied today's Recommended levels into Custom inputs for ${sym}`, 'info');
+    showToast(`Copied today's Recommended Sell & Stop levels for ${sym}`, 'info');
   } else if (mode === 'watchlist') {
     const sym = MarketAPI.normalizeTicker(document.getElementById('wl-ticker')?.value || editingWatchlistOriginalTicker || '');
     if (!sym) return;
     const curP = state?.prices?.[sym]?.price || 0;
     const pm = computeStockPriceMetrics(sym, curP);
-    if (pm?.recommendedBuyPrice) document.getElementById('wl-custom-buy').value = pm.recommendedBuyPrice;
     if (pm?.recommendedSellPrice) document.getElementById('wl-custom-sell').value = pm.recommendedSellPrice;
     if (pm?.recommendedStopLoss) document.getElementById('wl-custom-stop').value = pm.recommendedStopLoss;
     showToast(`Copied today's Recommended levels into Custom inputs for ${sym}`, 'info');
@@ -3671,12 +3657,9 @@ async function handleWatchlistSubmit(e) {
     }
   }
 
-  const autoMetrics = computeStockPriceMetrics(ticker, state.prices[ticker]?.price || 0);
-  const autoRecBuy = autoMetrics?.recommendedBuyPrice || 0;
-
   const existing = state.watchlist.find(w => w.ticker === ticker);
   if (existing) {
-    existing.targetBuyPrice = customBuyPrice || autoRecBuy;
+    existing.targetBuyPrice = customBuyPrice || 0;
     existing.customBuyPrice = customBuyPrice;
     existing.customSellPrice = customSellPrice;
     existing.customStopLoss = customStopLoss;
@@ -3687,7 +3670,7 @@ async function handleWatchlistSubmit(e) {
       ticker,
       name: name || ticker,
       sector,
-      targetBuyPrice: customBuyPrice || autoRecBuy,
+      targetBuyPrice: customBuyPrice || 0,
       customBuyPrice,
       customSellPrice,
       customStopLoss
@@ -3793,8 +3776,7 @@ window.openEditHoldingModal = function(rawTicker) {
     const pm = computeStockPriceMetrics(ticker, h?.currentPrice || state.prices[ticker]?.price || 0, null, h?.avgCost || null);
     recPreviewEl.innerHTML = `
       <span>Quant Recommended (${curr}):</span>
-      <strong class="text-sky-500 ml-1">Buy ${pm?.recommendedBuyPrice ? Fin.currency(pm.recommendedBuyPrice, false, curr) : '-'}</strong> &bull;
-      <strong class="text-pink-500">Sell ${pm?.recommendedSellPrice ? Fin.currency(pm.recommendedSellPrice, false, curr) : '-'}</strong> &bull;
+      <strong class="text-pink-500 ml-1">Sell ${pm?.recommendedSellPrice ? Fin.currency(pm.recommendedSellPrice, false, curr) : '-'}</strong> &bull;
       <strong class="text-red-700 dark:text-red-500">Stop ${pm?.recommendedStopLoss ? Fin.currency(pm.recommendedStopLoss, false, curr) : '-'}</strong>
     `;
   }
@@ -3816,10 +3798,8 @@ function handleEditHoldingSubmit(e) {
   const newCurrency = (document.getElementById('edit-holding-currency').value || 'HKD').trim();
   const newShares = parseFloat(document.getElementById('edit-holding-shares').value);
   const newAvgCost = parseFloat(document.getElementById('edit-holding-avg-cost').value);
-  const rawCustBuy = parseFloat(document.getElementById('edit-holding-custom-buy')?.value);
   const rawCustSell = parseFloat(document.getElementById('edit-holding-custom-sell')?.value);
   const rawCustStop = parseFloat(document.getElementById('edit-holding-custom-stop')?.value);
-  const customBuyPrice = (Number.isFinite(rawCustBuy) && rawCustBuy > 0) ? Fin.round(rawCustBuy, 4) : null;
   const customSellPrice = (Number.isFinite(rawCustSell) && rawCustSell > 0) ? Fin.round(rawCustSell, 4) : null;
   const customStopLoss = (Number.isFinite(rawCustStop) && rawCustStop > 0) ? Fin.round(rawCustStop, 4) : null;
 
@@ -3844,7 +3824,6 @@ function handleEditHoldingSubmit(e) {
     sector: newSector,
     currency: newCurrency,
     assetProfile: (document.getElementById('edit-holding-profile')?.value || 'auto'),
-    customBuyPrice,
     customSellPrice,
     customStopLoss,
     _userCustomName: true,
@@ -3860,10 +3839,8 @@ function handleEditHoldingSubmit(e) {
   if (wlMatch) {
     wlMatch.sector = newSector;
     wlMatch.assetProfile = (document.getElementById('edit-holding-profile')?.value || 'auto');
-    wlMatch.customBuyPrice = customBuyPrice;
     wlMatch.customSellPrice = customSellPrice;
     wlMatch.customStopLoss = customStopLoss;
-    if (customBuyPrice) wlMatch.targetBuyPrice = customBuyPrice;
     if (newName) wlMatch.name = newName;
   }
   (state.transactions || []).forEach(tx => {
@@ -4126,6 +4103,8 @@ window.toggleChartOverlay = function(kind, tabType) {
     state.settings.chartShowCushion = !(state.settings.chartShowCushion !== false);
   } else if (kind === 'div') {
     state.settings.chartShowDivMarkers = !(state.settings.chartShowDivMarkers !== false);
+  } else if (kind === 'vol') {
+    state.settings.chartShowVolume = !(state.settings.chartShowVolume !== false);
   }
   saveState();
   renderQuantSettingsUI();
@@ -4140,6 +4119,12 @@ window.toggleChartOverlay = function(kind, tabType) {
     b.className = onD
       ? 'btn-toggle-chart-div px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/40 transition'
       : 'btn-toggle-chart-div px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-300 dark:border-slate-700 transition';
+  });
+  document.querySelectorAll('.btn-toggle-chart-vol').forEach(b => {
+    const onV = state.settings.chartShowVolume !== false;
+    b.className = onV
+      ? 'btn-toggle-chart-vol px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/40 transition'
+      : 'btn-toggle-chart-vol px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-300 dark:border-slate-700 transition';
   });
   renderInlineStockChart(tabType || 'holdings');
 };
@@ -4876,16 +4861,17 @@ function renderDashboardActionRadar() {
   const alerts = [];
   const seen = new Set();
 
-  const inspectItem = (sym, curPrice, curr, buyVal, sellVal, stopVal, divInfo, stalePins, tabType) => {
+  const inspectItem = (sym, curPrice, curr, entryAlertVal, sellVal, stopVal, divInfo, stalePins, tabType) => {
     if (!sym) return;
-    if (curPrice > 0 && stopVal > 0 && curPrice <= stopVal * 1.005) {
+    const isHoldingItem = tabType === 'holdings';
+    if (isHoldingItem && curPrice > 0 && stopVal > 0 && curPrice <= stopVal * 1.005) {
       alerts.push({ prio: 1, tabType, sym, tag: 'STOP BREACHED', detail: `${Fin.currency(curPrice, false, curr)} <= ${Fin.currency(stopVal, false, curr)}`, cls: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/35 hover:bg-rose-500/25' });
     }
-    if (curPrice > 0 && sellVal > 0 && curPrice >= sellVal * 0.995) {
+    if (isHoldingItem && curPrice > 0 && sellVal > 0 && curPrice >= sellVal * 0.995) {
       alerts.push({ prio: 2, tabType, sym, tag: 'TARGET HIT', detail: `${Fin.currency(curPrice, false, curr)} >= ${Fin.currency(sellVal, false, curr)}`, cls: 'bg-pink-500/15 text-pink-600 dark:text-pink-400 border-pink-500/35 hover:bg-pink-500/25' });
     }
-    if (curPrice > 0 && buyVal > 0 && curPrice <= buyVal * 1.015) {
-      alerts.push({ prio: 3, tabType, sym, tag: 'BUY ZONE', detail: `${Fin.currency(curPrice, false, curr)} vs ${Fin.currency(buyVal, false, curr)}`, cls: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/35 hover:bg-sky-500/25' });
+    if (!isHoldingItem && curPrice > 0 && entryAlertVal > 0 && curPrice <= entryAlertVal * 1.015) {
+      alerts.push({ prio: 3, tabType, sym, tag: 'ENTRY ALERT', detail: `${Fin.currency(curPrice, false, curr)} <= ${Fin.currency(entryAlertVal, false, curr)}`, cls: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/35 hover:bg-sky-500/25' });
     }
     if (divInfo && divInfo.daysUntilEx !== null && divInfo.daysUntilEx >= 0 && divInfo.daysUntilEx <= 14) {
       alerts.push({ prio: 4, tabType, sym, tag: `EX-DIV ${divInfo.daysUntilEx}d`, detail: divInfo.nextExDate || '', cls: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/35 hover:bg-amber-500/25' });
@@ -4898,10 +4884,9 @@ function renderDashboardActionRadar() {
 
   (portfolio?.activeHoldings || []).forEach(h => {
     seen.add(h.ticker);
-    const activeBuy = h.customBuyPrice || h.recommendedBuyPrice;
     const activeSell = h.customSellPrice || h.recommendedSellPrice;
     const activeStop = h.customStopLoss || h.recommendedStopLoss;
-    inspectItem(h.ticker, h.currentPrice, h.currency || 'HKD', activeBuy, activeSell, activeStop, h.divInfo, h.staleCustomPins, 'holdings');
+    inspectItem(h.ticker, h.currentPrice, h.currency || 'HKD', null, activeSell, activeStop, h.divInfo, h.staleCustomPins, 'holdings');
   });
 
   (state?.watchlist || []).forEach(w => {
@@ -4910,10 +4895,10 @@ function renderDashboardActionRadar() {
     const curr = state.prices?.[w.ticker]?.currency || MarketAPI.getStaticProfile(w.ticker).currency || 'HKD';
     const pm = typeof computeStockPriceMetrics === 'function' ? computeStockPriceMetrics(w.ticker, curP) : null;
     if (!pm) return;
-    const activeBuy = w.customBuyPrice || pm.customBuyPrice || pm.recommendedBuyPrice;
+    const manualEntry = Number(w.customBuyPrice || 0) || null;
     const activeSell = w.customSellPrice || pm.customSellPrice || pm.recommendedSellPrice;
     const activeStop = w.customStopLoss || pm.customStopLoss || pm.recommendedStopLoss;
-    inspectItem(w.ticker, curP, curr, activeBuy, activeSell, activeStop, pm.divInfo, pm.staleCustomPins, 'watchlist');
+    inspectItem(w.ticker, curP, curr, manualEntry, activeSell, activeStop, pm.divInfo, pm.staleCustomPins, 'watchlist');
   });
 
   alerts.sort((a, b) => a.prio - b.prio || a.sym.localeCompare(b.sym));
@@ -5217,13 +5202,12 @@ function renderTradeSimulationTable() {
     const priceChgCls = priceDelta >= 0 ? 'text-emerald-500' : 'text-rose-500';
 
     const wlEntry = (state?.watchlist || []).find(w => w.ticker === m.sym);
-    const recBuy = wm?.recommendedBuyPrice || 0;
     const recSell = wm?.recommendedSellPrice || 0;
     const recStop = wm?.recommendedStopLoss || 0;
-    const custBuy = Number(wlEntry?.customBuyPrice || wm?.customBuyPrice || 0) || null;
+    const custBuy = Number(wlEntry?.customBuyPrice || 0) || null;
     const custSell = Number(wlEntry?.customSellPrice || wm?.customSellPrice || 0) || null;
     const custStop = Number(wlEntry?.customStopLoss || wm?.customStopLoss || 0) || null;
-    const activeBuy = custBuy || recBuy;
+    const activeBuy = custBuy || 0;
     const distPct = (m.curPrice > 0 && activeBuy > 0) ? ((m.curPrice - activeBuy) / activeBuy) * 100 : 0;
 
     const sideCls = m.side === 'BUY'
@@ -5280,9 +5264,9 @@ function renderTradeSimulationTable() {
       <td class="py-1.5 px-3 text-right">${formatTrendRegimeCell(wm)}</td>
       <td class="py-1.5 px-3 text-center">${formatSignalBadgeCell(m.sym, wm)}</td>
       <td class="py-1.5 px-3 text-right">${formatDividendExDateCell(wm.divInfo)}</td>
-      <td class="py-1.5 px-3 text-right num-font">${formatTargetLevelCell(custBuy, recBuy, m.curPrice, m.curr, 'text-sky-500', 'Buy Target')}</td>
-      <td class="py-1.5 px-3 text-right num-font font-medium ${distPct <= 0.5 && m.curPrice > 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}">
-        ${m.curPrice > 0 && activeBuy > 0 ? (distPct <= 0.5 ? 'In Buy Zone' : `+${distPct.toFixed(1)}% above`) : '-'}
+      <td class="py-1.5 px-3 text-right num-font">${formatTargetLevelCell(custBuy, null, m.curPrice, m.curr, 'text-sky-500', 'Entry Alert')}</td>
+      <td class="py-1.5 px-3 text-right num-font font-medium ${m.curPrice > 0 && activeBuy > 0 && distPct <= 0.5 ? 'text-sky-500 font-bold' : 'text-slate-400'}">
+        ${m.curPrice > 0 && activeBuy > 0 ? (distPct <= 0.5 ? 'Entry Hit' : `+${distPct.toFixed(1)}% above`) : '-'}
       </td>
       <td class="py-1.5 px-3 text-right num-font">${formatTargetLevelCell(custSell, recSell, m.curPrice, m.curr, 'text-pink-500', 'Sell Target')}</td>
       <td class="py-1.5 px-3 text-right num-font">${formatTargetLevelCell(custStop, recStop, m.curPrice, m.curr, 'text-red-700 dark:text-red-500', 'Stop Loss')}</td>
@@ -5325,17 +5309,20 @@ window.renderTradeSimulationTable = renderTradeSimulationTable;
 // v3.8.0: INLINE CHART QUICK-PIN BAR, ANNUAL SCORECARD & BACKUP AGE PILL
 // =========================================================================
 window.populateInlineQuickPinBar = function(tabType, ticker, pm) {
-  const prefix = tabType === 'watchlist' ? 'watchlist' : 'holdings';
+  const isWl = tabType === 'watchlist';
+  const prefix = isWl ? 'watchlist' : 'holdings';
   const bEl = document.getElementById(`${prefix}-qpin-buy`);
   const sEl = document.getElementById(`${prefix}-qpin-sell`);
   const stEl = document.getElementById(`${prefix}-qpin-stop`);
-  if (!bEl || !sEl || !stEl) return;
+  if (!sEl || !stEl) return;
   const fund = state?.fundamentals?.[ticker] || {};
   const wl = (state?.watchlist || []).find(w => w.ticker === ticker);
-  bEl.value = (fund.customBuyPrice ?? wl?.customBuyPrice ?? '') || '';
+  if (bEl && isWl) {
+    bEl.value = wl?.customBuyPrice || '';
+    bEl.placeholder = 'Optional';
+  }
   sEl.value = (fund.customSellPrice ?? wl?.customSellPrice ?? '') || '';
   stEl.value = (fund.customStopLoss ?? wl?.customStopLoss ?? '') || '';
-  bEl.placeholder = pm?.recommendedBuyPrice ? `Rec ${pm.recommendedBuyPrice}` : 'Auto';
   sEl.placeholder = pm?.recommendedSellPrice ? `Rec ${pm.recommendedSellPrice}` : 'Auto';
   stEl.placeholder = pm?.recommendedStopLoss ? `Rec ${pm.recommendedStopLoss}` : 'Auto';
 };
@@ -5345,7 +5332,8 @@ window.saveInlineQuickPins = function(tabType) {
   const ticker = isWl ? selectedWatchlistTicker : selectedHoldingsTicker;
   if (!ticker) return;
   const prefix = isWl ? 'watchlist' : 'holdings';
-  const rawB = parseFloat(document.getElementById(`${prefix}-qpin-buy`)?.value);
+  const bEl = isWl ? document.getElementById(`${prefix}-qpin-buy`) : null;
+  const rawB = bEl ? parseFloat(bEl.value) : NaN;
   const rawS = parseFloat(document.getElementById(`${prefix}-qpin-sell`)?.value);
   const rawSt = parseFloat(document.getElementById(`${prefix}-qpin-stop`)?.value);
   const cBuy = (Number.isFinite(rawB) && rawB > 0) ? Fin.round(rawB, 4) : null;
@@ -5355,16 +5343,17 @@ window.saveInlineQuickPins = function(tabType) {
   if (!state.fundamentals) state.fundamentals = {};
   state.fundamentals[ticker] = {
     ...(state.fundamentals[ticker] || {}),
-    customBuyPrice: cBuy,
     customSellPrice: cSell,
     customStopLoss: cStop
   };
   const wl = (state.watchlist || []).find(w => w.ticker === ticker);
   if (wl) {
-    wl.customBuyPrice = cBuy;
+    if (isWl) {
+      wl.customBuyPrice = cBuy;
+      wl.targetBuyPrice = cBuy || 0;
+    }
     wl.customSellPrice = cSell;
     wl.customStopLoss = cStop;
-    if (cBuy) wl.targetBuyPrice = cBuy;
   }
   if (typeof invalidateStockMetricsCache === 'function') invalidateStockMetricsCache();
   recalculatePortfolio();
@@ -5382,10 +5371,8 @@ window.snapInlineQuickPinsToRec = function(tabType) {
   const curP = Number(state?.prices?.[ticker]?.price || h?.currentPrice || 0);
   const pm = typeof computeStockPriceMetrics === 'function' ? computeStockPriceMetrics(ticker, curP, null, h?.avgCost || null) : null;
   if (!pm) return;
-  const bEl = document.getElementById(`${prefix}-qpin-buy`);
   const sEl = document.getElementById(`${prefix}-qpin-sell`);
   const stEl = document.getElementById(`${prefix}-qpin-stop`);
-  if (bEl && pm.recommendedBuyPrice) bEl.value = pm.recommendedBuyPrice;
   if (sEl && pm.recommendedSellPrice) sEl.value = pm.recommendedSellPrice;
   if (stEl && pm.recommendedStopLoss) stEl.value = pm.recommendedStopLoss;
   saveInlineQuickPins(tabType);

@@ -1456,7 +1456,6 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <th class="py-1.5 px-3 text-right col-g-pnl" data-sort-col="shares" title="Click to sort by Shares Held">Shares <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right col-g-pnl col-g-targets" data-sort-col="avgCost" title="Click to sort by Average Cost">Avg Cost <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right col-g-pnl" data-sort-col="totalCost" title="Click to sort by Total Cost Basis">Total Cost <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
-                <th class="py-1.5 px-3 text-right text-sky-500 col-g-targets" data-sort-col="buyTarget" title="Click to sort by Buy Target Level">Buy Target <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right text-pink-500 col-g-targets" data-sort-col="sellTarget" title="Click to sort by Sell Target Level">Sell Target <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right text-red-700 dark:text-red-500 col-g-targets" data-sort-col="stopLoss" title="Click to sort by Stop Loss Level">Stop Loss <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-center col-g-targets" data-sort-col="riskReward" title="Implied Risk/Reward Ratio = (Active Sell - Current) / (Current - Active Stop)">R:R <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
@@ -1496,6 +1495,8 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
             <span>Loading monthly historical price series...</span>
           </div>
         </div>
+        <!-- v3.10.2 Docked Selected-Month Inspector Strip (replaces obstructing multi-row chart popup) -->
+        <div id="holdings-chart-hover-detail" class="mt-2 px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/80 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-mono text-slate-600 dark:text-slate-300"></div>
         <!-- Stock Title, Regime/RSI Subtitle & Overlay/Range Controls moved BELOW the chart canvas -->
         <div class="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-2">
           <div>
@@ -1510,6 +1511,7 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
             <button type="button" onclick="toggleChartOverlay('reg', 'holdings')" class="btn-toggle-chart-reg px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/40 transition" title="Toggle 12M Log-Linear Regression Trend Channel">12M Reg Channel</button>
             <button type="button" onclick="toggleChartOverlay('cushion', 'holdings')" class="btn-toggle-chart-cushion px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 transition" title="Toggle Profit/Loss Cushion shading vs. Avg Cost">P/L Cushion</button>
             <button type="button" onclick="toggleChartOverlay('div', 'holdings')" class="btn-toggle-chart-div px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/40 transition" title="Toggle Ex-Dividend Markers (D) on chart">Div (D)</button>
+            <button type="button" onclick="toggleChartOverlay('vol', 'holdings')" class="btn-toggle-chart-vol px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/40 transition" title="Toggle Monthly Trade Volume Bars at bottom of chart">Vol</button>
             <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
               <button type="button" data-stock-tab="holdings" data-stock-range="12" class="holdings-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1-Y</button>
               <button type="button" data-stock-tab="holdings" data-stock-range="24" class="holdings-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">2-Y</button>
@@ -1526,7 +1528,6 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
         <!-- v3.8.0 Inline Quick-Pin Bar -->
         <div id="holdings-quick-pin-bar" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-2 text-[11px]">
           <span class="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1"><i class="fa-solid fa-thumbtack text-amber-500"></i> Quick Pins:</span>
-          <label class="inline-flex items-center gap-1 text-sky-500 font-semibold">Buy <input type="number" step="any" min="0" id="holdings-qpin-buy" placeholder="Auto" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
           <label class="inline-flex items-center gap-1 text-pink-500 font-semibold">Sell <input type="number" step="any" min="0" id="holdings-qpin-sell" placeholder="Auto" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
           <label class="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold">Stop <input type="number" step="any" min="0" id="holdings-qpin-stop" placeholder="Auto" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
           <button type="button" onclick="saveInlineQuickPins('holdings')" class="px-2.5 py-0.5 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold transition">Save Pins</button>
@@ -1580,8 +1581,8 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <th class="py-1.5 px-3 text-right">Trend &amp; RSI</th>
                 <th class="py-1.5 px-3 text-center">Signal</th>
                 <th class="py-1.5 px-3 text-right">Div / Ex-Date</th>
-                <th class="py-1.5 px-3 text-right text-sky-500">Buy Target</th>
-                <th class="py-1.5 px-3 text-right">Target Dist</th>
+                <th class="py-1.5 px-3 text-right text-sky-500">Entry Alert</th>
+                <th class="py-1.5 px-3 text-right">Alert Dist</th>
                 <th class="py-1.5 px-3 text-right text-pink-500">Sell Target</th>
                 <th class="py-1.5 px-3 text-right text-red-700 dark:text-red-500">Stop Loss</th>
                 <th class="py-1.5 px-3 text-center">R:R</th>
@@ -1996,8 +1997,8 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <th class="py-1.5 px-3 text-right" title="6-State Trend Regime, RSI(14) & Benchmark Alpha">Trend &amp; RSI</th>
                 <th class="py-1.5 px-3 text-center" data-wl-sort-col="signalScore" title="Click to sort by Signal Score">Signal <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right" data-wl-sort-col="divYield" title="Click to sort by Dividend Yield">Div / Ex-Date <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
-                <th class="py-1.5 px-3 text-right text-sky-500" data-wl-sort-col="buyTarget" title="Click to sort by Buy Target">Buy Target <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
-                <th class="py-1.5 px-3 text-right" data-wl-sort-col="dist" title="Click to sort by Distance to Buy Target">Target Dist <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
+                <th class="py-1.5 px-3 text-right text-sky-500" data-wl-sort-col="buyTarget" title="Click to sort by Manual Entry Alert Price">Entry Alert <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
+                <th class="py-1.5 px-3 text-right" data-wl-sort-col="dist" title="Click to sort by Distance to Manual Entry Alert">Alert Dist <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right text-pink-500" data-wl-sort-col="sellTarget" title="Click to sort by Sell Target">Sell Target <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-right text-red-700 dark:text-red-500" data-wl-sort-col="stopLoss" title="Click to sort by Stop Loss">Stop Loss <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
                 <th class="py-1.5 px-3 text-center" data-wl-sort-col="riskReward" title="Implied Risk/Reward Ratio = (Active Sell - Current) / (Current - Active Stop)">R:R <i class="fa-solid fa-sort text-[9px] opacity-40 ml-1"></i></th>
@@ -2032,6 +2033,8 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
             <span>Loading monthly historical price series...</span>
           </div>
         </div>
+        <!-- v3.10.2 Docked Selected-Month Inspector Strip (replaces obstructing multi-row chart popup) -->
+        <div id="watchlist-chart-hover-detail" class="mt-2 px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/80 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-mono text-slate-600 dark:text-slate-300"></div>
         <!-- Stock Title, Regime/RSI Subtitle & Overlay/Range Controls moved BELOW the chart canvas -->
         <div class="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-2">
           <div>
@@ -2045,6 +2048,7 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
             <button type="button" onclick="toggleChartOverlay('sma', 'watchlist')" class="btn-toggle-chart-sma px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40 transition" title="Toggle SMA 20/50/200 Moving Average Overlays">SMA Overlays</button>
             <button type="button" onclick="toggleChartOverlay('reg', 'watchlist')" class="btn-toggle-chart-reg px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/40 transition" title="Toggle 12M Log-Linear Regression Trend Channel">12M Reg Channel</button>
             <button type="button" onclick="toggleChartOverlay('div', 'watchlist')" class="btn-toggle-chart-div px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/40 transition" title="Toggle Ex-Dividend Markers (D) on chart">Div (D)</button>
+            <button type="button" onclick="toggleChartOverlay('vol', 'watchlist')" class="btn-toggle-chart-vol px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/40 transition" title="Toggle Monthly Trade Volume Bars at bottom of chart">Vol</button>
             <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs">
               <button type="button" data-stock-tab="watchlist" data-stock-range="12" class="watchlist-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold text-slate-500 dark:text-slate-400 transition">1-Y</button>
               <button type="button" data-stock-tab="watchlist" data-stock-range="24" class="watchlist-stock-range-btn px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md font-semibold bg-white dark:bg-dark-card shadow text-slate-900 dark:text-white transition">2-Y</button>
@@ -2061,7 +2065,7 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
         <!-- v3.8.0 Inline Quick-Pin Bar -->
         <div id="watchlist-quick-pin-bar" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-2 text-[11px]">
           <span class="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1"><i class="fa-solid fa-thumbtack text-amber-500"></i> Quick Pins:</span>
-          <label class="inline-flex items-center gap-1 text-sky-500 font-semibold">Buy <input type="number" step="any" min="0" id="watchlist-qpin-buy" placeholder="Auto" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
+          <label class="inline-flex items-center gap-1 text-sky-500 font-semibold">Entry Alert <input type="number" step="any" min="0" id="watchlist-qpin-buy" placeholder="Optional" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
           <label class="inline-flex items-center gap-1 text-pink-500 font-semibold">Sell <input type="number" step="any" min="0" id="watchlist-qpin-sell" placeholder="Auto" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
           <label class="inline-flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold">Stop <input type="number" step="any" min="0" id="watchlist-qpin-stop" placeholder="Auto" class="w-20 px-1.5 py-0.5 rounded bg-slate-50 dark:bg-dark-input border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white num-font text-[11px]"></label>
           <button type="button" onclick="saveInlineQuickPins('watchlist')" class="px-2.5 py-0.5 rounded bg-purple-600 hover:bg-purple-500 text-white font-semibold transition">Save Pins</button>
@@ -2443,14 +2447,6 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                   <input type="checkbox" id="setting-chart-reg" checked class="accent-brand-600 rounded"> Reg Channel
                 </label>
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-sky-600 dark:text-sky-400 mb-1" title="Base pullback % below current price / trend support for Recommended Buy">Rec. Buy Pullback (%)</label>
-                <input type="number" id="setting-rec-buy-pullback" step="0.5" value="6.0" class="w-full px-2 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg">
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-sky-600 dark:text-sky-400 mb-1" title="Weight (%) given to Previous Trough &amp; Reg Lower Band in Recommended Buy">Rec. Buy Trough Wt (%)</label>
-                <input type="number" id="setting-rec-buy-trough-wt" step="5" value="40" class="w-full px-2 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg">
               </div>
               <div>
                 <label class="block text-[11px] font-semibold text-pink-600 dark:text-pink-400 mb-1" title="Base upside target % above price / Avg Cost for Recommended Sell">Rec. Sell Gain (%)</label>
@@ -3187,8 +3183,8 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
           <div id="wl-rec-levels-preview" class="text-[11px] font-mono text-slate-500 dark:text-slate-400"></div>
           <div class="grid grid-cols-3 gap-2">
             <div>
-              <label class="block text-[10px] font-semibold text-sky-600 dark:text-sky-400 mb-0.5">Custom Buy</label>
-              <input type="number" id="wl-custom-buy" step="any" min="0" placeholder="Auto Rec" class="w-full px-2 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
+              <label class="block text-[10px] font-semibold text-sky-600 dark:text-sky-400 mb-0.5">Entry Alert (Manual)</label>
+              <input type="number" id="wl-custom-buy" step="any" min="0" placeholder="Optional" class="w-full px-2 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
             </div>
             <div>
               <label class="block text-[10px] font-semibold text-pink-600 dark:text-pink-400 mb-0.5">Custom Sell</label>
@@ -3288,11 +3284,7 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
             </div>
           </div>
           <div id="edit-holding-rec-levels-preview" class="text-[11px] font-mono text-slate-500 dark:text-slate-400"></div>
-          <div class="grid grid-cols-3 gap-2">
-            <div>
-              <label class="block text-[10px] font-semibold text-sky-600 dark:text-sky-400 mb-0.5">Custom Buy</label>
-              <input type="number" id="edit-holding-custom-buy" step="any" min="0" placeholder="Auto Rec" class="w-full px-2 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
-            </div>
+          <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-[10px] font-semibold text-pink-600 dark:text-pink-400 mb-0.5">Custom Sell</label>
               <input type="number" id="edit-holding-custom-sell" step="any" min="0" placeholder="Auto Rec" class="w-full px-2 py-1.5 text-xs num-font bg-white dark:bg-dark-input border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white">
@@ -3536,25 +3528,25 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.9.3',
-  buildId: '20261128_1530',
-  releaseDate: '2026-11-28 15:30 HKT',
-  driveFolder: '/myPortfolio/20261128_1530/',
+  appVersion: '3.10.2',
+  buildId: '20261128_1845',
+  releaseDate: '2026-11-28 18:45 HKT',
+  driveFolder: '/myPortfolio/20261128_1845/',
   modules: {
-    'version.js':   { version: '3.9.3', updated: '20261128_1530', role: 'Version manifest, module registry & v3.9.3 changelog history' },
+    'version.js':   { version: '3.10.2', updated: '20261128_1845', role: 'Version manifest, module registry & v3.10.2 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.7.4', updated: '20261128_1250', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
-    'portfolio.js': { version: '3.9.2', updated: '20261128_1520', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
-    'charts.js':    { version: '3.8.0', updated: '20261128_1440', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
-    'app.js':       { version: '3.9.3', updated: '20261128_1530', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
+    'portfolio.js': { version: '3.10.0', updated: '20261128_1745', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
+    'charts.js':    { version: '3.10.2', updated: '20261128_1845', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
+    'app.js':       { version: '3.10.1', updated: '20261128_1840', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
     'styles.css':   { version: '3.6.0', updated: '20261125_1720', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.9.3', updated: '20261128_1530', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.10.2', updated: '20261128_1845', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
     {
       version: '3.6.0',
-      buildId: '20261128_1530',
+      buildId: '20261128_1845',
       date: '2026-11-25',
       title: 'Quant Risk Analytics, Action Radar, Benchmark Overlay, 12M Dividend Calendar & Holdings Presets',
       highlights: [
@@ -3568,7 +3560,7 @@ var APP_VERSION_MANIFEST = {
 
     {
       version: '3.6.0',
-      buildId: '20261128_1530',
+      buildId: '20261128_1845',
       date: '2026-11-24 12:20 HKT',
       summary: 'Fixed Total Return % (and Privacy Mode Realized P&L %) denominator across individual holdings, sector subtotals, Portfolio Total row, and Dashboard KPI to use Cumulative Buy Cost Basis (Active Cost + Sold Cost) instead of remaining active cost alone.',
       changes: [
@@ -8565,48 +8557,8 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
       : stopFloorPct;
     effectiveStopFloorPct = Math.min(stopFloorPct, volStopCapPct);
 
-    // 1. Recommended Buy Price (Volatility-Adaptive Pullback Support)
-    let trendBuyAnchor = refCurrent * (1 - effectiveBuyPullbackPct / 100);
-    if (regime === 'Stage 2 Strong Uptrend' || regime === 'Stage 2 Uptrend (Consolidating)') {
-      const maRef = sma50 || sma20 || trendBuyAnchor;
-      trendBuyAnchor = 0.55 * trendBuyAnchor + 0.45 * Math.min(refCurrent, maRef);
-    } else if (regime === 'Bullish Pullback (Buy-the-Dip)' || regime === 'Stage 1 Bullish Inflection') {
-      const dipRef = sma200 || regLowerNow || sma50 || trendBuyAnchor;
-      trendBuyAnchor = 0.50 * (refCurrent * (1 - (effectiveBuyPullbackPct * 0.70) / 100)) + 0.50 * Math.min(refCurrent, dipRef);
-    } else if (regime === 'Stage 3 Topping / Distribution' || regime === 'Stage 4 Confirmed Downtrend') {
-      const bearRef = Math.min(sma200 || refCurrent, regLowerNow || refCurrent, refCurrent * (1 - (effectiveBuyPullbackPct * 1.5) / 100));
-      trendBuyAnchor = bearRef;
-    }
-
-    const troughRef = (prevTrough && regLowerNow)
-      ? (0.60 * prevTrough + 0.40 * regLowerNow)
-      : (prevTrough || regLowerNow || trendBuyAnchor);
-
-    let rawRecBuy = (1 - recBuyTroughWeight) * trendBuyAnchor + recBuyTroughWeight * troughRef;
-
-    // Signal conviction adjustment
-    if (signalLabel === 'STRONG BUY') {
-      rawRecBuy = Math.max(rawRecBuy, refCurrent * (1 - (effectiveBuyPullbackPct * 0.35) / 100));
-    } else if (signalLabel === 'ACCUMULATE') {
-      rawRecBuy = Math.max(rawRecBuy, refCurrent * (1 - (effectiveBuyPullbackPct * 0.75) / 100));
-    } else if (signalLabel.includes('TRIM') || signalLabel.includes('SELL')) {
-      rawRecBuy = Math.min(rawRecBuy, refCurrent * (1 - (effectiveBuyPullbackPct * 1.35) / 100));
-    }
-
-    // Average Cost basis integration for existing holdings
-    if (avgCost > 0) {
-      if (refCurrent < avgCost && regime !== 'Stage 4 Confirmed Downtrend') {
-        const avgDownFactor = 1 - Math.min(0.04, (effectiveBuyPullbackPct / 100) * 0.65);
-        rawRecBuy = 0.70 * rawRecBuy + 0.30 * Math.min(refCurrent, avgCost * avgDownFactor);
-      } else if (refCurrent >= avgCost) {
-        rawRecBuy = 0.80 * rawRecBuy + 0.20 * Math.min(refCurrent, Math.max(avgCost, troughRef));
-      }
-    }
-
-    const minBuyFloor = prevTrough
-      ? Math.min(prevTrough * (1 - Math.min(0.08, (effectiveBuyPullbackPct / 100) * 1.3)), refCurrent * 0.70)
-      : refCurrent * 0.70;
-    recommendedBuyPrice = Fin.round(Math.min(refCurrent, Math.max(minBuyFloor, rawRecBuy)), 2);
+    // 1. Recommended Buy Price removed in v3.10.0 (Option 2: manual Watchlist Entry Alert only)
+    recommendedBuyPrice = null;
 
     // 2. Recommended Sell Price (Volatility-Adaptive Take-Profit / Resistance Target)
     const costOrPriceBase = avgCost > 0 ? Math.max(refCurrent, avgCost) : refCurrent;
@@ -8653,19 +8605,15 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
     if (avgCost > 0 && refCurrent >= avgCost * 1.14) {
       rawStop = Math.max(rawStop, Math.min(refCurrent * 0.96, avgCost * 1.01));
     }
-    // Dynamic Stop Ceiling strictly below Recommended Buy Price & Current Price
+    // Dynamic Stop Ceiling strictly below Current Price (v3.10.0: independent of removed Recommended Buy)
     const stopGapFromCurrent = Math.min(0.025, (effectiveStopFloorPct / 100) * 0.5);
-    const stopGapFromBuy = Math.min(0.015, (effectiveStopFloorPct / 100) * 0.35);
-    const stopCeiling = Math.min(
-      refCurrent * (1 - stopGapFromCurrent),
-      recommendedBuyPrice > 0 ? recommendedBuyPrice * (1 - stopGapFromBuy) : refCurrent * (1 - stopGapFromCurrent)
-    );
+    const stopCeiling = refCurrent * (1 - stopGapFromCurrent);
     recommendedStopLoss = Fin.round(Math.max(0.01, Math.min(stopCeiling, rawStop)), 2);
   }
 
   const suggestedStopLoss = recommendedStopLoss;
   const wlEntryForCustom = (Array.isArray(state?.watchlist) ? state.watchlist.find(w => w.ticker === ticker) : null);
-  const rawCustBuy = Number(fundObj.customBuyPrice ?? wlEntryForCustom?.customBuyPrice ?? 0);
+  const rawCustBuy = Number(wlEntryForCustom?.customBuyPrice ?? 0);
   const rawCustSell = Number(fundObj.customSellPrice ?? wlEntryForCustom?.customSellPrice ?? 0);
   const rawCustStop = Number(fundObj.customStopLoss ?? wlEntryForCustom?.customStopLoss ?? 0);
   const customBuyPrice = (Number.isFinite(rawCustBuy) && rawCustBuy > 0) ? Fin.round(rawCustBuy, 4) : null;
@@ -8689,7 +8637,7 @@ function computeStockPriceMetrics(rawTicker, fallbackCurrentPrice = 0, explicitP
       }
     }
   };
-  checkPinDrift('BUY', customBuyPrice, recommendedBuyPrice);
+  // v3.10.0: BUY drift check removed (Watchlist Entry Alert is strictly manual)
   checkPinDrift('SELL', customSellPrice, recommendedSellPrice);
   checkPinDrift('STOP', customStopLoss, recommendedStopLoss);
   const hasStaleCustomPin = staleCustomPins.length > 0;
@@ -11193,10 +11141,10 @@ function renderInlineStockChart(tabType) {
   if (typeof populateInlineQuickPinBar === 'function') populateInlineQuickPinBar(tabType, ticker, pm);
   if (statsEl) {
     const chgColor = periodChange >= 0 ? 'text-emerald-500' : 'text-rose-500';
-    const cBuy = pm?.customBuyPrice || null;
+    const wlMatchForStats = !isHoldings ? (state?.watchlist || []).find(w => w.ticker === ticker) : null;
+    const cBuy = !isHoldings ? (Number(wlMatchForStats?.customBuyPrice || pm?.customBuyPrice || 0) || null) : null;
     const cSell = pm?.customSellPrice || null;
     const cStop = pm?.customStopLoss || null;
-    const rBuy = pm?.recommendedBuyPrice || null;
     const rSell = pm?.recommendedSellPrice || null;
     const rStop = pm?.recommendedStopLoss || null;
 
@@ -11217,9 +11165,10 @@ function renderInlineStockChart(tabType) {
         <div class="font-bold ${chgColor} whitespace-nowrap">${periodTag}: ${Fin.percent(periodChangePct, true)} (${Fin.currency(periodChange, true, currency)})</div>
       </div>
       <div class="col-span-2 sm:col-span-3 lg:col-span-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300">
-        <span class="whitespace-nowrap">Buy: ${fmtPair(cBuy, rBuy, 'text-sky-500')}</span>
+        ${!isHoldings ? `<span class="whitespace-nowrap">Entry: ${cBuy ? `<strong class="text-sky-500" title="Manual Watchlist Entry Alert"><i class="fa-solid fa-bell text-[9px] mr-0.5"></i>${Fin.currency(cBuy, false, currency)}</strong>` : '<strong class="text-slate-400">-</strong>'}</span>` : ''}
         <span class="whitespace-nowrap">Sell: ${fmtPair(cSell, rSell, 'text-pink-500')}</span>
         <span class="whitespace-nowrap">Stop: ${fmtPair(cStop, rStop, 'text-rose-500')}</span>
+        ${isHoldings && pm?.riskRewardRatio != null ? `<span class="whitespace-nowrap">R:R: <strong class="${pm.riskRewardRatio >= 2 ? 'text-emerald-500' : (pm.riskRewardRatio >= 1 ? 'text-amber-500' : 'text-rose-500')}">${pm.riskRewardRatio.toFixed(1)}x</strong></span>` : ''}
       </div>
       <div class="col-span-1 sm:col-span-1 lg:col-span-1 flex flex-col justify-center px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 text-[10px]">
         <div class="truncate"><span class="text-slate-400">${periodTag} H/L:</span> <strong>${Fin.currency(periodHigh, false, currency)}</strong> / <strong>${Fin.currency(periodLow, false, currency)}</strong></div>
@@ -11235,10 +11184,10 @@ function renderInlineStockChart(tabType) {
   const holding = (portfolio.allHoldings || portfolio.activeHoldings || []).find(h => h.ticker === ticker);
   const hideMoney = Fin.isPrivacyMode();
   const avgCostValue = (!hideMoney && isHoldings && holding && holding.isActive !== false && holding.avgCost > 0) ? holding.avgCost : null;
-  const customBuyVal = pm?.customBuyPrice || holding?.customBuyPrice || null;
+  const wlMatchForChart = !isHoldings ? (state?.watchlist || []).find(w => w.ticker === ticker) : null;
+  const customBuyVal = !isHoldings ? (Number(wlMatchForChart?.customBuyPrice || pm?.customBuyPrice || 0) || null) : null;
   const customSellVal = pm?.customSellPrice || holding?.customSellPrice || null;
   const customStopVal = pm?.customStopLoss || holding?.customStopLoss || null;
-  const recBuyVal = pm?.recommendedBuyPrice || holding?.recommendedBuyPrice || null;
   const recSellVal = pm?.recommendedSellPrice || holding?.recommendedSellPrice || null;
   const recStopVal = pm?.recommendedStopLoss || holding?.recommendedStopLoss || null;
 
@@ -11364,7 +11313,8 @@ function renderInlineStockChart(tabType) {
       pointHoverRadius: isMobile ? 3.5 : 4.5,
       pointBackgroundColor: mainColor,
       order: 1,
-      _legendStyle: 'solid'
+      _legendStyle: 'solid',
+      _isCloseSeries: true
     }
   ];
 
@@ -11459,13 +11409,11 @@ function renderInlineStockChart(tabType) {
     return labels.map((_, idx) => (idx === nL - 1 ? r : 0));
   };
 
-  // 1. BUY LEVEL(S) — Light Blue (#38bdf8)
-  const fullBuyLineVal = customBuyVal || recBuyVal;
-  const fullBuyIsCustom = Boolean(customBuyVal);
-  if (fullBuyLineVal && fullBuyLineVal > 0) {
+  // 1. MANUAL ENTRY ALERT (Watchlist only, v3.10.0) — Light Blue (#38bdf8)
+  if (!isHoldings && customBuyVal && customBuyVal > 0) {
     datasets.push({
-      label: `${fullBuyIsCustom ? 'Custom Buy Target' : 'Target Buy Price'} (${Fin.currency(fullBuyLineVal, false, currency)})`,
-      data: labels.map(() => fullBuyLineVal),
+      label: `Entry Alert (${Fin.currency(customBuyVal, false, currency)})`,
+      data: labels.map(() => customBuyVal),
       borderColor: '#38bdf8',
       borderDash: [3, 3],
       borderWidth: 2.2,
@@ -11473,27 +11421,6 @@ function renderInlineStockChart(tabType) {
       fill: false,
       order: 2,
       _legendStyle: 'dashed'
-    });
-  }
-  if (recBuyVal && recBuyVal > 0 && (fullBuyIsCustom || labels.length >= 2)) {
-    datasets.push({
-      label: `Rec. Buy Pin (${Fin.currency(recBuyVal, false, currency)})`,
-      data: buildRightEdgeTickSeries(recBuyVal),
-      borderColor: '#0284c7',
-      backgroundColor: '#38bdf8',
-      borderDash: [2, 2],
-      borderWidth: 2.4,
-      pointStyle: 'triangle',
-      pointRadius: buildRightEdgePointRadii(isMobile ? 5.5 : 6.5),
-      pointHoverRadius: isMobile ? 7 : 8,
-      pointBackgroundColor: '#38bdf8',
-      pointBorderColor: '#0284c7',
-      pointBorderWidth: 1.8,
-      spanGaps: false,
-      fill: false,
-      order: 1,
-      _legendStyle: 'dashed',
-      _hideFromExternalLegend: !fullBuyIsCustom || Math.abs((customBuyVal || 0) - (recBuyVal || 0)) < 0.005
     });
   }
 
@@ -11670,6 +11597,53 @@ function renderInlineStockChart(tabType) {
     }
   }
 
+  // v3.10.1: Monthly Total Trade Volume Bars (bottom-pinned transparent green/red bars on hidden yVol axis)
+  const volData = sliced.map(b => {
+    const v = Number(b?.volume || 0);
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  });
+  const maxVol = volData.reduce((m, v) => (v > m ? v : m), 0);
+  const showVol = Boolean(state?.settings?.chartShowVolume !== false) && maxVol > 0;
+  if (showVol) {
+    const fullStartIdx = Math.max(0, (bars?.length || 0) - sliced.length);
+    const prevBarBeforeSlice = fullStartIdx > 0 ? bars[fullStartIdx - 1] : null;
+    const volBgColors = sliced.map((b, i) => {
+      const curC = Number(b?.close || 0);
+      const prevC = i > 0
+        ? Number(sliced[i - 1]?.close || 0)
+        : Number(prevBarBeforeSlice?.close || b?.open || curC);
+      const isUp = curC >= prevC;
+      return isUp
+        ? (isDark ? 'rgba(16, 185, 129, 0.24)' : 'rgba(16, 185, 129, 0.20)')
+        : (isDark ? 'rgba(244, 63, 94, 0.24)' : 'rgba(244, 63, 94, 0.20)');
+    });
+    const volBorderColors = sliced.map((b, i) => {
+      const curC = Number(b?.close || 0);
+      const prevC = i > 0
+        ? Number(sliced[i - 1]?.close || 0)
+        : Number(prevBarBeforeSlice?.close || b?.open || curC);
+      const isUp = curC >= prevC;
+      return isUp
+        ? (isDark ? 'rgba(52, 211, 153, 0.45)' : 'rgba(16, 185, 129, 0.40)')
+        : (isDark ? 'rgba(251, 113, 133, 0.45)' : 'rgba(244, 63, 94, 0.40)');
+    });
+    datasets.push({
+      type: 'bar',
+      label: 'Monthly Volume',
+      data: volData,
+      yAxisID: 'yVol',
+      backgroundColor: volBgColors,
+      borderColor: volBorderColors,
+      borderWidth: 1,
+      borderRadius: 2,
+      barPercentage: 0.72,
+      categoryPercentage: 0.85,
+      order: 20,
+      _isVolume: true,
+      _legendStyle: 'vol'
+    });
+  }
+
   const renderClickedTradeMarkerDetail = (metaList) => {
     if (!tradeMarkerBoxEl || !Array.isArray(metaList) || metaList.length === 0) return;
     const isPriv = Fin.isPrivacyMode();
@@ -11704,6 +11678,84 @@ function renderInlineStockChart(tabType) {
     }).join('');
   };
 
+  const hoverDetailEl = document.getElementById(isHoldings ? 'holdings-chart-hover-detail' : 'watchlist-chart-hover-detail');
+  const formatCompactVol = (v) => {
+    const n = Number(v || 0);
+    if (!Number.isFinite(n) || n <= 0) return null;
+    if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+    if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+    if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+    return String(Math.round(n));
+  };
+  let lastInspectedIdx = -1;
+  const renderHoveredMonthInspector = (idx) => {
+    if (!hoverDetailEl || !labels.length) return;
+    const safeIdx = Math.max(0, Math.min(labels.length - 1, Number(idx)));
+    if (safeIdx === lastInspectedIdx && hoverDetailEl.innerHTML) return;
+    lastInspectedIdx = safeIdx;
+
+    const mKey = labels[safeIdx];
+    const cVal = Number(closeData[safeIdx] || 0);
+    const hVal = Number(highData[safeIdx] || 0);
+    const lVal = Number(lowData[safeIdx] || 0);
+    const vVal = Number(volData[safeIdx] || 0);
+    const fullStartIdx = Math.max(0, (bars?.length || 0) - sliced.length);
+    const prevC = safeIdx > 0
+      ? Number(closeData[safeIdx - 1] || 0)
+      : Number((fullStartIdx > 0 ? bars[fullStartIdx - 1]?.close : 0) || 0);
+    const momChgPct = (prevC > 0 && cVal > 0) ? ((cVal - prevC) / prevC) * 100 : null;
+    const curYm = new Date().toISOString().slice(0, 7);
+    const mtdTag = (safeIdx === labels.length - 1 && mKey === curYm) ? ' (MTD)' : '';
+
+    const parts = [];
+    parts.push(`<span class="px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-700/80 text-slate-800 dark:text-white font-bold">${mKey}</span>`);
+    parts.push(`<span>Close: <strong class="text-slate-900 dark:text-white">${Fin.currency(cVal, false, currency)}</strong>${momChgPct !== null ? ` <span class="${momChgPct >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-semibold">(${Fin.percent(momChgPct, true)})</span>` : ''}</span>`);
+    if (hVal > 0 && lVal > 0) {
+      parts.push(`<span>H/L: <strong class="text-emerald-600 dark:text-emerald-400">${Fin.currency(hVal, false, currency)}</strong> / <strong class="text-rose-500">${Fin.currency(lVal, false, currency)}</strong></span>`);
+    }
+    const fmtV = formatCompactVol(vVal);
+    if (fmtV) {
+      parts.push(`<span>Vol${mtdTag}: <strong class="text-teal-600 dark:text-teal-400">${fmtV}</strong></span>`);
+    }
+
+    // Active overlays at this month index (3M SMA, 12M Reg Channel)
+    const smaDs = datasets.find(d => d.label === '3M SMA');
+    if (smaDs && Number.isFinite(Number(smaDs.data?.[safeIdx]))) {
+      parts.push(`<span>3M SMA: <strong class="text-sky-500">${Fin.currency(smaDs.data[safeIdx], false, currency)}</strong></span>`);
+    }
+    const regUpDs = datasets.find(d => String(d.label || '').startsWith('12M Reg Upper'));
+    const regLoDs = datasets.find(d => String(d.label || '').startsWith('12M Reg Lower'));
+    if (regUpDs && regLoDs && regUpDs.data?.[safeIdx] != null && regLoDs.data?.[safeIdx] != null) {
+      parts.push(`<span>12M Reg: <strong class="text-purple-500">${Fin.currency(regLoDs.data[safeIdx], false, currency)}&ndash;${Fin.currency(regUpDs.data[safeIdx], false, currency)}</strong></span>`);
+    }
+    if (isHoldings && avgCostValue > 0 && !Fin.isPrivacyMode()) {
+      const cushionPct = ((cVal - avgCostValue) / avgCostValue) * 100;
+      parts.push(`<span>Avg Cost: <strong class="text-amber-500">${Fin.currency(avgCostValue, false, currency)}</strong> <span class="${cushionPct >= 0 ? 'text-emerald-500' : 'text-rose-500'}">(${Fin.percent(cushionPct, true)})</span></span>`);
+    }
+
+    // Ex-Dividend marker for this month
+    const divDs = datasets.find(d => d._divByMonth);
+    const dm = divDs?._divByMonth?.[mKey];
+    if (dm) {
+      const perSh = dm.amount > 0 ? `${Fin.currency(dm.amount, false, currency)}/sh` : '';
+      const payout = (!Fin.isPrivacyMode() && dm.loggedTotal > 0) ? ` · ${Fin.currency(dm.loggedTotal, false, currency)}` : '';
+      parts.push(`<span class="px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 font-semibold">Div: ${perSh}${payout}</span>`);
+    }
+
+    // Buy / Sell trade markers for this month
+    const isPriv = Fin.isPrivacyMode();
+    if (buyMetaByIndex[safeIdx]) {
+      const bm = buyMetaByIndex[safeIdx];
+      parts.push(`<span class="px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 font-semibold">BUY @ ${Fin.currency(bm.avgPrice, false, currency)}${isPriv ? '' : ` · ${Fin.shares(bm.shares)} sh (${Fin.currency(bm.amount, false, currency)})`}</span>`);
+    }
+    if (sellMetaByIndex[safeIdx]) {
+      const sm = sellMetaByIndex[safeIdx];
+      parts.push(`<span class="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 font-semibold">SELL @ ${Fin.currency(sm.avgPrice, false, currency)}${isPriv ? '' : ` · ${Fin.shares(sm.shares)} sh (${Fin.currency(sm.amount, false, currency)})`}</span>`);
+    }
+
+    hoverDetailEl.innerHTML = parts.join('');
+  };
+
   const renderSig = JSON.stringify({
     ticker,
     rangeMonths,
@@ -11711,12 +11763,13 @@ function renderInlineStockChart(tabType) {
     showReg: Boolean(state?.settings?.chartShowRegChannel !== false),
     showCushion: Boolean(state?.settings?.chartShowCushion !== false),
     showDiv: Boolean(state?.settings?.chartShowDivMarkers !== false),
+    showVol,
     hideMoney,
     isDark,
     labelsLen: labels.length,
     dsCount: datasets.length,
     avgCostValue: avgCostValue || 0,
-    fullBuyLineVal: fullBuyLineVal || 0,
+    entryAlertVal: (!isHoldings && customBuyVal) ? customBuyVal : 0,
     fullSellLineVal: fullSellLineVal || 0,
     fullStopLineVal: fullStopLineVal || 0
   });
@@ -11728,10 +11781,19 @@ function renderInlineStockChart(tabType) {
       targetDs.data = ds.data;
       targetDs.label = ds.label;
       targetDs.fill = ds.fill;
+      if (ds._isVolume) {
+        targetDs.backgroundColor = ds.backgroundColor;
+        targetDs.borderColor = ds.borderColor;
+      }
       if (ds._tradeMeta) targetDs._tradeMeta = ds._tradeMeta;
       if (ds._divByMonth) targetDs._divByMonth = ds._divByMonth;
     });
+    if (existingChart.options?.scales?.yVol && maxVol > 0) {
+      existingChart.options.scales.yVol.max = maxVol * 4.8;
+    }
+    existingChart._renderMonthInspector = renderHoveredMonthInspector;
     existingChart.update('none');
+    renderHoveredMonthInspector(labels.length - 1);
     return;
   }
 
@@ -11748,6 +11810,10 @@ function renderInlineStockChart(tabType) {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       onClick: (evt, activeElements, chart) => {
+        if (activeElements && activeElements.length > 0) {
+          const fn = chart._renderMonthInspector || renderHoveredMonthInspector;
+          fn(activeElements[0].index);
+        }
         if (!isHoldings) return;
         const pts = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
         const matchedMetas = [];
@@ -11778,6 +11844,15 @@ function renderInlineStockChart(tabType) {
             font: { size: isMobile ? 9 : 10 },
             callback: (v) => Fin.currency(v, false, currency)
           }
+        },
+        yVol: {
+          type: 'linear',
+          display: false,
+          position: 'right',
+          beginAtZero: true,
+          min: 0,
+          max: maxVol > 0 ? maxVol * 4.8 : 1,
+          grid: { display: false }
         }
       },
       plugins: {
@@ -11785,40 +11860,25 @@ function renderInlineStockChart(tabType) {
           display: false
         },
         tooltip: {
+          filter: (item) => Boolean(item?.dataset?._isCloseSeries),
+          displayColors: false,
+          padding: { x: 8, y: 4 },
+          cornerRadius: 6,
+          caretSize: 5,
+          backgroundColor: isDark ? 'rgba(15, 23, 42, 0.90)' : 'rgba(15, 23, 42, 0.88)',
+          titleFont: { size: 9, weight: '600' },
+          bodyFont: { size: 11, weight: 'bold' },
           callbacks: {
-            label: (c) => {
-              const ds = c.dataset;
-              if (ds && ds._divByMonth) {
-                const mKey = labels[c.dataIndex];
-                const dm = ds._divByMonth[mKey];
-                if (dm) {
-                  const perShTxt = dm.amount > 0 ? `${Fin.currency(dm.amount, false, currency)}/sh` : '';
-                  const totTxt = (!Fin.isPrivacyMode() && dm.loggedTotal > 0) ? ` · Payout: ${Fin.currency(dm.loggedTotal, false, currency)}` : '';
-                  return ` Dividend (${dm.exDate || mKey}): ${perShTxt}${totTxt}`;
-                }
+            title: (items) => {
+              if (items && items.length > 0) {
+                const idx = items[0].dataIndex;
+                const fn = items[0].chart?._renderMonthInspector || renderHoveredMonthInspector;
+                fn(idx);
+                return items[0].label || '';
               }
-              if (ds && ds._tradeMeta && ds._tradeMeta[c.dataIndex]) {
-                const tm = ds._tradeMeta[c.dataIndex];
-                if (Fin.isPrivacyMode()) {
-                  const lines = [` ${tm.type} (${tm.month}): ${tm.trades && tm.trades.length > 1 ? 'Avg ' : ''}Price ${Fin.currency(tm.avgPrice, false, currency)}`];
-                  if (tm.trades && tm.trades.length > 1) {
-                    lines.push(`   • ${tm.trades.length} ${tm.type} orders @ ${tm.trades.map(t => Fin.currency(t.price, false, currency)).join(', ')}`);
-                  }
-                  return lines;
-                }
-                return [
-                  ` ${tm.type} Marker (${tm.month}): Avg Price ${Fin.currency(tm.avgPrice, false, currency)}`,
-                  `   • Action: ${tm.type} | Shares: ${Fin.shares(tm.shares)} | ${tm.type === 'BUY' ? 'Buy' : 'Sell'} Amount: ${Fin.currency(tm.amount, false, currency)}`
-                ];
-              }
-              if (c.datasetIndex === 0) {
-                return ` Monthly High: ${Fin.currency(c.raw, false, currency)}`;
-              }
-              if (c.datasetIndex === 1) {
-                return ` Monthly Low: ${Fin.currency(c.raw, false, currency)}`;
-              }
-              return ` ${c.dataset.label}: ${Fin.currency(c.raw, false, currency)}`;
-            }
+              return '';
+            },
+            label: (c) => Fin.currency(c.raw, false, currency)
           }
         }
       }
@@ -11826,7 +11886,9 @@ function renderInlineStockChart(tabType) {
   });
   chartInstance._renderSig = renderSig;
   chartInstance._mountedTicker = ticker;
+  chartInstance._renderMonthInspector = renderHoveredMonthInspector;
   charts[chartKey] = chartInstance;
+  renderHoveredMonthInspector(labels.length - 1);
 
   // Render external HTML legend below the chart in a tidy multi-column grid
   if (legendEl) {
@@ -11847,6 +11909,8 @@ function renderInlineStockChart(tabType) {
         let swatchHtml = '';
         if (ds._legendStyle === 'band') {
           swatchHtml = `<span class="inline-block w-3.5 h-2 rounded-sm border shrink-0" style="background: rgba(16, 185, 129, 0.28); border-color: rgba(52, 211, 153, 0.75);"></span>`;
+        } else if (ds._legendStyle === 'vol') {
+          swatchHtml = `<span class="inline-flex items-end gap-0.5 h-2.5 shrink-0"><span class="inline-block w-1.5 h-2.5 rounded-t-sm" style="background: rgba(16, 185, 129, 0.55);"></span><span class="inline-block w-1.5 h-1.5 rounded-t-sm" style="background: rgba(244, 63, 94, 0.55);"></span></span>`;
         } else if (ds._legendStyle === 'cross-blue') {
           swatchHtml = `<span class="inline-flex items-center justify-center font-extrabold text-xs leading-none shrink-0" style="color: #2563eb;">✕</span>`;
         } else if (ds._legendStyle === 'cross-red') {
@@ -13466,7 +13530,7 @@ function renderKPIs() {
   const targetHits = state.watchlist.filter(w => {
     const cur = state.prices[w.ticker]?.price || 0;
     const wm = cur > 0 ? computeStockPriceMetrics(w.ticker, cur) : null;
-    const activeBuyTarget = Number(w.customBuyPrice || wm?.customBuyPrice || wm?.recommendedBuyPrice || 0);
+    const activeBuyTarget = Number(w.customBuyPrice || 0);
     return cur > 0 && activeBuyTarget > 0 && cur <= activeBuyTarget * 1.005;
   });
   const strongBuys = portfolio.activeHoldings.filter(h => h.signalScore >= Number(state.settings?.signalStrongBuyMin ?? 78));
@@ -13904,14 +13968,14 @@ function formatTargetLevelCell(customVal, recVal, currentPrice, currency, colorC
 
   // U2: Target Buy / Sell / Stop-Loss Proximity Badges
   let proximityBadge = '';
-  const isBuy = labelTitle.toLowerCase().includes('buy');
+  const isBuy = labelTitle.toLowerCase().includes('buy') || labelTitle.toLowerCase().includes('entry');
   const isSell = labelTitle.toLowerCase().includes('sell');
   const isStop = labelTitle.toLowerCase().includes('stop');
 
   if (currentPrice > 0 && activeVal > 0) {
     if (isBuy) {
       if (currentPrice <= activeVal * 1.002) {
-        proximityBadge = '<span class="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-bold bg-sky-500/20 text-sky-600 dark:text-sky-300 border border-sky-500/40 leading-tight">BUY ZONE</span>';
+        proximityBadge = '<span class="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-bold bg-sky-500/20 text-sky-600 dark:text-sky-300 border border-sky-500/40 leading-tight">ENTRY HIT</span>';
       } else if (((currentPrice - activeVal) / activeVal) <= 0.025) {
         const away = (((currentPrice - activeVal) / activeVal) * 100).toFixed(1);
         proximityBadge = `<span class="inline-block mt-0.5 px-1 py-0 rounded text-[8px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 leading-tight">+${away}% away</span>`;
@@ -14030,9 +14094,9 @@ window.openSignalDetailModal = function(rawTicker) {
     </div>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-      <div class="p-2.5 rounded-lg border border-sky-500/30 bg-sky-500/5">
-        <span class="text-[10px] text-sky-600 dark:text-sky-400 font-semibold block">Recommended Buy Price</span>
-        <span class="font-mono font-bold text-sky-600 dark:text-sky-400 text-sm">${m.recommendedBuyPrice ? Fin.currency(m.recommendedBuyPrice, false, curr) : '-'}</span>
+      <div class="p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
+        <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block">Implied Risk / Reward</span>
+        <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">${m.riskRewardRatio != null ? m.riskRewardRatio.toFixed(1) + 'x' : '-'}</span>
         <span class="text-[10px] text-slate-400 block">Prev Trough: ${m.prevTrough ? Fin.currency(m.prevTrough, false, curr) : '-'}</span>
       </div>
       <div class="p-2.5 rounded-lg border border-pink-500/30 bg-pink-500/5">
@@ -14348,7 +14412,7 @@ function renderHoldingsTable() {
     <td class="py-1.5 px-3 text-right num-font font-extrabold text-slate-800 dark:text-slate-200 col-g-pnl">
       ${hideMoney ? '••••••' : Fin.currency(totCostBasisBase, false, baseCurr)}
     </td>
-    <td colspan="4" class="py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono col-g-targets">Quant Levels &amp; R:R</td>
+    <td colspan="3" class="py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono col-g-targets">Sell, Stop &amp; R:R</td>
     <td class="py-1.5 px-3 text-right num-font ${totXirrColor} col-g-pnl">
       <div class="font-extrabold">${totXirrPct !== null ? Fin.percent(totXirrPct, true) : '-'}</div>
       ${totRealXirrPct !== null ? `<div class="text-[9.5px] font-normal text-slate-400">Real ${Fin.percent(totRealXirrPct, true)}</div>` : ''}
@@ -14429,7 +14493,6 @@ function renderHoldingsTable() {
         case 'shares': return Number(h.shares || 0);
         case 'avgCost': return toBase(h.avgCost || 0);
         case 'totalCost': return Number(h.costBasisBase ?? toBase(h.totalCostBasis || 0));
-        case 'buyTarget': return toBase(h.customBuyPrice || h.recommendedBuyPrice || 0);
         case 'sellTarget': return toBase(h.customSellPrice || h.recommendedSellPrice || 0);
         case 'stopLoss': return toBase(h.customStopLoss || h.recommendedStopLoss || 0);
         case 'riskReward': return Number(h.riskRewardRatio ?? -999);
@@ -14554,7 +14617,7 @@ function renderHoldingsTable() {
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold text-slate-700 dark:text-slate-300 col-g-pnl">
         ${hideMoney ? '••••••' : Fin.currency(group.totalCostBasis, false, group.currency)}
       </td>
-      <td colspan="4" class="py-1 sm:py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono col-g-targets">-</td>
+      <td colspan="3" class="py-1 sm:py-1.5 px-3 text-center text-[10px] text-slate-400 font-mono col-g-targets">-</td>
       <td class="py-1 sm:py-1.5 px-3 text-right num-font text-xs font-bold ${groupXirrColor} col-g-pnl" title="${groupXirrPct !== null ? `Sector Money-Weighted Annualized XIRR: ${Fin.percent(groupXirrPct, true)} p.a. (Real Inflation-Adjusted: ${Fin.percent(groupRealXirrPct, true)} p.a.)` : 'Insufficient cash flow span'}">
         <div>${groupXirrPct !== null ? Fin.percent(groupXirrPct, true) : '-'}</div>
         ${groupRealXirrPct !== null ? `<div class="text-[9.5px] font-normal text-slate-400">Real ${Fin.percent(groupRealXirrPct, true)}</div>` : ''}
@@ -14620,10 +14683,8 @@ function renderHoldingsTable() {
         const priceDeltaNative = Math.abs(h.priceChangePct) > 40 ? 0 : rawDeltaNative;
         const priceChangeColor = priceDeltaNative >= 0 ? 'text-emerald-500' : 'text-rose-500';
 
-        const recBuyNative = (h.recommendedBuyPrice && Number(h.recommendedBuyPrice) > 0) ? Number(h.recommendedBuyPrice) : null;
         const recSellNative = (h.recommendedSellPrice && Number(h.recommendedSellPrice) > 0) ? Number(h.recommendedSellPrice) : null;
         const recStopNative = ((h.recommendedStopLoss || h.suggestedStopLoss) && Number(h.recommendedStopLoss || h.suggestedStopLoss) > 0) ? Number(h.recommendedStopLoss || h.suggestedStopLoss) : null;
-        const custBuyNative = ((h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice) && Number(h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice) > 0) ? Number(h.customBuyPrice || state.fundamentals?.[h.ticker]?.customBuyPrice) : null;
         const custSellNative = ((h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice) && Number(h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice) > 0) ? Number(h.customSellPrice || state.fundamentals?.[h.ticker]?.customSellPrice) : null;
         const custStopNative = ((h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss) && Number(h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss) > 0) ? Number(h.customStopLoss || state.fundamentals?.[h.ticker]?.customStopLoss) : null;
         const low52wNative = (h.low52w && Number(h.low52w) > 0) ? Number(h.low52w) : null;
@@ -14702,9 +14763,6 @@ function renderHoldingsTable() {
           <td class="py-1 sm:py-1.5 px-3 text-right num-font font-medium ${isAct ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'} col-g-pnl">${hideMoney ? '••••' : Fin.shares(h.shares)}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300 col-g-pnl col-g-targets" title="${hCurr !== baseCurr && avgCostBase > 0 ? `Equivalent in ${baseCurr}: ${Fin.currency(avgCostBase, false, baseCurr)}` : ''}">${isAct ? (hideMoney ? '••••••' : Fin.currency(h.avgCost, false, hCurr)) : '<span class="text-slate-400">-</span>'}</td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font text-slate-600 dark:text-slate-300 col-g-pnl">${isAct ? (hideMoney ? '••••••' : Fin.currency(totalCostBase, false, baseCurr)) : `<span class="text-slate-400 text-[10px]">-</span>`}</td>
-          <td class="py-1 sm:py-1.5 px-3 text-right num-font col-g-targets">
-            ${formatTargetLevelCell(custBuyNative, recBuyNative, h.currentPrice, hCurr, 'text-sky-500', 'Buy Target')}
-          </td>
           <td class="py-1 sm:py-1.5 px-3 text-right num-font col-g-targets">
             ${formatTargetLevelCell(custSellNative, recSellNative, h.currentPrice, hCurr, 'text-pink-500', 'Sell Target')}
           </td>
@@ -15221,7 +15279,7 @@ function renderWatchlistAndFundamentals() {
         const g = groupsMap[sec];
         g.items.push(item);
         g.scoreSum += item.signalScore;
-        const activeBuyVal = Number(item.w?.customBuyPrice || item.wm?.customBuyPrice || item.wm?.recommendedBuyPrice || 0);
+        const activeBuyVal = Number(item.w?.customBuyPrice || 0);
         if (item.curPrice > 0 && activeBuyVal > 0 && item.curPrice <= activeBuyVal * 1.005) {
           g.triggeredCount += 1;
         }
@@ -15248,12 +15306,12 @@ function renderWatchlistAndFundamentals() {
             case 'qoq': return Number(wm?.qoqPct || 0);
             case 'yoy': return Number(wm?.yoyPct || 0);
             case 'divYield': return Number(wm?.divInfo?.netYieldPct || wm?.divInfo?.trailingYieldPct || 0);
-            case 'buyTarget': return Number(w.customBuyPrice || wm?.customBuyPrice || wm?.recommendedBuyPrice || 0);
+            case 'buyTarget': return Number(w.customBuyPrice || 0);
             case 'sellTarget': return Number(w.customSellPrice || wm?.customSellPrice || wm?.recommendedSellPrice || 0);
             case 'stopLoss': return Number(w.customStopLoss || wm?.customStopLoss || wm?.recommendedStopLoss || 0);
             case 'riskReward': return Number(wm?.riskRewardRatio ?? -999);
             case 'dist': {
-              const activeBuy = Number(w.customBuyPrice || wm?.customBuyPrice || wm?.recommendedBuyPrice || 0);
+              const activeBuy = Number(w.customBuyPrice || 0);
               return (curP > 0 && activeBuy > 0) ? ((curP - activeBuy) / activeBuy) * 100 : 999;
             }
             case 'signalScore': return Number(item.signalScore ?? 50);
@@ -15310,7 +15368,7 @@ function renderWatchlistAndFundamentals() {
           </td>
           <td colspan="3" class="py-1 sm:py-1.5 px-3 text-center">
             ${group.triggeredCount > 0
-              ? `<span class="px-2 py-0.5 rounded-full font-bold bg-emerald-500 text-white text-[10px]">${group.triggeredCount} IN BUY ZONE</span>`
+              ? `<span class="px-2 py-0.5 rounded-full font-bold bg-sky-500 text-white text-[10px]">${group.triggeredCount} ENTRY HIT</span>`
               : `<span class="text-[11px] text-slate-400 font-mono">Monitoring quant levels</span>`}
           </td>
           <td class="py-1 sm:py-1.5 px-3 text-center text-[11px] font-semibold text-purple-600 dark:text-purple-400">
@@ -15330,13 +15388,12 @@ function renderWatchlistAndFundamentals() {
               : Number(state.prices[w.ticker]?.change || 0);
             const wlPriceDelta = Math.abs(priceChangePct) > 40 ? 0 : rawWlDelta;
             const priceChangeColor = wlPriceDelta >= 0 ? 'text-emerald-500' : 'text-rose-500';
-            const recBuy = wm?.recommendedBuyPrice || 0;
             const recSell = wm?.recommendedSellPrice || 0;
             const recStop = wm?.recommendedStopLoss || 0;
-            const custBuy = Number(w.customBuyPrice || wm?.customBuyPrice || 0) || null;
+            const custBuy = Number(w.customBuyPrice || 0) || null;
             const custSell = Number(w.customSellPrice || wm?.customSellPrice || 0) || null;
             const custStop = Number(w.customStopLoss || wm?.customStopLoss || 0) || null;
-            const activeBuy = custBuy || recBuy;
+            const activeBuy = custBuy || 0;
             const distPct = (curPrice > 0 && activeBuy > 0) ? ((curPrice - activeBuy) / activeBuy) * 100 : 0;
             const isTriggered = curPrice > 0 && activeBuy > 0 && curPrice <= activeBuy * 1.005;
 
@@ -15378,10 +15435,10 @@ function renderWatchlistAndFundamentals() {
                 ${formatDividendExDateCell(wm.divInfo)}
               </td>
               <td class="py-1.5 px-3 text-right num-font">
-                ${formatTargetLevelCell(custBuy, recBuy, curPrice, wlCurrency, 'text-sky-500', 'Buy Target')}
+                ${formatTargetLevelCell(custBuy, null, curPrice, wlCurrency, 'text-sky-500', 'Entry Alert')}
               </td>
-              <td class="py-1.5 px-3 text-right num-font font-medium ${distPct <= 0.5 && curPrice > 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}">
-                ${curPrice > 0 && activeBuy > 0 ? (distPct <= 0.5 ? 'In Buy Zone' : `+${distPct.toFixed(1)}% above`) : '-'}
+              <td class="py-1.5 px-3 text-right num-font font-medium ${curPrice > 0 && activeBuy > 0 && distPct <= 0.5 ? 'text-sky-500 font-bold' : 'text-slate-400'}">
+                ${curPrice > 0 && activeBuy > 0 ? (distPct <= 0.5 ? 'Entry Hit' : `+${distPct.toFixed(1)}% above`) : '-'}
               </td>
               <td class="py-1.5 px-3 text-right num-font">
                 ${formatTargetLevelCell(custSell, recSell, curPrice, wlCurrency, 'text-pink-500', 'Sell Target')}
@@ -15426,7 +15483,7 @@ function renderWatchlistAndFundamentals() {
                   <button onclick="event.stopPropagation(); openEditWatchlistModal('${w.ticker}')" class="p-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded transition" title="Edit Watchlist Ticker (Symbol, Name, Sector)">
                     <i class="fa-solid fa-pen-to-square text-xs"></i>
                   </button>
-                  <button onclick="event.stopPropagation(); openTradeModalForTicker('${w.ticker}', 'BUY', ${curPrice || recBuy})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold text-[11px]">
+                  <button onclick="event.stopPropagation(); openTradeModalForTicker('${w.ticker}', 'BUY', ${curPrice || custBuy || 0})" class="px-2 py-1 rounded bg-brand-600 hover:bg-brand-500 text-white font-semibold text-[11px]">
                     Buy
                   </button>
                   <button onclick="event.stopPropagation(); deleteFromWatchlist('${w.ticker}')" class="p-1.5 text-slate-400 hover:text-rose-500 transition" title="Remove from Watchlist">
@@ -15825,8 +15882,6 @@ function renderQuantSettingsUI() {
   setVal('setting-atr-mult', cfg.atrStopMultiplier ?? 2.0);
   setVal('setting-stop-floor-pct', cfg.stopLossFloorPct ?? 8.0);
   setVal('setting-peak-trough-months', cfg.peakTroughLookbackMonths ?? 12);
-  setVal('setting-rec-buy-pullback', cfg.recBuyPullbackPct ?? 6.0);
-  setVal('setting-rec-buy-trough-wt', cfg.recBuyTroughWeightPct ?? 40.0);
   setVal('setting-rec-sell-gain', cfg.recSellTargetGainPct ?? 18.0);
   setVal('setting-rec-sell-peak-wt', cfg.recSellPeakWeightPct ?? 45.0);
   setVal('setting-sig-strong-buy', cfg.signalStrongBuyMin ?? 78);
@@ -15878,8 +15933,6 @@ function saveQuantSettingsFromUI() {
   state.settings.atrStopMultiplier = num('setting-atr-mult', 2.0);
   state.settings.stopLossFloorPct = num('setting-stop-floor-pct', 8.0);
   state.settings.peakTroughLookbackMonths = num('setting-peak-trough-months', 12);
-  state.settings.recBuyPullbackPct = num('setting-rec-buy-pullback', 6.0);
-  state.settings.recBuyTroughWeightPct = num('setting-rec-buy-trough-wt', 40.0);
   state.settings.recSellTargetGainPct = num('setting-rec-sell-gain', 18.0);
   state.settings.recSellPeakWeightPct = num('setting-rec-sell-peak-wt', 45.0);
   state.settings.signalStrongBuyMin = num('setting-sig-strong-buy', 78);
@@ -16430,20 +16483,19 @@ function updateWatchlistModalRecPreview(rawTicker) {
   const previewEl = document.getElementById('wl-rec-levels-preview');
   if (!previewEl) return;
   if (!sym) {
-    previewEl.innerHTML = 'Enter a ticker symbol above to preview calculated Recommended Buy, Sell &amp; Stop-Loss levels.';
+    previewEl.innerHTML = 'Enter a ticker symbol above to preview calculated Recommended Sell &amp; Stop-Loss levels.';
     return;
   }
   const curP = state?.prices?.[sym]?.price || 0;
   const curr = state?.prices?.[sym]?.currency || state?.fundamentals?.[sym]?.currency || MarketAPI.getStaticProfile(sym).currency || 'HKD';
   const pm = computeStockPriceMetrics(sym, curP);
-  if (!pm || (!pm.recommendedBuyPrice && !pm.recommendedSellPrice && !pm.recommendedStopLoss)) {
+  if (!pm || (!pm.recommendedSellPrice && !pm.recommendedStopLoss)) {
     previewEl.innerHTML = `<span class="text-slate-400">Live price / history will be fetched on save to compute Recommended levels for <strong>${sym}</strong>.</span>`;
     return;
   }
   previewEl.innerHTML = `
     <span>Quant Recommended (${curr}):</span>
-    <strong class="text-sky-500 ml-1">Buy ${pm.recommendedBuyPrice ? Fin.currency(pm.recommendedBuyPrice, false, curr) : '-'}</strong> &bull;
-    <strong class="text-pink-500">Sell ${pm.recommendedSellPrice ? Fin.currency(pm.recommendedSellPrice, false, curr) : '-'}</strong> &bull;
+    <strong class="text-pink-500 ml-1">Sell ${pm.recommendedSellPrice ? Fin.currency(pm.recommendedSellPrice, false, curr) : '-'}</strong> &bull;
     <strong class="text-red-700 dark:text-red-500">Stop ${pm.recommendedStopLoss ? Fin.currency(pm.recommendedStopLoss, false, curr) : '-'}</strong>
   `;
 }
@@ -16456,16 +16508,14 @@ window.copyRecommendedToCustomInModal = function(mode) {
     const curP = state?.prices?.[sym]?.price || h?.currentPrice || 0;
     const avgC = parseFloat(document.getElementById('edit-holding-avg-cost')?.value) || h?.avgCost || null;
     const pm = computeStockPriceMetrics(sym, curP, null, avgC);
-    if (pm?.recommendedBuyPrice) document.getElementById('edit-holding-custom-buy').value = pm.recommendedBuyPrice;
     if (pm?.recommendedSellPrice) document.getElementById('edit-holding-custom-sell').value = pm.recommendedSellPrice;
     if (pm?.recommendedStopLoss) document.getElementById('edit-holding-custom-stop').value = pm.recommendedStopLoss;
-    showToast(`Copied today's Recommended levels into Custom inputs for ${sym}`, 'info');
+    showToast(`Copied today's Recommended Sell & Stop levels for ${sym}`, 'info');
   } else if (mode === 'watchlist') {
     const sym = MarketAPI.normalizeTicker(document.getElementById('wl-ticker')?.value || editingWatchlistOriginalTicker || '');
     if (!sym) return;
     const curP = state?.prices?.[sym]?.price || 0;
     const pm = computeStockPriceMetrics(sym, curP);
-    if (pm?.recommendedBuyPrice) document.getElementById('wl-custom-buy').value = pm.recommendedBuyPrice;
     if (pm?.recommendedSellPrice) document.getElementById('wl-custom-sell').value = pm.recommendedSellPrice;
     if (pm?.recommendedStopLoss) document.getElementById('wl-custom-stop').value = pm.recommendedStopLoss;
     showToast(`Copied today's Recommended levels into Custom inputs for ${sym}`, 'info');
@@ -16558,12 +16608,9 @@ async function handleWatchlistSubmit(e) {
     }
   }
 
-  const autoMetrics = computeStockPriceMetrics(ticker, state.prices[ticker]?.price || 0);
-  const autoRecBuy = autoMetrics?.recommendedBuyPrice || 0;
-
   const existing = state.watchlist.find(w => w.ticker === ticker);
   if (existing) {
-    existing.targetBuyPrice = customBuyPrice || autoRecBuy;
+    existing.targetBuyPrice = customBuyPrice || 0;
     existing.customBuyPrice = customBuyPrice;
     existing.customSellPrice = customSellPrice;
     existing.customStopLoss = customStopLoss;
@@ -16574,7 +16621,7 @@ async function handleWatchlistSubmit(e) {
       ticker,
       name: name || ticker,
       sector,
-      targetBuyPrice: customBuyPrice || autoRecBuy,
+      targetBuyPrice: customBuyPrice || 0,
       customBuyPrice,
       customSellPrice,
       customStopLoss
@@ -16680,8 +16727,7 @@ window.openEditHoldingModal = function(rawTicker) {
     const pm = computeStockPriceMetrics(ticker, h?.currentPrice || state.prices[ticker]?.price || 0, null, h?.avgCost || null);
     recPreviewEl.innerHTML = `
       <span>Quant Recommended (${curr}):</span>
-      <strong class="text-sky-500 ml-1">Buy ${pm?.recommendedBuyPrice ? Fin.currency(pm.recommendedBuyPrice, false, curr) : '-'}</strong> &bull;
-      <strong class="text-pink-500">Sell ${pm?.recommendedSellPrice ? Fin.currency(pm.recommendedSellPrice, false, curr) : '-'}</strong> &bull;
+      <strong class="text-pink-500 ml-1">Sell ${pm?.recommendedSellPrice ? Fin.currency(pm.recommendedSellPrice, false, curr) : '-'}</strong> &bull;
       <strong class="text-red-700 dark:text-red-500">Stop ${pm?.recommendedStopLoss ? Fin.currency(pm.recommendedStopLoss, false, curr) : '-'}</strong>
     `;
   }
@@ -16703,10 +16749,8 @@ function handleEditHoldingSubmit(e) {
   const newCurrency = (document.getElementById('edit-holding-currency').value || 'HKD').trim();
   const newShares = parseFloat(document.getElementById('edit-holding-shares').value);
   const newAvgCost = parseFloat(document.getElementById('edit-holding-avg-cost').value);
-  const rawCustBuy = parseFloat(document.getElementById('edit-holding-custom-buy')?.value);
   const rawCustSell = parseFloat(document.getElementById('edit-holding-custom-sell')?.value);
   const rawCustStop = parseFloat(document.getElementById('edit-holding-custom-stop')?.value);
-  const customBuyPrice = (Number.isFinite(rawCustBuy) && rawCustBuy > 0) ? Fin.round(rawCustBuy, 4) : null;
   const customSellPrice = (Number.isFinite(rawCustSell) && rawCustSell > 0) ? Fin.round(rawCustSell, 4) : null;
   const customStopLoss = (Number.isFinite(rawCustStop) && rawCustStop > 0) ? Fin.round(rawCustStop, 4) : null;
 
@@ -16731,7 +16775,6 @@ function handleEditHoldingSubmit(e) {
     sector: newSector,
     currency: newCurrency,
     assetProfile: (document.getElementById('edit-holding-profile')?.value || 'auto'),
-    customBuyPrice,
     customSellPrice,
     customStopLoss,
     _userCustomName: true,
@@ -16747,10 +16790,8 @@ function handleEditHoldingSubmit(e) {
   if (wlMatch) {
     wlMatch.sector = newSector;
     wlMatch.assetProfile = (document.getElementById('edit-holding-profile')?.value || 'auto');
-    wlMatch.customBuyPrice = customBuyPrice;
     wlMatch.customSellPrice = customSellPrice;
     wlMatch.customStopLoss = customStopLoss;
-    if (customBuyPrice) wlMatch.targetBuyPrice = customBuyPrice;
     if (newName) wlMatch.name = newName;
   }
   (state.transactions || []).forEach(tx => {
@@ -17013,6 +17054,8 @@ window.toggleChartOverlay = function(kind, tabType) {
     state.settings.chartShowCushion = !(state.settings.chartShowCushion !== false);
   } else if (kind === 'div') {
     state.settings.chartShowDivMarkers = !(state.settings.chartShowDivMarkers !== false);
+  } else if (kind === 'vol') {
+    state.settings.chartShowVolume = !(state.settings.chartShowVolume !== false);
   }
   saveState();
   renderQuantSettingsUI();
@@ -17027,6 +17070,12 @@ window.toggleChartOverlay = function(kind, tabType) {
     b.className = onD
       ? 'btn-toggle-chart-div px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/40 transition'
       : 'btn-toggle-chart-div px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-300 dark:border-slate-700 transition';
+  });
+  document.querySelectorAll('.btn-toggle-chart-vol').forEach(b => {
+    const onV = state.settings.chartShowVolume !== false;
+    b.className = onV
+      ? 'btn-toggle-chart-vol px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/40 transition'
+      : 'btn-toggle-chart-vol px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-300 dark:border-slate-700 transition';
   });
   renderInlineStockChart(tabType || 'holdings');
 };
@@ -17763,16 +17812,17 @@ function renderDashboardActionRadar() {
   const alerts = [];
   const seen = new Set();
 
-  const inspectItem = (sym, curPrice, curr, buyVal, sellVal, stopVal, divInfo, stalePins, tabType) => {
+  const inspectItem = (sym, curPrice, curr, entryAlertVal, sellVal, stopVal, divInfo, stalePins, tabType) => {
     if (!sym) return;
-    if (curPrice > 0 && stopVal > 0 && curPrice <= stopVal * 1.005) {
+    const isHoldingItem = tabType === 'holdings';
+    if (isHoldingItem && curPrice > 0 && stopVal > 0 && curPrice <= stopVal * 1.005) {
       alerts.push({ prio: 1, tabType, sym, tag: 'STOP BREACHED', detail: `${Fin.currency(curPrice, false, curr)} <= ${Fin.currency(stopVal, false, curr)}`, cls: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/35 hover:bg-rose-500/25' });
     }
-    if (curPrice > 0 && sellVal > 0 && curPrice >= sellVal * 0.995) {
+    if (isHoldingItem && curPrice > 0 && sellVal > 0 && curPrice >= sellVal * 0.995) {
       alerts.push({ prio: 2, tabType, sym, tag: 'TARGET HIT', detail: `${Fin.currency(curPrice, false, curr)} >= ${Fin.currency(sellVal, false, curr)}`, cls: 'bg-pink-500/15 text-pink-600 dark:text-pink-400 border-pink-500/35 hover:bg-pink-500/25' });
     }
-    if (curPrice > 0 && buyVal > 0 && curPrice <= buyVal * 1.015) {
-      alerts.push({ prio: 3, tabType, sym, tag: 'BUY ZONE', detail: `${Fin.currency(curPrice, false, curr)} vs ${Fin.currency(buyVal, false, curr)}`, cls: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/35 hover:bg-sky-500/25' });
+    if (!isHoldingItem && curPrice > 0 && entryAlertVal > 0 && curPrice <= entryAlertVal * 1.015) {
+      alerts.push({ prio: 3, tabType, sym, tag: 'ENTRY ALERT', detail: `${Fin.currency(curPrice, false, curr)} <= ${Fin.currency(entryAlertVal, false, curr)}`, cls: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/35 hover:bg-sky-500/25' });
     }
     if (divInfo && divInfo.daysUntilEx !== null && divInfo.daysUntilEx >= 0 && divInfo.daysUntilEx <= 14) {
       alerts.push({ prio: 4, tabType, sym, tag: `EX-DIV ${divInfo.daysUntilEx}d`, detail: divInfo.nextExDate || '', cls: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/35 hover:bg-amber-500/25' });
@@ -17785,10 +17835,9 @@ function renderDashboardActionRadar() {
 
   (portfolio?.activeHoldings || []).forEach(h => {
     seen.add(h.ticker);
-    const activeBuy = h.customBuyPrice || h.recommendedBuyPrice;
     const activeSell = h.customSellPrice || h.recommendedSellPrice;
     const activeStop = h.customStopLoss || h.recommendedStopLoss;
-    inspectItem(h.ticker, h.currentPrice, h.currency || 'HKD', activeBuy, activeSell, activeStop, h.divInfo, h.staleCustomPins, 'holdings');
+    inspectItem(h.ticker, h.currentPrice, h.currency || 'HKD', null, activeSell, activeStop, h.divInfo, h.staleCustomPins, 'holdings');
   });
 
   (state?.watchlist || []).forEach(w => {
@@ -17797,10 +17846,10 @@ function renderDashboardActionRadar() {
     const curr = state.prices?.[w.ticker]?.currency || MarketAPI.getStaticProfile(w.ticker).currency || 'HKD';
     const pm = typeof computeStockPriceMetrics === 'function' ? computeStockPriceMetrics(w.ticker, curP) : null;
     if (!pm) return;
-    const activeBuy = w.customBuyPrice || pm.customBuyPrice || pm.recommendedBuyPrice;
+    const manualEntry = Number(w.customBuyPrice || 0) || null;
     const activeSell = w.customSellPrice || pm.customSellPrice || pm.recommendedSellPrice;
     const activeStop = w.customStopLoss || pm.customStopLoss || pm.recommendedStopLoss;
-    inspectItem(w.ticker, curP, curr, activeBuy, activeSell, activeStop, pm.divInfo, pm.staleCustomPins, 'watchlist');
+    inspectItem(w.ticker, curP, curr, manualEntry, activeSell, activeStop, pm.divInfo, pm.staleCustomPins, 'watchlist');
   });
 
   alerts.sort((a, b) => a.prio - b.prio || a.sym.localeCompare(b.sym));
@@ -18104,13 +18153,12 @@ function renderTradeSimulationTable() {
     const priceChgCls = priceDelta >= 0 ? 'text-emerald-500' : 'text-rose-500';
 
     const wlEntry = (state?.watchlist || []).find(w => w.ticker === m.sym);
-    const recBuy = wm?.recommendedBuyPrice || 0;
     const recSell = wm?.recommendedSellPrice || 0;
     const recStop = wm?.recommendedStopLoss || 0;
-    const custBuy = Number(wlEntry?.customBuyPrice || wm?.customBuyPrice || 0) || null;
+    const custBuy = Number(wlEntry?.customBuyPrice || 0) || null;
     const custSell = Number(wlEntry?.customSellPrice || wm?.customSellPrice || 0) || null;
     const custStop = Number(wlEntry?.customStopLoss || wm?.customStopLoss || 0) || null;
-    const activeBuy = custBuy || recBuy;
+    const activeBuy = custBuy || 0;
     const distPct = (m.curPrice > 0 && activeBuy > 0) ? ((m.curPrice - activeBuy) / activeBuy) * 100 : 0;
 
     const sideCls = m.side === 'BUY'
@@ -18167,9 +18215,9 @@ function renderTradeSimulationTable() {
       <td class="py-1.5 px-3 text-right">${formatTrendRegimeCell(wm)}</td>
       <td class="py-1.5 px-3 text-center">${formatSignalBadgeCell(m.sym, wm)}</td>
       <td class="py-1.5 px-3 text-right">${formatDividendExDateCell(wm.divInfo)}</td>
-      <td class="py-1.5 px-3 text-right num-font">${formatTargetLevelCell(custBuy, recBuy, m.curPrice, m.curr, 'text-sky-500', 'Buy Target')}</td>
-      <td class="py-1.5 px-3 text-right num-font font-medium ${distPct <= 0.5 && m.curPrice > 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}">
-        ${m.curPrice > 0 && activeBuy > 0 ? (distPct <= 0.5 ? 'In Buy Zone' : `+${distPct.toFixed(1)}% above`) : '-'}
+      <td class="py-1.5 px-3 text-right num-font">${formatTargetLevelCell(custBuy, null, m.curPrice, m.curr, 'text-sky-500', 'Entry Alert')}</td>
+      <td class="py-1.5 px-3 text-right num-font font-medium ${m.curPrice > 0 && activeBuy > 0 && distPct <= 0.5 ? 'text-sky-500 font-bold' : 'text-slate-400'}">
+        ${m.curPrice > 0 && activeBuy > 0 ? (distPct <= 0.5 ? 'Entry Hit' : `+${distPct.toFixed(1)}% above`) : '-'}
       </td>
       <td class="py-1.5 px-3 text-right num-font">${formatTargetLevelCell(custSell, recSell, m.curPrice, m.curr, 'text-pink-500', 'Sell Target')}</td>
       <td class="py-1.5 px-3 text-right num-font">${formatTargetLevelCell(custStop, recStop, m.curPrice, m.curr, 'text-red-700 dark:text-red-500', 'Stop Loss')}</td>
@@ -18212,17 +18260,20 @@ window.renderTradeSimulationTable = renderTradeSimulationTable;
 // v3.8.0: INLINE CHART QUICK-PIN BAR, ANNUAL SCORECARD & BACKUP AGE PILL
 // =========================================================================
 window.populateInlineQuickPinBar = function(tabType, ticker, pm) {
-  const prefix = tabType === 'watchlist' ? 'watchlist' : 'holdings';
+  const isWl = tabType === 'watchlist';
+  const prefix = isWl ? 'watchlist' : 'holdings';
   const bEl = document.getElementById(`${prefix}-qpin-buy`);
   const sEl = document.getElementById(`${prefix}-qpin-sell`);
   const stEl = document.getElementById(`${prefix}-qpin-stop`);
-  if (!bEl || !sEl || !stEl) return;
+  if (!sEl || !stEl) return;
   const fund = state?.fundamentals?.[ticker] || {};
   const wl = (state?.watchlist || []).find(w => w.ticker === ticker);
-  bEl.value = (fund.customBuyPrice ?? wl?.customBuyPrice ?? '') || '';
+  if (bEl && isWl) {
+    bEl.value = wl?.customBuyPrice || '';
+    bEl.placeholder = 'Optional';
+  }
   sEl.value = (fund.customSellPrice ?? wl?.customSellPrice ?? '') || '';
   stEl.value = (fund.customStopLoss ?? wl?.customStopLoss ?? '') || '';
-  bEl.placeholder = pm?.recommendedBuyPrice ? `Rec ${pm.recommendedBuyPrice}` : 'Auto';
   sEl.placeholder = pm?.recommendedSellPrice ? `Rec ${pm.recommendedSellPrice}` : 'Auto';
   stEl.placeholder = pm?.recommendedStopLoss ? `Rec ${pm.recommendedStopLoss}` : 'Auto';
 };
@@ -18232,7 +18283,8 @@ window.saveInlineQuickPins = function(tabType) {
   const ticker = isWl ? selectedWatchlistTicker : selectedHoldingsTicker;
   if (!ticker) return;
   const prefix = isWl ? 'watchlist' : 'holdings';
-  const rawB = parseFloat(document.getElementById(`${prefix}-qpin-buy`)?.value);
+  const bEl = isWl ? document.getElementById(`${prefix}-qpin-buy`) : null;
+  const rawB = bEl ? parseFloat(bEl.value) : NaN;
   const rawS = parseFloat(document.getElementById(`${prefix}-qpin-sell`)?.value);
   const rawSt = parseFloat(document.getElementById(`${prefix}-qpin-stop`)?.value);
   const cBuy = (Number.isFinite(rawB) && rawB > 0) ? Fin.round(rawB, 4) : null;
@@ -18242,16 +18294,17 @@ window.saveInlineQuickPins = function(tabType) {
   if (!state.fundamentals) state.fundamentals = {};
   state.fundamentals[ticker] = {
     ...(state.fundamentals[ticker] || {}),
-    customBuyPrice: cBuy,
     customSellPrice: cSell,
     customStopLoss: cStop
   };
   const wl = (state.watchlist || []).find(w => w.ticker === ticker);
   if (wl) {
-    wl.customBuyPrice = cBuy;
+    if (isWl) {
+      wl.customBuyPrice = cBuy;
+      wl.targetBuyPrice = cBuy || 0;
+    }
     wl.customSellPrice = cSell;
     wl.customStopLoss = cStop;
-    if (cBuy) wl.targetBuyPrice = cBuy;
   }
   if (typeof invalidateStockMetricsCache === 'function') invalidateStockMetricsCache();
   recalculatePortfolio();
@@ -18269,10 +18322,8 @@ window.snapInlineQuickPinsToRec = function(tabType) {
   const curP = Number(state?.prices?.[ticker]?.price || h?.currentPrice || 0);
   const pm = typeof computeStockPriceMetrics === 'function' ? computeStockPriceMetrics(ticker, curP, null, h?.avgCost || null) : null;
   if (!pm) return;
-  const bEl = document.getElementById(`${prefix}-qpin-buy`);
   const sEl = document.getElementById(`${prefix}-qpin-sell`);
   const stEl = document.getElementById(`${prefix}-qpin-stop`);
-  if (bEl && pm.recommendedBuyPrice) bEl.value = pm.recommendedBuyPrice;
   if (sEl && pm.recommendedSellPrice) sEl.value = pm.recommendedSellPrice;
   if (stEl && pm.recommendedStopLoss) stEl.value = pm.recommendedStopLoss;
   saveInlineQuickPins(tabType);
