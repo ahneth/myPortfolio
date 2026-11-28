@@ -369,7 +369,7 @@ function computeMonthlyPortfolioSeries(rangeMonths, onlyFromEarliestActivity = f
 }
 
 
-function computeBenchmarkReturnSeries(benchTicker, labels) {
+function computeBenchmarkReturnSeries(benchTicker, labels, startOffsetPct = 0) {
   if (!benchTicker || benchTicker === 'NONE' || !Array.isArray(labels) || labels.length === 0) return null;
   const sym = MarketAPI.normalizeTicker(benchTicker);
   const hist = state?.historicalPrices?.[sym] || [];
@@ -383,13 +383,25 @@ function computeBenchmarkReturnSeries(benchTicker, labels) {
   if (liveP > 0 && labels.length > 0) {
     priceMap[labels[labels.length - 1]] = liveP;
   }
+  const offset = Number.isFinite(Number(startOffsetPct)) ? Number(startOffsetPct) : 0;
   let basePrice = null;
   let lastKnown = null;
+  // Seed lastKnown from the latest benchmark bar <= labels[0] so the benchmark starts at labels[0] with zero gap
+  const firstLabel = labels[0];
+  const sortedBenchMonths = Object.keys(priceMap).sort();
+  for (let i = 0; i < sortedBenchMonths.length; i++) {
+    if (sortedBenchMonths[i] <= firstLabel) {
+      lastKnown = priceMap[sortedBenchMonths[i]];
+    } else {
+      break;
+    }
+  }
   const out = labels.map(m => {
     if (priceMap[m] > 0) lastKnown = priceMap[m];
     if (basePrice === null && lastKnown > 0) basePrice = lastKnown;
     if (basePrice > 0 && lastKnown > 0) {
-      return Fin.round(((lastKnown - basePrice) / basePrice) * 100, 2);
+      const relPct = ((lastKnown - basePrice) / basePrice) * 100;
+      return Fin.round(offset + relPct, 2);
     }
     return null;
   });
@@ -513,7 +525,8 @@ function renderMonthlyHistoryChart() {
     accumReturnPctSeries
   } = seriesData;
   try { renderDashboardRiskStrip(seriesData); } catch (_) {}
-  const benchSeries = computeBenchmarkReturnSeries(portfolioBenchmarkTicker, labels);
+  const startPortfolioRetPct = accumReturnPctSeries.length > 0 ? Number(accumReturnPctSeries[0] || 0) : 0;
+  const benchSeries = computeBenchmarkReturnSeries(portfolioBenchmarkTicker, labels, startPortfolioRetPct);
 
   const latestBalance = balanceSeries[balanceSeries.length - 1] || 0;
   const latestReturnDollar = accumReturnDollarSeries[accumReturnDollarSeries.length - 1] || 0;
@@ -561,9 +574,15 @@ function renderMonthlyHistoryChart() {
             data: accumReturnPctSeries,
             borderColor: lineColor,
             backgroundColor: fillColor,
-            fill: true,
+            borderWidth: 1.75,
+            fill: {
+              target: 'origin',
+              above: 'rgba(16, 185, 129, 0.16)',
+              below: 'rgba(249, 115, 22, 0.22)'
+            },
             tension: 0.32,
-            pointRadius: isMobile ? 2 : 3.5,
+            pointRadius: isMobile ? 1.2 : 2.2,
+            pointHoverRadius: 4.5,
             pointBackgroundColor: lineColor
           },
           ...(benchSeries ? [{
@@ -571,10 +590,11 @@ function renderMonthlyHistoryChart() {
             data: benchSeries,
             borderColor: '#f59e0b',
             borderDash: [5, 4],
-            borderWidth: 2,
+            borderWidth: 1.5,
             fill: false,
             tension: 0.3,
-            pointRadius: 0
+            pointRadius: 0,
+            pointHoverRadius: 3.5
           }] : [])
         ]
       },
@@ -654,9 +674,15 @@ function renderMonthlyHistoryChart() {
             data: accumReturnDollarSeries,
             borderColor: lineColor,
             backgroundColor: fillColor,
-            fill: true,
+            borderWidth: 1.75,
+            fill: {
+              target: 'origin',
+              above: 'rgba(16, 185, 129, 0.16)',
+              below: 'rgba(249, 115, 22, 0.22)'
+            },
             tension: 0.32,
-            pointRadius: isMobile ? 2 : 3.5,
+            pointRadius: isMobile ? 1.2 : 2.2,
+            pointHoverRadius: 4.5,
             pointBackgroundColor: lineColor,
             yAxisID: 'y'
           },
@@ -665,9 +691,11 @@ function renderMonthlyHistoryChart() {
             data: accumReturnPctSeries,
             borderColor: '#6366f1',
             borderDash: [4, 4],
+            borderWidth: 1.5,
             fill: false,
             tension: 0.32,
             pointRadius: 0,
+            pointHoverRadius: 3.5,
             yAxisID: 'y1'
           },
           ...(benchSeries ? [{
@@ -675,10 +703,11 @@ function renderMonthlyHistoryChart() {
             data: benchSeries,
             borderColor: '#f59e0b',
             borderDash: [5, 4],
-            borderWidth: 2,
+            borderWidth: 1.5,
             fill: false,
             tension: 0.3,
             pointRadius: 0,
+            pointHoverRadius: 3.5,
             yAxisID: 'y1'
           }] : [])
         ]
@@ -760,9 +789,11 @@ function renderMonthlyHistoryChart() {
           data: balanceSeries,
           borderColor: '#10b981',
           backgroundColor: 'rgba(16, 185, 129, 0.14)',
+          borderWidth: 1.75,
           fill: true,
           tension: 0.32,
-          pointRadius: isMobile ? 2 : 3.5,
+          pointRadius: isMobile ? 1.2 : 2.2,
+          pointHoverRadius: 4.5,
           pointBackgroundColor: '#10b981'
         },
         {
@@ -770,9 +801,11 @@ function renderMonthlyHistoryChart() {
           data: costBasisSeries,
           borderColor: '#f59e0b',
           borderDash: [5, 5],
+          borderWidth: 1.5,
           fill: false,
           tension: 0.2,
-          pointRadius: 0
+          pointRadius: 0,
+          pointHoverRadius: 3.5
         }
       ]
     },

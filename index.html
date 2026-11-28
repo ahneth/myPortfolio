@@ -872,7 +872,7 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.7.2 (20261127_2030)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.7.3 (20261128_1150)</span>
             </div>
           </div>
         </div>
@@ -3338,25 +3338,25 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.7.2',
-  buildId: '20261127_2030',
-  releaseDate: '2026-11-27 20:30 HKT',
-  driveFolder: '/myPortfolio/20261127_2030/',
+  appVersion: '3.7.3',
+  buildId: '20261128_1150',
+  releaseDate: '2026-11-28 11:50 HKT',
+  driveFolder: '/myPortfolio/20261128_1150/',
   modules: {
-    'version.js':   { version: '3.7.2', updated: '20261127_2030', role: 'Version manifest, module registry & v3.7.2 changelog history' },
+    'version.js':   { version: '3.7.3', updated: '20261128_1150', role: 'Version manifest, module registry & v3.7.3 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.6.3', updated: '20261127_1550', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
     'portfolio.js': { version: '3.7.2', updated: '20261127_2030', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
-    'charts.js':    { version: '3.6.2', updated: '20261127_1520', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
+    'charts.js':    { version: '3.7.3', updated: '20261128_1150', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
     'app.js':       { version: '3.7.2', updated: '20261127_2030', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
     'styles.css':   { version: '3.6.0', updated: '20261125_1720', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.7.2', updated: '20261127_2030', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.7.3', updated: '20261128_1150', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
     {
       version: '3.6.0',
-      buildId: '20261127_2030',
+      buildId: '20261128_1150',
       date: '2026-11-25',
       title: 'Quant Risk Analytics, Action Radar, Benchmark Overlay, 12M Dividend Calendar & Holdings Presets',
       highlights: [
@@ -3370,7 +3370,7 @@ var APP_VERSION_MANIFEST = {
 
     {
       version: '3.6.0',
-      buildId: '20261127_2030',
+      buildId: '20261128_1150',
       date: '2026-11-24 12:20 HKT',
       summary: 'Fixed Total Return % (and Privacy Mode Realized P&L %) denominator across individual holdings, sector subtotals, Portfolio Total row, and Dashboard KPI to use Cumulative Buy Cost Basis (Active Cost + Sold Cost) instead of remaining active cost alone.',
       changes: [
@@ -9957,7 +9957,7 @@ function computeMonthlyPortfolioSeries(rangeMonths, onlyFromEarliestActivity = f
 }
 
 
-function computeBenchmarkReturnSeries(benchTicker, labels) {
+function computeBenchmarkReturnSeries(benchTicker, labels, startOffsetPct = 0) {
   if (!benchTicker || benchTicker === 'NONE' || !Array.isArray(labels) || labels.length === 0) return null;
   const sym = MarketAPI.normalizeTicker(benchTicker);
   const hist = state?.historicalPrices?.[sym] || [];
@@ -9971,13 +9971,25 @@ function computeBenchmarkReturnSeries(benchTicker, labels) {
   if (liveP > 0 && labels.length > 0) {
     priceMap[labels[labels.length - 1]] = liveP;
   }
+  const offset = Number.isFinite(Number(startOffsetPct)) ? Number(startOffsetPct) : 0;
   let basePrice = null;
   let lastKnown = null;
+  // Seed lastKnown from the latest benchmark bar <= labels[0] so the benchmark starts at labels[0] with zero gap
+  const firstLabel = labels[0];
+  const sortedBenchMonths = Object.keys(priceMap).sort();
+  for (let i = 0; i < sortedBenchMonths.length; i++) {
+    if (sortedBenchMonths[i] <= firstLabel) {
+      lastKnown = priceMap[sortedBenchMonths[i]];
+    } else {
+      break;
+    }
+  }
   const out = labels.map(m => {
     if (priceMap[m] > 0) lastKnown = priceMap[m];
     if (basePrice === null && lastKnown > 0) basePrice = lastKnown;
     if (basePrice > 0 && lastKnown > 0) {
-      return Fin.round(((lastKnown - basePrice) / basePrice) * 100, 2);
+      const relPct = ((lastKnown - basePrice) / basePrice) * 100;
+      return Fin.round(offset + relPct, 2);
     }
     return null;
   });
@@ -10101,7 +10113,8 @@ function renderMonthlyHistoryChart() {
     accumReturnPctSeries
   } = seriesData;
   try { renderDashboardRiskStrip(seriesData); } catch (_) {}
-  const benchSeries = computeBenchmarkReturnSeries(portfolioBenchmarkTicker, labels);
+  const startPortfolioRetPct = accumReturnPctSeries.length > 0 ? Number(accumReturnPctSeries[0] || 0) : 0;
+  const benchSeries = computeBenchmarkReturnSeries(portfolioBenchmarkTicker, labels, startPortfolioRetPct);
 
   const latestBalance = balanceSeries[balanceSeries.length - 1] || 0;
   const latestReturnDollar = accumReturnDollarSeries[accumReturnDollarSeries.length - 1] || 0;
@@ -10149,9 +10162,15 @@ function renderMonthlyHistoryChart() {
             data: accumReturnPctSeries,
             borderColor: lineColor,
             backgroundColor: fillColor,
-            fill: true,
+            borderWidth: 1.75,
+            fill: {
+              target: 'origin',
+              above: 'rgba(16, 185, 129, 0.16)',
+              below: 'rgba(249, 115, 22, 0.22)'
+            },
             tension: 0.32,
-            pointRadius: isMobile ? 2 : 3.5,
+            pointRadius: isMobile ? 1.2 : 2.2,
+            pointHoverRadius: 4.5,
             pointBackgroundColor: lineColor
           },
           ...(benchSeries ? [{
@@ -10159,10 +10178,11 @@ function renderMonthlyHistoryChart() {
             data: benchSeries,
             borderColor: '#f59e0b',
             borderDash: [5, 4],
-            borderWidth: 2,
+            borderWidth: 1.5,
             fill: false,
             tension: 0.3,
-            pointRadius: 0
+            pointRadius: 0,
+            pointHoverRadius: 3.5
           }] : [])
         ]
       },
@@ -10242,9 +10262,15 @@ function renderMonthlyHistoryChart() {
             data: accumReturnDollarSeries,
             borderColor: lineColor,
             backgroundColor: fillColor,
-            fill: true,
+            borderWidth: 1.75,
+            fill: {
+              target: 'origin',
+              above: 'rgba(16, 185, 129, 0.16)',
+              below: 'rgba(249, 115, 22, 0.22)'
+            },
             tension: 0.32,
-            pointRadius: isMobile ? 2 : 3.5,
+            pointRadius: isMobile ? 1.2 : 2.2,
+            pointHoverRadius: 4.5,
             pointBackgroundColor: lineColor,
             yAxisID: 'y'
           },
@@ -10253,9 +10279,11 @@ function renderMonthlyHistoryChart() {
             data: accumReturnPctSeries,
             borderColor: '#6366f1',
             borderDash: [4, 4],
+            borderWidth: 1.5,
             fill: false,
             tension: 0.32,
             pointRadius: 0,
+            pointHoverRadius: 3.5,
             yAxisID: 'y1'
           },
           ...(benchSeries ? [{
@@ -10263,10 +10291,11 @@ function renderMonthlyHistoryChart() {
             data: benchSeries,
             borderColor: '#f59e0b',
             borderDash: [5, 4],
-            borderWidth: 2,
+            borderWidth: 1.5,
             fill: false,
             tension: 0.3,
             pointRadius: 0,
+            pointHoverRadius: 3.5,
             yAxisID: 'y1'
           }] : [])
         ]
@@ -10348,9 +10377,11 @@ function renderMonthlyHistoryChart() {
           data: balanceSeries,
           borderColor: '#10b981',
           backgroundColor: 'rgba(16, 185, 129, 0.14)',
+          borderWidth: 1.75,
           fill: true,
           tension: 0.32,
-          pointRadius: isMobile ? 2 : 3.5,
+          pointRadius: isMobile ? 1.2 : 2.2,
+          pointHoverRadius: 4.5,
           pointBackgroundColor: '#10b981'
         },
         {
@@ -10358,9 +10389,11 @@ function renderMonthlyHistoryChart() {
           data: costBasisSeries,
           borderColor: '#f59e0b',
           borderDash: [5, 5],
+          borderWidth: 1.5,
           fill: false,
           tension: 0.2,
-          pointRadius: 0
+          pointRadius: 0,
+          pointHoverRadius: 3.5
         }
       ]
     },
