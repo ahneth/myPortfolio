@@ -1420,7 +1420,7 @@ function renderInlineStockChart(tabType) {
   // v3.6.1 Ex-Dividend & Dividend Payout Markers (D) on Inline Stock Chart
   if (state?.settings?.chartShowDivMarkers !== false && labels.length > 0) {
     const schedObj = state?.dividendSchedules?.[ticker]
-      || (typeof buildDividendScheduleForTicker === 'function' ? buildDividendScheduleForTicker(ticker, null, livePrice || 0, currency) : null);
+      || (typeof buildDividendScheduleForTicker === 'function' ? buildDividendScheduleForTicker(ticker, null, livePx || lastClose || 0, currency) : null);
     const schedHist = Array.isArray(schedObj?.history) ? schedObj.history : [];
     const divByMonth = {};
     schedHist.forEach(d => {
@@ -1478,8 +1478,8 @@ function renderInlineStockChart(tabType) {
   const maxVol = volData.reduce((m, v) => (v > m ? v : m), 0);
   const showVol = Boolean(state?.settings?.chartShowVolume !== false) && maxVol > 0;
   if (showVol) {
-    const fullStartIdx = Math.max(0, (bars?.length || 0) - sliced.length);
-    const prevBarBeforeSlice = fullStartIdx > 0 ? bars[fullStartIdx - 1] : null;
+    const fullStartIdx = Math.max(0, (series?.length || 0) - sliced.length);
+    const prevBarBeforeSlice = fullStartIdx > 0 ? series[fullStartIdx - 1] : null;
     const volBgColors = sliced.map((b, i) => {
       const curC = Number(b?.close || 0);
       const prevC = i > 0
@@ -1572,10 +1572,10 @@ function renderInlineStockChart(tabType) {
     const hVal = Number(highData[safeIdx] || 0);
     const lVal = Number(lowData[safeIdx] || 0);
     const vVal = Number(volData[safeIdx] || 0);
-    const fullStartIdx = Math.max(0, (bars?.length || 0) - sliced.length);
+    const fullStartIdx = Math.max(0, (series?.length || 0) - sliced.length);
     const prevC = safeIdx > 0
       ? Number(closeData[safeIdx - 1] || 0)
-      : Number((fullStartIdx > 0 ? bars[fullStartIdx - 1]?.close : 0) || 0);
+      : Number((fullStartIdx > 0 ? series[fullStartIdx - 1]?.close : 0) || 0);
     const momChgPct = (prevC > 0 && cVal > 0) ? ((cVal - prevC) / prevC) * 100 : null;
     const curYm = new Date().toISOString().slice(0, 7);
     const mtdTag = (safeIdx === labels.length - 1 && mKey === curYm) ? ' (MTD)' : '';

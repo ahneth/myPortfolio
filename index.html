@@ -3528,25 +3528,25 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.10.2',
-  buildId: '20261128_1845',
-  releaseDate: '2026-11-28 18:45 HKT',
-  driveFolder: '/myPortfolio/20261128_1845/',
+  appVersion: '3.10.3',
+  buildId: '20261128_1852',
+  releaseDate: '2026-11-28 18:52 HKT',
+  driveFolder: '/myPortfolio/20261128_1852/',
   modules: {
-    'version.js':   { version: '3.10.2', updated: '20261128_1845', role: 'Version manifest, module registry & v3.10.2 changelog history' },
+    'version.js':   { version: '3.10.3', updated: '20261128_1852', role: 'Version manifest, module registry & v3.10.3 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
     'api.js':       { version: '3.7.4', updated: '20261128_1250', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
     'portfolio.js': { version: '3.10.0', updated: '20261128_1745', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
-    'charts.js':    { version: '3.10.2', updated: '20261128_1845', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
+    'charts.js':    { version: '3.10.3', updated: '20261128_1852', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
     'app.js':       { version: '3.10.1', updated: '20261128_1840', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
     'styles.css':   { version: '3.6.0', updated: '20261125_1720', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.10.2', updated: '20261128_1845', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.10.3', updated: '20261128_1852', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
     {
       version: '3.6.0',
-      buildId: '20261128_1845',
+      buildId: '20261128_1852',
       date: '2026-11-25',
       title: 'Quant Risk Analytics, Action Radar, Benchmark Overlay, 12M Dividend Calendar & Holdings Presets',
       highlights: [
@@ -3560,7 +3560,7 @@ var APP_VERSION_MANIFEST = {
 
     {
       version: '3.6.0',
-      buildId: '20261128_1845',
+      buildId: '20261128_1852',
       date: '2026-11-24 12:20 HKT',
       summary: 'Fixed Total Return % (and Privacy Mode Realized P&L %) denominator across individual holdings, sector subtotals, Portfolio Total row, and Dashboard KPI to use Cumulative Buy Cost Basis (Active Cost + Sold Cost) instead of remaining active cost alone.',
       changes: [
@@ -11547,7 +11547,7 @@ function renderInlineStockChart(tabType) {
   // v3.6.1 Ex-Dividend & Dividend Payout Markers (D) on Inline Stock Chart
   if (state?.settings?.chartShowDivMarkers !== false && labels.length > 0) {
     const schedObj = state?.dividendSchedules?.[ticker]
-      || (typeof buildDividendScheduleForTicker === 'function' ? buildDividendScheduleForTicker(ticker, null, livePrice || 0, currency) : null);
+      || (typeof buildDividendScheduleForTicker === 'function' ? buildDividendScheduleForTicker(ticker, null, livePx || lastClose || 0, currency) : null);
     const schedHist = Array.isArray(schedObj?.history) ? schedObj.history : [];
     const divByMonth = {};
     schedHist.forEach(d => {
@@ -11605,8 +11605,8 @@ function renderInlineStockChart(tabType) {
   const maxVol = volData.reduce((m, v) => (v > m ? v : m), 0);
   const showVol = Boolean(state?.settings?.chartShowVolume !== false) && maxVol > 0;
   if (showVol) {
-    const fullStartIdx = Math.max(0, (bars?.length || 0) - sliced.length);
-    const prevBarBeforeSlice = fullStartIdx > 0 ? bars[fullStartIdx - 1] : null;
+    const fullStartIdx = Math.max(0, (series?.length || 0) - sliced.length);
+    const prevBarBeforeSlice = fullStartIdx > 0 ? series[fullStartIdx - 1] : null;
     const volBgColors = sliced.map((b, i) => {
       const curC = Number(b?.close || 0);
       const prevC = i > 0
@@ -11699,10 +11699,10 @@ function renderInlineStockChart(tabType) {
     const hVal = Number(highData[safeIdx] || 0);
     const lVal = Number(lowData[safeIdx] || 0);
     const vVal = Number(volData[safeIdx] || 0);
-    const fullStartIdx = Math.max(0, (bars?.length || 0) - sliced.length);
+    const fullStartIdx = Math.max(0, (series?.length || 0) - sliced.length);
     const prevC = safeIdx > 0
       ? Number(closeData[safeIdx - 1] || 0)
-      : Number((fullStartIdx > 0 ? bars[fullStartIdx - 1]?.close : 0) || 0);
+      : Number((fullStartIdx > 0 ? series[fullStartIdx - 1]?.close : 0) || 0);
     const momChgPct = (prevC > 0 && cVal > 0) ? ((cVal - prevC) / prevC) * 100 : null;
     const curYm = new Date().toISOString().slice(0, 7);
     const mtdTag = (safeIdx === labels.length - 1 && mKey === curYm) ? ' (MTD)' : '';
