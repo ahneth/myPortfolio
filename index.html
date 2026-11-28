@@ -872,7 +872,7 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
                 <span id="device-indicator-text">Desktop</span>
               </span>
               <!-- Version Badge -->
-              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.7.3 (20261128_1150)</span>
+              <span id="app-version-badge" class="text-[8.5px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0 sm:py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/30 whitespace-nowrap" title="Application Release &amp; Build ID">v3.7.4 (20261128_1250)</span>
             </div>
           </div>
         </div>
@@ -3338,25 +3338,25 @@ table.preset-targets-active td:not(.sticky-col-mobile):not(.col-always):not(.col
  */
 
 var APP_VERSION_MANIFEST = {
-  appVersion: '3.7.3',
-  buildId: '20261128_1150',
-  releaseDate: '2026-11-28 11:50 HKT',
-  driveFolder: '/myPortfolio/20261128_1150/',
+  appVersion: '3.7.4',
+  buildId: '20261128_1250',
+  releaseDate: '2026-11-28 12:50 HKT',
+  driveFolder: '/myPortfolio/20261128_1250/',
   modules: {
-    'version.js':   { version: '3.7.3', updated: '20261128_1150', role: 'Version manifest, module registry & v3.7.3 changelog history' },
+    'version.js':   { version: '3.7.4', updated: '20261128_1250', role: 'Version manifest, module registry & v3.7.4 changelog history' },
     'logger.js':    { version: '2.4.0', updated: '20261018_2345', role: 'Centralized telemetry, health checks & diagnostic log store' },
     'utils.js':     { version: '3.1.0', updated: '20261031_1650', role: 'Nominal & Real (Inflation-Adjusted) XIRR solver, Multi-Currency FX & GBp scaling, formatters' },
-    'api.js':       { version: '3.6.3', updated: '20261127_1550', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
+    'api.js':       { version: '3.7.4', updated: '20261128_1250', role: '1D Intraday Chart Quote Engine (meta.chartPreviousClose) + Unified Cloudflare Worker (quotes, 15Y history, dividends & news)' },
     'portfolio.js': { version: '3.7.2', updated: '20261127_2030', role: 'Cumulative Buy Cost Basis for Total Return %, Volatility-Adaptive Sell Target & Live Dividend Persistence' },
-    'charts.js':    { version: '3.7.3', updated: '20261128_1150', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
+    'charts.js':    { version: '3.7.4', updated: '20261128_1250', role: 'Zero-Bounce In-Place chart.update("none") Engine, Dual-Axis Trades Cashflow Chart, SMA & 12M Reg Channel Overlays' },
     'app.js':       { version: '3.7.2', updated: '20261127_2030', role: 'Cumulative Buy Cost Basis Total Return % across Holdings, Sector Subtotals, Portfolio Total & Dashboard KPI' },
     'styles.css':   { version: '3.6.0', updated: '20261125_1720', role: 'Responsive dark/light glassmorphic styles, signal pills & trend channel badges' },
-    'index.html':   { version: '3.7.3', updated: '20261128_1150', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
+    'index.html':   { version: '3.7.4', updated: '20261128_1250', role: 'Self-contained single-file production bundle powered 100% by Cloudflare Worker (zero GitHub JSON files)' }
   },
   changelog: [
     {
       version: '3.6.0',
-      buildId: '20261128_1150',
+      buildId: '20261128_1250',
       date: '2026-11-25',
       title: 'Quant Risk Analytics, Action Radar, Benchmark Overlay, 12M Dividend Calendar & Holdings Presets',
       highlights: [
@@ -3370,7 +3370,7 @@ var APP_VERSION_MANIFEST = {
 
     {
       version: '3.6.0',
-      buildId: '20261128_1150',
+      buildId: '20261128_1250',
       date: '2026-11-24 12:20 HKT',
       summary: 'Fixed Total Return % (and Privacy Mode Realized P&L %) denominator across individual holdings, sector subtotals, Portfolio Total row, and Dashboard KPI to use Cumulative Buy Cost Basis (Active Cost + Sold Cost) instead of remaining active cost alone.',
       changes: [
@@ -5405,7 +5405,7 @@ var MarketAPI = {
     if (syms.length === 0) return { historyCount: 0, dividendCount: 0 };
 
     const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
-    const chunkSize = 15;
+    const chunkSize = mode === 'history' ? 8 : 15;
     let historyCount = 0;
     let dividendCount = 0;
 
@@ -5472,6 +5472,94 @@ var MarketAPI = {
       invalidateStockMetricsCache();
     }
     return { historyCount, dividendCount };
+  },
+
+  _mtdFetchInFlight: {},
+
+  /**
+   * v3.7.4 Self-Healing Month-To-Date High & Low Fetcher:
+   * Fetches range=2mo&interval=1d daily bars via the Cloudflare Worker ?url= proxy (works regardless of Worker version),
+   * aggregates the exact local-timezone Month-To-Date High & Low for the current incomplete month,
+   * updates state.historicalPrices[sym][lastIdx], and refreshes the active inline chart smoothly in-place.
+   */
+  async ensureCurrentMonthHighLow(rawTicker, tabType = null) {
+    const sym = this.normalizeTicker(rawTicker);
+    if (!sym || !state?.historicalPrices?.[sym]?.length) return false;
+    const series = state.historicalPrices[sym];
+    const latestBar = series[series.length - 1];
+    if (!latestBar || !latestBar.month) return false;
+
+    const todayStr = (typeof getLocalTodayDateString === 'function')
+      ? getLocalTodayDateString()
+      : new Date().toISOString().slice(0, 10);
+    if (latestBar._mtdDate === todayStr) return false;
+    if (this._mtdFetchInFlight[sym]) return false;
+
+    const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
+    if (!workerBase) return false;
+
+    this._mtdFetchInFlight[sym] = true;
+    try {
+      const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=2mo&interval=1d&includePrePost=false`;
+      const proxyUrl = `${workerBase}/?url=${encodeURIComponent(yahooUrl)}`;
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 8000);
+      const res = await fetch(proxyUrl, { signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(timer);
+      if (!res.ok) return false;
+
+      const json = await res.json();
+      const result = json?.chart?.result?.[0];
+      const tsArr = result?.timestamp || [];
+      const q = result?.indicators?.quote?.[0] || {};
+      const highs = q.high || [];
+      const lows = q.low || [];
+      const closes = q.close || [];
+      const gmtOff = Number(result?.meta?.gmtoffset ?? 0);
+      const targetMonth = String(latestBar.month).slice(0, 7);
+
+      let mtdMaxH = 0;
+      let mtdMinL = Infinity;
+      let matchedDays = 0;
+      for (let i = 0; i < tsArr.length; i++) {
+        const tsD = Number(tsArr[i]);
+        if (!tsD) continue;
+        const localMonth = new Date((tsD + gmtOff) * 1000).toISOString().slice(0, 7);
+        if (localMonth !== targetMonth) continue;
+        const dh = Number(highs[i]);
+        const dl = Number(lows[i]);
+        const dc = Number(closes[i]);
+        if (Number.isFinite(dh) && dh > 0) { mtdMaxH = Math.max(mtdMaxH, dh); matchedDays++; }
+        if (Number.isFinite(dc) && dc > 0) { mtdMaxH = Math.max(mtdMaxH, dc); }
+        if (Number.isFinite(dl) && dl > 0) { mtdMinL = Math.min(mtdMinL, dl); }
+        if (Number.isFinite(dc) && dc > 0) { mtdMinL = Math.min(mtdMinL, dc); }
+      }
+
+      if (matchedDays > 0 && mtdMaxH > 0 && mtdMinL < Infinity) {
+        const livePx = Number(state?.prices?.[sym]?.price || 0);
+        if (livePx > 0) {
+          mtdMaxH = Math.max(mtdMaxH, livePx);
+          mtdMinL = Math.min(mtdMinL, livePx);
+        }
+        const newH = Fin.round(mtdMaxH, 4);
+        const newL = Fin.round(mtdMinL, 4);
+        const changed = (latestBar.high !== newH || latestBar.low !== newL);
+        latestBar.high = newH;
+        latestBar.low = newL;
+        latestBar._mtdDate = todayStr;
+        if (typeof invalidateStockMetricsCache === 'function') invalidateStockMetricsCache();
+        if (typeof saveState === 'function') saveState();
+        if (changed && tabType && typeof renderInlineStockChart === 'function') {
+          renderInlineStockChart(tabType);
+        }
+        return changed;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    } finally {
+      delete this._mtdFetchInFlight[sym];
+    }
   },
 
   async fetchCloudflareNewsBatch(tickers = [], maxPerTicker = 6) {
@@ -6177,13 +6265,13 @@ async function checkAndRunDailyCloudflareSync(forceAll = false) {
   if (allTickers.length === 0) return;
 
   const todayStr = getLocalTodayDateString();
-  const isNewCalendarDay = (state.settings.lastDailySyncDate !== todayStr) || (state.settings.lastHistorySchemaVersion !== '3.6.3');
+  const isNewCalendarDay = (state.settings.lastDailySyncDate !== todayStr) || (state.settings.lastHistorySchemaVersion !== '3.7.4');
   const missingHistoryTickers = allTickers.filter(sym => !Array.isArray(state.historicalPrices?.[sym]) || state.historicalPrices[sym].length === 0);
   const hasEmptyNews = !Array.isArray(state.companyNews) || state.companyNews.length === 0;
 
   if (forceAll || isNewCalendarDay) {
     state.settings.lastDailySyncDate = todayStr;
-    state.settings.lastHistorySchemaVersion = '3.6.3';
+    state.settings.lastHistorySchemaVersion = '3.7.4';
     saveState();
     if (typeof AppLogger !== 'undefined') {
       AppLogger.info('DailyAutoSync', `First active session of ${todayStr} — auto-fetching 15Y monthly prices, dividends, live FX & news via Cloudflare Worker.`);
@@ -10576,6 +10664,11 @@ function renderInlineStockChart(tabType) {
       highData[lastIdx] = Math.max(highData[lastIdx], prevPx);
       lowData[lastIdx] = Math.min(lowData[lastIdx], prevPx);
     }
+  }
+
+  // v3.7.4: Self-healing exact Month-To-Date High/Low fetch via 2mo/1d daily bars (at most once per day per viewed ticker)
+  if (typeof MarketAPI !== 'undefined' && typeof MarketAPI.ensureCurrentMonthHighLow === 'function') {
+    MarketAPI.ensureCurrentMonthHighLow(ticker, tabType);
   }
 
   const firstClose = closeData[0] || 0;

@@ -650,7 +650,7 @@ var MarketAPI = {
     if (syms.length === 0) return { historyCount: 0, dividendCount: 0 };
 
     const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
-    const chunkSize = 15;
+    const chunkSize = mode === 'history' ? 8 : 15;
     let historyCount = 0;
     let dividendCount = 0;
 
@@ -717,6 +717,94 @@ var MarketAPI = {
       invalidateStockMetricsCache();
     }
     return { historyCount, dividendCount };
+  },
+
+  _mtdFetchInFlight: {},
+
+  /**
+   * v3.7.4 Self-Healing Month-To-Date High & Low Fetcher:
+   * Fetches range=2mo&interval=1d daily bars via the Cloudflare Worker ?url= proxy (works regardless of Worker version),
+   * aggregates the exact local-timezone Month-To-Date High & Low for the current incomplete month,
+   * updates state.historicalPrices[sym][lastIdx], and refreshes the active inline chart smoothly in-place.
+   */
+  async ensureCurrentMonthHighLow(rawTicker, tabType = null) {
+    const sym = this.normalizeTicker(rawTicker);
+    if (!sym || !state?.historicalPrices?.[sym]?.length) return false;
+    const series = state.historicalPrices[sym];
+    const latestBar = series[series.length - 1];
+    if (!latestBar || !latestBar.month) return false;
+
+    const todayStr = (typeof getLocalTodayDateString === 'function')
+      ? getLocalTodayDateString()
+      : new Date().toISOString().slice(0, 10);
+    if (latestBar._mtdDate === todayStr) return false;
+    if (this._mtdFetchInFlight[sym]) return false;
+
+    const workerBase = String(this.cloudflareWorkerUrl || CLOUDFLARE_WORKER_URL || '').replace(/\/+$/, '');
+    if (!workerBase) return false;
+
+    this._mtdFetchInFlight[sym] = true;
+    try {
+      const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=2mo&interval=1d&includePrePost=false`;
+      const proxyUrl = `${workerBase}/?url=${encodeURIComponent(yahooUrl)}`;
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 8000);
+      const res = await fetch(proxyUrl, { signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(timer);
+      if (!res.ok) return false;
+
+      const json = await res.json();
+      const result = json?.chart?.result?.[0];
+      const tsArr = result?.timestamp || [];
+      const q = result?.indicators?.quote?.[0] || {};
+      const highs = q.high || [];
+      const lows = q.low || [];
+      const closes = q.close || [];
+      const gmtOff = Number(result?.meta?.gmtoffset ?? 0);
+      const targetMonth = String(latestBar.month).slice(0, 7);
+
+      let mtdMaxH = 0;
+      let mtdMinL = Infinity;
+      let matchedDays = 0;
+      for (let i = 0; i < tsArr.length; i++) {
+        const tsD = Number(tsArr[i]);
+        if (!tsD) continue;
+        const localMonth = new Date((tsD + gmtOff) * 1000).toISOString().slice(0, 7);
+        if (localMonth !== targetMonth) continue;
+        const dh = Number(highs[i]);
+        const dl = Number(lows[i]);
+        const dc = Number(closes[i]);
+        if (Number.isFinite(dh) && dh > 0) { mtdMaxH = Math.max(mtdMaxH, dh); matchedDays++; }
+        if (Number.isFinite(dc) && dc > 0) { mtdMaxH = Math.max(mtdMaxH, dc); }
+        if (Number.isFinite(dl) && dl > 0) { mtdMinL = Math.min(mtdMinL, dl); }
+        if (Number.isFinite(dc) && dc > 0) { mtdMinL = Math.min(mtdMinL, dc); }
+      }
+
+      if (matchedDays > 0 && mtdMaxH > 0 && mtdMinL < Infinity) {
+        const livePx = Number(state?.prices?.[sym]?.price || 0);
+        if (livePx > 0) {
+          mtdMaxH = Math.max(mtdMaxH, livePx);
+          mtdMinL = Math.min(mtdMinL, livePx);
+        }
+        const newH = Fin.round(mtdMaxH, 4);
+        const newL = Fin.round(mtdMinL, 4);
+        const changed = (latestBar.high !== newH || latestBar.low !== newL);
+        latestBar.high = newH;
+        latestBar.low = newL;
+        latestBar._mtdDate = todayStr;
+        if (typeof invalidateStockMetricsCache === 'function') invalidateStockMetricsCache();
+        if (typeof saveState === 'function') saveState();
+        if (changed && tabType && typeof renderInlineStockChart === 'function') {
+          renderInlineStockChart(tabType);
+        }
+        return changed;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    } finally {
+      delete this._mtdFetchInFlight[sym];
+    }
   },
 
   async fetchCloudflareNewsBatch(tickers = [], maxPerTicker = 6) {
@@ -1422,13 +1510,13 @@ async function checkAndRunDailyCloudflareSync(forceAll = false) {
   if (allTickers.length === 0) return;
 
   const todayStr = getLocalTodayDateString();
-  const isNewCalendarDay = (state.settings.lastDailySyncDate !== todayStr) || (state.settings.lastHistorySchemaVersion !== '3.6.3');
+  const isNewCalendarDay = (state.settings.lastDailySyncDate !== todayStr) || (state.settings.lastHistorySchemaVersion !== '3.7.4');
   const missingHistoryTickers = allTickers.filter(sym => !Array.isArray(state.historicalPrices?.[sym]) || state.historicalPrices[sym].length === 0);
   const hasEmptyNews = !Array.isArray(state.companyNews) || state.companyNews.length === 0;
 
   if (forceAll || isNewCalendarDay) {
     state.settings.lastDailySyncDate = todayStr;
-    state.settings.lastHistorySchemaVersion = '3.6.3';
+    state.settings.lastHistorySchemaVersion = '3.7.4';
     saveState();
     if (typeof AppLogger !== 'undefined') {
       AppLogger.info('DailyAutoSync', `First active session of ${todayStr} — auto-fetching 15Y monthly prices, dividends, live FX & news via Cloudflare Worker.`);

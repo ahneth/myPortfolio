@@ -990,6 +990,11 @@ function renderInlineStockChart(tabType) {
     }
   }
 
+  // v3.7.4: Self-healing exact Month-To-Date High/Low fetch via 2mo/1d daily bars (at most once per day per viewed ticker)
+  if (typeof MarketAPI !== 'undefined' && typeof MarketAPI.ensureCurrentMonthHighLow === 'function') {
+    MarketAPI.ensureCurrentMonthHighLow(ticker, tabType);
+  }
+
   const firstClose = closeData[0] || 0;
   const lastClose = closeData[closeData.length - 1] || 0;
   const periodChange = Fin.round(lastClose - firstClose, 2);
